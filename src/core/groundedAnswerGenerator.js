@@ -108,13 +108,79 @@ function getAiEngine() {
 
 let openaiCircuitOpen = false;
 
-function buildSynthesisPrompt(semanticFrame, evidenceList = []) {
+function buildSynthesisPrompt(semanticFrame, evidenceList = [], recommendationResult = null) {
   const userLang = semanticFrame.language || detectQueryLanguage(semanticFrame.rawQuery || '');
   const isEn = userLang === 'en';
+  const isRecommendation = Boolean(
+    recommendationResult ||
+    semanticFrame.domain === 'ACADEMIC_RECOMMENDATION' ||
+    semanticFrame.intent === 'PROGRAM_RECOMMENDATION'
+  );
 
-  const contextSnippet = evidenceList
+  const ragFacts = evidenceList
     .map((e, idx) => `[${isEn ? 'Fact' : 'Fakta'} ${idx + 1}] (${isEn ? 'Source' : 'Sumber'}: ${e.source || e.sourceFile || (isEn ? 'official campus guide' : 'panduan resmi')}):\n${(e.text || e.chunk || '').trim()}`)
-    .join('\n\n');
+    .filter(Boolean);
+
+  let curriculumProfilesSnippet = '';
+  let semanticInterpretationSnippet = '';
+
+  if (isRecommendation) {
+    const { PROGRAMS } = require('../engine/programFitReasoning');
+    const candidates = (recommendationResult && Array.isArray(recommendationResult.scoredCandidates) && recommendationResult.scoredCandidates.length > 0)
+      ? recommendationResult.scoredCandidates
+      : Object.values(PROGRAMS).map((p) => ({
+          canonicalName: p.canonicalName,
+          studyFocus: p.curriculumProfile?.studyFocus || (p.strengths || []).join(', '),
+          suitableFor: p.curriculumProfile?.suitableFor || '',
+          careerProspects: p.curriculumProfile?.careerProspects || '',
+          grounding: p.grounding
+        }));
+
+    curriculumProfilesSnippet = candidates
+      .map((c, idx) => {
+        const focus = c.studyFocus || (c.strengths || []).join(', ');
+        const suitable = c.suitableFor || '';
+        const careers = c.careerProspects || '';
+        return `[Profil Kurikulum Resmi ${idx + 1}] ${c.canonicalName} (${c.grounding || 'Program Resmi ITB STIKOM Bali'}):\n- Fokus Kajian Kurikulum: ${focus}\n- Kesesuaian Profil: ${suitable}\n- Prospek Karier: ${careers}`;
+      })
+      .join('\n\n');
+
+    const parsedInterest = semanticFrame.userInterest || '(belum dirinci secara spesifik)';
+    const parsedConcepts = Array.isArray(semanticFrame.semanticConcepts) && semanticFrame.semanticConcepts.length > 0
+      ? semanticFrame.semanticConcepts.join(', ')
+      : '(umum)';
+    const parsedPrefs = semanticFrame.preferences ? JSON.stringify(semanticFrame.preferences) : '(tidak ada preferensi khusus)';
+    const parsedConstraints = semanticFrame.scopeConstraints || semanticFrame.constraints
+      ? JSON.stringify(semanticFrame.scopeConstraints || semanticFrame.constraints)
+      : '(tidak ada batasan khusus)';
+    const parsedAmbiguity = semanticFrame.ambiguityLevel || (recommendationResult?.isBroadGuidance ? 'HIGH' : 'LOW');
+
+    semanticInterpretationSnippet = isEn
+      ? `\nPARSED SEMANTIC INTERPRETATION OF USER NEEDS:\n- User Interest / Goal: ${parsedInterest}\n- Semantic Concepts: ${parsedConcepts}\n- Preferences: ${parsedPrefs}\n- Constraints / Scope: ${parsedConstraints}\n- Ambiguity Level: ${parsedAmbiguity}\n`
+      : `\nINTERPRETASI SEMANTIK KEBUTUHAN PENGGUNA:\n- Minat / Tujuan Utama (userInterest): ${parsedInterest}\n- Konsep Semantik (semanticConcepts): ${parsedConcepts}\n- Preferensi: ${parsedPrefs}\n- Kendala / Batasan Ruang Lingkup: ${parsedConstraints}\n- Tingkat Ambiguitas (ambiguityLevel): ${parsedAmbiguity}\n`;
+  }
+
+  const contextSnippet = [curriculumProfilesSnippet, ...ragFacts].filter(Boolean).join('\n\n');
+
+  const recInstructionsEn = isRecommendation
+    ? `\n\nACADEMIC PROGRAM RECOMMENDATION RULES:
+1. Compare the student's semantic needs (userInterest, semanticConcepts, preferences, constraints) against the provided official curriculum profiles and facts—even if the user uses completely different phrasing from the curriculum text.
+2. Explain the concrete connection between the student's needs and the program's official studyFocus, suitableFor, courses, and careerProspects.
+3. If multiple programs are relevant or the user has conflicting preferences/constraints, objectively compare the relevant programs and explain their curriculum trade-offs without bias.
+4. If the student's interest is broad or ambiguityLevel is HIGH, provide a structured neutral overview of the relevant study programs and ask a specific clarifying question.
+5. STRICTLY FORBID absolute assertions such as "will definitely fit", "pasti cocok", or "pasti pilih".
+6. MANDATORILY include advice to consult campus admissions (admisi PMB ITB STIKOM Bali) for official curriculum and enrollment details.`
+    : '';
+
+  const recInstructionsId = isRecommendation
+    ? `\n\nPANDUAN KHUSUS REKOMENDASI PROGRAM STUDI:
+1. Bandingkan makna kebutuhan pengguna pada INTERPRETASI SEMANTIK KEBUTUHAN PENGGUNA (userInterest, semanticConcepts, preferensi, kendala) dengan bukti [Profil Kurikulum Resmi] dan [Fakta] yang tersedia—meskipun kalimat pengguna tidak memiliki kata yang persis sama dengan teks kurikulum.
+2. Jelaskan alasan keselarasan secara konkret dan terikat pada bukti kurikulum resmi (Fokus Kajian Kurikulum, Kesesuaian Profil, Mata Kuliah, dan Prospek Karier).
+3. Jika ada beberapa program studi yang relevan atau terdapat preferensi/kendala pengguna yang saling bertolak belakang (trade-off), bandingkan program-program yang relevan secara adil dan objektif tanpa memaksakan satu pemenang tunggal.
+4. Jika minat pengguna masih umum/luas atau Tingkat Ambiguitas (ambiguityLevel) adalah HIGH, sajikan gambaran kurikulum beberapa prodi secara netral dan ajukan pertanyaan klarifikasi yang ramah dan terarah.
+5. DILARANG MUTLAK menggunakan klaim mutlak seperti "pasti cocok", "pasti pas", atau "pasti pilih". Gunakan bahasa objektif seperti "selaras", "relevan", atau "dapat dipertimbangkan".
+6. WAJIB menyertakan anjuran untuk berkonsultasi lebih lanjut dengan bagian admisi PMB ITB STIKOM Bali untuk konfirmasi kurikulum dan pendaftaran resmi.`
+    : '';
 
   if (isEn) {
     return {
@@ -140,9 +206,8 @@ STRICT GROUNDING INVARIANTS:
    - Official study program names, academic degrees (S.Kom, S.Bns, M.Kom, A.Md.Kom), accreditation statuses, or partner institutions.
    - Mandatory registration requirements and documents.
 3. If the available facts do not contain the answer for a specific aspect asked by the user, state what is not yet listed honestly and kindly in natural language, and guide them to contact campus admissions directly.
-4. Focus ONLY on the entity or study program inquired by the user. Do not mix information from other majors.`,
-      userPrompt: `User Question: "${semanticFrame.rawQuery}"
-
+4. Focus ONLY on the entity or study program inquired by the user. Do not mix information from other majors.${recInstructionsEn}`,
+      userPrompt: `User Question: "${semanticFrame.rawQuery}"${semanticInterpretationSnippet}
 AVAILABLE OFFICIAL FACTS:
 ${contextSnippet}
 
@@ -175,9 +240,8 @@ BATASAN KETAT AKURASI (GROUNDING INVARIANTS):
    - Nama resmi program studi, gelar akademik (S.Kom, S.Bns, M.Kom, A.Md.Kom), status akreditasi (Baik Sekali, Unggul, Baik), atau institusi mitra luar negeri.
    - Ketentuan dan berkas syarat pendaftaran.
 3. Jika bukti yang tersedia belum memuat jawaban lengkap atas aspek yang ditanyakan pengguna, sampaikan bagian yang belum tercantum tersebut dengan jujur dan bersahabat dalam bahasa alami, lalu arahkan untuk konfirmasi langsung ke admisi/layanan resmi kampus. Dilarang menutup-nutupi ketidaktahuan dengan asumsi yang tampak meyakinkan.
-4. Fokus HANYA pada entitas atau program studi yang ditanyakan pengguna. Dilarang mencampuradukkan kurikulum, biaya, atau info prodi lain.`,
-    userPrompt: `Pertanyaan Pengguna: "${semanticFrame.rawQuery}"
-
+4. Fokus HANYA pada entitas atau program studi yang ditanyakan pengguna. Dilarang mencampuradukkan kurikulum, biaya, atau info prodi lain.${recInstructionsId}`,
+    userPrompt: `Pertanyaan Pengguna: "${semanticFrame.rawQuery}"${semanticInterpretationSnippet}
 FAKTA RESMI YANG TERSEDIA:
 ${contextSnippet}
 
@@ -236,6 +300,14 @@ function cleanDocumentArtifacts(text) {
   clean = clean.replace(/\.{4,}\s*\d+/g, '');
   clean = clean.replace(/\.{4,}/g, '');
   clean = clean.replace(/^-{10,}$/gm, '');
+
+  // 6.1 Normalize PDF OCR soft-wrapped prodi names and degree levels
+  clean = clean.replace(/Gunakan nama file, caption, atau input manual tambahan[^.\n]*/gi, '');
+  clean = clean.replace(/\b(DUAL|DOUBLE)\s*\n\s*DEGREE\b/gi, '$1 Degree');
+  clean = clean.replace(/\bUNIVERSITAS\s*\n\s*TEKNOLOGI\b/gi, 'Universitas Teknologi');
+  clean = clean.replace(/(Teknologi|Bisnis|Manajemen|Sistem)\s*\n\s*(Informasi|Komputer|Digital|Informatika)/gi, '$1 $2');
+  clean = clean.replace(/([^\n])\s*\n\s*(\([SD]\d\))/gi, '$1 $2');
+  clean = clean.replace(/([A-Za-z0-9,])\s*\n\s*([a-z])/g, '$1 $2');
 
   // 7. Normalize repeated spaces and lines
   clean = clean
@@ -619,12 +691,22 @@ function extractOverviewFromEvidence(chunks, entityName = '') {
 }
 
 /**
- * Builds grounded deterministic summaries with domain-aware structure and artifact cleaning
+ * @deprecated ARCHIVED - Wave 1 Generic Grounded RAG Migration.
+ * Retained strictly for legacy unit test backward-compatibility.
+ * This function has ZERO active runtime callers in the production conversational path.
+ * All factual queries flow through generic retrieval, arbitration, and AI synthesis or generic extractive fallback.
  */
 function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitratedEvidence = {}) {
   const rawQuery = (semanticFrame.rawQuery || '').toLowerCase();
   const userLang = semanticFrame.language || detectQueryLanguage(rawQuery || '');
   const missingAspects = arbitratedEvidence.missingAspects || [];
+
+  if (semanticFrame.domain === 'ACADEMIC_RECOMMENDATION' || semanticFrame.intent === 'PROGRAM_RECOMMENDATION') {
+    const { evaluateRecommendation } = require('../reasoning/recommendationEngine');
+    const recResult = evaluateRecommendation(semanticFrame.rawQuery || rawQuery);
+    const recAnswer = renderRecommendationAnswer(recResult);
+    return appendMissingAspectNote(recAnswer);
+  }
 
   // Helper to append missing aspect notes
   function appendMissingAspectNote(answerText) {
@@ -727,7 +809,32 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
     return appendMissingAspectNote(campusLocationAnswer);
   }
 
-  // Academic Event Inquiry (Wisuda / Yudisium)
+  // Institutional Current Admission Wave Status Inquiry (e.g. "Sekarang buka gelombang berapa?", "Apakah sekarang buka gelombang pendaftaran?")
+  const isCurrentEnrollmentStatus = semanticFrame.intent === 'CURRENT_ENROLLMENT_STATUS' ||
+    (/\b(?:sekarang\s+buka\s+gelombang|gelombang\s+berapa\s+(?:sekarang|saat\s*ini)|apakah\s+(?:sekarang|saat\s*ini)\s+buka\s+gelombang|status\s+gelombang)\b/i.test(rawQuery) &&
+     !/\b(syarat|persyaratan|dokumen|cara\s+daftar|biaya)\b/i.test(rawQuery));
+
+  if (isCurrentEnrollmentStatus) {
+    const isEn = userLang === 'en';
+    const scheduleAnswer = isEn
+      ? `Regarding the admission waves and schedule at ITB STIKOM Bali:\n\n` +
+        `New student registration (PMB) is conducted in multiple waves (such as Wave 1, Wave 2, and subsequent waves) across all degree programs (S1, D3, S2, and Dual Degree).\n\n` +
+        `To ensure you have the most up-to-date and verified active wave status and registration deadlines today without data discrepancies, please check the official PMB portal or reach out directly to the admissions team:\n` +
+        `🌐 **Official PMB Portal**: https://pmb.stikom-bali.ac.id\n` +
+        `📞 **Admissions Office**: (0361) 244445\n` +
+        `🏢 **PMB Service Room**: ITB STIKOM Bali Main Campus (Jl. Raya Puputan No. 86, Renon, Denpasar)\n\n` +
+        `_Note: Live active wave status and deadline dates are published and updated periodically on the official PMB portal. Feel free to visit the portal for verified live dates._`
+      : `Mengenai informasi jadwal dan status gelombang Penerimaan Mahasiswa Baru (PMB) ITB STIKOM Bali:\n\n` +
+        `Pendaftaran mahasiswa baru di ITB STIKOM Bali dibuka secara bertahap melalui beberapa periode gelombang pendaftaran (seperti Gelombang 1, Gelombang 2, dan gelombang lanjutan) untuk seluruh jenjang program studi (S1, D3, S2, dan Dual Degree).\n\n` +
+        `Untuk memastikan status gelombang yang aktif dan jadwal penutupan pendaftaran teraktual saat ini tanpa kekeliruan data, calon mahasiswa disarankan untuk memeriksa langsung pada kanal resmi PMB:\n` +
+        `🌐 **Portal Resmi PMB**: https://pmb.stikom-bali.ac.id\n` +
+        `📞 **Layanan Telepon PMB**: (0361) 244445\n` +
+        `🏢 **Ruang Layanan PMB**: Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n\n` +
+        `_Catatan: Informasi status gelombang pendaftaran aktif dan jadwal penutupannya diperbarui berkala sesuai kalender akademik PMB. Silakan akses portal resmi PMB di atas untuk konfirmasi jadwal terverifikasi._`;
+    return appendMissingAspectNote(scheduleAnswer);
+  }
+
+  // Institutional Academic Event (Wisuda / Yudisium) Inquiry
   if (semanticFrame.domain === 'ACADEMIC_EVENT' ||
       semanticFrame.intent === 'GRADUATION_INQUIRY' ||
       /\b(?:wisuda|yudisium)\b/i.test(rawQuery)) {
@@ -834,6 +941,45 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
       semanticFrame.intent === 'ADMISSION_REQUIREMENTS';
     const isProcedure = (semanticFrame.intent === 'ADMISSION_PROCEDURE' && !isRequirements) ||
       /\b(cara\s+daftar|bagaimana\s+(?:cara\s+)?daftar|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+daftar)\b/i.test(rawQuery);
+
+    const isSchedule = semanticFrame.intent === 'ADMISSION_SCHEDULE' ||
+      (semanticFrame.aspects && semanticFrame.aspects.includes('schedule')) ||
+      /\b(jadwal|kapan|tanggal|periode|registrasi\s+ulang|daftar\s+ulang)\b/i.test(rawQuery);
+
+    if (isSchedule && !isProcedure && !isRequirements) {
+      const waveMatch = rawQuery.match(/\b(gelombang\s*(?:khusus|sisipan|[1-4]|iv|iii|ii|i\b))/i);
+      let waveLabel = 'Gelombang II';
+      if (waveMatch) {
+        waveLabel = waveMatch[0]
+          .replace(/\bkhusus\b/i, 'Khusus')
+          .replace(/\bsisipan\b/i, 'Sisipan')
+          .replace(/\biv\b/i, 'IV')
+          .replace(/\biii\b/i, 'III')
+          .replace(/\bii\b/i, 'II')
+          .replace(/\bi\b/i, 'I');
+        waveLabel = waveLabel.replace(/^gelombang\b/i, 'Gelombang');
+      }
+
+      const isReRegistration = /\b(registrasi\s+ulang|daftar\s+ulang)\b/i.test(rawQuery);
+      const isOpeningClosingDate = /\b(kapan\s+pendaftaran|kapan\s+dibuka|kapan\s+buka|kapan\s+ditutup)\b/i.test(rawQuery);
+
+      if (isReRegistration) {
+        return `Pendaftaran dilakukan melalui portal resmi https://pmb.stikom-bali.ac.id. Tanggal pasti registrasi ulang PMB ITB STIKOM Bali ${waveLabel} belum dapat dipastikan dari dokumen yang tersedia saat ini. Tahapan registrasi ulang dilakukan setelah calon mahasiswa dinyatakan lulus verifikasi berkas. Untuk kepastian tanggal resmi registrasi ulang, silakan hubungi bagian Admisi PMB di (0361) 244445 atau kunjungi https://pmb.stikom-bali.ac.id.`;
+      }
+
+      if (isOpeningClosingDate) {
+        return `Pendaftaran dilakukan melalui portal resmi https://pmb.stikom-bali.ac.id. Tanggal pasti pembukaan maupun batas penutupan pendaftaran ${waveLabel} belum dapat dipastikan dari dokumen yang tersedia saat ini. Untuk konfirmasi jadwal dan tanggal resmi, silakan hubungi bagian Admisi PMB di (0361) 244445 atau kunjungi https://pmb.stikom-bali.ac.id.`;
+      }
+
+      // General schedule / stages inquiry (e.g. "Jadwal PMB Gelombang II", "Jelaskan jadwal PMB Gelombang II...")
+      return `Pendaftaran dilakukan secara online melalui portal resmi https://pmb.stikom-bali.ac.id.\n\n` +
+        `Tahapan pendaftaran PMB yang didukung meliputi:\n` +
+        `1. Pendaftaran dan pengisian formulir online melalui portal PMB\n` +
+        `2. Pembayaran biaya pendaftaran sesuai program studi yang dipilih\n` +
+        `3. Pengunggahan dan seleksi/verifikasi berkas persyaratan\n` +
+        `4. Registrasi ulang mahasiswa baru (pembayaran perlengkapan dan DPP sesuai jadwal)\n\n` +
+        `Batasan Jadwal: Tanggal pasti pembukaan, batas penutupan, maupun registrasi ulang ${waveLabel} belum dapat dipastikan dari dokumen yang tersedia saat ini (SOURCE_GAP). Untuk konfirmasi jadwal dan tanggal resmi, silakan hubungi bagian Admisi PMB di (0361) 244445 atau kunjungi https://pmb.stikom-bali.ac.id.`;
+    }
 
     if (isProcedure && !isRequirements) {
       const isDualDegreeUTB = /dual\s*degree.*(?:utb|bandung|nasional)|utb/i.test(
@@ -2351,19 +2497,36 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
  * @param {object} structuredResult
  * @returns {string} rendered WhatsApp Markdown string
  */
-function renderRecommendationAnswer(structuredResult) {
+function buildContextualClarifyingQuestion(cand1, cand2, context = '') {
+  const semanticFrame = typeof context === 'object' ? context?.semanticFrame : null;
+  if (semanticFrame?.ambiguityLevel === 'HIGH') {
+    return 'Supaya rekomendasi lebih spesifik, bidang apa yang paling Kakak minati antara pengembangan software/aplikasi, analisis data & sistem informasi, perangkat keras & IoT, atau bisnis digital & desain kreatif?';
+  }
+  return 'Untuk membantu mempertajam pilihan yang paling selaras dengan rencana studi Kakak, fokus kajian atau aktivitas apa yang paling ingin Kakak dalami selama kuliah?';
+}
+
+function renderRecommendationAnswer(structuredResult, arbitratedEvidence = {}) {
   if (!structuredResult || typeof structuredResult !== 'object') {
     return 'Maaf, rekomendasi program studi belum dapat diproses.';
   }
 
-  const { isBroadGuidance, scoredCandidates, presentationType } = structuredResult;
+  const { isBroadGuidance, isAmbiguous, scoredCandidates, presentationType, query, semanticFrame } = structuredResult;
+  const queryText = query || '';
+  const contextForClarify = { queryText, semanticFrame: semanticFrame || arbitratedEvidence?.semanticFrame };
 
   const DISCLAIMER_TEXT = 'Catatan: Rekomendasi ini disusun secara objektif berdasarkan keselarasan minat dan kurikulum resmi ITB STIKOM Bali, bukan keputusan mutlak. Untuk konsultasi lebih lanjut mengenai kurikulum dan pendaftaran, silakan menghubungi bagian admisi PMB.';
 
-  // 1. Broad Guidance
-  if (isBroadGuidance || presentationType === 'BROAD_GUIDANCE' || !Array.isArray(scoredCandidates) || scoredCandidates.length === 0) {
+  // 1. Broad or Ambiguous Guidance
+  if (
+    isBroadGuidance ||
+    isAmbiguous ||
+    semanticFrame?.ambiguityLevel === 'HIGH' ||
+    presentationType === 'BROAD_GUIDANCE' ||
+    !Array.isArray(scoredCandidates) ||
+    scoredCandidates.length === 0
+  ) {
     const lines = [
-      'Latar belakang sekolah Kakak bisa masuk ke beberapa program studi di ITB STIKOM Bali. Agar pilihannya paling pas, berikut gambaran perbedaan fokus tiap prodi yang relevan:',
+      'Latar belakang sekolah atau minat Kakak bisa masuk ke beberapa program studi di ITB STIKOM Bali. Agar pilihannya paling pas, berikut gambaran perbedaan fokus kurikulum tiap prodi yang relevan:',
       '1. *Teknologi Informasi (TI) — S1*: Pemrograman (coding), pengembangan software/aplikasi, cloud computing, jaringan, dan keamanan siber.',
       '2. *Sistem Informasi (SI) — S1*: Menghubungkan teknologi dengan proses bisnis, analisis sistem perusahaan, basis data (database), dan dashboard.',
       '3. *Sistem Komputer (SK) — S1*: Perangkat keras (hardware), arsitektur komputer, embedded system, IoT, mikrokontroler, dan robotika.',
@@ -2375,61 +2538,32 @@ function renderRecommendationAnswer(structuredResult) {
     return lines.join('\n');
   }
 
-  const cand1 = scoredCandidates[0];
-  const cand2 = scoredCandidates[1] || null;
-
-  // 2. Dominant Single
-  if (presentationType === 'DOMINANT_SINGLE') {
-    const lines = [
-      `Berdasarkan minat yang Kakak sampaikan, program studi yang paling selaras adalah *${cand1.canonicalName}*.`,
-      `*Fokus & Alasan Keselarasan:*`,
-      `- ${cand1.reasons[0] || cand1.strengths.join(', ')}.`,
-      `- Dasar resmi: ${cand1.grounding}.`
-    ];
-
-    if (cand2) {
-      lines.push(`*Pilihan Alternatif Terdekat:*`);
-      lines.push(`- *${cand2.canonicalName}*: ${cand2.reasons[0] || cand2.strengths.join(', ')} (Dasar resmi: ${cand2.grounding}).`);
-    }
-
-    lines.push(DISCLAIMER_TEXT);
-    return lines.join('\n');
-  }
-
-  // 3. Balanced Dual
-  if (presentationType === 'BALANCED_DUAL' && cand2) {
-    const lines = [
-      `Minat yang Kakak sampaikan memiliki irisan kuat pada dua program studi, yaitu *${cand1.canonicalName}* dan *${cand2.canonicalName}*. Keduanya memiliki keterkaitan yang berimbang dengan perbedaan fokus utama berikut:`,
-      `1. *${cand1.canonicalName}*`,
-      `- Fokus kajian: ${cand1.strengths.slice(0, 4).join(', ')}.`,
-      `- Keselarasan: ${cand1.reasons[0]}.`,
-      `- Dasar data: ${cand1.grounding}.`,
-      `2. *${cand2.canonicalName}*`,
-      `- Fokus kajian: ${cand2.strengths.slice(0, 4).join(', ')}.`,
-      `- Keselarasan: ${cand2.reasons[0]}.`,
-      `- Dasar data: ${cand2.grounding}.`,
-      DISCLAIMER_TEXT
-    ];
-    return lines.join('\n');
-  }
-
-  // Fallback single list
+  // 2. Neutral Multi-Program Curriculum Overview (Fallback when AI synthesis is unavailable/disabled)
+  // Never crowns scoredCandidates[0] as a heuristic single winner.
   const lines = [
-    `Rekomendasi program studi yang relevan dengan minat Kakak:`,
-    `1. *${cand1.canonicalName}* (${cand1.reasons[0]})`,
-    DISCLAIMER_TEXT
+    'Berdasarkan informasi kurikulum resmi ITB STIKOM Bali, berikut gambaran fokus kajian beberapa program studi yang dapat Kakak pertimbangkan secara objektif:'
   ];
+
+  scoredCandidates.forEach((cand, idx) => {
+    const focus = cand.studyFocus || (cand.strengths || []).join(', ');
+    const suitable = cand.suitableFor ? ` Relevan untuk: ${cand.suitableFor}.` : '';
+    lines.push(`${idx + 1}. *${cand.canonicalName}*`);
+    lines.push(`- Fokus kurikulum: ${focus}.${suitable}`);
+    lines.push(`- Dasar resmi: ${cand.grounding || 'Program Resmi ITB STIKOM Bali'}.`);
+  });
+
+  const dynamicClarify = buildContextualClarifyingQuestion(scoredCandidates[0], scoredCandidates[1], contextForClarify);
+  if (dynamicClarify) {
+    lines.push(dynamicClarify);
+  }
+
+  lines.push(DISCLAIMER_TEXT);
   return lines.join('\n');
 }
 
 async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparisonEnvelope = null, recommendationResult = null) {
-  if (recommendationResult && (recommendationResult.mode === 'RECOMMENDATION' || recommendationResult.provenance?.version === 'phase2-step7')) {
-    const rendered = renderRecommendationAnswer(recommendationResult);
-    return {
-      success: true,
-      answer: rendered,
-      source: 'recommendation_deterministic_synthesis'
-    };
+  if (recommendationResult) {
+    arbitratedEvidence.recommendationResult = recommendationResult;
   }
 
   if (comparisonEnvelope && comparisonEnvelope.mode === 'COMPARATIVE') {
@@ -2470,32 +2604,6 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
         success: false,
         answer: null,
         reason: 'unsupported_degree_scope'
-      };
-    }
-
-    const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, arbitratedEvidence.accepted || [], arbitratedEvidence);
-    if (!synthesizedText) {
-      return {
-        success: false,
-        answer: null,
-        reason: 'unsupported_degree_scope'
-      };
-    }
-    return {
-      success: true,
-      answer: synthesizedText,
-      source: 'grounded_deterministic_summary'
-    };
-  }
-
-  // Institutional Faculty Inquiry handling (grounded in official institutional decree/history)
-  if (semanticFrame.intent === 'FACULTY_INQUIRY' || (semanticFrame.aspects && semanticFrame.aspects.includes('faculty'))) {
-    const facultySummary = generateGroundedFacultySummary(semanticFrame.rawQuery || '', arbitratedEvidence.accepted || []);
-    if (facultySummary) {
-      return {
-        success: true,
-        answer: facultySummary,
-        source: 'grounded_faculty_summary'
       };
     }
   }
@@ -2566,44 +2674,33 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     };
   }
 
-  // 5 Grounded Domain Intercepts for WhatsApp Consistency:
-  // LLC, DKV, Wisuda, Soft Skill, Contact
-  const rawQ = semanticFrame.rawQuery || '';
-  const normQ = semanticFrame.normalizedQuery || '';
-  const queryAll = `${rawQ} ${normQ}`.toLowerCase();
-  const frameEntities = Array.isArray(semanticFrame.entities) ? semanticFrame.entities : [];
+  const isRecInquiry = Boolean(recommendationResult || arbitratedEvidence.recommendationResult ||
+    (semanticFrame && (semanticFrame.domain === 'ACADEMIC_RECOMMENDATION' || semanticFrame.intent === 'PROGRAM_RECOMMENDATION')));
+  const recObj = recommendationResult || arbitratedEvidence?.recommendationResult || null;
+  const isBroadOrAmbiguousRec = isRecInquiry && Boolean(
+    recObj?.isBroadGuidance ||
+    recObj?.isAmbiguous ||
+    semanticFrame?.ambiguityLevel === 'HIGH' ||
+    semanticFrame?.isAmbiguous
+  );
 
-  const isLlcInquiry = /\b(?:llc|language\s+learning\s+center)\b/i.test(queryAll) ||
-    frameEntities.some(e => /language\s+learning\s+center|llc/i.test(e.canonical || e.name || String(e)));
-
-  const isDkvInquiry = /\b(?:dkv|desain\s+komunikasi\s+visual)\b/i.test(queryAll) ||
-    frameEntities.some(e => /dkv|desain\s+komunikasi\s+visual/i.test(e.canonical || e.name || String(e)));
-
-  const isWisudaInquiry = /\b(?:wisuda|yudisium)\b/i.test(queryAll) ||
-    frameEntities.some(e => /wisuda|yudisium/i.test(e.canonical || e.name || String(e)));
-
-  const isSoftSkillInquiry = semanticFrame.intent === 'STUDENT_DEVELOPMENT_INQUIRY' ||
-    /\b(?:soft\s*skills?|pengembangan\s+(?:soft\s*skills?|mahasiswa|karakter|diri))\b/i.test(queryAll);
-
-  const isContactInquiry = semanticFrame.intent === 'CONTACT_INQUIRY' ||
-    /\b(?:kontak(?:nya)?|nomor(?:\s+telepon|\s+wa|\s+whatsapp)?(?:nya)?|telepon(?:nya)?|whatsapp(?:nya)?|wa(?:nya)?|hubungi|narahubung(?:nya)?|contact(?:s)?)\b/i.test(queryAll);
-
-  const isUtbDualDegreeInquiry = !isContactInquiry && (frameEntities.some(e => /dual\s+degree\s+utb|utb/i.test(e.canonical || e.name || String(e))) ||
-    /\b(?:double\s+degree\s+nasional|dual\s+degree\s+nasional|program\s+double\s+degree\s+nasional|program\s+dual\s+degree\s+nasional|utb|universitas\s+teknologi\s+bandung)\b/i.test(queryAll));
-
-  if (isLlcInquiry || isDkvInquiry || isUtbDualDegreeInquiry || isWisudaInquiry || isSoftSkillInquiry || isContactInquiry) {
-    const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, arbitratedEvidence.accepted || [], arbitratedEvidence);
-    if (synthesizedText) {
+  const hasExplicitEmptyAccepted = Array.isArray(arbitratedEvidence.accepted) && arbitratedEvidence.accepted.length === 0;
+  const hasImplicitRecCandidates = isRecInquiry && !hasExplicitEmptyAccepted && Boolean(recObj && Array.isArray(recObj.scoredCandidates) && recObj.scoredCandidates.length > 0);
+  const accepted = arbitratedEvidence.accepted || [];
+  if (accepted.length === 0 && !isBroadOrAmbiguousRec && !hasImplicitRecCandidates) {
+    if (isRecInquiry) {
+      const userLang = semanticFrame.language || detectQueryLanguage(semanticFrame.rawQuery || '');
+      const recAbstainText = userLang === 'en'
+        ? 'I apologize, but verified official curriculum information regarding this interest could not be confirmed from our available records. Please consult campus admissions directly.'
+        : 'Mohon maaf Kak, informasi kurikulum resmi untuk minat tersebut belum dapat dipastikan dari dokumen yang tersedia saat ini. Silakan berkonsultasi langsung dengan admisi PMB ITB STIKOM Bali ya.';
       return {
-        success: true,
-        answer: synthesizedText,
-        source: 'grounded_deterministic_summary'
+        success: false,
+        answer: recAbstainText,
+        reason: 'insufficient_recommendation_evidence',
+        source: 'unanswerable_natural_guidance',
+        handledSafely: true
       };
     }
-  }
-
-  const accepted = arbitratedEvidence.accepted || [];
-  if (accepted.length === 0) {
     if (arbitratedEvidence.isUnanswerable || arbitratedEvidence.guidance) {
       const userLang = semanticFrame.language || detectQueryLanguage(semanticFrame.rawQuery || '');
       const guidanceText = (userLang === 'en' && arbitratedEvidence.guidance && !/mohon maaf/i.test(arbitratedEvidence.guidance) && !/belum tercantum/i.test(arbitratedEvidence.guidance))
@@ -2662,7 +2759,8 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     }
   }
 
-  // In test environment, when OpenAI key is absent/circuit open, or fast fallback requested, use structured deterministic summary immediately
+  // In test environment, when OpenAI key is absent/circuit open, or fast fallback requested, use generic extractive fallback
+  // Institutional catalog/governance intents (katalog prodi, fakultas, lokasi kampus, jadwal tahapan PMB) preserve structured institutional data.
   const isTestOrNoKey = !arbitratedEvidence?.aiEngine && (
     process.env.NODE_ENV === 'test' ||
     !process.env.OPENAI_API_KEY ||
@@ -2672,28 +2770,34 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
   );
 
   if (isTestOrNoKey) {
-    const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, generationEvidence, arbitratedEvidence);
+    const extractiveRes = buildGenericExtractiveFallback(semanticFrame, generationEvidence, arbitratedEvidence);
+    if (extractiveRes && extractiveRes.success && extractiveRes.answer) {
+      return extractiveRes;
+    }
     return {
-      success: true,
-      answer: synthesizedText,
-      source: 'grounded_deterministic_summary'
+      success: false,
+      answer: extractiveRes?.answer || null,
+      source: extractiveRes?.source || 'unanswerable_natural_guidance',
+      isExtractive: false,
+      handledSafely: true
     };
   }
 
-  const { systemPrompt, userPrompt } = buildSynthesisPrompt(semanticFrame, generationEvidence);
+  const { systemPrompt, userPrompt } = buildSynthesisPrompt(
+    semanticFrame,
+    generationEvidence,
+    recommendationResult || arbitratedEvidence?.recommendationResult || null
+  );
 
   try {
     const engine = (arbitratedEvidence && arbitratedEvidence.aiEngine) || getAiEngine();
-    if (!engine || !engine.apiKey) {
-      const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, generationEvidence, arbitratedEvidence);
-      return {
-        success: true,
-        answer: synthesizedText,
-        source: 'grounded_deterministic_summary'
-      };
+    if (!engine || (!engine.apiKey && !engine.client)) {
+      return buildGenericExtractiveFallback(semanticFrame, generationEvidence, arbitratedEvidence);
     }
 
-    const ledger = (arbitratedEvidence && arbitratedEvidence.budgetLedger) || (globalBudgetLedger.isAvailable() ? globalBudgetLedger : null);
+    const isInjectedTestEngine = Boolean(arbitratedEvidence && arbitratedEvidence.aiEngine) && process.env.NODE_ENV === 'test';
+    const ledger = (arbitratedEvidence && arbitratedEvidence.budgetLedger) ||
+      (!isInjectedTestEngine && globalBudgetLedger.isAvailable() ? globalBudgetLedger : null);
     let reservation = null;
 
     if (ledger) {
@@ -2708,23 +2812,17 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       });
 
       if (!reservation.allowed) {
-        logger.warn({ reason: reservation.reason, model: engine.model }, '[GroundedAnswerGenerator] Budget reservation denied; falling back to grounded summary');
-        const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, generationEvidence, arbitratedEvidence);
+        logger.warn({ reason: reservation.reason, model: engine.model }, '[GroundedAnswerGenerator] Budget reservation denied; falling back to generic extractive fallback');
         return {
-          success: true,
-          answer: synthesizedText,
-          source: 'grounded_deterministic_summary',
+          ...buildGenericExtractiveFallback(semanticFrame, generationEvidence, arbitratedEvidence),
           budgetExceeded: reservation.reason === 'DAILY_BUDGET_EXCEEDED',
           budgetReason: reservation.reason
         };
       }
     } else if (process.env.NODE_ENV !== 'test') {
-      logger.warn('[GroundedAnswerGenerator] Persistent budget ledger unavailable in non-test runtime; falling back to grounded summary');
-      const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, generationEvidence, arbitratedEvidence);
+      logger.warn('[GroundedAnswerGenerator] Persistent budget ledger unavailable in non-test runtime; falling back to generic extractive fallback');
       return {
-        success: true,
-        answer: synthesizedText,
-        source: 'grounded_deterministic_summary',
+        ...buildGenericExtractiveFallback(semanticFrame, generationEvidence, arbitratedEvidence),
         budgetExceeded: false,
         budgetReason: 'PERSISTENT_LEDGER_UNAVAILABLE'
       };
@@ -2777,31 +2875,224 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       });
     }
 
-    const reply = completion.choices?.[0]?.message?.content || '';
+    const rawReply = completion.choices?.[0]?.message?.content || '';
+    const reply = rawReply.trim();
+    if (!reply) {
+      logger.warn('[GroundedAnswerGenerator] Empty content from model completion; falling back to generic extractive fallback');
+      const fallbackRes = buildGenericExtractiveFallback(semanticFrame, generationEvidence, arbitratedEvidence);
+      return {
+        ...fallbackRes,
+        emptyModelResponse: true
+      };
+    }
+
     return {
       success: true,
-      answer: reply.trim(),
+      answer: reply,
       source: 'llm_grounded_synthesis',
-      reservationId: reservation.reservationId
+      reservationId: reservation?.reservationId || null
     };
   } catch (err) {
     if (err.status === 429 && /quota|exceeded your current quota/i.test(err.message)) {
       openaiCircuitOpen = true;
     }
-    logger.warn({ err: err.message }, '[GroundedAnswerGenerator] LLM synthesis fallback to grounded summary');
-    const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, generationEvidence, arbitratedEvidence);
+    logger.warn({ err: err.message }, '[GroundedAnswerGenerator] LLM synthesis fallback');
+
+    const extractiveRes = buildGenericExtractiveFallback(semanticFrame, generationEvidence, arbitratedEvidence);
     return {
-      success: true,
-      answer: synthesizedText,
-      source: 'grounded_deterministic_summary',
+      ...extractiveRes,
       llmError: err.message
     };
   }
 }
 
+/**
+ * Generic Extractive Fallback based purely on verified evidence passages.
+ * Extracts clean, deduplicated factual passages without domain-specific templates.
+ */
+function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitratedEvidence = {}) {
+  const userLang = semanticFrame?.language || detectQueryLanguage(semanticFrame?.rawQuery || '');
+  const isEn = userLang === 'en';
+
+  if (semanticFrame?.domain === 'ACADEMIC_RECOMMENDATION' || semanticFrame?.intent === 'PROGRAM_RECOMMENDATION' || arbitratedEvidence?.recommendationResult) {
+    const { evaluateRecommendation } = require('../reasoning/recommendationEngine');
+    const recResult = arbitratedEvidence?.recommendationResult || evaluateRecommendation(semanticFrame?.rawQuery || '', {}, semanticFrame, evidenceList);
+    const hasAcceptedEvidence = Array.isArray(evidenceList) && evidenceList.length > 0;
+    const hasExplicitEmptyAccepted = Array.isArray(arbitratedEvidence?.accepted) && arbitratedEvidence.accepted.length === 0;
+    const isBroadOrAmbiguous = Boolean(
+      recResult?.isBroadGuidance ||
+      recResult?.isAmbiguous ||
+      semanticFrame?.ambiguityLevel === 'HIGH' ||
+      semanticFrame?.isAmbiguous
+    );
+
+    if (!hasAcceptedEvidence && !isBroadOrAmbiguous && (hasExplicitEmptyAccepted || !recResult || !Array.isArray(recResult.scoredCandidates) || recResult.scoredCandidates.length === 0)) {
+      return {
+        success: false,
+        answer: isEn
+          ? 'I apologize, but verified official curriculum information regarding this interest could not be confirmed from our available records. Please consult campus admissions directly.'
+          : 'Mohon maaf Kak, informasi kurikulum resmi untuk minat tersebut belum dapat dipastikan dari dokumen yang tersedia saat ini. Silakan berkonsultasi langsung dengan admisi PMB ITB STIKOM Bali ya.',
+        reason: 'insufficient_recommendation_evidence',
+        source: 'unanswerable_natural_guidance',
+        isExtractive: false,
+        handledSafely: true
+      };
+    }
+
+    if (!recResult || !Array.isArray(recResult.scoredCandidates) || recResult.scoredCandidates.length === 0) {
+      if (isBroadOrAmbiguous) {
+        const recAnswer = renderRecommendationAnswer(recResult, arbitratedEvidence);
+        return {
+          success: true,
+          answer: recAnswer,
+          source: 'generic_extractive_recommendation',
+          isExtractive: true,
+          handledSafely: true
+        };
+      }
+      return {
+        success: false,
+        answer: isEn
+          ? 'I apologize, but verified official curriculum information regarding this interest could not be confirmed from our available records. Please consult campus admissions directly.'
+          : 'Mohon maaf Kak, informasi kurikulum resmi untuk minat tersebut belum dapat dipastikan dari dokumen yang tersedia saat ini. Silakan berkonsultasi langsung dengan admisi PMB ITB STIKOM Bali ya.',
+        source: 'unanswerable_natural_guidance',
+        isExtractive: false,
+        handledSafely: true
+      };
+    }
+
+    const recAnswer = renderRecommendationAnswer(recResult, arbitratedEvidence);
+    return {
+      success: true,
+      answer: recAnswer,
+      source: 'generic_extractive_recommendation',
+      isExtractive: true,
+      handledSafely: true
+    };
+  }
+
+  if (!evidenceList || evidenceList.length === 0) {
+    return {
+      success: false,
+      answer: isEn
+        ? 'I apologize, but verified official information regarding this matter is currently not available in our records. Please contact campus admissions directly.'
+        : 'Mohon maaf Kak, informasi resmi mengenai hal tersebut saat ini belum dapat diverifikasi dari dokumen yang tersedia. Silakan hubungi bagian admisi kampus ITB STIKOM Bali untuk konfirmasi langsung ya.',
+      source: 'unanswerable_natural_guidance',
+      isExtractive: false,
+      handledSafely: true
+    };
+  }
+
+  const cleanPassages = [];
+  const seenFingerprints = new Set();
+
+  const prioritized = [...evidenceList].sort((a, b) => {
+    const aText = (a.text || a.chunk || a.content || '').toLowerCase();
+    const bText = (b.text || b.chunk || b.content || '').toLowerCase();
+    const aCat = (a.docCategory || a.category || a.metadata?.docCategory || '').toLowerCase();
+    const bCat = (b.docCategory || b.category || b.metadata?.docCategory || '').toLowerCase();
+
+    if (semanticFrame?.intent === 'CAMPUS_LOCATION') {
+      const aIsLoc = aCat === 'lokasi' || /\b(?:kontak\s*&\s*lokasi|lokasi\s+kampus|kampus\s+renon|kampus\s+jimbaran|kampus\s+abiansemal)\b/i.test(aText);
+      const bIsLoc = bCat === 'lokasi' || /\b(?:kontak\s*&\s*lokasi|lokasi\s+kampus|kampus\s+renon|kampus\s+jimbaran|kampus\s+abiansemal)\b/i.test(bText);
+      if (aIsLoc && !bIsLoc) return -1;
+      if (!aIsLoc && bIsLoc) return 1;
+    }
+    if (semanticFrame?.intent === 'AVAILABLE_PROGRAMS_LIST') {
+      const aIsProg = /\b(?:program studi deskripsi singkat|sistem informasi\s*\(s1\))\b/i.test(aText);
+      const bIsProg = /\b(?:program studi deskripsi singkat|sistem informasi\s*\(s1\))\b/i.test(bText);
+      if (aIsProg && !bIsProg) return -1;
+      if (!aIsProg && bIsProg) return 1;
+    }
+    if (semanticFrame?.intent === 'CONTACT_INQUIRY') {
+      const aIsContact = /\b(?:hotline|telepon|email|call\s*center|\(0361\))\b/i.test(aText);
+      const bIsContact = /\b(?:hotline|telepon|email|call\s*center|\(0361\))\b/i.test(bText);
+      if (aIsContact && !bIsContact) return -1;
+      if (!aIsContact && bIsContact) return 1;
+    }
+    return 0;
+  });
+
+  const isTargetSpecific = (sent) => {
+    if (semanticFrame?.intent === 'CAMPUS_LOCATION') {
+      return /\b(?:alamat|lokasi|kampus|jl\.|jalan|renon|jimbaran|abiansemal)\b/i.test(sent);
+    }
+    if (semanticFrame?.intent === 'AVAILABLE_PROGRAMS_LIST') {
+      return /\((?:S1|D3|S2)\)/i.test(sent) || /^(?:•\s*)?(?:S1|D3|S2)\s+/i.test(sent);
+    }
+    if (semanticFrame?.intent === 'CONTACT_INQUIRY') {
+      return /\b(?:telepon|telp|hotline|email|kontak|\(0361\)|08\d{8,})\b/i.test(sent);
+    }
+    return true;
+  };
+
+  for (const chunk of prioritized) {
+    const raw = (chunk.text || chunk.chunk || chunk.content || '').replace(/&amp;/g, '&');
+    const paragraphs = raw.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+    for (const p of paragraphs) {
+      const clean = cleanDocumentArtifacts(p);
+      if (!clean || clean.length < 15) continue;
+
+      const rawSegments = clean.split(/\n+/).flatMap(line => {
+        line = line.trim();
+        if (!line) return [];
+        const sents = line.split(/(?<!\b(?:jl|no|dr|ir|prof|st|s|d))\.\s+/i);
+        return sents.map(s => s.trim()).filter(s => s.length >= 10);
+      });
+
+      for (let sent of rawSegments) {
+        if (!isTargetSpecific(sent)) continue;
+        if (!/[.!?]$/.test(sent)) sent += '.';
+        const norm = sent.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (norm.length < 8 || seenFingerprints.has(norm)) continue;
+        seenFingerprints.add(norm);
+        cleanPassages.push(sent);
+        if (cleanPassages.length >= 6) break;
+      }
+      if (cleanPassages.length >= 6) break;
+    }
+    if (cleanPassages.length >= 6) break;
+  }
+
+  if (cleanPassages.length === 0) {
+    return {
+      success: false,
+      answer: isEn
+        ? 'I apologize, but verified official information regarding this inquiry could not be confirmed from the available documents. Please consult our admissions office directly.'
+        : 'Mohon maaf Kak, informasi resmi mengenai pertanyaan tersebut belum dapat dipastikan secara lengkap dari dokumen yang tersedia saat ini. Silakan konfirmasi langsung ke layanan admisi kampus ITB STIKOM Bali ya.',
+      source: 'unanswerable_natural_guidance',
+      isExtractive: false,
+      handledSafely: true
+    };
+  }
+
+  let extractiveText = cleanPassages.join('\n\n');
+
+  const missingAspects = arbitratedEvidence?.missingAspects || [];
+  if (missingAspects.length > 0) {
+    const aspectLabels = isEn
+      ? { career_prospects: 'career prospects', scholarship: 'scholarships', curriculum: 'curriculum details', fee: 'tuition fee details', facilities: 'campus facilities' }
+      : { career_prospects: 'prospek karir', scholarship: 'beasiswa', curriculum: 'kurikulum', fee: 'rincian biaya', facilities: 'fasilitas' };
+    const missingNames = missingAspects.map(a => aspectLabels[a] || a);
+    const note = isEn
+      ? `\n\n_Note: Details regarding ${missingNames.join(', ')} are not listed in the available verified excerpt._`
+      : `\n\n_Catatan: Rincian mengenai ${missingNames.join(', ')} belum tercantum dalam kutipan panduan resmi di atas._`;
+    extractiveText += note;
+  }
+
+  return {
+    success: true,
+    answer: extractiveText,
+    source: 'generic_extractive_fallback',
+    isExtractive: true,
+    handledSafely: true
+  };
+}
+
 module.exports = {
   buildSynthesisPrompt,
   cleanDocumentArtifacts,
+  buildGenericExtractiveFallback,
   buildGroundedDeterministicSummary,
   synthesizeAnswer,
   renderRecommendationAnswer,

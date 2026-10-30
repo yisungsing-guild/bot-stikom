@@ -121,7 +121,26 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     return { shouldInherit: false, reason: 'no_session_history' };
   }
 
-  const isAcademicActiveEntity = sessionData.activeEntity && (
+  const activeEntityStr = (sessionData.activeEntity && typeof sessionData.activeEntity === 'object')
+    ? (sessionData.activeEntity.canonical || sessionData.activeEntity.name || '')
+    : String(sessionData.activeEntity || '');
+
+  const isInternationalActiveEntity = Boolean(
+    sessionData.activeDomain === 'INTERNATIONAL' ||
+    sessionData.activeEntity?.family === 'international_program' ||
+    sessionData.activeEntity?.type === 'international_program' ||
+    /\b(?:double\s+degree|dual\s+degree|utb|dnui|help\s+university|student\s+exchange|gccp|hi-?think)\b/i.test(activeEntityStr)
+  );
+
+  const isCampusLocationActiveEntity = Boolean(
+    sessionData.activeDomain === 'FACILITIES' ||
+    sessionData.activeIntent === 'CAMPUS_LOCATION' ||
+    sessionData.activeEntity?.family === 'campus_location' ||
+    sessionData.activeEntity?.type === 'campus' ||
+    /\bkampus\b/i.test(activeEntityStr)
+  );
+
+  const isAcademicActiveEntity = Boolean(sessionData.activeEntity) && !isCampusLocationActiveEntity && (
     sessionData.activeEntity.family === 'academic_program' ||
     sessionData.activeEntity.family === 'international_program' ||
     sessionData.activeEntity.type === 'program' ||
@@ -132,9 +151,56 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
      sessionData.activeDomain !== 'FACILITIES')
   );
 
-  // Guard: Campus-wide service domain inquiries must not inherit academic program entities
-  // Covers: FACILITIES, ORGANIZATION_UKM, SCHOLARSHIP, CAMPUS_SERVICE, CAREER_CENTER
+  // Wave fee follow-up check (e.g. "Kalau gelombang 2 berapa?", "Kalau gelombang 2C berapa?", "Biaya gelombang 1 berapa?")
+  const hasScheduleOrCalendarFocus = /\b(?:kapan|tanggal|jadwal|periode|kalender|buka|dibuka|ditutup|tutup|batas\s+(?:waktu|pendaftaran)|apa\s+saja|daftar\s+gelombang|pembagian\s+gelombang)\b/i.test(query);
+  const hasFeeFocus = /\b(?:biaya|potongan|diskon|total|dpp|spp|bayar|uang\s+kuliah|uang\s+gedung|angsuran|cicilan)\b/i.test(query);
+  const isWaveFeeFollowup = Boolean(sessionData.activeEntity) && !hasScheduleOrCalendarFocus && (
+    (/\b(?:kalau\s+|kalo\s+)?gelombang\s*(?:[1-4]|i{1,4}|[0-9]+[a-z]?|khusus|awal|sisipan)\s*(?:berapa|biaya(?:nya)?|potongan(?:nya)?|diskon(?:nya)?|dpp(?:nya)?|total(?:nya)?)\b/i.test(query)) ||
+    (/\bgelombang\s*(?:[1-4]|i{1,4}|[0-9]+[a-z]?|khusus|awal|sisipan)\b/i.test(query) && hasFeeFocus) ||
+    ((sessionData.activeDomain === 'TUITION_FEE' || isAcademicActiveEntity) &&
+     /\b(?:kalau\s+|kalo\s+)gelombang\s*(?:[1-4]|i{1,4}|[0-9]+[a-z]?|khusus|awal|sisipan)\s*(?:berapa|gimana|bagaimana)?\??$/i.test(query))
+  );
+
+  if (isWaveFeeFollowup) {
+    return {
+      shouldInherit: true,
+      reason: 'wave_fee_continuation',
+      inheritedDomain: 'TUITION_FEE',
+      inheritedEntity: sessionData.activeEntity
+    };
+  }
+
+  // Explicit admission wave schedule/status inquiry is university-wide and must NOT inherit fee or specific program entities
+  const isAdmissionScheduleOrStatus = !isWaveFeeFollowup && !hasFeeFocus && (
+    /\b(?:sekarang\s+buka|buka\s+gelombang|buka\s+pendaftaran|kapan\s+(?:buka|dibuka|ditutup|tutup)|jadwal\s+(?:gelombang|pendaftaran|pmb)|periode\s+(?:gelombang|pendaftaran)|kalender\s+pmb|gelombang\s+berapa)\b/i.test(query) ||
+    (/\bgelombang\b/i.test(query) && (hasScheduleOrCalendarFocus || /\bpmb\b/i.test(query)))
+  );
+  if (isAdmissionScheduleOrStatus) {
+    return {
+      shouldInherit: false,
+      reason: 'admission_schedule_isolation'
+    };
+  }
+
+  // Explicit academic event check: wisuda/yudisium must NOT inherit previous PMB or program entity
+  const hasExplicitAcademicEvent = /\b(?:wisuda|yudisium)\b/i.test(query);
+  if (hasExplicitAcademicEvent) {
+    return {
+      shouldInherit: false,
+      reason: 'explicit_academic_event'
+    };
+  }
+
+  // Guard: Campus-wide service domain inquiries (including institutional contact & campus location) must not inherit academic program entities
+  const isInstitutionalContactQuery = /\b(?:kontak(?:nya)?|nomor(?:\s+telepon|\s+wa|\s+whatsapp|\s+hp|\s+kontak)?(?:nya)?|telepon(?:nya)?|telp(?:nya)?|whatsapp(?:nya)?|wa(?:nya)?|call\s*center|hotline|narahubung(?:nya)?)\b/i.test(query);
+  const isInstitutionalCampusLocationQuery = !isInternationalActiveEntity && (
+    /\b(?:lokasi\s+kampus|alamat\s+kampus|cabang\s+kampus|kampus(?:nya)?\s+di\s*mana|dimana\s+kampus)\b/i.test(query) ||
+    (!isCampusLocationActiveEntity && /\b(?:lokasi(?:nya)?|alamat(?:nya)?)\b/i.test(query))
+  );
+
   const isCampusWideQuery =
+    isInstitutionalContactQuery ||
+    isInstitutionalCampusLocationQuery ||
     (/\b(?:ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi(?:\s+mahasiswa)?|ormawa|ekskul|ekstrakurikuler|student\s+clubs?|student\s+organizations?)\b/i.test(query) &&
      !/\b(?:hima\b|himaprodi|himpunan)\b/i.test(query)) ||
     /\b(?:fasilitas|laboratorium|lab\b|perpustakaan|asrama|gedung|kantin|parkir|parking|lapangan)\b/i.test(query) ||
@@ -173,7 +239,7 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   const isCampusCountFollowup = (
     /\b(?:berapa\s+(?:ada\s+)?kampus|ada\s+berapa\s+kampus|berapa\s+jumlah\s+kampus|jumlah\s+kampus|berapa\s+banyak\s+kampus|berapa\s+(?:ada\s+)?cabang|ada\s+berapa\s+cabang)\b/i.test(query) ||
     (/\b(?:berapa\s+ada|ada\s+berapa|berapa\s+jumlah|berapa\s+banyak)\b/i.test(query) && /\b(?:kampus|cabang)\b/i.test(query)) ||
-    ((sessionData.activeDomain === 'FACILITIES' || sessionData.activeIntent === 'CAMPUS_LOCATION' || (sessionData.activeEntity && (sessionData.activeEntity.family === 'campus_location' || sessionData.activeEntity.type === 'campus' || String(sessionData.activeEntity).toLowerCase().includes('kampus')))) &&
+    (isCampusLocationActiveEntity &&
      /\b(?:berapa\s+ada|ada\s+berapa|berapa\s+jumlah|berapa\s+banyak|jumlahnya|banyaknya)\b/i.test(query))
   );
 
@@ -183,21 +249,14 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
       reason: 'campus_count_followup',
       inheritedDomain: 'FACILITIES',
       inheritedIntent: 'CAMPUS_LOCATION',
-      inheritedEntity: sessionData.activeEntity || 'Kampus ITB STIKOM Bali'
+      inheritedEntity: isCampusLocationActiveEntity ? (sessionData.activeEntity || 'Kampus ITB STIKOM Bali') : 'Kampus ITB STIKOM Bali'
     };
   }
 
   // Campus location follow-up check (e.g. "Lokasinya di mana saja?", "Di mana lokasinya?")
   const isLocationFollowup = (
     /\b(?:lokasi(?:nya)?|alamat(?:nya)?|di\s*mana(?:\s+saja)?|dimana(?:\s+saja)?|mana\s+saja)\b/i.test(query) &&
-    (sessionData.activeDomain === 'FACILITIES' ||
-     sessionData.activeIntent === 'CAMPUS_LOCATION' ||
-     (sessionData.activeEntity && (
-       sessionData.activeEntity.family === 'campus_location' ||
-       sessionData.activeEntity.type === 'campus' ||
-       sessionData.activeEntity === 'Kampus ITB STIKOM Bali' ||
-       String(sessionData.activeEntity).toLowerCase().includes('kampus')
-     )))
+    isCampusLocationActiveEntity
   );
 
   if (isLocationFollowup) {
@@ -215,7 +274,7 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     return {
       shouldInherit: true,
       reason: 'genuine_ellipsis',
-      inheritedDomain: sessionData.activeDomain,
+      inheritedDomain: isInternationalActiveEntity && !hasFeeFocus ? 'INTERNATIONAL' : sessionData.activeDomain,
       inheritedEntity: sessionData.activeEntity
     };
   }
@@ -225,38 +284,14 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     return {
       shouldInherit: true,
       reason: 'pronoun_reference',
-      inheritedDomain: sessionData.activeDomain,
-      inheritedEntity: sessionData.activeEntity
-    };
-  }
-
-  // Explicit academic event check: wisuda/yudisium must NOT inherit previous PMB or program entity
-  const hasExplicitAcademicEvent = /\b(?:wisuda|yudisium)\b/i.test(query);
-  if (hasExplicitAcademicEvent) {
-    return {
-      shouldInherit: false,
-      reason: 'explicit_academic_event'
-    };
-  }
-
-  // Wave fee follow-up check (e.g. "Kalau gelombang 2 berapa?", "Kalau gelombang 1?")
-  const isWaveFeeFollowup = (
-    (/\b(?:kalau\s+)?gelombang\s*(?:[1-4]|i{1,4}|khusus|awal|sisipan)\s*(?:berapa|biaya|potongan|diskon|dpp|total)\b/i.test(query)) ||
-    (/\bgelombang\b/i.test(query) && /\b(?:berapa|biaya|potongan|diskon)\b/i.test(query)) ||
-    (sessionData.activeDomain === 'TUITION_FEE' && /\b(?:kalau\s+)?(?:gelombang|semester|cicilan|angsuran|berapa)\b/i.test(query) && !/\b(?:kapan|tanggal|jadwal)\b/i.test(query))
-  );
-
-  if (isWaveFeeFollowup && sessionData.activeEntity) {
-    return {
-      shouldInherit: true,
-      reason: 'wave_fee_continuation',
-      inheritedDomain: 'TUITION_FEE',
+      inheritedDomain: isInternationalActiveEntity && !hasFeeFocus ? 'INTERNATIONAL' : sessionData.activeDomain,
       inheritedEntity: sessionData.activeEntity
     };
   }
 
   // Check 3: Attribute or Procedural Continuation without explicit entity
-  const isAttributeInquiry = /\b(gelar(?:\s+apa)?|masa\s+studi|durasi\s+studi|lama\s+studi|prospek\s+lulusan|rincian\s+biaya|biaya(?:\s+kuliah)?|spp|dpp|kontak(?:nya)?|nomor(?:\s+telepon|\s+wa|\s+whatsapp|\s+hp)?(?:nya)?|telepon(?:nya)?|whatsapp(?:nya)?|wa(?:nya)?|narahubung(?:nya)?|hubungi|degree(?:s)?(?:\s+awarded|\s+received)?|qualification(?:s)?|study\s+duration|study\s+length|duration(?:\s+of\s+study)?|how\s+long\b|graduate(?:s)?|graduation|contact(?:s)?)\b/i.test(query);
+  const isAttributeInquiry = /\b(gelar(?:\s+apa)?|masa\s+studi|durasi\s+studi|lama\s+studi|prospek\s+lulusan|rincian\s+biaya|biaya(?:\s+kuliah)?|spp|dpp|degree(?:s)?(?:\s+awarded|\s+received)?|qualification(?:s)?|study\s+duration|study\s+length|duration(?:\s+of\s+study)?|how\s+long\b|graduate(?:s)?|graduation)\b/i.test(query) ||
+    (!isAcademicActiveEntity && isInstitutionalContactQuery);
   const isProceduralInquiry = /\b(?:bagaimana\s+cara\s+(?:daftar|mendaftar)|cara\s+(?:daftar|mendaftar|pendaftaran)|alur\s+pendaftaran|prosedur\s+pendaftaran|syarat(?:\s+pendaftaran|\s+masuk|\s+daftar)?|persyaratan(?:\s+pendaftaran|\s+masuk|\s+daftar)?|berkas|dokumen(?:\s+persyaratan)?|kapan\s+pendaftaran|jadwal\s+pendaftaran|tahapan\s+pendaftaran|how\s+to\s+apply|how\s+to\s+register|admission\s+procedure|registration\s+procedure|admission\s+requirements)\b/i.test(query);
   const isDateInquiry = /\b(tanggal(?:\s+berapa)?|kapan|jadwal|waktu|hari\s+apa|pelaksanaan)\b/i.test(query);
 
@@ -277,14 +312,14 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
 
   if ((isAttributeInquiry || isProceduralInquiry || isDateInquiry) && sessionData.activeEntity) {
     const isFee = /\b(rincian\s+biaya|biaya|spp|dpp)\b/i.test(query);
-    const isContact = /\b(kontak|nomor|telepon|wa|whatsapp|narahubung|hubungi|contact)\b/i.test(query);
+    const isContact = isInstitutionalContactQuery;
     const isAdmission = isProceduralInquiry || /\b(daftar|pendaftaran|syarat|persyaratan|berkas|dokumen)\b/i.test(query);
 
-    let inheritedDomain = sessionData.activeDomain || 'ACADEMIC_PROGRAM';
+    let inheritedDomain = isInternationalActiveEntity ? 'INTERNATIONAL' : (sessionData.activeDomain || 'ACADEMIC_PROGRAM');
     if (isFee) inheritedDomain = 'TUITION_FEE';
     else if (isContact) inheritedDomain = 'CAMPUS_SERVICE';
     else if (isAdmission && inheritedDomain !== 'INTERNATIONAL') inheritedDomain = 'PMB';
-    else if (isDateInquiry && (sessionData.activeDomain === 'ACADEMIC_EVENT' || sessionData.activeDomain === 'ACADEMIC_SCHEDULE' || /^(?:wisuda|yudisium)$/i.test(String(sessionData.activeEntity?.canonical || sessionData.activeEntity || '')))) {
+    else if (isDateInquiry && (sessionData.activeDomain === 'ACADEMIC_EVENT' || sessionData.activeDomain === 'ACADEMIC_SCHEDULE' || /^(?:wisuda|yudisium)$/i.test(activeEntityStr))) {
       inheritedDomain = 'ACADEMIC_EVENT';
     }
 

@@ -15,7 +15,7 @@
 const { resolveSemanticFrame, resolveSemanticFrameAsync } = require('./semanticFrameResolver');
 
 // Conjunction separators indicating multi-intent
-const MULTI_INTENT_CONJUNCTION_REGEX = /(?:,\s*(?:serta|dan|plus)\s*|\s+(?:dan|serta|sekaligus|dan juga|plus)\s+(?=apa|bagaimana|berapa|apakah|kapan|keuntungan|syarat|biaya|fasilitas|training|rekrutmen|pembuatan|prosedur|kontak|prospek|peluang|beasiswa|ada\s+beasiswa))/i;
+const MULTI_INTENT_CONJUNCTION_REGEX = /(?:,\s*(?:serta|dan|plus)\s*|\s+(?:dan|serta|sekaligus|dan juga|plus)\s+(?=(?:apa|bagaimana|berapa|apakah|kapan|keuntungan|syarat|biaya|rincian|fasilitas|training|rekrutmen|pembuatan|prosedur|kontak|prospek|peluang|beasiswa|ada\s+beasiswa)\b))/i;
 
 function hasMultipleIntents(rawQuery) {
   if (!rawQuery) return false;
@@ -91,8 +91,10 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
     const rawParts = query.split(MULTI_INTENT_CONJUNCTION_REGEX).map(p => p.trim()).filter(Boolean);
     const isContactCoordination = /\b(?:nomor|telepon|telp|wa|whatsapp|hp)\s+(?:dan|serta|plus)\s+(?:kontak|nomor|telepon|wa|whatsapp)\b/i.test(query) ||
       /\bkontak\s+(?:dan|serta|plus)\s+(?:nomor|telepon|wa|whatsapp)\b/i.test(query);
+    const isSingleClauseRecommendation = /\b(?:saya|aku|anak\s+saya)\b.*\b(?:suka|senang|gemar|tertarik|hobi|minat|passion|ingin\s+kuliah|mau\s+kuliah|bingung)\b/i.test(query) &&
+      !/\b(?:berapa|bagaimana\s+cara|kapan|di\s*mana)\b/i.test(query);
 
-    if (isContactCoordination || (rawParts.length >= 2 && rawParts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|kapan|apakah|ada)\b/i.test(rawParts[0]))) {
+    if (isContactCoordination || isSingleClauseRecommendation || (rawParts.length >= 2 && rawParts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|kapan|apakah|ada)\b/i.test(rawParts[0]))) {
       parts = [query];
     } else {
       parts = rawParts;

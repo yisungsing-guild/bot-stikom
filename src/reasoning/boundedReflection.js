@@ -283,6 +283,9 @@ async function executeBoundedReplan({
 
     // Re-evaluate answerability via Phase 1 gate
     const updatedAnswerability = evaluateAnswerability(semanticFrame, updatedArbitrated);
+    updatedArbitrated.missingAspects = updatedAnswerability.missingAspects || [];
+    updatedArbitrated.answerability = updatedAnswerability.status;
+    updatedArbitrated.answerabilityDetails = updatedAnswerability;
 
     logger.info({
       newChunksCount: newlyDiscoveredChunks.length,

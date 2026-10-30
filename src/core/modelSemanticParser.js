@@ -88,6 +88,20 @@ const ALLOWED_REFERENCE_TYPES = Object.freeze([
   'clarification'
 ]);
 
+const ALLOWED_TOPIC_CONTINUITY = Object.freeze([
+  'NEW_TOPIC',
+  'CONTINUATION',
+  'CLARIFICATION'
+]);
+
+const ALLOWED_EXECUTION_ROUTES = Object.freeze([
+  'RAG_RETRIEVAL',
+  'CONVERSATIONAL',
+  'ACADEMIC_RECOMMENDATION',
+  'DIRECT_CATALOG',
+  'UNKNOWN'
+]);
+
 const SEMANTIC_INTERPRETATION_JSON_SCHEMA = {
   name: 'semantic_interpretation',
   strict: true,
@@ -97,6 +111,12 @@ const SEMANTIC_INTERPRETATION_JSON_SCHEMA = {
       speechAct: {
         type: 'string',
         enum: ALLOWED_SPEECH_ACTS
+      },
+      primaryIntent: {
+        type: 'string'
+      },
+      userInterest: {
+        type: ['string', 'null']
       },
       semanticConcepts: {
         type: 'array',
@@ -156,10 +176,21 @@ const SEMANTIC_INTERPRETATION_JSON_SCHEMA = {
           referenceType: {
             type: 'string',
             enum: ALLOWED_REFERENCE_TYPES
+          },
+          topicContinuity: {
+            type: 'string',
+            enum: ALLOWED_TOPIC_CONTINUITY
+          },
+          relevantPriorContext: {
+            type: ['string', 'null']
           }
         },
-        required: ['isFollowUp', 'referenceType'],
+        required: ['isFollowUp', 'referenceType', 'topicContinuity', 'relevantPriorContext'],
         additionalProperties: false
+      },
+      executionRoute: {
+        type: 'string',
+        enum: ALLOWED_EXECUTION_ROUTES
       },
       confidence: { type: 'number' },
       ambiguityLevel: {
@@ -169,11 +200,14 @@ const SEMANTIC_INTERPRETATION_JSON_SCHEMA = {
     },
     required: [
       'speechAct',
+      'primaryIntent',
+      'userInterest',
       'semanticConcepts',
       'candidateEntities',
       'requestedAspects',
       'scopeConstraints',
       'contextDependency',
+      'executionRoute',
       'confidence',
       'ambiguityLevel'
     ],
@@ -216,13 +250,26 @@ Aspects:
 - facilities: Campus facilities, labs, dormitories, library.
 - organization: Student clubs, UKM, student government, ormawa.
 
+Execution Routes:
+- RAG_RETRIEVAL: Factual query requiring verified retrieval from knowledge base.
+- CONVERSATIONAL: Sapaan, small talk, acknowledgement, non-factual pleasantries.
+- ACADEMIC_RECOMMENDATION: Asking advice or recommendation for study programs based on personal interest, hobby, or background (e.g. "cocok masuk jurusan apa").
+- DIRECT_CATALOG: Exploring what programs exist or faculty mapping without deep search.
+- UNKNOWN: Incomprehensible, unsupported, or out-of-domain inquiries.
+
+Topic Continuity:
+- NEW_TOPIC: Fresh inquiry or clear domain switch from previous topic (e.g. changing from prodi to admission wave schedule).
+- CONTINUATION: Genuine ellipsis or anaphora carrying over the previous entity/topic.
+- CLARIFICATION: User clarifying a previous ambiguous statement.
+
 Rules:
 1. Understand colloquial Indonesian, abbreviations, typos, and slang by SEMANTIC MEANING, not literal character matching.
 2. DO NOT answer questions or invent facts/catalogs.
 3. Candidate entities: Extract ONLY specific named entities (programs, institutions, specific clubs/organizations, specific partners). DO NOT extract generic common nouns, verbs, or full prepositional phrases as candidate entities (e.g. "maba", "awal masuk", "calon pendaftar lokal", "upload bukti", "konsultasi", "registrasi online" are NOT candidate entities; they belong to aspects/concepts).
-4. For follow-ups (ellipsis/anaphora), set contextDependency.isFollowUp=true with appropriate referenceType. DO NOT invent unmentioned entities.
+4. For follow-ups (ellipsis/anaphora), set contextDependency.isFollowUp=true with appropriate referenceType, topicContinuity="CONTINUATION", and relevantPriorContext. If the turn introduces a new question or domain, set topicContinuity="NEW_TOPIC" and isFollowUp=false.
 5. For multi-entity or inherently ambiguous inquiries, preserve all candidate entities and set ambiguityLevel="HIGH".
-6. Return only the structured JSON.`;
+6. For recommendation / advice inquiries (speechAct="SEEK_ADVICE" or executionRoute="ACADEMIC_RECOMMENDATION"), populate userInterest with the normalized summary of the user's stated interest, hobby, career goal, or constraint (e.g. "analisis sistem dan manajemen basis data", "desain komunikasi visual dan ilustrasi", "pemasaran digital dan live commerce"), or null if none is stated.
+7. Return only the structured JSON adhering strictly to the schema.`;
 
 /**
  * Creates a deterministic, safe UNKNOWN / HIGH_AMBIGUITY interpretation.
@@ -232,6 +279,8 @@ Rules:
 function buildSafeUnknownInterpretation(rawQuery, reason = 'unknown', extraMeta = {}) {
   return {
     speechAct: 'UNKNOWN',
+    primaryIntent: 'UNKNOWN',
+    userInterest: null,
     semanticConcepts: [],
     candidateEntities: [],
     requestedAspects: [],
@@ -242,8 +291,11 @@ function buildSafeUnknownInterpretation(rawQuery, reason = 'unknown', extraMeta 
     },
     contextDependency: {
       isFollowUp: false,
-      referenceType: 'none'
+      referenceType: 'none',
+      topicContinuity: 'NEW_TOPIC',
+      relevantPriorContext: null
     },
+    executionRoute: 'UNKNOWN',
     confidence: 0.0,
     ambiguityLevel: 'HIGH',
     metadata: {
@@ -264,6 +316,13 @@ function validateInterpretationSchema(data) {
 
   if (!ALLOWED_SPEECH_ACTS.includes(data.speechAct)) {
     return { valid: false, reason: `invalid_speechAct: ${data.speechAct}` };
+  }
+
+  if (data.userInterest !== undefined && data.userInterest !== null && typeof data.userInterest !== 'string') {
+    return { valid: false, reason: 'invalid_userInterest' };
+  }
+  if (data.userInterest === undefined) {
+    data.userInterest = null;
   }
 
   if (!Array.isArray(data.semanticConcepts) || !data.semanticConcepts.every(c => ALLOWED_SEMANTIC_CONCEPTS.includes(c))) {
@@ -299,6 +358,30 @@ function validateInterpretationSchema(data) {
   }
   if (!ALLOWED_REFERENCE_TYPES.includes(data.contextDependency.referenceType)) {
     return { valid: false, reason: `invalid_referenceType: ${data.contextDependency.referenceType}` };
+  }
+
+  // Ensure topicContinuity & relevantPriorContext backwards compatibility
+  if (data.contextDependency.topicContinuity && !ALLOWED_TOPIC_CONTINUITY.includes(data.contextDependency.topicContinuity)) {
+    return { valid: false, reason: `invalid_topicContinuity: ${data.contextDependency.topicContinuity}` };
+  }
+  if (!data.contextDependency.topicContinuity) {
+    data.contextDependency.topicContinuity = data.contextDependency.isFollowUp ? 'CONTINUATION' : 'NEW_TOPIC';
+  }
+  if (data.contextDependency.relevantPriorContext === undefined) {
+    data.contextDependency.relevantPriorContext = null;
+  }
+
+  // Ensure primaryIntent & executionRoute backwards compatibility
+  if (data.executionRoute && !ALLOWED_EXECUTION_ROUTES.includes(data.executionRoute)) {
+    return { valid: false, reason: `invalid_executionRoute: ${data.executionRoute}` };
+  }
+  if (!data.executionRoute) {
+    if (data.speechAct === 'GENERAL_GREETING') data.executionRoute = 'CONVERSATIONAL';
+    else if (data.speechAct === 'SEEK_ADVICE') data.executionRoute = 'ACADEMIC_RECOMMENDATION';
+    else data.executionRoute = 'RAG_RETRIEVAL';
+  }
+  if (!data.primaryIntent) {
+    data.primaryIntent = data.speechAct === 'GENERAL_GREETING' ? 'CONVERSATIONAL_GREETING' : (data.speechAct === 'SEEK_ADVICE' ? 'PROGRAM_RECOMMENDATION' : 'UNKNOWN');
   }
 
   if (typeof data.confidence !== 'number' || Number.isNaN(data.confidence)) {
@@ -407,7 +490,8 @@ async function parseSemanticInterpretation(input, options = {}) {
     const providerStart = Date.now();
     const isNewerGptModel = /^gpt-(?:[4-9]|4o)/i.test(model) || /^o\d/i.test(model);
     const isGpt6OrReasoning = /gpt-6|luna|o1|o3/i.test(model);
-    const tokenLimit = 300;
+
+    const tokenLimit = options.maxCompletionTokens || 300;
     const requestPayload = {
       model,
       messages,
@@ -429,7 +513,8 @@ async function parseSemanticInterpretation(input, options = {}) {
 
     const sanitizedPayload = sanitizeOpenAiChatPayload(requestPayload);
 
-    const ledger = options.budgetLedger || (globalBudgetLedger.isAvailable() ? globalBudgetLedger : null);
+    const isTestRuntime = process.env.NODE_ENV === 'test' || Boolean(options.client);
+    const ledger = (!isTestRuntime && (options.budgetLedger || (globalBudgetLedger.isAvailable() ? globalBudgetLedger : null)));
     let reservation = null;
 
     if (ledger) {
@@ -454,7 +539,7 @@ async function parseSemanticInterpretation(input, options = {}) {
           elapsedMs
         });
       }
-    } else if (process.env.NODE_ENV !== 'test') {
+    } else if (process.env.NODE_ENV !== 'test' && !options.client) {
       const elapsedMs = Date.now() - startTime;
       logger.warn({ rawQuery }, '[modelSemanticParser] Persistent budget ledger unavailable in non-test runtime; failing closed');
       return buildSafeUnknownInterpretation(rawQuery, 'PERSISTENT_LEDGER_UNAVAILABLE', {
@@ -510,16 +595,31 @@ async function parseSemanticInterpretation(input, options = {}) {
     }
 
     const parseStart = Date.now();
-    const rawContent = response?.choices?.[0]?.message?.content;
-
-    if (!rawContent) {
+    const choice = response?.choices?.[0];
+    const refusal = choice?.message?.refusal;
+    if (refusal) {
       const elapsedMs = Date.now() - startTime;
-      logger.warn({ rawQuery, elapsedMs }, '[modelSemanticParser] Empty content from model');
-      return buildSafeUnknownInterpretation(rawQuery, 'empty_response', {
+      logger.warn({ rawQuery, refusal, elapsedMs }, '[modelSemanticParser] Model returned explicit refusal');
+      return buildSafeUnknownInterpretation(rawQuery, 'model_refusal', {
         requestedModel: model,
         responseModel: response?.model || null,
         providerLatencyMs,
-        totalLatencyMs: elapsedMs
+        totalLatencyMs: elapsedMs,
+        refusal
+      });
+    }
+
+    const rawContent = choice?.message?.content;
+    if (!rawContent || (typeof rawContent === 'string' && rawContent.trim() === '')) {
+      const elapsedMs = Date.now() - startTime;
+      const finishReason = choice?.finish_reason;
+      logger.warn({ rawQuery, finishReason, elapsedMs }, '[modelSemanticParser] Empty content from model');
+      return buildSafeUnknownInterpretation(rawQuery, finishReason === 'length' ? 'token_limit_exceeded' : 'empty_response', {
+        requestedModel: model,
+        responseModel: response?.model || null,
+        providerLatencyMs,
+        totalLatencyMs: elapsedMs,
+        finishReason
       });
     }
 
@@ -596,6 +696,8 @@ module.exports = {
   ALLOWED_INFERRED_CATEGORIES,
   ALLOWED_AMBIGUITY_LEVELS,
   ALLOWED_REFERENCE_TYPES,
+  ALLOWED_TOPIC_CONTINUITY,
+  ALLOWED_EXECUTION_ROUTES,
   SEMANTIC_INTERPRETATION_JSON_SCHEMA,
   SYSTEM_PARSER_INSTRUCTION,
   _resetSharedClientForTesting

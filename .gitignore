@@ -180,6 +180,9 @@ tests/*
 !tests/doubleDegreeSystemicContract.test.js
 !tests/productionOct29FailureRemediation.test.js
 !tests/liveWhatsappOct29Reproduction.test.js
+!tests/wave1FallbackArchitectureReview.test.js
+!tests/wave2RecommendationGeneralization.test.js
+!tests/wave3UnifiedEvidenceAndContext.test.js
 !tests/fixtures/
 !tests/fixtures/candidateMetadataFixture.json
 

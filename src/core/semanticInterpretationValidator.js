@@ -225,6 +225,11 @@ function validateSchemaAndEnums(data) {
     errors.push(`Invalid speechAct: "${data.speechAct}". Expected one of: ${ALLOWED_SPEECH_ACTS.join(', ')}`);
   }
 
+  // 1b. UserInterest (optional string or null)
+  if (data.userInterest !== undefined && data.userInterest !== null && typeof data.userInterest !== 'string') {
+    errors.push('userInterest must be a string or null');
+  }
+
   // 2. SemanticConcepts
   if (!Array.isArray(data.semanticConcepts)) {
     errors.push('semanticConcepts must be an array');
@@ -514,7 +519,9 @@ function validateSemanticInterpretation(interpretation, priorContext = null, opt
 
   // Resolve primary domain
   let resolvedDomain = 'GENERAL';
-  if (interpretation.semanticConcepts.length > 0) {
+  if (interpretation.speechAct === 'SEEK_ADVICE' || interpretation.executionRoute === 'ACADEMIC_RECOMMENDATION' || interpretation.primaryIntent === 'PROGRAM_RECOMMENDATION') {
+    resolvedDomain = 'ACADEMIC_RECOMMENDATION';
+  } else if (interpretation.semanticConcepts.length > 0) {
     resolvedDomain = CONCEPT_TO_DOMAIN_MAP[interpretation.semanticConcepts[0]] || 'GENERAL';
   } else if (normPrior.priorDomain && isEligibleForInheritance) {
     resolvedDomain = normPrior.priorDomain;
@@ -541,6 +548,9 @@ function validateSemanticInterpretation(interpretation, priorContext = null, opt
   // Assemble Verified Semantic Frame (Downstream Source of Truth)
   const validatedFrame = {
     speechAct: interpretation.speechAct,
+    primaryIntent: interpretation.primaryIntent || null,
+    userInterest: interpretation.userInterest ?? null,
+    executionRoute: interpretation.executionRoute || null,
     semanticConcepts: [...interpretation.semanticConcepts],
     candidateEntities: finalEntities,
     inheritedEntities,
@@ -553,6 +563,8 @@ function validateSemanticInterpretation(interpretation, priorContext = null, opt
     contextDependency: {
       isFollowUp: interpretation.contextDependency?.isFollowUp || false,
       referenceType: interpretation.contextDependency?.referenceType || 'none',
+      topicContinuity: interpretation.contextDependency?.topicContinuity || (interpretation.contextDependency?.isFollowUp ? 'CONTINUATION' : 'NEW_TOPIC'),
+      relevantPriorContext: interpretation.contextDependency?.relevantPriorContext ?? null,
       contextInherited: isEligibleForInheritance,
       inheritanceReason
     },

@@ -253,10 +253,21 @@ function buildRetrievalPlan(semanticFrame) {
   const isDkvOrUtb = targetEntities.some(e => /utb|dkv|desain\s+komunikasi\s+visual|Dual Degree UTB/i.test(String(e))) ||
     /\b(?:dkv|desain\s+komunikasi\s+visual|utb|double\s+degree\s+nasional|dual\s+degree\s+nasional)\b/i.test(normalizedText);
   if (isDkvOrUtb) {
-    queryVariants.push('rincian biaya pendidikan mahasiswa baru dual degree national class universitas teknologi bandung UTB S.Bns S.Ds');
-    queryVariants.push('dual degree nasional universitas teknologi bandung UTB desain komunikasi visual dkv bisnis digital');
-    queryVariants.push('program dual degree nasional UTB STIKOM Bali');
-    queryVariants.push('rincian Biaya UTB Tahun Ajaran 2026-2027.pdf');
+    const wantsProcedureOrReq = intent === 'PROGRAM_PROCEDURE' || intent === 'ADMISSION_PROCEDURE' || intent === 'ADMISSION_REQUIREMENTS' ||
+      (Array.isArray(aspects) && aspects.some(a => ['procedure', 'requirements', 'admission_overview', 'admission_pathways'].includes(a)));
+    const wantsFeeHere = domain === 'TUITION_FEE' || (Array.isArray(aspects) && aspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)));
+
+    if (wantsProcedureOrReq && !wantsFeeHere) {
+      queryVariants.push('prosedur cara pendaftaran syarat masuk dual degree nasional universitas teknologi bandung UTB STIKOM Bali');
+      queryVariants.push('program dual degree nasional UTB STIKOM Bali');
+      queryVariants.push('CHATBOT - Double Degree.docx');
+      queryVariants.push('dual degree nasional universitas teknologi bandung UTB desain komunikasi visual dkv bisnis digital');
+    } else {
+      queryVariants.push('rincian biaya pendidikan mahasiswa baru dual degree national class universitas teknologi bandung UTB S.Bns S.Ds');
+      queryVariants.push('dual degree nasional universitas teknologi bandung UTB desain komunikasi visual dkv bisnis digital');
+      queryVariants.push('program dual degree nasional UTB STIKOM Bali');
+      queryVariants.push('rincian Biaya UTB Tahun Ajaran 2026-2027.pdf');
+    }
   }
 
   // International Program & Double Degree query variants
@@ -351,9 +362,24 @@ function buildRetrievalPlan(semanticFrame) {
       queryVariants.push(`program studi jenjang ${rawMention} ITB STIKOM Bali`);
     } else {
       // UNSPECIFIED: general institutional catalog queries allowed
+      queryVariants.push('Program Studi Deskripsi Singkat Sistem Informasi S1 Sistem Komputer S1 Teknologi Informasi S1 Bisnis Digital S1 Manajemen Informatika D3');
       queryVariants.push('program studi sarjana diploma magister ITB STIKOM Bali');
       queryVariants.push('pilihan jurusan program studi S1 D3 S2 ITB STIKOM Bali');
       queryVariants.push('program sarjana S1 Sistem Informasi Sistem Komputer Teknologi Informasi Bisnis Digital');
+    }
+  }
+
+  // Academic Program Recommendation & Program Fit query variants
+  if (domain === 'ACADEMIC_RECOMMENDATION' || intent === 'PROGRAM_RECOMMENDATION' || (aspects && (aspects.includes('recommendation') || aspects.includes('program_fit')))) {
+    queryVariants.push('Penjelasan Prodi dan Karier Masa Depan Penjelasan prodi Yang Dipelajari Cocok Untuk Peluang Karir');
+    queryVariants.push('Program Studi Deskripsi Singkat Sistem Informasi Teknologi Informasi Bisnis Digital Sistem Komputer Manajemen Informatika DKV UTB');
+    queryVariants.push('hobi_prodi_lengkap.xlsx Program Studi Hobi Aktivitas Bisnis Digital DKV Sistem Komputer Sistem Informasi Teknologi Informasi');
+    queryVariants.push('Profil Program Studi Kompetensi Utama Lulusan Karir prospek kerja');
+    if (targetEntities.length > 0) {
+      for (const ent of targetEntities) {
+        queryVariants.push(`kurikulum profil lulusan peluang karir ${ent}`);
+        queryVariants.push(`Penjelasan prodi ${ent} karakteristik minat`);
+      }
     }
   }
 

@@ -166,7 +166,7 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
   if (!isFacilityOrCanteen && !isAcademicMilestoneEvent && (aspects.includes('schedule') || semanticFrame?.intent === 'ADMISSION_SCHEDULE')) {
     if (!semanticFrame.academicLevel) {
       // If it asks for batas akhir/jadwal pendaftaran but does not specify gelombang (1, 2, 3) or jalur
-      if (/\b(?:batas\s+akhir|jadwal|periode|kapan)\s+(?:pendaftaran|pmb)\b/i.test(q) && !/\b(?:gelombang\s+\d|jalur\s+[a-z]+)\b/i.test(q)) {
+      if (/\b(?:batas\s+akhir|jadwal|periode|kapan)\s+(?:pendaftaran|pmb)\b/i.test(q) && !/\b(?:gelombang\s*(?:\d+|[ivx]+|[a-z0-9]+)|jalur\s+[a-z]+)\b/i.test(q)) {
         return true;
       }
       if (!/\b(?:pendaftaran|gelombang|pmb)\b/i.test(q)) {
@@ -300,6 +300,7 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
     'CONVERSATIONAL_SMALL_TALK',
     'CONVERSATIONAL_ACKNOWLEDGEMENT',
     'ADVERSARIAL_INJECTION_DEFENSE',
+    'PROGRAM_OVERVIEW',
     'PROGRAM_ACCREDITATION',
     'INSTITUTIONAL_ACCREDITATION',
     'ACCREDITATION_INQUIRY',
@@ -374,7 +375,7 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
     isBroadSchoolBackgroundWithoutSpecificPreference(query) ||
     (detectProgramFitSignals(normalizeQueryForSignals(query)).length > 0 &&
      !effectiveDomain?.includes('FEE') &&
-     entities.length <= 1) ||
+     (entities.length === 0 || semanticFrame.speechAct === 'SEEK_ADVICE' || /\b(?:cocok|rekomendasi|saran|pilih|ambil|masuk\s+apa|jurusan\s+apa|prodi\s+apa)\b/i.test(query))) ||
     ((/\b(?:rekomendasi|rekomendasikan|cocok(?:nya)?|saran|bingung\s+pilih|pilih|ambil|pas)\b/i.test(query) || semanticFrame.speechAct === 'SEEK_ADVICE') &&
      /\b(?:prodi|jurusan|program\s*studi|kuliah)\b/i.test(query) &&
      !/\b(?:ukm|unit\s+kegiatan\s+mahasiswa|organisasi|ormawa|hima|beasiswa|inkubator|career|fasilitas)\b/i.test(query))

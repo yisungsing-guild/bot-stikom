@@ -26,49 +26,46 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
   const { accepted = [], rejected = [] } = arbitratedEvidence;
   const isEn = semanticFrame?.language === 'en' || detectQueryLanguage(semanticFrame?.rawQuery) === 'en';
 
-  // Institutional Academic Catalog can authoritatively answer faculty mapping
-  if (semanticFrame.intent === 'FACULTY_INQUIRY') {
-    const { resolveFaculty, getFacultyForProgram } = require('./academicCatalog');
-    const rawQ = semanticFrame.rawQuery || '';
-    const isAmbiguousTeknologi = /\bteknologi\b/i.test(rawQ) &&
-      !/\b(?:teknologi\s+informasi|ti)\b/i.test(rawQ) &&
-      /\b(?:masuk|fakultas|jurusan|prodi|bagian|bernaung|di\s+bawah)\b/i.test(rawQ);
-    const targetProgram = (semanticFrame.entities || []).find(e => e.family === 'academic_program' || e.type === 'program');
-    const progFaculty = targetProgram ? getFacultyForProgram(targetProgram.canonical || targetProgram.name) : null;
-    const resolvedFac = resolveFaculty(rawQ);
-    if (progFaculty || (resolvedFac && resolvedFac.canonical) || isAmbiguousTeknologi || /\b(?:fik|fbv|infokom|bisvo)\b/i.test(rawQ)) {
+  // 1. If no accepted evidence exists -> must evaluate before any factual or recommendation shortcut
+  if (!accepted || accepted.length === 0) {
+    // Allow clarification without external RAG evidence ONLY when query is genuinely ambiguous or broad guidance without specific preference
+    if (
+      semanticFrame.intent === 'AMBIGUOUS_CLARIFICATION' ||
+      semanticFrame.isAmbiguous ||
+      semanticFrame.ambiguityLevel === 'HIGH'
+    ) {
       return {
-        status: ANSWERABILITY_STATUS.ANSWERABLE,
-        reason: 'institutional_academic_catalog',
-        coveredAspects: ['faculty', 'academic_structure'],
+        status: ANSWERABILITY_STATUS.CLARIFY,
+        reason: 'ambiguous_clarification_required',
+        coveredAspects: [],
         missingAspects: []
       };
     }
-  }
 
-  // Institutional Campus Locations (Renon, Jimbaran, Abiansemal) can authoritatively answer campus location queries
-  if (semanticFrame.intent === 'CAMPUS_LOCATION' ||
-      /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus\s+(?:renon|jimbaran|abiansemal)|(?:di\s*mana|dimana)\s+kampus|lokasi(?:nya)?\s+di\s*mana|di\s*mana(?:\s+saja)?\s+lokasi(?:nya)?|berapa\s+(?:ada\s+)?kampus|ada\s+berapa\s+kampus|jumlah\s+kampus)\b/i.test(semanticFrame.rawQuery || '')) {
-    return {
-      status: ANSWERABILITY_STATUS.ANSWERABLE,
-      reason: 'institutional_campus_locations',
-      coveredAspects: ['location', 'campus_location', 'address'],
-      missingAspects: []
-    };
-  }
+    if (semanticFrame.domain === 'ACADEMIC_RECOMMENDATION' || semanticFrame.intent === 'PROGRAM_RECOMMENDATION') {
+      const { isBroadSchoolBackgroundWithoutSpecificPreference } = require('../engine/programFitReasoning');
+      const isBroad = isBroadSchoolBackgroundWithoutSpecificPreference(semanticFrame.rawQuery || '', {
+        canonical: semanticFrame
+      });
+      if (isBroad) {
+        return {
+          status: ANSWERABILITY_STATUS.CLARIFY,
+          reason: 'broad_recommendation_clarification_required',
+          coveredAspects: ['recommendation', 'program_fit'],
+          missingAspects: []
+        };
+      }
+      return {
+        status: ANSWERABILITY_STATUS.UNKNOWN,
+        reason: 'insufficient_recommendation_evidence',
+        coveredAspects: [],
+        missingAspects: ['recommendation', 'program_fit'],
+        guidance: isEn
+          ? 'I apologize, but verified official curriculum information regarding this interest could not be confirmed from our available records. Please consult campus admissions directly.'
+          : 'Mohon maaf Kak, informasi kurikulum resmi untuk minat tersebut belum dapat dipastikan dari dokumen yang tersedia saat ini. Silakan berkonsultasi langsung dengan admisi PMB ITB STIKOM Bali ya.'
+      };
+    }
 
-  // Institutional Academic Event (Wisuda & Yudisium) guidelines can authoritatively answer graduation events
-  if (semanticFrame.domain === 'ACADEMIC_EVENT' || semanticFrame.intent === 'GRADUATION_INQUIRY' || /\b(?:wisuda|yudisium)\b/i.test(semanticFrame.rawQuery || '')) {
-    return {
-      status: ANSWERABILITY_STATUS.ANSWERABLE,
-      reason: 'institutional_academic_event_guidelines',
-      coveredAspects: ['procedure', 'requirements', 'schedule'],
-      missingAspects: []
-    };
-  }
-
-  // 1. If no accepted evidence exists
-  if (!accepted || accepted.length === 0) {
     // If user query represents a missed academic process or complaint -> ESCALATE to admin/academic staff
     if (semanticFrame.intent === 'MISSED_ACADEMIC_PROCESS' || semanticFrame.userState === 'LATE') {
       return {
@@ -126,12 +123,32 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
     }
 
     // Default when no evidence proves the question
+    if (semanticFrame.intent === 'CURRENT_ENROLLMENT_STATUS' || semanticFrame.domain === 'PMB') {
+      return {
+        status: ANSWERABILITY_STATUS.UNKNOWN,
+        reason: 'corpus_gap',
+        guidance: isEn
+          ? 'Official information regarding current admission status or schedule has not been verified from the available documents. Please contact campus PMB admissions directly.'
+          : 'Informasi resmi mengenai jadwal atau status gelombang pendaftaran saat ini belum dapat diverifikasi dari dokumen yang tersedia. Silakan hubungi layanan admisi PMB ITB STIKOM Bali untuk konfirmasi langsung.'
+      };
+    }
+
     return {
       status: ANSWERABILITY_STATUS.UNKNOWN,
       reason: 'corpus_gap',
       guidance: isEn
         ? 'Official information regarding this matter is not fully listed in the available guidelines.'
         : 'Informasi resmi terkait hal ini belum tercantum secara lengkap dalam panduan yang tersedia.'
+    };
+  }
+
+  // Institutional Academic Program Recommendation Reasoning when RAG evidence is present
+  if (semanticFrame.domain === 'ACADEMIC_RECOMMENDATION' || semanticFrame.intent === 'PROGRAM_RECOMMENDATION') {
+    return {
+      status: ANSWERABILITY_STATUS.ANSWERABLE,
+      reason: 'supported_recommendation_evidence',
+      coveredAspects: ['recommendation', 'program_fit'],
+      missingAspects: []
     };
   }
 

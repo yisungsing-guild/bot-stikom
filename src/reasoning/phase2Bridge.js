@@ -80,6 +80,12 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
   });
 
   const executionPromise = (async () => {
+    // Multi-intent queries must be decomposed and executed via deterministic pipeline
+    const { hasMultipleIntents } = require('../core/multiIntentResolver');
+    if (typeof hasMultipleIntents === 'function' && hasMultipleIntents(rawQuery)) {
+      return await phase1PipelineFn(chatId, rawQuery, internalOptions);
+    }
+
     // 1. Read-only session snapshot
     const session = (options && options.sessionSnapshot)
       ? JSON.parse(JSON.stringify(options.sessionSnapshot))
@@ -88,7 +94,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
 
     // 2. Resolve semantic frame asynchronously via modelSemanticParser if not already provided
     let semanticFrame = options.semanticFrame;
-    if (!semanticFrame && typeof resolveSemanticFrameAsync === 'function' && !options.syncOnly && !isTestEnv) {
+    if (!semanticFrame && typeof resolveSemanticFrameAsync === 'function' && !options.syncOnly && (!isTestEnv || options.client)) {
       semanticFrame = await resolveSemanticFrameAsync(rawQuery, sessionData, { ...options, startTime });
     }
     if (semanticFrame) {
@@ -276,20 +282,55 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
     }
 
     // 3.5 Step 7: Deterministic Recommendation Engine Handling
-    // phase2Bridge owns task execution, recommendation result packaging, and context delta preparation only.
+    // phase2Bridge owns task execution (including RAG retrieval & arbitration), recommendation result packaging, and context delta preparation.
     // Natural language rendering, verification, fallback, context commit, and outbound dispatch are owned by orchestrator.
     if (plan.planType === PLAN_TYPE.RECOMMENDATION) {
+      const { buildRetrievalPlan } = require('../core/retrievalPlanner');
+      const { retrieveCandidates } = require('../core/retrievalService');
+      const { arbitrateEvidence } = require('../core/evidenceArbiter');
+      const { evaluateAnswerability } = require('../core/answerabilityGate');
       const { evaluateRecommendation } = require('./recommendationEngine');
-      const recResult = evaluateRecommendation(rawQuery, options);
 
-      const topEntity = recResult.scoredCandidates[0]?.canonicalName || null;
+      const recFrame = {
+        ...(semanticFrame || {}),
+        domain: 'ACADEMIC_RECOMMENDATION',
+        intent: 'PROGRAM_RECOMMENDATION',
+        rawQuery,
+        aspects: Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.length > 0
+          ? semanticFrame.aspects
+          : ['recommendation', 'program_fit']
+      };
+
+      const retrievalPlan = buildRetrievalPlan(recFrame);
+      const retrieveFn = typeof options.retrieveCandidatesFn === 'function' ? options.retrieveCandidatesFn : retrieveCandidates;
+      const candidates = await retrieveFn(retrievalPlan, { topK: 16 });
+      const arbitrated = arbitrateEvidence(candidates, retrievalPlan);
+      arbitrated.retrievalPlan = retrievalPlan;
+      arbitrated.sessionData = sessionData;
+      arbitrated.rawAccepted = [...arbitrated.accepted];
+      if (arbitrated.accepted.length > 10) {
+        arbitrated.accepted = arbitrated.accepted.slice(0, 10);
+      }
+
+      const answerability = evaluateAnswerability(recFrame, arbitrated);
+      arbitrated.missingAspects = answerability.missingAspects || [];
+
+      const recResult = evaluateRecommendation(rawQuery, { ...options, semanticFrame: recFrame }, recFrame, arbitrated.accepted);
+
+      const candidateEntities = (recResult.scoredCandidates || []).map(c => ({ canonical: c.canonicalName }));
       const subQueryResult = {
-        frame: { domain: 'ACADEMIC_RECOMMENDATION', intent: 'PROGRAM_RECOMMENDATION', entities: topEntity ? [{ canonical: topEntity }] : [] },
-        plan,
-        candidatesCount: recResult.scoredCandidates.length,
-        acceptedCount: recResult.detectedSignals.length,
-        rejectedCount: 0,
-        answerability: ANSWERABILITY_STATUS.ANSWERABLE
+        frame: { ...recFrame, entities: candidateEntities },
+        semanticFrame: { ...recFrame, entities: candidateEntities },
+        plan: retrievalPlan,
+        candidates,
+        allCandidates: candidates,
+        preArbitrationTop12: candidates.slice(0, 12),
+        candidatesCount: candidates.length,
+        acceptedCount: arbitrated.accepted.length,
+        rejectedCount: arbitrated.rejected.length,
+        answerability: answerability.status,
+        arbitrated,
+        arbitratedEvidence: arbitrated
       };
 
       const won = turnControl.tryAcceptPhase2();
@@ -302,6 +343,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         rawQuery,
         subQueryResults: [subQueryResult],
         structuredRecommendation: recResult,
+        arbitratedEvidence: arbitrated,
         plan,
         turnControl,
         phase2Meta: {
@@ -333,7 +375,8 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
               chunkHash: c.hash || 'hash',
               source: c.source || 'doc',
               sourceAuthority: c.sourceAuthority || c.source || 'SK_PMB',
-              confidenceScore: c.confidenceScore || 0.9
+              confidenceScore: c.confidenceScore || 0.9,
+              text: c.text || c.chunk || ''
             })),
             verifiedEntities: (firstSub.frame && firstSub.frame.entities) ? firstSub.frame.entities.map(e => e.canonical || String(e)) : (queryOpts.targetEntity ? [queryOpts.targetEntity] : []),
             verifiedAspects: (firstSub.frame && firstSub.frame.aspects) || (queryOpts.aspects || []),
@@ -357,7 +400,8 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
                   chunkHash: c.hash || 'hash',
                   source: c.source || 'doc',
                   sourceAuthority: c.sourceAuthority || c.source || 'SK_PMB',
-                  confidenceScore: c.confidenceScore || 0.9
+                  confidenceScore: c.confidenceScore || 0.9,
+                  text: c.text || c.chunk || ''
                 })),
                 answerability: firstSub.answerability
               }
@@ -424,8 +468,37 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
             renderPlan
           });
         } else {
-          const factsText = Object.values(graphResult.consolidatedFacts || {}).map(f => `${f.aspect}: ${JSON.stringify(f.value)}`).join(', ');
-          finalGraphAnswer = factsText || 'Informasi berhasil diproses.';
+          const allGraphEvidence = [];
+          if (graphResult.allNodes && graphResult.allNodes.size > 0) {
+            for (const [, node] of graphResult.allNodes.entries()) {
+              if (node.output && Array.isArray(node.output.acceptedEvidence)) {
+                for (const ev of node.output.acceptedEvidence) {
+                  if (ev && ev.text) allGraphEvidence.push(ev);
+                }
+              }
+            }
+          }
+          const graphFrame = {
+            ...(semanticFrame || {}),
+            rawQuery,
+            domain: plan.domain || semanticFrame?.domain || 'ACADEMIC_PROGRAM',
+            intent: plan.intent || semanticFrame?.intent || 'PROGRAM_OVERVIEW',
+            entities: (plan.targetEntities || []).map(t => ({ canonical: t }))
+          };
+          const graphArbitrated = { accepted: allGraphEvidence, sessionData };
+          if (allGraphEvidence.length > 0) {
+            const synthRes = await synthesizeAnswer(graphFrame, graphArbitrated);
+            if (synthRes && synthRes.success && synthRes.answer) {
+              const verifRes = verifyFinalAnswer(synthRes.answer, graphFrame, graphArbitrated);
+              if (verifRes && (verifRes.pass || verifRes.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || verifRes.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN)) {
+                finalGraphAnswer = synthRes.answer;
+              }
+            }
+          }
+          if (!finalGraphAnswer) {
+            const factsText = Object.values(graphResult.consolidatedFacts || {}).map(f => `${f.aspect}: ${JSON.stringify(f.value)}`).join(', ');
+            finalGraphAnswer = factsText || 'Informasi berhasil diproses.';
+          }
         }
       } else {
         // Graph did not succeed -> zero session mutation
@@ -599,13 +672,13 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         phase1Result.verification = (compositeVerification && (compositeVerification.pass || compositeVerification.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL))
           ? compositeVerification
           : {
-              pass: true,
-              outcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
-              status: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
-              reason: 'replan_verified_factual',
-              isGrounded: true,
-              handledSafely: true
-            };
+            pass: true,
+            outcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+            status: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+            reason: 'replan_verified_factual',
+            isGrounded: true,
+            handledSafely: true
+          };
       }
     }
 

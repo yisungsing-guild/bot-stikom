@@ -26,7 +26,7 @@ const { arbitrateEvidence } = require('./evidenceArbiter');
 const { evaluateAnswerability, ANSWERABILITY_STATUS } = require('./answerabilityGate');
 const groundedAnswerGenerator = require('./groundedAnswerGenerator');
 const finalAnswerVerifier = require('./finalAnswerVerifier');
-const { synthesizeAnswer, buildGroundedDeterministicSummary } = groundedAnswerGenerator;
+const { synthesizeAnswer, buildGenericExtractiveFallback } = groundedAnswerGenerator;
 const { verifyFinalAnswer } = finalAnswerVerifier;
 const outboundDispatcher = require('./outboundDispatcher');
 const logger = require('../logger');
@@ -35,6 +35,84 @@ const { isPhase2ShadowModeEnabled, runShadowEvaluationSafely } = require('../rea
 const { VERIFICATION_OUTCOME } = require('../reasoning/contracts');
 const isUnifiedSemanticPipelineEnabled = () => false;
 const processUnifiedTurn = null;
+
+function appendConciseTurnHistory(existingHistory = [], userQuery = '', assistantAnswer = '') {
+  const prev = Array.isArray(existingHistory) ? existingHistory.slice(-3) : [];
+  const next = [...prev];
+  if (userQuery && String(userQuery).trim()) {
+    next.push({ role: 'user', content: String(userQuery).trim().slice(0, 150) });
+  }
+  if (assistantAnswer && String(assistantAnswer).trim()) {
+    next.push({ role: 'assistant', content: String(assistantAnswer).trim().slice(0, 150) });
+  }
+  return next.slice(-4);
+}
+
+/**
+ * Selects up to maxCount chunks from accepted evidence while preserving
+ * balanced representation across all targetEntities.
+ */
+function selectBalancedEvidenceByEntity(accepted = [], targetEntities = [], maxCount = 10) {
+  if (!Array.isArray(accepted) || accepted.length <= maxCount) {
+    return Array.isArray(accepted) ? [...accepted] : [];
+  }
+  if (!Array.isArray(targetEntities) || targetEntities.length <= 1) {
+    return accepted.slice(0, maxCount);
+  }
+
+  const buckets = new Map();
+  for (const ent of targetEntities) {
+    buckets.set(ent, []);
+  }
+  const generalBucket = [];
+
+  for (const chunk of accepted) {
+    const supported = Array.isArray(chunk.supportedEntities) ? chunk.supportedEntities : [];
+    let matchedAny = false;
+    for (const ent of targetEntities) {
+      if (supported.some(s => String(s).toLowerCase() === String(ent).toLowerCase())) {
+        buckets.get(ent).push(chunk);
+        matchedAny = true;
+      }
+    }
+    if (!matchedAny) {
+      generalBucket.push(chunk);
+    }
+  }
+
+  const selected = [];
+  const seen = new Set();
+  let addedInRound = true;
+
+  while (selected.length < maxCount && addedInRound) {
+    addedInRound = false;
+    for (const ent of targetEntities) {
+      const list = buckets.get(ent) || [];
+      while (list.length > 0) {
+        const candidate = list.shift();
+        const key = candidate.id || candidate.chunkId || candidate.text || candidate;
+        if (!seen.has(key)) {
+          seen.add(key);
+          selected.push(candidate);
+          addedInRound = true;
+          break;
+        }
+      }
+      if (selected.length >= maxCount) break;
+    }
+  }
+
+  for (const chunk of [...generalBucket, ...accepted]) {
+    if (selected.length >= maxCount) break;
+    const key = chunk.id || chunk.chunkId || chunk.text || chunk;
+    if (!seen.has(key)) {
+      seen.add(key);
+      selected.push(chunk);
+    }
+  }
+
+  return selected;
+}
 
 /**
  * Processes a single turn inquiry through the orchestrator.
@@ -58,55 +136,96 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
     if (bridgeResult && bridgeResult.structuredRecommendation) {
       // Orchestrator owns synthesis, verification, fallback, context commit, and outbound dispatch for recommendations
       const recResult = bridgeResult.structuredRecommendation;
-      const topEntity = recResult.scoredCandidates[0]?.canonicalName || null;
+      const candidateEntities = (recResult.scoredCandidates || []).map(c => ({
+        canonical: c.canonicalName,
+        name: c.label || c.canonicalName,
+        programKey: c.programKey || c.program?.key,
+        type: 'program'
+      }));
+      const topEntity = null;
+      const baseSemanticFrame = recResult.semanticFrame || restOptions.semanticFrame || {};
       const frame = {
+        ...baseSemanticFrame,
         domain: 'ACADEMIC_RECOMMENDATION',
         intent: 'PROGRAM_RECOMMENDATION',
         rawQuery,
-        entities: topEntity ? [{ canonical: topEntity }] : []
+        entities: candidateEntities
       };
 
+      const arbitratedForRec = bridgeResult.arbitratedEvidence ||
+        bridgeResult.subQueryResults?.[0]?.arbitrated ||
+        { accepted: [] };
+      const synthOpts = { ...arbitratedForRec };
+      if (restOptions && restOptions.aiEngine) synthOpts.aiEngine = restOptions.aiEngine;
+      if (restOptions && restOptions.budgetLedger) synthOpts.budgetLedger = restOptions.budgetLedger;
+      if (restOptions && restOptions.fastFallback) synthOpts.fastFallback = true;
+      if (restOptions && restOptions.signal) synthOpts.signal = restOptions.signal;
+
+      const recAnswerability = evaluateAnswerability(frame, arbitratedForRec);
       let finalAnswer = null;
       let recVerification = null;
-      const synthRes = await synthesizeAnswer(frame, {}, null, recResult);
 
-      if (synthRes && synthRes.success && synthRes.answer) {
-        const verifRes = verifyFinalAnswer(synthRes.answer, frame, {}, null, recResult);
-        if (verifRes && (verifRes.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || verifRes.pass)) {
-          finalAnswer = synthRes.answer;
-          recVerification = verifRes;
-        } else if (verifRes && verifRes.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN) {
-          finalAnswer = synthRes.answer;
-          recVerification = verifRes;
+      if (
+        recAnswerability.status === ANSWERABILITY_STATUS.ANSWERABLE ||
+        recAnswerability.status === ANSWERABILITY_STATUS.PARTIAL ||
+        recAnswerability.status === ANSWERABILITY_STATUS.CLARIFY
+      ) {
+        const synthRes = await synthesizeAnswer(frame, synthOpts, null, recResult);
+
+        if (synthRes && synthRes.success && synthRes.answer) {
+          const verifRes = verifyFinalAnswer(synthRes.answer, frame, arbitratedForRec, null, recResult);
+          if (verifRes && (verifRes.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || verifRes.pass)) {
+            finalAnswer = synthRes.answer;
+            recVerification = verifRes;
+          } else if (verifRes && verifRes.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN) {
+            finalAnswer = synthRes.answer;
+            recVerification = verifRes;
+          } else {
+            logger.warn({ reason: verifRes ? verifRes.reason : 'unknown' }, '[Orchestrator] Recommendation answer blocked by verifier');
+            finalAnswer = 'Mohon maaf, rekomendasi program studi belum dapat dipastikan secara lengkap saat ini. Silakan berkonsultasi langsung dengan admisi PMB ITB STIKOM Bali.';
+            recVerification = {
+              pass: false,
+              outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+              interceptedFrom: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
+              isInterception: true,
+              status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+              reason: verifRes?.reason || 'recommendation_blocked_escalation',
+              isGrounded: false,
+              handledSafely: true
+            };
+          }
         } else {
-          logger.warn({ reason: verifRes ? verifRes.reason : 'unknown' }, '[Orchestrator] Recommendation answer blocked by verifier');
-          finalAnswer = 'Mohon maaf, rekomendasi program studi belum dapat dipastikan secara lengkap saat ini. Silakan berkonsultasi langsung dengan admisi PMB ITB STIKOM Bali.';
+          finalAnswer = synthRes?.answer || recAnswerability.guidance || 'Mohon maaf, rekomendasi program studi belum dapat dipastikan dari dokumen kurikulum yang tersedia saat ini. Silakan berkonsultasi langsung dengan admisi PMB ITB STIKOM Bali.';
           recVerification = {
             pass: false,
-            outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
-            interceptedFrom: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
-            isInterception: true,
-            status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
-            reason: verifRes?.reason || 'recommendation_blocked_escalation',
+            outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+            interceptedFrom: null,
+            isInterception: false,
+            status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+            reason: synthRes?.reason || 'recommendation_synthesis_failed',
             isGrounded: false,
             handledSafely: true
           };
         }
       } else {
-        finalAnswer = 'Mohon maaf, rekomendasi program studi belum dapat diproses.';
+        finalAnswer = recAnswerability.guidance || 'Mohon maaf Kak, informasi kurikulum resmi untuk minat tersebut belum dapat diverifikasi dari dokumen yang tersedia saat ini. Silakan berkonsultasi langsung dengan bagian admisi PMB ITB STIKOM Bali ya.';
         recVerification = {
           pass: false,
           outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
           interceptedFrom: null,
           isInterception: false,
           status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
-          reason: 'recommendation_synthesis_failed',
+          reason: recAnswerability.reason || 'insufficient_recommendation_evidence',
           isGrounded: false,
           handledSafely: true
         };
       }
 
       bridgeResult.finalAnswer = finalAnswer;
+      bridgeResult.text = finalAnswer;
+      bridgeResult.domain = frame.domain;
+      bridgeResult.intent = frame.intent;
+      bridgeResult.semanticFrame = frame;
       if (bridgeResult.subQueryResults && bridgeResult.subQueryResults[0]) {
         bridgeResult.subQueryResults[0].answer = finalAnswer;
         bridgeResult.subQueryResults[0].verification = recVerification;
@@ -118,13 +237,16 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
       const canSend = turnControl ? turnControl.canDispatch('phase2') : true;
 
       if (!isShadowMode && chatId && canCommit) {
+        const existingSession = await getSession(chatId);
+        const prevHist = existingSession?.data?.conversationHistory || [];
         await updateSession(chatId, {
           dataPatch: {
             activeDomain: 'academic_recommendation',
             activeEntity: topEntity,
             recommendationRelations: recResult.contextRelations,
             lastQuery: rawQuery,
-            lastAnswer: finalAnswer
+            lastAnswer: finalAnswer,
+            conversationHistory: appendConciseTurnHistory(prevHist, rawQuery, finalAnswer)
           }
         });
       }
@@ -182,6 +304,10 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
       }
 
       bridgeResult.finalAnswer = finalAnswer;
+      bridgeResult.text = finalAnswer;
+      bridgeResult.domain = frame.domain;
+      bridgeResult.intent = frame.intent;
+      bridgeResult.semanticFrame = frame;
       if (bridgeResult.subQueryResults && bridgeResult.subQueryResults[0]) {
         bridgeResult.subQueryResults[0].answer = finalAnswer;
         bridgeResult.subQueryResults[0].verification = compVerification;
@@ -194,6 +320,8 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
 
       if (!isShadowMode && chatId && bridgeResult.plan && bridgeResult.plan.contextDelta && bridgeResult.plan.contextDelta.resolvedState && canCommit) {
         const deltaState = bridgeResult.plan.contextDelta.resolvedState;
+        const existingSession = await getSession(chatId);
+        const prevHist = existingSession?.data?.conversationHistory || [];
         await updateSession(chatId, {
           dataPatch: {
             activeDomain: deltaState.activeDomain,
@@ -201,7 +329,8 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
             preservedBackgroundEntity: deltaState.preservedBackgroundEntity,
             entityProvenance: deltaState.entityProvenance,
             lastQuery: rawQuery,
-            lastAnswer: finalAnswer
+            lastAnswer: finalAnswer,
+            conversationHistory: appendConciseTurnHistory(prevHist, rawQuery, finalAnswer)
           }
         });
       }
@@ -219,7 +348,7 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
   // Phase 2 is disabled. Check if Shadow Mode is enabled.
   if (isPhase2ShadowModeEnabled() && !isShadowMode) {
     const p1StartTime = Date.now();
-    const p1Result = await runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatch, executionMode });
+    const p1Result = await runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatch, executionMode, ...restOptions });
     const p1LatencyMs = Date.now() - p1StartTime;
 
     // Fire asynchronously - never awaited by Phase 1 critical path
@@ -230,13 +359,13 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
         p1Result,
         p1LatencyMs,
         phase1PipelineFn: runPhase1DeterministicPipeline
-      }).catch(() => {});
+      }).catch(() => { });
     });
 
     return p1Result;
   }
 
-  return runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatch, executionMode });
+  return runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatch, executionMode, ...restOptions });
 }
 
 /**
@@ -439,8 +568,11 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     const plan = buildRetrievalPlan(frame);
     frame.retrievalPlan = plan;
 
-    // 3. Stage A: Wide Candidate Recall (fetch top 16 candidates)
-    const candidates = await retrieveCandidates(plan, { topK: 16 });
+    // 3. Stage A: Wide Candidate Recall (scale topK for multi-entity queries)
+    const candidateTopK = Array.isArray(plan.targetEntities) && plan.targetEntities.length > 1
+      ? Math.max(16, plan.targetEntities.length * 10)
+      : 16;
+    const candidates = await retrieveCandidates(plan, { topK: candidateTopK });
 
     // 4. Stage B: Strict Evidence Arbitration (Hard Entity Lock, Temporal, Aspect)
     const arbitrated = arbitrateEvidence(candidates, plan);
@@ -448,7 +580,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     arbitrated.sessionData = sessionData;
     arbitrated.rawAccepted = [...arbitrated.accepted];
     if (arbitrated.accepted.length > 10) {
-      arbitrated.accepted = arbitrated.accepted.slice(0, 10);
+      arbitrated.accepted = selectBalancedEvidenceByEntity(arbitrated.accepted, plan.targetEntities, 10);
     }
 
     // 5. Evaluate Answerability
@@ -465,32 +597,54 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       handledSafely: false
     };
 
-    if (answerability.status === ANSWERABILITY_STATUS.ANSWERABLE || answerability.status === ANSWERABILITY_STATUS.PARTIAL) {
+    let recResult = null;
+    if (frame.domain === 'ACADEMIC_RECOMMENDATION' || frame.intent === 'PROGRAM_RECOMMENDATION') {
+      const { evaluateRecommendation } = require('../reasoning/recommendationEngine');
+      recResult = evaluateRecommendation(frame.rawQuery, options, frame, arbitrated.accepted);
+    }
+
+    if (
+      answerability.status === ANSWERABILITY_STATUS.ANSWERABLE ||
+      answerability.status === ANSWERABILITY_STATUS.PARTIAL ||
+      answerability.status === ANSWERABILITY_STATUS.CLARIFY
+    ) {
       // 6. Grounded LLM Synthesis
-      const synthOpts = { ...arbitrated, sessionData };
+      const synthOpts = { ...arbitrated, sessionData, recommendationResult: recResult };
+      if (options && options.aiEngine) synthOpts.aiEngine = options.aiEngine;
+      if (options && options.budgetLedger) synthOpts.budgetLedger = options.budgetLedger;
       if (options && options.fastFallback) synthOpts.fastFallback = true;
       if (options && options.signal) synthOpts.signal = options.signal;
       const synthFn = groundedAnswerGenerator.synthesizeAnswer || synthesizeAnswer;
-      const synthesis = await synthFn(frame, synthOpts);
-      if (synthesis.success && synthesis.answer) {
+      const synthesis = await synthFn(frame, synthOpts, null, recResult);
+      if (synthesis && synthesis.success && synthesis.answer) {
         // 7. Universal Final Verification
         const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
-        verification = verifFn(synthesis.answer, frame, arbitrated);
+        verification = verifFn(synthesis.answer, frame, arbitrated, null, recResult);
+        answer = synthesis.answer;
 
         // Deterministic Recovery if synthesis failed verification or yielded unjustified SAFE_UNKNOWN on ANSWERABLE turn
         const isUnjustifiedSafeUnknown = verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN &&
           answerability.status === ANSWERABILITY_STATUS.ANSWERABLE;
 
         if (verification.outcome === VERIFICATION_OUTCOME.VERIFICATION_FAILED || isUnjustifiedSafeUnknown) {
-          logger.warn({ reason: verification.reason, outcome: verification.outcome }, '[Orchestrator] Synthesized answer flagged by verifier, attempting deterministic recovery');
-          const rawRecovery = groundedAnswerGenerator.buildGroundedDeterministicSummary(frame, arbitrated.accepted, arbitrated);
-          const recoverySummary = typeof rawRecovery === 'object' && rawRecovery !== null ? (rawRecovery.answer || rawRecovery.text) : rawRecovery;
-          if (recoverySummary) {
-            const recoveryVerif = verifFn(recoverySummary, frame, arbitrated);
+          logger.warn({ reason: verification.reason, outcome: verification.outcome }, '[Orchestrator] Synthesized answer flagged by verifier, attempting generic extractive recovery');
+          let recovered = false;
+          const extractiveRecovery = (groundedAnswerGenerator.buildGenericExtractiveFallback || buildGenericExtractiveFallback)(frame, arbitrated.accepted, synthOpts);
+          if (extractiveRecovery && extractiveRecovery.success && extractiveRecovery.answer) {
+            const recoveryVerif = verifFn(extractiveRecovery.answer, frame, arbitrated, null, recResult);
             if (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.pass) {
-              answer = recoverySummary;
-              verification = recoveryVerif;
+              answer = extractiveRecovery.answer;
+              verification = {
+                ...recoveryVerif,
+                source: 'generic_extractive_fallback',
+                isGrounded: true,
+                handledSafely: true
+              };
+              recovered = true;
             }
+          }
+          if (!recovered && verification.outcome === VERIFICATION_OUTCOME.VERIFICATION_FAILED) {
+            answer = null;
           }
         }
 
@@ -513,25 +667,35 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
           }
         }
       } else {
-        const rawRecovery = buildGroundedDeterministicSummary(frame, arbitrated.accepted, arbitrated);
-        const recoverySummary = typeof rawRecovery === 'object' && rawRecovery !== null ? (rawRecovery.answer || rawRecovery.text) : rawRecovery;
-        if (recoverySummary) {
+        const extractiveFallback = (groundedAnswerGenerator.buildGenericExtractiveFallback || buildGenericExtractiveFallback)(frame, arbitrated.accepted, arbitrated);
+        if (extractiveFallback && extractiveFallback.answer) {
           const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
-          const recoveryVerif = verifFn(recoverySummary, frame, arbitrated);
-          if (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.pass || recoveryVerif.outcome === VERIFICATION_OUTCOME.ESCALATION_GUIDANCE) {
-            answer = recoverySummary;
-            verification = recoveryVerif;
+          const recoveryVerif = verifFn(extractiveFallback.answer, frame, arbitrated);
+          if (extractiveFallback.success && (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.pass)) {
+            answer = extractiveFallback.answer;
+            verification = {
+              ...recoveryVerif,
+              source: 'generic_extractive_fallback',
+              isGrounded: true,
+              handledSafely: true
+            };
+          } else {
+            answer = extractiveFallback.answer;
+            verification = {
+              pass: false,
+              outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+              status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+              reason: 'generic_extractive_unverified',
+              isGrounded: false,
+              handledSafely: true
+            };
           }
         }
         if (!answer) {
-          const isAdvisingInquiry = frame.domain === 'ACADEMIC_PROCESS' ||
-            frame.intent === 'ACADEMIC_ADVISING_INQUIRY' ||
-            /\b(?:perwalian|dosen\s*wali|bimbingan\s+perwalian)\b/i.test(frame.rawQuery || '');
-          if (isAdvisingInquiry) {
-            answer = answerability.guidance || 'Bimbingan perwalian dengan Dosen Wali di ITB STIKOM Bali merupakan proses akademik wajib sebelum perkuliahan semester baru untuk menyetujui Kartu Rencana Studi (KRS). Rincian prosedur resmi penanganan keterlambatan perwalian maupun kontak bantuan teknis belum dapat dipastikan dari dokumen resmi yang terverifikasi saat ini. Mahasiswa disarankan untuk langsung berkonsultasi dengan Dosen Wali masing-masing atau menghubungi Bagian Layanan Akademik (BAAK) ITB STIKOM Bali.';
-          } else {
-            answer = answerability.guidance || 'Informasi resmi mengenai hal tersebut belum tercantum secara lengkap dalam panduan yang tersedia.';
-          }
+          const isEn = frame.language === 'en' || frame.detectedLanguage === 'en';
+          answer = answerability.guidance || (isEn
+            ? 'I apologize, but verified official information regarding this matter is currently not available in our records. Please contact campus admissions or the relevant department directly.'
+            : 'Mohon maaf Kak, informasi resmi mengenai hal tersebut saat ini belum dapat diverifikasi dari dokumen yang tersedia. Silakan hubungi bagian admisi atau layanan informasi kampus ITB STIKOM Bali untuk konfirmasi langsung ya.');
           verification = {
             pass: false,
             outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
@@ -545,7 +709,10 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         }
       }
     } else if (answerability.status === ANSWERABILITY_STATUS.ESCALATE) {
-      answer = answerability.guidance || 'Untuk kendala perwalian atau administrasi, silakan menghubungi dosen wali atau bagian akademik kampus.';
+      const isEn = frame.language === 'en' || frame.detectedLanguage === 'en';
+      answer = answerability.guidance || (isEn
+        ? 'For further assistance regarding this matter, please contact campus services or the relevant academic department directly.'
+        : 'Untuk bantuan lebih lanjut mengenai hal tersebut, silakan hubungi bagian layanan informasi atau akademik kampus langsung ya.');
       verification = {
         pass: false,
         outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
@@ -623,9 +790,16 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     let newActiveEntity = null;
     let newPreservedEntity = sessionData.preservedBackgroundEntity || null;
 
-    if (primaryFrame.entities.length > 0) {
+    const isGeneralPmbOrCatalog = ['CURRENT_ENROLLMENT_STATUS', 'ADMISSION_SCHEDULE', 'GENERAL_PMB_INQUIRY', 'AVAILABLE_PROGRAMS_LIST'].includes(primaryFrame.intent) || primaryFrame.topicContinuity === 'NEW_TOPIC';
+
+    if (Array.isArray(primaryFrame.entities) && primaryFrame.entities.length > 0) {
       newActiveEntity = primaryFrame.entities[0].canonical;
       newPreservedEntity = null;
+    } else if (isGeneralPmbOrCatalog) {
+      newActiveEntity = null;
+      if (sessionData.activeEntity) {
+        newPreservedEntity = sessionData.activeEntity;
+      }
     } else if (primaryFrame.domain === 'INTERNATIONAL') {
       const isDD = /\b(double\s*degree|dual\s*degree)\b/i.test(rawQuery);
       const isExchange = /\b(student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|gccp)\b/i.test(rawQuery);
@@ -635,19 +809,15 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       else if (isExchange) newActiveEntity = 'Student Exchange';
       else newActiveEntity = sessionData.activeEntity || null;
       newPreservedEntity = null;
-    } else if (isCampusWide) {
-      if (primaryFrame.intent === 'CONTACT_INQUIRY' && sessionData.activeEntity) {
-        newActiveEntity = sessionData.activeEntity;
-      } else {
-        // Campus-wide query without explicit entity: isolate activeEntity to background
-        newActiveEntity = null;
-        if (sessionData.activeEntity) {
-          newPreservedEntity = sessionData.activeEntity;
-        }
+    } else if (isCampusWide || primaryFrame.intent === 'CONTACT_INQUIRY' || primaryFrame.intent === 'PMB_CONTACT_INQUIRY') {
+      // Campus-wide query without explicit entity: isolate activeEntity to background
+      newActiveEntity = null;
+      if (sessionData.activeEntity) {
+        newPreservedEntity = sessionData.activeEntity;
       }
     } else if (primaryFrame.domain === sessionData.activeDomain ||
-               ['ACADEMIC_CURRICULUM', 'TUITION_FEE', 'ACADEMIC_PROGRAM', 'ACADEMIC_ADMISSION', 'PMB', 'INTERNATIONAL'].includes(primaryFrame.domain) ||
-               ['CONTACT_INQUIRY', 'ADMISSION_PROCEDURE', 'ADMISSION_REQUIREMENTS'].includes(primaryFrame.intent)) {
+      ['ACADEMIC_CURRICULUM', 'TUITION_FEE', 'ACADEMIC_PROGRAM', 'ACADEMIC_ADMISSION', 'PMB', 'INTERNATIONAL'].includes(primaryFrame.domain) ||
+      ['ADMISSION_PROCEDURE', 'ADMISSION_REQUIREMENTS'].includes(primaryFrame.intent)) {
       newActiveEntity = sessionData.activeEntity || null;
     } else {
       newActiveEntity = null;
@@ -677,7 +847,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         preservedBackgroundEntity: newPreservedEntity,
         lastActiveWave: currentWave || sessionData.lastActiveWave || null,
         lastQuery: rawQuery,
-        lastAnswer: finalAnswer
+        lastAnswer: finalAnswer,
+        conversationHistory: appendConciseTurnHistory(sessionData.conversationHistory || [], rawQuery, finalAnswer)
       }
     });
   }
@@ -689,7 +860,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
 
   const primaryStatus = subQueryResults[0]?.status ||
     (subQueryResults[0]?.frame?.domain === 'UNSUPPORTED_PROGRAM' ? 'unsupported_program' :
-     (subQueryResults[0]?.frame?.domain === 'OUT_OF_DOMAIN' ? 'out_of_domain' : undefined));
+      (subQueryResults[0]?.frame?.domain === 'OUT_OF_DOMAIN' ? 'out_of_domain' : undefined));
 
   const hasCorpusGap = subQueryResults.some(s =>
     s.status === 'corpus_gap' ||
@@ -807,5 +978,6 @@ async function handleInboundMessage(body = {}, { executeDispatch = true } = {}) 
 module.exports = {
   processTurn,
   handleInboundMessage,
-  runPhase1DeterministicPipeline
+  runPhase1DeterministicPipeline,
+  selectBalancedEvidenceByEntity
 };

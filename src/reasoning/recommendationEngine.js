@@ -3,33 +3,31 @@
 /**
  * src/reasoning/recommendationEngine.js
  *
- * Phase 2 Step 7: Deterministic Recommendation Engine & Scoring Contract.
+ * Wave 2 Generalization:
+ * Grounded Curriculum Profile Gathering & Neutral Recommendation Contract.
  *
  * Architectural Invariants:
- * 1. Single Grounding Authority: Consumes official programs and signals from src/engine/programFitReasoning.js.
- * 2. Strict Score Authority: Uses rawScore and confidence exclusively. No normalizedScore, no magic multipliers.
- * 3. Candidate Ordering: Descending by rawScore, with Unicode code-point tie-breaking via compareCodePoints(a.canonicalName, b.canonicalName).
- * 4. Presentation Type: Single deterministic rule with RAW_SCORE_DOMINANT_THRESHOLD = 2.0 (authorized Step 7 contract):
- *    - BROAD_GUIDANCE: isBroadGuidance || candidates.length === 0
- *    - DOMINANT_SINGLE: candidates.length === 1 || rawGap >= 2.0
- *    - BALANCED_DUAL: rawGap < 2.0
- * 5. Separation of Concerns: recommendationEngine produces structured data (StructuredRecommendationResult) exclusively.
- *    Natural language rendering is owned by the orchestration/synthesis lifecycle in src/core/groundedAnswerGenerator.js.
- * 6. Mandatory Non-Absolute Invariant: Forbids absolute claims ("pasti cocok", "pasti pilih") and mandates PMB advisory.
+ * 1. Single Grounding Authority: Consumes official programs and curriculum profiles
+ *    from src/engine/programFitReasoning.js.
+ * 2. Zero Heuristic Winner Crowning: Does NOT use static or heuristic scores, match-count
+ *    bonuses, or gap thresholds to pre-select a single winning major before AI synthesis.
+ * 3. Neutral Curriculum Representation: Assembles official curriculum profiles for relevant
+ *    programs so the single AI synthesis stage can compare user semantic needs against
+ *    official curriculum evidence, or so the fallback can present curriculum profiles neutrally.
+ * 4. Separation of Concerns: recommendationEngine produces structured curriculum context
+ *    (StructuredRecommendationResult) exclusively. Natural language synthesis and fallback
+ *    rendering are owned by groundedAnswerGenerator.js.
+ * 5. Mandatory Non-Absolute Invariant: Forbids absolute claims ("pasti cocok", "pasti pilih")
+ *    and mandates PMB advisory.
  */
 
 const {
   PROGRAMS,
-  SIGNALS,
   detectProgramFitSignals,
-  isBroadSchoolBackgroundWithoutSpecificPreference,
-  buildBroadBackgroundProgramGuidanceAnswer
+  isBroadSchoolBackgroundWithoutSpecificPreference
 } = require('../engine/programFitReasoning');
 
 const { validateProgramFeature } = require('./contracts');
-
-// Authorized Step 7 contract constant (derived from base score delta: primary 4 - alternative 2 = 2.0)
-const RAW_SCORE_DOMINANT_THRESHOLD = 2.0;
 
 // Canonical program names mapping
 const PROGRAM_KEY_TO_CANONICAL = Object.freeze({
@@ -54,72 +52,82 @@ function compareCodePoints(strA, strB) {
 }
 
 /**
- * Normalizes colloquial Indonesian query text for reliable signal detection
- * without altering semantic meaning (e.g. medsos -> sosmed, tiktok -> konten sosmed)
+ * Normalizes query text for whitespace and casing
  */
 function normalizeQueryForSignals(queryText) {
   return String(queryText || '')
     .toLowerCase()
-    .replace(/\bmedsos\b/gi, 'sosmed')
-    .replace(/\btiktok\b/gi, 'konten sosmed')
-    .replace(/\blive\s+streaming\b/gi, 'streaming konten')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
 /**
- * Evaluates candidate scores deterministically from detected signals
+ * Assembles neutral curriculum candidate profiles from detected signals.
+ * Does NOT assign heuristic or static fallback scores when signal.weights is absent.
  */
-function computeCandidateScores(signals) {
-  const scoreMap = new Map();
+function computeCandidateScores(signals, options = {}) {
+  const allowNeutralProfiles = Boolean(options.allowNeutralProfiles);
+  const profileMap = new Map();
 
   for (const signal of signals) {
-    signal.candidates.forEach(([programKey, level, reason], index) => {
-      const base = level === 'primary' ? 4 : level === 'alternative' ? 2 : 1;
-      const score = base + Math.max(0, 3 - index) * 0.1;
+    if (!signal || !Array.isArray(signal.candidates)) continue;
+    const isNeutralCatalogSignal = signal.key === 'official_curriculum_profiles' || allowNeutralProfiles;
+
+    signal.candidates.forEach(([programKey, level, reason]) => {
       const progMeta = PROGRAMS[programKey];
       if (!progMeta) return;
 
-      if (!scoreMap.has(programKey)) {
-        scoreMap.set(programKey, {
+      const canonicalName = PROGRAM_KEY_TO_CANONICAL[programKey] || progMeta.canonicalName || progMeta.label;
+      const rawWeight = signal.weights
+        ? (signal.weights[canonicalName] !== undefined ? signal.weights[canonicalName] : signal.weights[programKey])
+        : undefined;
+      const hasExplicitWeight = typeof rawWeight === 'number' && Number.isFinite(rawWeight) && rawWeight > 0;
+
+      // Do not fabricate static scores for unweighed signals unless neutral profile gathering is active
+      if (!hasExplicitWeight && !isNeutralCatalogSignal) {
+        return;
+      }
+
+      if (!profileMap.has(programKey)) {
+        profileMap.set(programKey, {
           programKey,
-          canonicalName: PROGRAM_KEY_TO_CANONICAL[programKey] || progMeta.label,
+          canonicalName,
           label: progMeta.label,
           type: progMeta.type,
           grounding: progMeta.grounding,
           strengths: progMeta.strengths || [],
-          rawScore: 0,
+          studyFocus: progMeta.curriculumProfile?.studyFocus || progMeta.strengths.join(', '),
+          suitableFor: progMeta.curriculumProfile?.suitableFor || '',
+          careerProspects: progMeta.curriculumProfile?.careerProspects || '',
+          rawScore: hasExplicitWeight ? Number(rawWeight.toFixed(4)) : null,
           levels: [],
           reasons: [],
           signals: []
         });
       }
 
-      const entry = scoreMap.get(programKey);
-      entry.rawScore = Number((entry.rawScore + score).toFixed(4));
-      entry.levels.push(level);
+      const entry = profileMap.get(programKey);
+      if (hasExplicitWeight) {
+        entry.rawScore = entry.rawScore !== null
+          ? Number(Math.max(entry.rawScore, rawWeight).toFixed(4))
+          : Number(rawWeight.toFixed(4));
+      }
+      entry.levels.push(level || 'candidate');
       entry.reasons.push(reason);
       entry.signals.push(signal.label);
     });
   }
 
-  // Convert to candidate array and apply authorized candidate ordering
-  return Array.from(scoreMap.values())
+  return Array.from(profileMap.values())
     .map((entry) => ({
       ...entry,
-      confidence: entry.rawScore >= 4 ? 'HIGH' : entry.rawScore >= 2 ? 'MEDIUM' : 'LOW',
-      level: entry.levels.includes('primary') ? 'primary' : (entry.levels.includes('alternative') ? 'alternative' : 'supporting'),
+      confidence: 'NEUTRAL',
+      level: 'candidate',
       signals: Array.from(new Set(entry.signals)),
       levels: Array.from(new Set(entry.levels)),
       reasons: Array.from(new Set(entry.reasons))
     }))
-    .sort((a, b) => {
-      const scoreDiff = b.rawScore - a.rawScore;
-      if (Math.abs(scoreDiff) > 1e-9) {
-        return scoreDiff;
-      }
-      return compareCodePoints(a.canonicalName, b.canonicalName);
-    })
+    .sort((a, b) => compareCodePoints(a.canonicalName, b.canonicalName))
     .map((cand, idx) => ({
       ...cand,
       rank: idx + 1
@@ -127,62 +135,72 @@ function computeCandidateScores(signals) {
 }
 
 /**
- * Classifies presentation type using the authorized single deterministic rule
+ * Classifies presentation mode without crowning a single winner via heuristic score thresholds.
+ * - BROAD_GUIDANCE: broad or ambiguous inquiry, or no candidate curriculum profiles
+ * - NEUTRAL_CURRICULUM_OVERVIEW: multiple (or single) curriculum profiles assembled neutrally
+ *   for AI grounded synthesis or neutral fallback comparison.
  */
-function classifyPresentationType(isBroadGuidance, sortedCandidates) {
-  if (isBroadGuidance || !Array.isArray(sortedCandidates) || sortedCandidates.length === 0) {
+function classifyPresentationType(isBroadGuidance, sortedCandidates, semanticFrame = {}) {
+  if (
+    isBroadGuidance ||
+    semanticFrame?.ambiguityLevel === 'HIGH' ||
+    !Array.isArray(sortedCandidates) ||
+    sortedCandidates.length === 0
+  ) {
     return 'BROAD_GUIDANCE';
   }
 
-  if (sortedCandidates.length === 1) {
-    return 'DOMINANT_SINGLE';
-  }
-
-  const rawGap = sortedCandidates[0].rawScore - sortedCandidates[1].rawScore;
-
-  if (rawGap >= RAW_SCORE_DOMINANT_THRESHOLD) {
-    return 'DOMINANT_SINGLE';
-  }
-
-  return 'BALANCED_DUAL';
+  return 'NEUTRAL_CURRICULUM_OVERVIEW';
 }
 
 /**
- * Evaluates user query and produces StructuredRecommendationResult
+ * Evaluates user query and produces StructuredRecommendationResult containing
+ * official curriculum profiles and parsed semantic frame without pre-locking a winning major.
  *
  * @param {string} rawQuery
  * @param {object} options
+ * @param {object} [semanticFrameArg]
+ * @param {Array} [evidenceListArg]
  * @returns {object} StructuredRecommendationResult
  */
-function evaluateRecommendation(rawQuery, options = {}) {
+function evaluateRecommendation(rawQuery, options = {}, semanticFrameArg = null, evidenceListArg = null) {
   const query = String(rawQuery || '').trim();
-  const maxCandidates = Number.isFinite(options.maxCandidates) ? options.maxCandidates : 3;
+  const semanticFrame = semanticFrameArg || options.semanticFrame || {};
+  const evidenceList = evidenceListArg || options.evidenceList || options.accepted || [];
 
-  // 1. Broad School Background Check (e.g. SMK Komputer without specific career/hobby preference)
-  const isBroad = isBroadSchoolBackgroundWithoutSpecificPreference(query, options);
+  // 1. Broad / Ambiguous Check
+  const isAmbiguous = semanticFrame?.ambiguityLevel === 'HIGH';
+  const isBroad = isAmbiguous || isBroadSchoolBackgroundWithoutSpecificPreference(query, {
+    ...options,
+    canonical: semanticFrame
+  });
 
-  // 2. Extract Signals with Normalized Wording
+  // 2. Gather Official Curriculum Profiles Neutrally (No regex/heuristic winner scoring)
   const normalizedQuery = normalizeQueryForSignals(query);
-  const detectedRawSignals = detectProgramFitSignals(normalizedQuery);
+  const detectedRawSignals = isBroad
+    ? []
+    : detectProgramFitSignals(normalizedQuery, semanticFrame, evidenceList);
 
   // 3. Transform signals and validate against validateProgramFeature
   const detectedSignals = detectedRawSignals.map((sig) => {
     const weights = {};
-    sig.candidates.forEach(([progKey, level, reason], index) => {
-      const canonical = PROGRAM_KEY_TO_CANONICAL[progKey] || progKey;
-      const base = level === 'primary' ? 4 : level === 'alternative' ? 2 : 1;
-      weights[canonical] = Number((base + Math.max(0, 3 - index) * 0.1).toFixed(2));
-    });
+    if (sig.weights && typeof sig.weights === 'object') {
+      for (const [k, v] of Object.entries(sig.weights)) {
+        const canonical = PROGRAM_KEY_TO_CANONICAL[k] || k;
+        if (typeof v === 'number' && Number.isFinite(v) && v > 0) {
+          weights[canonical] = Number(v.toFixed(2));
+        }
+      }
+    }
 
     const feature = {
       featureKey: sig.key,
       label: sig.label,
-      evidenceSource: 'Pedoman Akademik & Kurikulum Resmi ITB STIKOM Bali',
-      evidenceSnippet: sig.candidates.map(([k, lvl, r]) => `${PROGRAM_KEY_TO_CANONICAL[k] || k}: ${r}`).join('; '),
+      evidenceSource: sig.evidenceSource || 'Pedoman Akademik & Kurikulum Resmi ITB STIKOM Bali',
+      evidenceSnippet: sig.evidenceSnippet || sig.candidates.map(([k, , r]) => `${PROGRAM_KEY_TO_CANONICAL[k] || k}: ${r}`).join('; '),
       weights
     };
 
-    // Strict validation against Step 1 Contract
     const validation = validateProgramFeature(feature);
     if (!validation.valid) {
       throw new Error(`[RecommendationEngine] Feature contract violation: ${validation.reason}`);
@@ -191,44 +209,44 @@ function evaluateRecommendation(rawQuery, options = {}) {
     return feature;
   });
 
-  // 4. Compute Candidates with authorized ordering & tie-breaking
-  const allCandidates = isBroad ? [] : computeCandidateScores(detectedRawSignals);
-  const scoredCandidates = allCandidates.slice(0, Math.max(1, maxCandidates));
+  // 4. Assemble Neutral Candidate Curriculum Profiles (deterministic code-point order, no winner ranking)
+  const scoredCandidates = isBroad
+    ? []
+    : computeCandidateScores(detectedRawSignals, { allowNeutralProfiles: true });
 
-  // 5. Classify Presentation Type (Single authorized rule)
-  const presentationType = classifyPresentationType(isBroad, scoredCandidates);
+  // 5. Classify Presentation Type (Never forces DOMINANT_SINGLE from heuristic scores)
+  const presentationType = classifyPresentationType(isBroad, scoredCandidates, semanticFrame);
 
-  // 6. Build Context Relations (for Step 4 context propagation)
+  // 6. Build Neutral Context Relations
   const contextRelations = [];
   if (scoredCandidates.length >= 2) {
     contextRelations.push({
       source: scoredCandidates[0].canonicalName,
-      relation: 'alternative',
+      relation: 'curriculum_option',
       target: scoredCandidates[1].canonicalName,
-      reason: scoredCandidates[1].reasons[0] || `Fokus pada ${scoredCandidates[1].strengths.slice(0, 3).join(', ')}`
+      reason: scoredCandidates[1].reasons[0] || `Fokus pada ${scoredCandidates[1].studyFocus}`
     });
   }
 
-  // 7. Structured Result (Pure structured data - no natural language rendering in engine)
   return {
     mode: 'RECOMMENDATION',
     query,
     isBroadGuidance: isBroad,
+    isAmbiguous,
+    semanticFrame: semanticFrameArg || options.semanticFrame || null,
     detectedSignals,
     scoredCandidates,
     presentationType,
     contextRelations,
     provenance: {
-      rule: 'DETERMINISTIC_RECOMMENDATION_V2',
-      dominantThreshold: RAW_SCORE_DOMINANT_THRESHOLD,
-      sourceAuthority: 'programFitReasoning_v1',
-      version: 'phase2-step7'
+      rule: 'AI_LED_CURRICULUM_SYNTHESIS_V3',
+      sourceAuthority: 'programFitReasoning_v2_neutral_profiles',
+      version: 'wave2-final'
     }
   };
 }
 
 module.exports = {
-  RAW_SCORE_DOMINANT_THRESHOLD,
   compareCodePoints,
   normalizeQueryForSignals,
   computeCandidateScores,

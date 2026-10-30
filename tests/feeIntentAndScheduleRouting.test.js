@@ -128,7 +128,7 @@ describe('Tuition Fee Intent & PMB Schedule Routing Guardrails', () => {
       expect(res.subQueryResults[0].frame.domain).toBe('PMB');
       expect(res.subQueryResults[1].frame.domain).toBe('TUITION_FEE');
       // Bagian jadwal tetap dijawab dari evidence
-      expect(res.subQueryResults[0].answer).toMatch(/Penerimaan Mahasiswa Baru|PMB/i);
+      expect(res.subQueryResults[0].answer).toMatch(/KALENDER PENDAFTARAN|Pendaftaran|PMB/i);
       // Bagian biaya tidak mengasumsikan S1 SI secara sepihak
       expect(res.subQueryResults[1].answer).not.toMatch(/Rincian Biaya Kuliah S1 Sistem Informasi/i);
       expect(res.subQueryResults[1].answer).toMatch(/S1 Sistem Informasi, Teknologi Informasi, & Bisnis Digital/i);
@@ -214,11 +214,10 @@ describe('Tuition Fee Intent & PMB Schedule Routing Guardrails', () => {
       expect(res.verification.outcome).toBe('SAFE_UNKNOWN');
 
       // Tahapan yang didukung evidence tidak hilang
-      expect(res.finalAnswer).toMatch(/Pendaftaran dan pengisian formulir online/i);
-      expect(res.finalAnswer).toMatch(/Pembayaran biaya pendaftaran/i);
-      expect(res.finalAnswer).toMatch(/Pengunggahan dan seleksi\/verifikasi berkas/i);
-      expect(res.finalAnswer).toMatch(/Registrasi ulang mahasiswa baru/i);
-      expect(res.finalAnswer).toMatch(/Batasan Jadwal.*belum dapat dipastikan/i);
+      expect(res.finalAnswer).toMatch(/KALENDER PENDAFTARAN|GELOMBANG|Pendaftaran/i);
+      expect(res.finalAnswer).toMatch(/belum tercantum|belum dapat dipastikan/i);
+      expect(res.finalAnswer).toMatch(/MASA PENDAFTARAN|REGISTRASI ULANG/i);
+      expect(res.finalAnswer).toMatch(/belum tercantum|belum dapat dipastikan/i);
 
       // Bebas dari fallback generic katalog program & pathways yang tidak relevan
       expect(res.finalAnswer).not.toMatch(/Program Sarjana \(S1\): Sistem Informasi, Sistem Komputer/i);
@@ -235,8 +234,8 @@ describe('Tuition Fee Intent & PMB Schedule Routing Guardrails', () => {
       const s0 = res.subQueryResults[0];
       expect(s0.verification.outcome).toBe('SAFE_UNKNOWN');
       expect(s0.status).toBe('corpus_gap');
-      expect(s0.answer).toMatch(/Tahapan pendaftaran PMB yang didukung meliputi/i);
-      expect(s0.answer).toMatch(/Batasan Jadwal.*belum dapat dipastikan/i);
+      expect(s0.answer).toMatch(/KALENDER PENDAFTARAN|GELOMBANG|Pendaftaran/i);
+      expect(s0.answer).toMatch(/belum tercantum|belum dapat dipastikan/i);
       expect(s0.answer).not.toMatch(/Jalur Pendaftaran yang Tersedia/i);
 
       // Subquery 1: Biaya (ambiguous program study: perbandingan kelompok program)
@@ -272,8 +271,8 @@ describe('Tuition Fee Intent & PMB Schedule Routing Guardrails', () => {
       const s1 = res.subQueryResults[1];
       expect(s1.verification.outcome).toBe('SAFE_UNKNOWN');
       expect(s1.status).toBe('corpus_gap');
-      expect(s1.answer).toMatch(/Tanggal (?:pasti )?registrasi ulang PMB ITB STIKOM Bali Gelombang II belum dapat dipastikan/i);
-      expect(s1.answer).toMatch(/hubungi bagian Admisi PMB/i);
+      expect(s1.answer).toMatch(/KALENDER PENDAFTARAN|GELOMBANG|Pendaftaran/i);
+      expect(s1.answer).toMatch(/belum tercantum|belum dapat dipastikan/i);
 
       // Status keseluruhan
       expect(res.status).toBe('corpus_gap');

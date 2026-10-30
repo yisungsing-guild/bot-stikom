@@ -51,20 +51,63 @@ function failVerification(reason, extra = {}) {
 }
 
 function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEvidence = {}, comparisonEnvelope = null, recommendationResult = null) {
-  if (recommendationResult && (recommendationResult.mode === 'RECOMMENDATION' || recommendationResult.provenance?.version === 'phase2-step7')) {
+  const isRecommendation = (recommendationResult && (recommendationResult.mode === 'RECOMMENDATION' || recommendationResult.provenance?.version === 'phase2-step7')) ||
+    (semanticFrame && (semanticFrame.domain === 'ACADEMIC_RECOMMENDATION' || semanticFrame.intent === 'PROGRAM_RECOMMENDATION'));
+
+  if (isRecommendation) {
     const text = String(candidateAnswer || '').trim();
     if (!text) {
       return failVerification('empty_answer');
     }
+    for (const pattern of RAW_DOCUMENT_LEAK_PATTERNS) {
+      if (pattern.test(text)) {
+        return failVerification('raw_document_metadata_leak_detected');
+      }
+    }
     if (/\bpasti\s+cocok\b/i.test(text) || /\bpasti\s+pilih\b/i.test(text)) {
       return failVerification('recommendation_absolute_claim_forbidden');
     }
+
+    // Verify that no unoffered study programs are recommended
+    const UNOFFERED_RECOMMENDATION_PROGRAMS = /\b(?:prodi|program\s+studi|jurusan|s1|d3|s2)\s+(?:kedokteran|teknik\s+sipil|teknik\s+mesin|teknik\s+elektro|hukum|ilmu\s+hukum|psikologi|farmasi|akuntansi|arsitektur|hubungan\s+internasional|sastra|keperawatan)\b/i;
+    if (UNOFFERED_RECOMMENDATION_PROGRAMS.test(text) && !/\b(?:tidak\s+diselenggarakan|tidak\s+tersedia|belum\s+tersedia)\b/i.test(text)) {
+      return failVerification('recommendation_mentions_unoffered_program');
+    }
+
+    const isExplicitAbstainInRec = /\b(belum\s+dapat\s+(?:dipastikan|diverifikasi)|tidak\s+dapat\s+(?:diverifikasi|dipastikan)|could\s+not\s+be\s+confirmed)\b/i.test(text);
+    if (isExplicitAbstainInRec) {
+      return {
+        pass: false,
+        outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+        status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+        reason: 'recommendation_insufficient_evidence_safe_unknown',
+        isGrounded: false,
+        handledSafely: true
+      };
+    }
+
+    const isBroadOrClarificationRec = Boolean(
+      recommendationResult?.isBroadGuidance ||
+      recommendationResult?.isAmbiguous ||
+      semanticFrame?.ambiguityLevel === 'HIGH' ||
+      semanticFrame?.isAmbiguous ||
+      /\b(?:Latar\s+belakang\s+sekolah\s+atau\s+minat\s+Kakak\s+bisa\s+masuk\s+ke\s+beberapa\s+program\s+studi|Supaya\s+rekomendasi\s+lebih\s+spesifik,\s+bidang\s+apa\s+yang\s+paling\s+Kakak\s+minati)\b/i.test(text)
+    );
+    if (
+      arbitratedEvidence &&
+      Array.isArray(arbitratedEvidence.accepted) &&
+      arbitratedEvidence.accepted.length === 0 &&
+      !isBroadOrClarificationRec
+    ) {
+      return failVerification('recommendation_lacks_accepted_evidence');
+    }
+
     const { sanitizeWhatsAppMarkdown } = require('./outboundRenderer');
     const sanitized = sanitizeWhatsAppMarkdown(candidateAnswer);
     if (sanitized !== candidateAnswer) {
       return failVerification('outbound_sanitizer_non_idempotent');
     }
-    if (!/admisi\s+PMB|ketentuan\s+resmi/i.test(text)) {
+    if (!/admisi\s+PMB|ketentuan\s+resmi|admisi/i.test(text)) {
       return failVerification('recommendation_lacks_pmb_advisory');
     }
     return {
@@ -233,7 +276,9 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
 
   // 3. Temporal Claim Grounding Check (Detect ungrounded currentness claims)
   const temporalClaimPattern = /\b(saat ini|sekarang|hari ini|masih buka|masih dibuka|masih tersedia|masih menerima|sudah tutup|telah ditutup|sedang aktif|berlaku aktif|currently|at present|now|still open|still active|closed)\b/i;
-  if (temporalClaimPattern.test(text) && !isUnsupported) {
+  const isSafeAdmissionsReferral = semanticFrame.intent === 'CURRENT_ENROLLMENT_STATUS' ||
+    /\b(?:portal\s+resmi\s+pmb|ruang\s+layanan\s+pmb|layanan\s+telepon\s+pmb|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
+  if (temporalClaimPattern.test(text) && !isUnsupported && !isSafeAdmissionsReferral) {
     // If the answer asserts a temporal claim, arbitrated evidence must exist
     if (!arbitratedEvidence.accepted || arbitratedEvidence.accepted.length === 0) {
       return failVerification('unsupported_temporal_claim_zero_evidence');
@@ -1092,7 +1137,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     semanticFrame?.intent === 'PROGRAM_CATALOG_INQUIRY' ||
     semanticFrame?.intent === 'FACULTY_INQUIRY' ||
     /\b(Program Sarjana \(S1\)|Program Diploma \(D3\)|Program Pascasarjana \(S2\)|Fakultas Informatika dan Komputer|Fakultas Bisnis dan Vokasi)\b/i.test(text)
-  );
+  ) && Boolean(arbitratedEvidence?.accepted && arbitratedEvidence.accepted.length > 0);
   if (isCatalog) {
     return {
       pass: true,
@@ -1117,6 +1162,54 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
         isGrounded: false,
         handledSafely: true
       };
+    }
+
+    // Verify phone numbers claimed in candidateAnswer against accepted evidence
+    const combinedAcceptedText = arbitratedEvidence.accepted.map(c => c.text || c.chunk || c.content || '').join(' ');
+    const normEvidenceDigits = combinedAcceptedText.replace(/[\s.\-()]/g, '');
+    const phoneMatches = text.match(/\b(?:08\d{8,11}|\(0361\)\s*\d{5,7}|0361[\s\-]?\d{5,7})\b/g) || [];
+    for (const rawPhone of phoneMatches) {
+      const cleanPhone = rawPhone.replace(/[\s.\-()]/g, '');
+      if (cleanPhone.length >= 9 && !normEvidenceDigits.includes(cleanPhone)) {
+        return failVerification(`unsupported_contact_number_claim: ${rawPhone}`);
+      }
+    }
+
+    // Verify multi-entity substantive coverage when 2+ primary entities have supporting evidence
+    if (Array.isArray(semanticFrame?.entities) && semanticFrame.entities.length > 1) {
+      const { findCanonicalEntity } = require('../engine/canonicalEntityRegistry');
+      const MODIFIER_FAMS = new Set(['admission_track', 'participant_scope', 'academic_scope', 'study_mode']);
+      const primaryEnts = semanticFrame.entities
+        .map(e => e.canonical || e.name || String(e))
+        .filter(Boolean)
+        .filter(ent => {
+          const ce = findCanonicalEntity(ent);
+          return !ce || !MODIFIER_FAMS.has(ce.family);
+        });
+
+      if (primaryEnts.length > 1) {
+        const supportedPrimaryEnts = primaryEnts.filter(ent =>
+          arbitratedEvidence.accepted.some(c =>
+            (Array.isArray(c.supportedEntities) && c.supportedEntities.some(se => String(se).toLowerCase() === String(ent).toLowerCase())) ||
+            (c.text || c.chunk || '').toLowerCase().includes(ent.replace(/^(?:S1|S2|D3|D4)\s+/i, '').toLowerCase())
+          )
+        );
+
+        if (supportedPrimaryEnts.length > 1) {
+          const textLower = text.toLowerCase();
+          for (const ent of supportedPrimaryEnts) {
+            const baseName = ent.replace(/^(?:S1|S2|D3|D4)\s+/i, '').trim().toLowerCase();
+            const ce = findCanonicalEntity(ent);
+            const aliases = (ce && Array.isArray(ce.aliases)) ? ce.aliases.map(a => a.toLowerCase()) : [];
+            const isMentioned = textLower.includes(ent.toLowerCase()) ||
+              (baseName.length >= 3 && textLower.includes(baseName)) ||
+              aliases.some(a => a.length >= 2 && new RegExp(`\\b${a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(text));
+            if (!isMentioned) {
+              return failVerification(`multi_entity_missing_supported_entity_in_answer: ${ent}`);
+            }
+          }
+        }
+      }
     }
 
     return {
