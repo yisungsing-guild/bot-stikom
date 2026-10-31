@@ -810,6 +810,17 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
       };
     }
 
+    // Audience Lifecycle Compatibility Gate: exclude enrolled student operational calendar chunks from prospective new student PMB admission
+    const isEnrolledAcademicCalendar = (candidateFile && /kalender\s+akademik/i.test(candidateFile)) ||
+      /\b(pendaftaran\s+remedial|remedial\s+smt|remedial\s+semester|minggu\s+tenang|kuliah\s+perdana|krs\s+online)\b/i.test(text);
+    if (isEnrolledAcademicCalendar) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_LIFECYCLE_MISMATCH',
+        reason: 'enrolled_student_academic_calendar_not_applicable_to_pmb_admissions'
+      };
+    }
+
     const isStudentExchange = (candidateFile && /student\s+exchange/i.test(candidateFile)) ||
       /\b(?:student\s+exchange|gccp|global\s+cross\s+cultural)\b/i.test(text);
     const queryAsksExchange = /\b(?:student\s+exchange|pertukaran\s+mahasiswa|gccp)\b/i.test(queryText);
@@ -1138,6 +1149,41 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
 }
 
 /**
+ * Segments and curates atomic passages from accepted multi-topic evidence chunks.
+ * Preserves valid evidence units while discarding irrelevant operational noise.
+ */
+function curateCandidatePassages(candidate, retrievalPlan = {}) {
+  const rawText = candidate.text || candidate.chunk || '';
+  if (!rawText) return candidate;
+
+  const isScholarshipPlan = retrievalPlan.domain === 'SCHOLARSHIP' ||
+    retrievalPlan.intent === 'SCHOLARSHIP_INQUIRY' ||
+    (Array.isArray(retrievalPlan.requiredAspects) && retrievalPlan.requiredAspects.includes('scholarship'));
+
+  if (isScholarshipPlan) {
+    // If the chunk has multi-topic operational noise (e.g. yudisium, 2001 history, transfer SKS), filter those lines out
+    const hasOperationalNoise = /\b(pendaftaran\s+yudisium|batas\s+akhir\s+pendaftaran\s+yudisium|wisuda\s+xxxviii|berdiri\s+pada\s+tahun\s+2001|konversi\s+sks|alih\s+jenjang\s+maksimal)\b/i.test(rawText);
+
+    if (hasOperationalNoise) {
+      const lines = rawText.split('\n');
+      const curatedLines = lines
+        .map(l => l.trim())
+        .filter(l => l && !/\b(pendaftaran\s+yudisium|batas\s+akhir\s+pendaftaran\s+yudisium|wisuda\s+xxxviii|berdiri\s+pada\s+tahun\s+2001|konversi\s+sks|alih\s+jenjang\s+maksimal)\b/i.test(l));
+
+      if (curatedLines.length > 0) {
+        return {
+          ...candidate,
+          curatedPassages: curatedLines,
+          curatedText: curatedLines.join('\n')
+        };
+      }
+    }
+  }
+
+  return candidate;
+}
+
+/**
  * Filters candidates and separates into accepted and rejected evidence
  */
 function arbitrateEvidence(candidates = [], retrievalPlan = {}) {
@@ -1164,14 +1210,15 @@ function arbitrateEvidence(candidates = [], retrievalPlan = {}) {
   for (const candidate of candidates) {
     const evaluation = evaluateEvidenceCompatibility(candidate, retrievalPlan);
     if (evaluation.accepted) {
-      accepted.push({
+      const curated = curateCandidatePassages({
         ...candidate,
         disposition: evaluation.disposition,
         dispositionReason: evaluation.reason,
         reason: evaluation.reason,
         providedAspects: evaluation.providedAspects || [],
         supportedEntities: evaluation.supportedEntities || candidate.supportedEntities || []
-      });
+      }, retrievalPlan);
+      accepted.push(curated);
     } else {
       rejected.push({
         ...candidate,
@@ -1240,5 +1287,6 @@ function arbitrateEvidence(candidates = [], retrievalPlan = {}) {
 module.exports = {
   evaluateEvidenceCompatibility,
   arbitrateEvidence,
-  arbitrateEvidenceWithContract
+  arbitrateEvidenceWithContract,
+  curateCandidatePassages
 };

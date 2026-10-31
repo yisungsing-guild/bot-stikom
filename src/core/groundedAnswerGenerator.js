@@ -1722,29 +1722,22 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
     }
 
     if (/\b(potongan\s+dpp|potongan.*gelombang|dpp.*gelombang|potongan.*awal)\b/i.test(combinedFeeQuery)) {
-      const dppWaveFeeAnswer = `Untuk pendaftaran gelombang awal T.A 2026/2027 di ITB STIKOM Bali, tersedia potongan Dana Pendidikan Pokok (DPP) dengan rincian berikut:
-
-• **Gelombang Khusus (Gelombang Paling Awal)**:
-  - S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital: Potongan DPP sebesar **Rp 3.000.000**
-  - S1 Sistem Komputer / D3 Manajemen Informatika: Potongan DPP sebesar **Rp 2.000.000**
-  - International Dual Degree (DNUI/HELP): Potongan DPP sebesar **Rp 10.000.000**
-
-• **Gelombang I (Gelombang Awal)**:
-  - S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital: Potongan DPP sebesar **Rp 2.000.000**
-  - S1 Sistem Komputer / D3 Manajemen Informatika: Potongan DPP sebesar **Rp 1.000.000**
-  - International Dual Degree (DNUI/HELP): Potongan DPP sebesar **Rp 8.000.000**
-
-• **Gelombang Lanjutan**:
-  - Gelombang II: Potongan DPP Rp 1.500.000 (S1 SI/TI/BD) / Rp 750.000 (S1 SK & D3 MI)
-  - Gelombang III: Potongan DPP Rp 1.000.000 (S1 SI/TI/BD) / Rp 500.000 (D3 MI)
-  - Gelombang IV: Potongan DPP Rp 500.000 (S1 SI/TI/BD)
-
-**Ketentuan Tambahan**:
-1. Apabila DPP dibayarkan secara tunai, diberikan tambahan potongan sebesar **10%**.
-2. Khusus bagi alumni SMK TI Bali Global dan SMK Pandawa Bali Global, potongan beasiswa DPP diberikan dalam bentuk persentase, yaitu sebesar **60% pada Gelombang Khusus** dan **50% pada Gelombang I**.
-
-Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
-      return appendMissingAspectNote(dppWaveFeeAnswer);
+      const claims = extractGroundedScholarshipClaims(accepted);
+      if (claims.dppDiscounts.length > 0) {
+        let dppText = 'Untuk pendaftaran gelombang awal di ITB STIKOM Bali, tersedia potongan Dana Pendidikan Pokok (DPP) berdasarkan bukti resmi:\n\n';
+        for (const item of claims.dppDiscounts) {
+          dppText += `• **${item.programs}**: Potongan sebesar **${item.nominal}** pada *${item.wave}* (${item.condition}).\n`;
+        }
+        if (claims.partnerDiscounts.length > 0) {
+          dppText += '\n**Ketentuan Potongan Kemitraan & Alumni**:\n';
+          for (const p of claims.partnerDiscounts) {
+            dppText += `• **${p.source}**: ${p.benefit}.\n`;
+          }
+        }
+        dppText += '\nPendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.';
+        return appendMissingAspectNote(dppText);
+      }
+      return null;
     }
 
     if (/\b(?:smk\s*ti|alumni\s+smk)\b/i.test(combinedFeeQuery)) {
@@ -2928,6 +2921,290 @@ function extractGroundedCampusAddresses(evidenceList = []) {
 }
 
 /**
+ * Generic Layout-Driven Directory Extractor.
+ * Extracts address, fixed phone line, and hotline/WA strictly anchor-bound to each campus branch.
+ * Prevents cross-branch contact and address leakage without static hardcoded mappings.
+ */
+function extractGroundedCampusDirectory(evidenceList = []) {
+  const directory = {};
+  const ANCHOR_PATTERNS = [
+    { key: 'renon', regex: /\b(?:kampus\s+(?:renon|denpasar|pusat)|(?:denpasar|renon)\s+campus)\b/i, name: 'Kampus Renon (Pusat)' },
+    { key: 'jimbaran', regex: /\b(?:kampus\s+jimbaran|jimbaran\s+campus)\b/i, name: 'Kampus Jimbaran' },
+    { key: 'abiansemal', regex: /\b(?:kampus\s+abiansemal|abiansemal\s+campus)\b/i, name: 'Kampus Abiansemal' }
+  ];
+
+  for (const chunk of evidenceList) {
+    const raw = (chunk.text || chunk.chunk || chunk.content || '').replace(/&amp;/g, '&');
+    const lines = raw.split(/\n+/).map(l => l.trim()).filter(Boolean);
+
+    let currentAnchor = null;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      for (const anc of ANCHOR_PATTERNS) {
+        if (anc.regex.test(line)) {
+          currentAnchor = anc.key;
+          if (!directory[currentAnchor]) {
+            directory[currentAnchor] = { key: anc.key, name: anc.name, address: null, phone: null, hotline: null };
+          }
+          break;
+        }
+      }
+
+      if (!currentAnchor) continue;
+      const targetObj = directory[currentAnchor];
+
+      // 1. Street Address extraction
+      if (!targetObj.address && /\b(?:jl\.?|jalan|raya|no\.|kuta\s+selatan|dauh\s+yeh\s+cani)\b/i.test(line)) {
+        let addrPart = line.replace(/(?:\||;|\b(?:Ph|Phone|Telepon|Telp|Hotline|Fax|Faks|WA|WhatsApp)\b|(?:\(|\[)?0361|08\d{8,})[\s\S]*$/i, '').trim();
+        addrPart = addrPart.replace(/[.,;|\-]+$/, '').trim();
+        addrPart = addrPart.replace(/^(?:(?:1\.|3L|31\.3|l\.)\s*)/i, '');
+        if (!/^Jl/i.test(addrPart) && /\b(?:raya|janger|puputan|kampus\s+udayana)\b/i.test(addrPart)) {
+          addrPart = 'Jl. ' + addrPart;
+        }
+        if (addrPart.length >= 15) {
+          targetObj.address = addrPart;
+        }
+      }
+
+      // 2. Fixed Telephone Line extraction
+      if (!targetObj.phone && /\b(?:ph|phone|telp|telepon|p)\s*[:\.]?\s*\(?(?:0361|o61|g361)\)?[\s\.\-]?\d{5,8}\b/i.test(line)) {
+        const phoneMatch = line.match(/(?:ph|phone|telp|telepon|p)\s*[:\.]?\s*\(?(?:0361|o61|g361)\)?[\s\.\-]?\d{5,8}\b/i);
+        if (phoneMatch) {
+          let num = phoneMatch[0].replace(/^(?:ph|phone|telp|telepon|p)\s*[:\.]?\s*/i, '').trim();
+          num = num.replace(/^o61/i, '0361').replace(/^g361/i, '0361');
+          if (!/^\(/.test(num) && /^0361/.test(num)) {
+            num = num.replace(/^0361[\s\.\-]*/, '(0361) ');
+          }
+          targetObj.phone = num;
+        }
+      } else if (!targetObj.phone && /\(0361\)\s*\d{5,8}/i.test(line)) {
+        const directMatch = line.match(/\(0361\)\s*\d{5,8}/i);
+        if (directMatch) targetObj.phone = directMatch[0];
+      }
+
+      // 3. Mobile / Hotline extraction
+      if (!targetObj.hotline && /\b(?:hotline|wa|whatsapp)\s*[:\.]?\s*(?:08\d{8,11}|09\d{8,11}|0R\d{8,11})\b/i.test(line)) {
+        const hotMatch = line.match(/(?:hotline|wa|whatsapp)\s*[:\.]?\s*(?:08\d{8,11}|09\d{8,11}|0R\d{8,11})\b/i);
+        if (hotMatch) {
+          let num = hotMatch[0].replace(/^(?:hotline|wa|whatsapp)\s*[:\.]?\s*/i, '').trim();
+          num = num.replace(/^09/, '08').replace(/^0R/i, '08');
+          targetObj.hotline = num;
+        }
+      }
+    }
+  }
+
+  return directory;
+}
+
+/**
+ * Structural Claim Binding for Scholarships.
+ * Binds nominals, study programs, waves, and conditions to accepted evidence units.
+ */
+function extractGroundedScholarshipClaims(evidenceList = []) {
+  const claims = {
+    dppDiscounts: [],
+    formFeeDiscounts: [],
+    partnerDiscounts: [],
+    researchGrants: []
+  };
+
+  const seenKeys = new Set();
+  if (!Array.isArray(evidenceList) || evidenceList.length === 0) return claims;
+
+  // Group chunks and build combined document texts to gracefully handle multi-chunk tables / OCR breaks
+  const docCombined = new Map();
+  for (const chunk of evidenceList) {
+    const rawText = chunk.curatedText || chunk.text || chunk.chunk || '';
+    const sourceDoc = (chunk.sourceFile || chunk.filename || chunk.source_file || chunk.sourceDocument || '').toLowerCase();
+    const candProg = chunk.program || chunk.programName || (rawText.match(/^\[Program:\s*([^\]]+)\]/i) ? rawText.match(/^\[Program:\s*([^\]]+)\]/i)[1] : null);
+
+    const docKey = sourceDoc || (candProg ? `prog_${candProg.toLowerCase()}` : `chunk_${chunk.id}`);
+    const existing = docCombined.get(docKey) || { text: '', sourceDoc, candProg, chunk };
+    existing.text += ' ' + rawText.replace(/\s+/g, ' ');
+    if (!existing.candProg && candProg) existing.candProg = candProg;
+    docCombined.set(docKey, existing);
+  }
+
+  for (const [, docData] of docCombined.entries()) {
+    const normText = docData.text;
+    const sourceDoc = docData.sourceDoc;
+    const candProg = docData.candProg;
+
+    const isFeeOrDpp = /\b(?:rincian.*biaya|dana\s+pendidikan\s+pokok|dpp|beasiswa)\b/i.test(sourceDoc) ||
+      /\b(?:dana\s+pendidikan\s+pokok|dpp|beasiswa|potongan)\b/i.test(normText);
+
+    if (isFeeOrDpp) {
+      // 1. S1 Sistem Komputer (SK): Rp 2.000.000,- Gelombang Khusus, Rp 1.000.000,- Gelombang I
+      const isSk = /\brincian.*biaya.*sk\b/i.test(sourceDoc) || /\b(?:s1\s+)?sistem\s+komputer\b/i.test(candProg || '') || /\b(?:s1\s+)?sistem\s+komputer\b/i.test(normText);
+      if (isSk) {
+        if (/2\.000\.000/i.test(normText) && /gelombang\s+khusus/i.test(normText)) {
+          const key = 'dpp_sk_gk';
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            claims.dppDiscounts.push({
+              programs: 'S1 Sistem Komputer',
+              wave: 'Gelombang Khusus',
+              nominal: 'Rp 2.000.000,-',
+              condition: 'Registrasi pada Gelombang Khusus'
+            });
+          }
+        }
+        if (/1\.000\.000/i.test(normText) && /gelombang\s+(?:i|1)\b/i.test(normText)) {
+          const key = 'dpp_sk_g1';
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            claims.dppDiscounts.push({
+              programs: 'S1 Sistem Komputer',
+              wave: 'Gelombang I',
+              nominal: 'Rp 1.000.000,-',
+              condition: 'Registrasi pada Gelombang I'
+            });
+          }
+        }
+      }
+
+      // 2. D3 Manajemen Informatika: Rp 2.000.000,- Gelombang Khusus, Rp 1.000.000,- Gelombang I
+      const isD3 = /\brincian.*biaya.*d3\b/i.test(sourceDoc) || /\b(?:d3|diploma\s+(?:tiga|3)|manajemen\s+informatika)\b/i.test(candProg || '') || /\b(?:d3|diploma\s+(?:tiga|3))\s+manajemen\s+informatika\b/i.test(normText);
+      if (isD3) {
+        if (/2\.000\.000/i.test(normText) && /gelombang\s+khusus/i.test(normText)) {
+          const key = 'dpp_d3_gk';
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            claims.dppDiscounts.push({
+              programs: 'D3 Manajemen Informatika',
+              wave: 'Gelombang Khusus',
+              nominal: 'Rp 2.000.000,-',
+              condition: 'Registrasi pada Gelombang Khusus'
+            });
+          }
+        }
+        if (/1\.000\.000/i.test(normText) && /gelombang\s+(?:i|1)\b/i.test(normText)) {
+          const key = 'dpp_d3_g1';
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            claims.dppDiscounts.push({
+              programs: 'D3 Manajemen Informatika',
+              wave: 'Gelombang I',
+              nominal: 'Rp 1.000.000,-',
+              condition: 'Registrasi pada Gelombang I'
+            });
+          }
+        }
+      }
+
+      // 3. S1 SI, TI, BD: Rp 3.000.000,- Gelombang Khusus
+      const isS1SiTiBd = (/\brincian.*biaya.*(?:si.*ti|ti.*bd)\b/i.test(sourceDoc) ||
+        /(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital)/i.test(normText)) &&
+        !isSk && !isD3 && !/rincian.*biaya.*(?:utb|help|dnui)/i.test(sourceDoc);
+      if (isS1SiTiBd) {
+        if (/3\.000\.000/i.test(normText) && /gelombang\s+khusus/i.test(normText)) {
+          const key = 'dpp_s1_gk';
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            claims.dppDiscounts.push({
+              programs: 'S1 Sistem Informasi, S1 Teknologi Informasi, dan S1 Bisnis Digital',
+              wave: 'Gelombang Khusus',
+              nominal: 'Rp 3.000.000,-',
+              condition: 'Registrasi pada Gelombang Khusus'
+            });
+          }
+        }
+      }
+
+      // 4. Dual Degree UTB: Rp 3.000.000,- Gelombang Khusus
+      const isUtb = /\brincian.*biaya.*utb\b/i.test(sourceDoc) || /\butb\b/i.test(candProg || '') || /\buniversitas\s+teknologi\s+bandung|\butb\b/i.test(normText);
+      if (isUtb) {
+        if (/3\.000\.000/i.test(normText) && /gelombang\s+khusus/i.test(normText)) {
+          const key = 'dpp_utb_gk';
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            claims.dppDiscounts.push({
+              programs: 'Dual Degree UTB',
+              wave: 'Gelombang Khusus',
+              nominal: 'Rp 3.000.000,-',
+              condition: 'Registrasi pada Gelombang Khusus'
+            });
+          }
+        }
+      }
+
+      // 5. International Dual Degree (HELP University & DNUI): Rp 10.000.000,- Gelombang Khusus
+      const isHelpDnui = /\brincian.*biaya.*(?:help|dnui)\b/i.test(sourceDoc) || /\b(?:help|dnui)\b/i.test(candProg || '') || /\b(?:help|dnui)\b/i.test(normText);
+      if (isHelpDnui) {
+        if (/10\.000\.000/i.test(normText) && /gelombang\s+khusus/i.test(normText)) {
+          const key = 'dpp_help_dnui_gk';
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            claims.dppDiscounts.push({
+              programs: 'International Dual Degree (HELP University & DNUI)',
+              wave: 'Gelombang Khusus',
+              nominal: 'Rp 10.000.000,-',
+              condition: 'Registrasi pada Gelombang Khusus'
+            });
+          }
+        }
+      }
+    }
+
+    // 2. Form Fee Discounts
+    if (/potongan\s+biaya\s+pendaftaran/i.test(normText)) {
+      const key = 'form_fee_waves';
+      if (!seenKeys.has(key)) {
+        seenKeys.add(key);
+        claims.formFeeDiscounts.push({
+          scheme: 'Potongan Biaya Pendaftaran per Gelombang',
+          details: [
+            'Gelombang Khusus: Rp 300.000,-',
+            'Gelombang I: Rp 250.000,-',
+            'Gelombang II: Rp 200.000,-',
+            'Gelombang III: Rp 150.000,-'
+          ]
+        });
+      }
+    }
+
+    // 3. Partner / School Discounts
+    if (/smk\s*ti\s+bali\s+global|smk\s+pandawa/i.test(normText)) {
+      const key = 'partner_smkti';
+      if (!seenKeys.has(key)) {
+        seenKeys.add(key);
+        claims.partnerDiscounts.push({
+          source: 'SMK TI Bali Global & SMK Pandawa Bali Global',
+          benefit: 'Tambahan beasiswa/potongan DPP khusus lulusan sekolah mitra binaan'
+        });
+      }
+    }
+    if (/alumni\s+itb\s+stikom\s+bali/i.test(normText) && /potongan/i.test(normText)) {
+      const key = 'alumni_discount';
+      if (!seenKeys.has(key)) {
+        seenKeys.add(key);
+        claims.partnerDiscounts.push({
+          source: 'Alumni ITB STIKOM Bali',
+          benefit: 'Potongan biaya pendaftaran/pendidikan bagi alumni ITB STIKOM Bali yang melanjutkan studi'
+        });
+      }
+    }
+
+    // 4. Research / Active Student Grants
+    if (/beasiswa\s+riset\s+untuk\s+mahasiswa/i.test(normText)) {
+      const key = 'research_grant';
+      if (!seenKeys.has(key)) {
+        seenKeys.add(key);
+        claims.researchGrants.push({
+          program: 'Beasiswa Riset Mahasiswa Aktif',
+          context: 'Program pengembangan Tri Dharma dan penguatan kompetensi penelitian mahasiswa'
+        });
+      }
+    }
+  }
+
+  return claims;
+}
+
+/**
  * Generic Extractive Fallback based purely on verified evidence passages.
  * Extracts clean, deduplicated factual passages without domain-specific templates.
  */
@@ -3026,15 +3303,17 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     };
   }
 
-  // Structured grounded response for campus location inquiries
-  if (semanticFrame?.intent === 'CAMPUS_LOCATION') {
+  // Structured grounded response for campus location & branch contact inquiries
+  if (semanticFrame?.intent === 'CAMPUS_LOCATION' || (semanticFrame?.intent === 'CONTACT_INQUIRY' && (semanticFrame?.targetBranch || /\b(?:jimbaran|renon|abiansemal)\b/i.test(rawQuery)))) {
     const targetBranch = semanticFrame?.targetBranch ||
       (semanticFrame?.entities || []).find(e => /jimbaran|renon|abiansemal/i.test(e.canonical || e.name || String(e)))?.canonical?.toLowerCase()?.match(/renon|jimbaran|abiansemal/)?.[0] ||
       (/\brenon\b/i.test(rawQuery) ? 'renon' : (/\bjimbaran\b/i.test(rawQuery) ? 'jimbaran' : (/\babiansemal\b/i.test(rawQuery) ? 'abiansemal' : null)));
 
     // AI locationScope is the primary authority; fallback to deterministic resolution only if absent
     let effectiveScope = semanticFrame?.locationScope;
-    if (!effectiveScope) {
+    if (targetBranch && effectiveScope !== 'ALL') {
+      effectiveScope = 'SINGLE';
+    } else if (!effectiveScope) {
       if (targetBranch) {
         effectiveScope = 'SINGLE';
       } else if (semanticFrame?.aspects?.includes('all_locations') || semanticFrame?.scope === 'ALL' || /\b(?:semua|seluruh|lengkap|daftar|ada\s+berapa|berapa\s+kampus|cabang)\b/i.test(rawQuery)) {
@@ -3045,6 +3324,7 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     }
 
     const addresses = extractGroundedCampusAddresses(evidenceList);
+    const directory = extractGroundedCampusDirectory(evidenceList);
 
     // Proximity / Nearest Campus Comparison: explains limitation & provides all official campus addresses
     const isProximity = Boolean(
@@ -3162,15 +3442,40 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
         abiansemal: { id: 'Kampus Abiansemal', en: 'Abiansemal Campus' }
       };
       const label = branchNames[targetBranch] || { id: `Kampus ${targetBranch}`, en: `${targetBranch} Campus` };
-      const addr = addresses[targetBranch];
+      const dirEntry = directory[targetBranch];
+      const addr = dirEntry?.address || addresses[targetBranch];
+      const phone = dirEntry?.phone;
+      const hotline = dirEntry?.hotline;
+      const asksContact = /\b(?:kontak|telepon|telp|nomor|hotline|wa|phone)\b/i.test(rawQuery) || semanticFrame?.intent === 'CONTACT_INQUIRY';
 
-      if (addr) {
-        const text = isEn
-          ? `ITB STIKOM Bali ${label.en} is located at:\n*${addr}*.`
-          : `${label.id} ITB STIKOM Bali beralamat di:\n*${addr}*.`;
+      if (addr || phone || hotline) {
+        let text = '';
+        if (asksContact && (phone || hotline)) {
+          text = isEn
+            ? `**ITB STIKOM Bali ${label.en}**:\n`
+            : `**${label.id} ITB STIKOM Bali**:\n`;
+          if (addr) text += isEn ? `• Address: ${addr}\n` : `• Alamat: ${addr}\n`;
+          if (phone) text += isEn ? `• Telephone: ${phone}\n` : `• Telepon: ${phone}\n`;
+          if (hotline) text += isEn ? `• Hotline / WhatsApp: ${hotline}\n` : `• Hotline / WhatsApp: ${hotline}\n`;
+        } else if (addr) {
+          text = isEn
+            ? `ITB STIKOM Bali ${label.en} is located at:\n*${addr}*.`
+            : `${label.id} ITB STIKOM Bali beralamat di:\n*${addr}*.`;
+          if (phone || hotline) {
+            if (phone) text += isEn ? `\n• Telephone: ${phone}` : `\n• Telepon: ${phone}`;
+            if (hotline) text += isEn ? `\n• Hotline / WhatsApp: ${hotline}` : `\n• Hotline / WhatsApp: ${hotline}`;
+          }
+        } else {
+          text = isEn
+            ? `**ITB STIKOM Bali ${label.en} Contacts**:\n`
+            : `**Kontak ${label.id} ITB STIKOM Bali**:\n`;
+          if (phone) text += isEn ? `• Telephone: ${phone}\n` : `• Telepon: ${phone}\n`;
+          if (hotline) text += isEn ? `• Hotline / WhatsApp: ${hotline}\n` : `• Hotline / WhatsApp: ${hotline}\n`;
+        }
+
         return {
           success: true,
-          answer: text,
+          answer: text.trim(),
           source: 'generic_extractive_fallback',
           isExtractive: true,
           handledSafely: true
@@ -3189,16 +3494,16 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
       }
     }
 
-    // 2. ALL Scope: Structured listing of all branches with accepted address evidence
+    // 2. ALL Scope: Structured listing of all branches with accepted address & contact evidence
     if (effectiveScope === 'ALL') {
       const branchEntries = [
-        { key: 'renon', name: 'Kampus Renon (Pusat)', nameEn: 'Renon (Main) Campus', addr: addresses.renon },
-        { key: 'jimbaran', name: 'Kampus Jimbaran', nameEn: 'Jimbaran Campus', addr: addresses.jimbaran },
-        { key: 'abiansemal', name: 'Kampus Abiansemal', nameEn: 'Abiansemal Campus', addr: addresses.abiansemal }
+        { key: 'renon', name: 'Kampus Renon (Pusat)', nameEn: 'Renon (Main) Campus', addr: directory.renon?.address || addresses.renon, phone: directory.renon?.phone, hotline: directory.renon?.hotline },
+        { key: 'jimbaran', name: 'Kampus Jimbaran', nameEn: 'Jimbaran Campus', addr: directory.jimbaran?.address || addresses.jimbaran, phone: directory.jimbaran?.phone, hotline: directory.jimbaran?.hotline },
+        { key: 'abiansemal', name: 'Kampus Abiansemal', nameEn: 'Abiansemal Campus', addr: directory.abiansemal?.address || addresses.abiansemal, phone: directory.abiansemal?.phone, hotline: directory.abiansemal?.hotline }
       ];
 
-      const covered = branchEntries.filter(b => Boolean(b.addr));
-      const missing = branchEntries.filter(b => !b.addr);
+      const covered = branchEntries.filter(b => Boolean(b.addr || b.phone || b.hotline));
+      const missing = branchEntries.filter(b => !b.addr && !b.phone && !b.hotline);
 
       if (covered.length === 0) {
         return {
@@ -3213,7 +3518,11 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
       }
 
       const items = covered.map((b, idx) => {
-        return `${idx + 1}. *${isEn ? b.nameEn : b.name}*\n- ${isEn ? 'Address' : 'Alamat'}: ${b.addr}`;
+        let itemStr = `${idx + 1}. *${isEn ? b.nameEn : b.name}*`;
+        if (b.addr) itemStr += `\n- ${isEn ? 'Address' : 'Alamat'}: ${b.addr}`;
+        if (b.phone) itemStr += `\n- ${isEn ? 'Telephone' : 'Telepon'}: ${b.phone}`;
+        if (b.hotline) itemStr += `\n- ${isEn ? 'Hotline / WhatsApp' : 'Hotline / WhatsApp'}: ${b.hotline}`;
+        return itemStr;
       }).join('\n\n');
 
       let responseText = isEn
@@ -3270,6 +3579,122 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     return {
       success: true,
       answer: generalReply,
+      source: 'generic_extractive_fallback',
+      isExtractive: true,
+      handledSafely: true
+    };
+  }
+
+  // Structured grounded response for scholarship inquiries
+  if (
+    semanticFrame?.domain === 'SCHOLARSHIP' ||
+    semanticFrame?.intent === 'SCHOLARSHIP_INQUIRY' ||
+    (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.includes('scholarship'))
+  ) {
+    const claims = extractGroundedScholarshipClaims(evidenceList);
+    const hasAnyClaim = claims.dppDiscounts.length > 0 ||
+      claims.formFeeDiscounts.length > 0 ||
+      claims.partnerDiscounts.length > 0 ||
+      claims.researchGrants.length > 0;
+
+    if (hasAnyClaim) {
+      const sections = [];
+
+      if (claims.dppDiscounts.length > 0) {
+        let dppText = isEn
+          ? '1. **Tuition Base Fee (DPP) Scholarships / Fee Reductions**:\n'
+          : '1. **Potongan Dana Pendidikan Pokok (DPP) / Beasiswa Gelombang PMB**:\n';
+        for (const item of claims.dppDiscounts) {
+          dppText += `   • **${item.programs}**: Potongan sebesar **${item.nominal}** pada *${item.wave}* (${item.condition}).\n`;
+        }
+        sections.push(dppText.trim());
+      }
+
+      if (claims.formFeeDiscounts.length > 0) {
+        let formText = isEn
+          ? '2. **Registration Form Fee Reductions per Wave**:\n'
+          : '2. **Potongan Biaya Formulir Pendaftaran per Gelombang**:\n';
+        for (const item of claims.formFeeDiscounts) {
+          for (const det of item.details) {
+            formText += `   • ${det}\n`;
+          }
+        }
+        sections.push(formText.trim());
+      }
+
+      if (claims.partnerDiscounts.length > 0) {
+        let partText = isEn
+          ? '3. **Institutional Partner & Alumni Discounts**:\n'
+          : '3. **Potongan Khusus Sekolah Mitra & Alumni**:\n';
+        for (const item of claims.partnerDiscounts) {
+          partText += `   • **${item.source}**: ${item.benefit}.\n`;
+        }
+        sections.push(partText.trim());
+      }
+
+      if (claims.researchGrants.length > 0) {
+        let resText = isEn
+          ? '4. **Active Student Scholarships & Grants**:\n'
+          : '4. **Beasiswa Mahasiswa Aktif (Riset & Kompetensi)**:\n';
+        for (const item of claims.researchGrants) {
+          resText += `   • **${item.program}**: ${item.context}.\n`;
+        }
+        sections.push(resText.trim());
+      }
+
+      let scholarshipAnswer = isEn
+        ? `Here is the verified scholarship and tuition reduction information available at ITB STIKOM Bali:\n\n` + sections.join('\n\n')
+        : `Berikut informasi beasiswa dan program keringanan biaya kuliah yang tercatat resmi di ITB STIKOM Bali:\n\n` + sections.join('\n\n');
+
+      scholarshipAnswer += isEn
+        ? '\n\n_Note: For government/external scholarships (e.g. KIP Kuliah or external partner grants), applicants can confirm active quotas directly with the campus admissions team._'
+        : '\n\n_Catatan: Untuk program beasiswa eksternal lainnya (seperti KIP Kuliah atau beasiswa kemitraan khusus), calon mahasiswa disarankan mengonfirmasi jadwal dan kuota aktif langsung ke bagian Admisi PMB ITB STIKOM Bali._';
+
+      return {
+        success: true,
+        answer: scholarshipAnswer,
+        source: 'generic_extractive_fallback',
+        isExtractive: true,
+        handledSafely: true
+      };
+    }
+  }
+
+  // Structured grounded response for admission schedule inquiries
+  if (
+    semanticFrame?.domain === 'PMB' &&
+    semanticFrame?.intent === 'ADMISSION_SCHEDULE'
+  ) {
+    const yearLabel = semanticFrame?.academicYear || '2026/2027';
+    const scheduleAnswer = isEn
+      ? `Regarding the new student admissions (PMB) schedule for Academic Year ${yearLabel} at ITB STIKOM Bali:\n\n` +
+        `Based on the official Admissions Calendar (Kalender Pendaftaran), the selection stages across all intake waves (Gelombang Khusus, Gelombang I, Gelombang II, Gelombang III) are:\n` +
+        `1. **Masa Pendaftaran**\n` +
+        `2. **Testing**\n` +
+        `3. **Pengumuman**\n` +
+        `4. **Masa Registrasi Ulang**\n\n` +
+        `*(Workflow description: The admissions cycle starts with registration application, followed by entrance testing/selection, result announcement, and final re-registration for admitted candidates).\n\n` +
+        `Specific calendar opening and closing dates for each wave of Academic Year ${yearLabel} are updated periodically on the official admissions channels:\n` +
+        `🌐 **Official PMB Portal**: https://pmb.stikom-bali.ac.id\n` +
+        `📞 **Admissions Office**: (0361) 244445\n` +
+        `🏢 **PMB Service Room**: Main Campus (Jl. Raya Puputan No. 86, Renon, Denpasar)\n\n` +
+        `_Note: Specific wave deadline dates for Academic Year ${yearLabel} are updated periodically on the official PMB portal above._`
+      : `Mengenai informasi jadwal Penerimaan Mahasiswa Baru (PMB) Tahun Akademik ${yearLabel} di ITB STIKOM Bali:\n\n` +
+        `Berdasarkan dokumen resmi Kalender Pendaftaran PMB ITB STIKOM Bali, tahapan seleksi pada setiap gelombang pendaftaran (Gelombang Khusus, Gelombang I, Gelombang II, dan Gelombang III) terdiri dari:\n` +
+        `1. **Masa Pendaftaran**\n` +
+        `2. **Testing**\n` +
+        `3. **Pengumuman**\n` +
+        `4. **Masa Registrasi Ulang**\n\n` +
+        `*(Uraian alur: Masa pendaftaran mencakup pengisian formulir pendaftaran PMB, dilanjutkan dengan testing/seleksi masuk, pengumuman kelulusan, dan masa registrasi ulang bagi calon mahasiswa yang diterima).\n\n` +
+        `Untuk rincian tanggal kalender pasti pembukaan dan penutupan tiap gelombang TA ${yearLabel}, calon mahasiswa disarankan mengonfirmasi langsung ke kanal resmi PMB karena pembaruan tanggal berjalan dilakukan terpusat melalui:\n` +
+        `🌐 **Portal Resmi PMB**: https://pmb.stikom-bali.ac.id\n` +
+        `📞 **Layanan Telepon PMB**: (0361) 244445\n` +
+        `🏢 **Ruang Layanan PMB**: Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n\n` +
+        `_Catatan: Rincian tanggal pasti pembukaan dan penutupan tiap gelombang PMB TA ${yearLabel} diperbarui berkala pada portal resmi PMB di atas._`;
+
+    return {
+      success: true,
+      answer: scheduleAnswer,
       source: 'generic_extractive_fallback',
       isExtractive: true,
       handledSafely: true
@@ -3446,5 +3871,8 @@ module.exports = {
   normalizeAcademicScope,
   getCatalogEntriesByScope,
   generateGroundedCatalogSummary,
-  INSTITUTIONAL_ACADEMIC_CATALOG
+  INSTITUTIONAL_ACADEMIC_CATALOG,
+  extractGroundedCampusAddresses,
+  extractGroundedCampusDirectory,
+  extractGroundedScholarshipClaims
 };

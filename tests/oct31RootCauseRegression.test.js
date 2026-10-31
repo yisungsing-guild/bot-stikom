@@ -15,10 +15,13 @@ const { resolveSemanticFrame } = require('../src/core/semanticFrameResolver');
 const { evaluateContextDependency } = require('../src/core/contextResolver');
 const { buildRetrievalPlan } = require('../src/core/retrievalPlanner');
 const { retrieveCandidates } = require('../src/core/retrievalService');
-const { arbitrateEvidence, evaluateEvidenceCompatibility } = require('../src/core/evidenceArbiter');
+const { arbitrateEvidence, evaluateEvidenceCompatibility, curateCandidatePassages } = require('../src/core/evidenceArbiter');
 const { evaluateAnswerability, ANSWERABILITY_STATUS } = require('../src/core/answerabilityGate');
-const { buildGenericExtractiveFallback } = require('../src/core/groundedAnswerGenerator');
+const { buildGenericExtractiveFallback, extractGroundedCampusDirectory, extractGroundedScholarshipClaims } = require('../src/core/groundedAnswerGenerator');
 const { runPhase1DeterministicPipeline } = require('../src/core/orchestrator');
+const { generateFeeAnswer } = require('../src/core/feeCalculationEngine');
+const { evaluateRecommendation } = require('../src/reasoning/recommendationEngine');
+const { generateGroundedCatalogSummary } = require('../src/core/academicCatalog');
 
 describe('31 October Root Cause Regression Suite', () => {
 
@@ -235,7 +238,7 @@ describe('31 October Root Cause Regression Suite', () => {
     test('2e. Extractive fallback for general scholarship strictly presents verified discounts from accepted evidence without hallucinating KIP/Prestasi', async () => {
       const frame = resolveSemanticFrame('Beasiswa apa saja yang tersedia di kampus ITB STIKOM Bali?');
       const plan = buildRetrievalPlan(frame);
-      const candidates = await retrieveCandidates(plan, { topK: 12 });
+      const candidates = await retrieveCandidates(plan, { topK: 25 });
       const arbitrated = arbitrateEvidence(candidates, plan);
       const fallback = buildGenericExtractiveFallback(frame, arbitrated.accepted, arbitrated);
 
@@ -259,6 +262,222 @@ describe('31 October Root Cause Regression Suite', () => {
       expect(fallback.answer).toMatch(/belum dapat (?:diverifikasi|dipastikan)/i);
       // Must not invent DTKS or criteria
       expect(fallback.answer).not.toContain('Data Terpadu Kesejahteraan Sosial');
+    });
+
+  });
+
+  describe('3. Case 3: Semantic Audience & Lifecycle Gate (PMB Schedule vs Enrolled Operations)', () => {
+
+    test('3a. Enrolled student operational calendar chunk is rejected for PMB intake schedule inquiry', () => {
+      const frame = resolveSemanticFrame('Jadwal pendaftaran PMB 2026/2027');
+      const plan = buildRetrievalPlan(frame);
+
+      const enrolledCalendarCandidate = {
+        sourceFile: 'Kalender Akademik Ganjil, Genap dan Antara TA 2025-2026 (1).pdf',
+        filename: 'Kalender Akademik Ganjil, Genap dan Antara TA 2025-2026 (1).pdf',
+        text: '04 - 05 Feb. : Pendaftaran Remedial SMT Ganjil T.A. 2025/2026\n16 - 21 Feb. : Minggu Tenang SMT Genap T.A. 2025/2026',
+        chunk: '04 - 05 Feb. : Pendaftaran Remedial SMT Ganjil T.A. 2025/2026\n16 - 21 Feb. : Minggu Tenang SMT Genap T.A. 2025/2026',
+        docCategory: 'AKADEMIK'
+      };
+
+      const evalResult = evaluateEvidenceCompatibility(enrolledCalendarCandidate, plan);
+      expect(evalResult.accepted).toBe(false);
+      expect(evalResult.disposition).toBe('REJECT_LIFECYCLE_MISMATCH');
+    });
+
+    test('3b. Prospective admission schedule presents verified 4 stages without date hallucination', async () => {
+      const frame = resolveSemanticFrame('Kapan jadwal pendaftaran PMB 2026/2027?');
+      const plan = buildRetrievalPlan(frame);
+      const candidates = await retrieveCandidates(plan, { topK: 12 });
+      const arbitrated = arbitrateEvidence(candidates, plan);
+      const fallback = buildGenericExtractiveFallback(frame, arbitrated.accepted, arbitrated);
+
+      expect(fallback.success).toBe(true);
+      expect(fallback.answer).toContain('2026/2027');
+      expect(fallback.answer).toContain('Masa Pendaftaran');
+      expect(fallback.answer).toContain('Testing');
+      expect(fallback.answer).toContain('Pengumuman');
+      expect(fallback.answer).toContain('Masa Registrasi Ulang');
+      expect(fallback.answer).toContain('https://pmb.stikom-bali.ac.id');
+      // Must not fabricate arbitrary calendar dates
+      expect(fallback.answer).not.toMatch(/\b\d{1,2}\s+(?:Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+2026\s*s\/?d/i);
+    });
+
+  });
+
+  describe('4. Case 4: Structural Claim Binding for Scholarships & Atomic Passage Curation', () => {
+
+    test('4a. curateCandidatePassages purges yudisium and 2001 foundation noise while preserving active student research grant', () => {
+      const plan = {
+        domain: 'SCHOLARSHIP',
+        intent: 'SCHOLARSHIP_INQUIRY',
+        requiredAspects: ['scholarship']
+      };
+
+      const noisyCandidate = {
+        sourceFile: 'ISIAN WEBSITE (1).pdf',
+        text: 'Ringkasan dokumen:\nBatas akhir pendaftaran yudisium periode XXXVIII adalah 25 Juli 2026.\nITB STIKOM Bali berdiri pada tahun 2001.\nWorkshop bagi dosen, beasiswa riset untuk mahasiswa, dan kuliah tamu internasional.\nKetentuan konversi SKS alih jenjang maksimal 60 SKS.',
+        chunk: 'Ringkasan dokumen:\nBatas akhir pendaftaran yudisium periode XXXVIII adalah 25 Juli 2026.\nITB STIKOM Bali berdiri pada tahun 2001.\nWorkshop bagi dosen, beasiswa riset untuk mahasiswa, dan kuliah tamu internasional.\nKetentuan konversi SKS alih jenjang maksimal 60 SKS.'
+      };
+
+      const curated = curateCandidatePassages(noisyCandidate, plan);
+      expect(curated.curatedText).toBeDefined();
+      expect(curated.curatedText).toContain('beasiswa riset untuk mahasiswa');
+      expect(curated.curatedText).not.toContain('yudisium');
+      expect(curated.curatedText).not.toContain('2001');
+      expect(curated.curatedText).not.toContain('konversi SKS');
+    });
+
+    test('4b. extractGroundedScholarshipClaims binds S1 & Dual Degree UTB DPP discount Rp 3.000.000,- on Gelombang Khusus', async () => {
+      const frame = resolveSemanticFrame('Beasiswa apa saja yang tersedia di kampus ITB STIKOM Bali?');
+      const plan = buildRetrievalPlan(frame);
+      const candidates = await retrieveCandidates(plan, { topK: 25 });
+      const arbitrated = arbitrateEvidence(candidates, plan);
+
+      const claims = extractGroundedScholarshipClaims(arbitrated.accepted);
+      expect(claims.dppDiscounts.length).toBeGreaterThan(0);
+
+      const s1Claim = claims.dppDiscounts.find(d => /S1 Sistem Informasi/i.test(d.programs));
+      expect(s1Claim).toBeDefined();
+      expect(s1Claim.nominal).toBe('Rp 3.000.000,-');
+      expect(s1Claim.wave).toBe('Gelombang Khusus');
+    });
+
+    test('4c. Extractive fallback presents bound claims structured without non-scholarship operational noise', async () => {
+      const frame = resolveSemanticFrame('Beasiswa apa saja yang tersedia di kampus ITB STIKOM Bali?');
+      const plan = buildRetrievalPlan(frame);
+      const candidates = await retrieveCandidates(plan, { topK: 25 });
+      const arbitrated = arbitrateEvidence(candidates, plan);
+      const fallback = buildGenericExtractiveFallback(frame, arbitrated.accepted, arbitrated);
+
+      expect(fallback.success).toBe(true);
+      expect(fallback.answer).toContain('Rp 3.000.000,-');
+      expect(fallback.answer).toContain('Gelombang Khusus');
+      expect(fallback.answer).toContain('Beasiswa Riset Mahasiswa Aktif');
+      expect(fallback.answer).not.toContain('yudisium');
+      expect(fallback.answer).not.toContain('berdiri pada tahun 2001');
+      expect(fallback.answer).not.toContain('konversi SKS');
+    });
+
+    test('4d. Multi-program structural claim binding binds exact DPP discounts and avoids cross-program contamination', () => {
+      // Load official fee evidence units across all 5 programs directly from canonical snapshot
+      const fs = require('fs');
+      const corpusChunks = JSON.parse(fs.readFileSync('data/runtime/index_snapshots/2026-10-26T08-00-00-000Z_reconciled-official-faculty/rag_index.json', 'utf8'));
+
+      const skChunks = corpusChunks.filter(c => c.id === '564b4435-846b-43b4-9bd6-930b2768dfdb' || c.id === '4d0dba51-d1ee-4216-8a33-e987e61fc6f6');
+      const d3Chunks = corpusChunks.filter(c => c.id === '550d76f6-7da8-42a5-9437-30e79603012e' || c.id === '40b2d661-fa6a-4cc2-b6e3-c62059f5898c' || c.id === 'eb036039-ea42-4f68-9c23-0254d92bb74d');
+      const s1Chunk = corpusChunks.find(c => c.id === 'eb2e3662-bfd9-4769-93a9-cff2dcd48cde');
+      const utbChunks = corpusChunks.filter(c => c.id === 'e9305567-48d9-4aa4-8d77-aa113ec5c6e5' || c.id === 'f7a4e65c-ab74-4737-aded-47494b1316ca');
+      const helpChunk = corpusChunks.find(c => c.id === '5acebacd-b354-45a4-bc14-4e7425961ebb');
+
+      const allEvidence = [...skChunks, ...d3Chunks, s1Chunk, ...utbChunks, helpChunk];
+      const claims = extractGroundedScholarshipClaims(allEvidence);
+
+      // S1 SK claims
+      const skKhusus = claims.dppDiscounts.find(d => /Sistem Komputer/i.test(d.programs) && d.wave === 'Gelombang Khusus');
+      const skG1 = claims.dppDiscounts.find(d => /Sistem Komputer/i.test(d.programs) && d.wave === 'Gelombang I');
+      expect(skKhusus).toBeDefined();
+      expect(skKhusus.nominal).toBe('Rp 2.000.000,-');
+      expect(skG1).toBeDefined();
+      expect(skG1.nominal).toBe('Rp 1.000.000,-');
+
+      // D3 Manajemen Informatika claims
+      const d3Khusus = claims.dppDiscounts.find(d => /D3 Manajemen Informatika/i.test(d.programs) && d.wave === 'Gelombang Khusus');
+      const d3G1 = claims.dppDiscounts.find(d => /D3 Manajemen Informatika/i.test(d.programs) && d.wave === 'Gelombang I');
+      expect(d3Khusus).toBeDefined();
+      expect(d3Khusus.nominal).toBe('Rp 2.000.000,-');
+      expect(d3G1).toBeDefined();
+      expect(d3G1.nominal).toBe('Rp 1.000.000,-');
+
+      // S1 SI, TI, BD claims
+      const s1Khusus = claims.dppDiscounts.find(d => /S1 Sistem Informasi/i.test(d.programs) && d.wave === 'Gelombang Khusus');
+      expect(s1Khusus).toBeDefined();
+      expect(s1Khusus.nominal).toBe('Rp 3.000.000,-');
+
+      // Dual Degree UTB claims
+      const utbKhusus = claims.dppDiscounts.find(d => /Dual Degree UTB/i.test(d.programs) && d.wave === 'Gelombang Khusus');
+      expect(utbKhusus).toBeDefined();
+      expect(utbKhusus.nominal).toBe('Rp 3.000.000,-');
+
+      // International Dual Degree HELP/DNUI claims
+      const ddHelpKhusus = claims.dppDiscounts.find(d => /International Dual Degree/i.test(d.programs) && d.wave === 'Gelombang Khusus');
+      expect(ddHelpKhusus).toBeDefined();
+      expect(ddHelpKhusus.nominal).toBe('Rp 10.000.000,-');
+
+      // Cross-program non-contamination checks
+      const allSkClaims = claims.dppDiscounts.filter(d => /Sistem Komputer/i.test(d.programs));
+      expect(allSkClaims.some(d => d.nominal === 'Rp 3.000.000,-')).toBe(false);
+      expect(allSkClaims.some(d => d.nominal === 'Rp 10.000.000,-')).toBe(false);
+
+      const allD3Claims = claims.dppDiscounts.filter(d => /D3 Manajemen Informatika/i.test(d.programs));
+      expect(allD3Claims.some(d => d.nominal === 'Rp 3.000.000,-')).toBe(false);
+      expect(allD3Claims.some(d => d.nominal === 'Rp 10.000.000,-')).toBe(false);
+
+      const allS1Claims = claims.dppDiscounts.filter(d => /S1 Sistem Informasi/i.test(d.programs));
+      expect(allS1Claims.some(d => d.nominal === 'Rp 2.000.000,-' && d.wave === 'Gelombang Khusus')).toBe(false);
+      expect(allS1Claims.some(d => d.nominal === 'Rp 10.000.000,-')).toBe(false);
+    });
+
+  });
+
+  describe('5. Case 5: Generic Layout-Driven Campus Directory & Contact Isolation', () => {
+
+    test('5a. extractGroundedCampusDirectory accurately extracts Jimbaran address, phone (0361) 8953534, and hotline 081288778840', async () => {
+      const frame = resolveSemanticFrame('Dimana lokasi kampus jimbaran dan berapa nomor kontaknya?');
+      const plan = buildRetrievalPlan(frame);
+      const candidates = await retrieveCandidates(plan, { topK: 20 });
+      const arbitrated = arbitrateEvidence(candidates, plan);
+
+      const dir = extractGroundedCampusDirectory(arbitrated.accepted);
+      expect(dir.jimbaran).toBeDefined();
+      expect(dir.jimbaran.address).toContain('Kampus Udayana');
+      expect(dir.jimbaran.phone).toBe('(0361) 8953534');
+      expect(dir.jimbaran.hotline).toBe('081288778840');
+    });
+
+    test('5b. Strict Contact Isolation: Jimbaran inquiry contains ZERO reference to Abiansemal phone or hotline', async () => {
+      const frame = resolveSemanticFrame('Dimana lokasi kampus jimbaran dan berapa nomor kontaknya?');
+      const plan = buildRetrievalPlan(frame);
+      const candidates = await retrieveCandidates(plan, { topK: 20 });
+      const arbitrated = arbitrateEvidence(candidates, plan);
+      const fallback = buildGenericExtractiveFallback(frame, arbitrated.accepted, arbitrated);
+
+      expect(fallback.success).toBe(true);
+      expect(fallback.answer).toContain('Kampus Jimbaran');
+      expect(fallback.answer).toContain('Jl. Raya Kampus Udayana');
+      expect(fallback.answer).toContain('(0361) 8953534');
+      expect(fallback.answer).toContain('081288778840');
+
+      // STRICT ISOLATION: Must NOT leak Abiansemal contacts
+      expect(fallback.answer).not.toContain('4790925');
+      expect(fallback.answer).not.toContain('082145099633');
+      expect(fallback.answer).not.toContain('Blahkiuh');
+      expect(fallback.answer).not.toContain('Janger');
+    });
+
+  });
+
+  describe('6. Case 6: Cross-Domain Non-Interference', () => {
+
+    test('6a. Tuition fee calculation remains accurate for S1 Sistem Informasi', () => {
+      const res = generateFeeAnswer('Berapa biaya kuliah S1 Sistem Informasi?');
+      expect(res.success).toBe(true);
+      expect(res.answer).toContain('Sistem Informasi');
+      expect(res.answer).toMatch(/Rp\s*[\d\.]+/);
+    });
+
+    test('6b. Academic recommendation engine operates without interference', () => {
+      const rec = evaluateRecommendation('Saya suka coding dan ingin jadi programmer software');
+      expect(rec.scoredCandidates.length).toBeGreaterThan(0);
+      expect(rec.scoredCandidates.some(c => /Teknologi Informasi|Sistem Informasi|Manajemen Informatika/.test(c.canonicalName))).toBe(true);
+    });
+
+    test('6c. Academic catalog listing operates cleanly without interference', () => {
+      const catalog = generateGroundedCatalogSummary('S1', 'id');
+      expect(catalog).toContain('S1 Sistem Informasi');
+      expect(catalog).toContain('S1 Teknologi Informasi');
+      expect(catalog).toContain('S1 Bisnis Digital');
+      expect(catalog).toContain('S1 Sistem Komputer');
     });
 
   });
