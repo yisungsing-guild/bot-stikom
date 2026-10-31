@@ -108,7 +108,7 @@ function getAiEngine() {
 
 let openaiCircuitOpen = false;
 
-function buildSynthesisPrompt(semanticFrame, evidenceList = [], recommendationResult = null) {
+function buildSynthesisPrompt(semanticFrame, evidenceList = [], recommendationResult = null, options = {}) {
   const userLang = semanticFrame.language || detectQueryLanguage(semanticFrame.rawQuery || '');
   const isEn = userLang === 'en';
   const isRecommendation = Boolean(
@@ -116,6 +116,19 @@ function buildSynthesisPrompt(semanticFrame, evidenceList = [], recommendationRe
     semanticFrame.domain === 'ACADEMIC_RECOMMENDATION' ||
     semanticFrame.intent === 'PROGRAM_RECOMMENDATION'
   );
+
+  let conversationHistorySnippet = '';
+  const history = Array.isArray(options?.conversationHistory)
+    ? options.conversationHistory.slice(-2)
+    : (Array.isArray(semanticFrame?.conversationHistory) ? semanticFrame.conversationHistory.slice(-2) : []);
+  if (history.length > 0) {
+    const formattedHistory = history
+      .map(h => `${h.role === 'user' ? (isEn ? 'User' : 'Pengguna') : (isEn ? 'Assistant' : 'Asisten')}: ${h.content ? h.content.trim().substring(0, 250) : ''}`)
+      .join('\n');
+    conversationHistorySnippet = isEn
+      ? `\nRECENT CONVERSATION CONTEXT:\n${formattedHistory}\n\n`
+      : `\nRIWAYAT PERCAKAPAN TERAKHIR:\n${formattedHistory}\n\n`;
+  }
 
   const ragFacts = evidenceList
     .map((e, idx) => `[${isEn ? 'Fact' : 'Fakta'} ${idx + 1}] (${isEn ? 'Source' : 'Sumber'}: ${e.source || e.sourceFile || (isEn ? 'official campus guide' : 'panduan resmi')}):\n${(e.text || e.chunk || '').trim()}`)
@@ -207,7 +220,7 @@ STRICT GROUNDING INVARIANTS:
    - Mandatory registration requirements and documents.
 3. If the available facts do not contain the answer for a specific aspect asked by the user, state what is not yet listed honestly and kindly in natural language, and guide them to contact campus admissions directly.
 4. Focus ONLY on the entity or study program inquired by the user. Do not mix information from other majors.${recInstructionsEn}`,
-      userPrompt: `User Question: "${semanticFrame.rawQuery}"${semanticInterpretationSnippet}
+      userPrompt: `${conversationHistorySnippet}User Question: "${semanticFrame.rawQuery}"${semanticInterpretationSnippet}
 AVAILABLE OFFICIAL FACTS:
 ${contextSnippet}
 
@@ -241,7 +254,7 @@ BATASAN KETAT AKURASI (GROUNDING INVARIANTS):
    - Ketentuan dan berkas syarat pendaftaran.
 3. Jika bukti yang tersedia belum memuat jawaban lengkap atas aspek yang ditanyakan pengguna, sampaikan bagian yang belum tercantum tersebut dengan jujur dan bersahabat dalam bahasa alami, lalu arahkan untuk konfirmasi langsung ke admisi/layanan resmi kampus. Dilarang menutup-nutupi ketidaktahuan dengan asumsi yang tampak meyakinkan.
 4. Fokus HANYA pada entitas atau program studi yang ditanyakan pengguna. Dilarang mencampuradukkan kurikulum, biaya, atau info prodi lain.${recInstructionsId}`,
-    userPrompt: `Pertanyaan Pengguna: "${semanticFrame.rawQuery}"${semanticInterpretationSnippet}
+    userPrompt: `${conversationHistorySnippet}Pertanyaan Pengguna: "${semanticFrame.rawQuery}"${semanticInterpretationSnippet}
 FAKTA RESMI YANG TERSEDIA:
 ${contextSnippet}
 
@@ -810,27 +823,29 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
   }
 
   // Institutional Current Admission Wave Status Inquiry (e.g. "Sekarang buka gelombang berapa?", "Apakah sekarang buka gelombang pendaftaran?")
+  const academicYearLabel = semanticFrame.academicYear || semanticFrame.temporal?.academicYear || '2026/2027';
   const isCurrentEnrollmentStatus = semanticFrame.intent === 'CURRENT_ENROLLMENT_STATUS' ||
-    (/\b(?:sekarang\s+buka\s+gelombang|gelombang\s+berapa\s+(?:sekarang|saat\s*ini)|apakah\s+(?:sekarang|saat\s*ini)\s+buka\s+gelombang|status\s+gelombang)\b/i.test(rawQuery) &&
+    semanticFrame.intent === 'ADMISSION_SCHEDULE' ||
+    (/\b(?:sekarang\s+buka\s+gelombang|gelombang\s+berapa\s+(?:sekarang|saat\s*ini)|apakah\s+(?:sekarang|saat\s*ini)\s+buka\s+gelombang|status\s+gelombang|jadwal\s+pendaftaran|kapan\s+pendaftaran)\b/i.test(rawQuery) &&
      !/\b(syarat|persyaratan|dokumen|cara\s+daftar|biaya)\b/i.test(rawQuery));
 
   if (isCurrentEnrollmentStatus) {
     const isEn = userLang === 'en';
     const scheduleAnswer = isEn
-      ? `Regarding the admission waves and schedule at ITB STIKOM Bali:\n\n` +
-        `New student registration (PMB) is conducted in multiple waves (such as Wave 1, Wave 2, and subsequent waves) across all degree programs (S1, D3, S2, and Dual Degree).\n\n` +
-        `To ensure you have the most up-to-date and verified active wave status and registration deadlines today without data discrepancies, please check the official PMB portal or reach out directly to the admissions team:\n` +
+      ? `Regarding the admission schedule and waves for Academic Year ${academicYearLabel} at ITB STIKOM Bali:\n\n` +
+        `New student registration (PMB) is conducted in multiple waves (following the official calendar stages: Registration, Testing, Announcement, and Re-registration) across all study programs (S1, D3, S2, and Dual Degree).\n\n` +
+        `To ensure you have the most up-to-date and verified active wave dates and deadlines for Academic Year ${academicYearLabel} without discrepancies, please check the official PMB portal or reach out directly to the admissions team:\n` +
         `🌐 **Official PMB Portal**: https://pmb.stikom-bali.ac.id\n` +
         `📞 **Admissions Office**: (0361) 244445\n` +
         `🏢 **PMB Service Room**: ITB STIKOM Bali Main Campus (Jl. Raya Puputan No. 86, Renon, Denpasar)\n\n` +
-        `_Note: Live active wave status and deadline dates are published and updated periodically on the official PMB portal. Feel free to visit the portal for verified live dates._`
-      : `Mengenai informasi jadwal dan status gelombang Penerimaan Mahasiswa Baru (PMB) ITB STIKOM Bali:\n\n` +
-        `Pendaftaran mahasiswa baru di ITB STIKOM Bali dibuka secara bertahap melalui beberapa periode gelombang pendaftaran (seperti Gelombang 1, Gelombang 2, dan gelombang lanjutan) untuk seluruh jenjang program studi (S1, D3, S2, dan Dual Degree).\n\n` +
-        `Untuk memastikan status gelombang yang aktif dan jadwal penutupan pendaftaran teraktual saat ini tanpa kekeliruan data, calon mahasiswa disarankan untuk memeriksa langsung pada kanal resmi PMB:\n` +
+        `_Note: Exact calendar deadline dates per wave for Academic Year ${academicYearLabel} are published and updated live on the official PMB portal._`
+      : `Mengenai informasi jadwal pendaftaran Penerimaan Mahasiswa Baru (PMB) Tahun Akademik ${academicYearLabel} di ITB STIKOM Bali:\n\n` +
+        `Pendaftaran mahasiswa baru dibuka secara bertahap melalui beberapa periode gelombang (sesuai tahapan kalender resmi PMB: Masa Pendaftaran, Testing, Pengumuman, dan Masa Registrasi Ulang) untuk seluruh jenjang program studi (S1, D3, S2, dan Dual Degree).\n\n` +
+        `Untuk memastikan rincian tanggal kalender pasti pembukaan dan penutupan tiap gelombang TA ${academicYearLabel} secara teraktual tanpa kekeliruan data, calon mahasiswa disarankan memeriksa langsung kanal resmi PMB:\n` +
         `🌐 **Portal Resmi PMB**: https://pmb.stikom-bali.ac.id\n` +
         `📞 **Layanan Telepon PMB**: (0361) 244445\n` +
         `🏢 **Ruang Layanan PMB**: Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n\n` +
-        `_Catatan: Informasi status gelombang pendaftaran aktif dan jadwal penutupannya diperbarui berkala sesuai kalender akademik PMB. Silakan akses portal resmi PMB di atas untuk konfirmasi jadwal terverifikasi._`;
+        `_Catatan: Rincian tanggal pasti pembukaan dan penutupan tiap gelombang PMB TA ${academicYearLabel} diperbarui berkala pada portal resmi PMB di atas._`;
     return appendMissingAspectNote(scheduleAnswer);
   }
 
@@ -879,10 +894,6 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
     return appendMissingAspectNote(academicEventAnswer);
   }
 
-  if (!accepted || accepted.length === 0) return null;
-
-  const cleanAll = accepted.map(a => cleanDocumentArtifacts(a.text)).join('\n\n');
-
   // Prioritize specific academic program over broad degree scope (exclude academic events like Wisuda/Yudisium)
   const isExcludedEntity = (name) => /^(?:wisuda|yudisium)$/i.test(String(name || '').trim());
   const programEntity = (semanticFrame.entities || []).find(e => (e.family === 'academic_program' || e.type === 'program') && !isExcludedEntity(e.canonical || e.name));
@@ -902,6 +913,11 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
       targetEntities.unshift(programEntity.canonical);
     }
   }
+
+  if (!accepted || accepted.length === 0) return null;
+
+  const cleanAll = accepted.map(a => cleanDocumentArtifacts(a.text)).join('\n\n');
+
   const rawEntityLabel = (programEntity && programEntity.canonical) || targetEntities[0] || 'program terkait';
   const entityLabel = isExcludedEntity(rawEntityLabel) ? 'program terkait' : rawEntityLabel;
 
@@ -1185,76 +1201,6 @@ Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per pro
       return appendMissingAspectNote(ans.trim());
     }
   }
-
-  // 2. Scholarship Inquiry
-  if (semanticFrame.domain === 'SCHOLARSHIP' || (semanticFrame.aspects && semanticFrame.aspects.includes('scholarship') && semanticFrame.domain !== 'TUITION_FEE')) {
-    const isKip = /kip|kip-?kuliah/i.test(rawQuery) || targetEntities.some(e => /kip/i.test(e));
-    const isSkss = /skss|satu keluarga satu sarjana/i.test(rawQuery) || targetEntities.some(e => /skss/i.test(e));
-
-    if (isKip) {
-      const kipAnswer = `Beasiswa KIP Kuliah di ITB STIKOM Bali memberikan bantuan biaya pendidikan penuh bagi calon mahasiswa berprestasi yang memenuhi kriteria ekonomi:
-
-**Persyaratan Beasiswa KIP Kuliah**:
-1. Siswa SMA/SMK/MA sederajat yang lulus pada tahun berjalan atau maksimal 2 tahun sebelumnya.
-2. Memiliki Kartu Indonesia Pintar (KIP) atau terdaftar dalam Data Terpadu Kesejahteraan Sosial (DTKS) Kemensos / PKH.
-3. Memiliki potensi akademik baik dan lolos seleksi penerimaan mahasiswa baru di ITB STIKOM Bali.
-4. Berkas persyaratan: scan KIP/KKS/PKH, surat keterangan penghasilan orang tua dari kelurahan/desa, Kartu Keluarga (KK), dan pasfoto.
-
-Pendaftaran akun KIP Kuliah dilakukan melalui portal Kemendikbudristek https://kip-kuliah.kemdikbud.go.id dan diintegrasikan saat pendaftaran PMB di https://pmb.stikom-bali.ac.id.`;
-      return appendMissingAspectNote(kipAnswer);
-    }
-
-    if (isSkss) {
-      const skssAnswer = `Program Beasiswa SKSS (Satu Keluarga Satu Sarjana) dari Yayasan ditujukan untuk calon mahasiswa yang belum ada anggota keluarganya berpendidikan sarjana (S1):
-
-**Ketentuan & Persyaratan**:
-1. Calon mahasiswa baru yang merupakan sarjana pertama di dalam kartu keluarganya.
-2. Melampirkan Kartu Keluarga (KK) dan surat keterangan dari kelurahan/desa setempat.
-3. Memiliki motivasi belajar tinggi serta komitmen menyelesaikan perkuliahan tepat waktu di ITB STIKOM Bali.
-4. Lolos verifikasi berkas dan wawancara dari panitia beasiswa yayasan.
-
-Untuk informasi kuota dan pengajuan beasiswa SKSS periode ini, Kakak bisa berkonsultasi langsung dengan layanan admisi PMB di https://pmb.stikom-bali.ac.id.`;
-      return appendMissingAspectNote(skssAnswer);
-    }
-
-    const isDppDiscount = /\b(potongan\s+dpp|potongan.*gelombang|dpp.*gelombang|gelombang\s+awal)\b/i.test(rawQuery);
-    if (isDppDiscount) {
-      const dppDiscountAnswer = `Untuk pendaftaran di gelombang awal T.A 2026/2027, ITB STIKOM Bali menyediakan potongan Dana Pendidikan Pokok (DPP) dengan rincian berikut:
-
-• **Gelombang Khusus (Gelombang Paling Awal)**:
-  - S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital: Potongan DPP sebesar **Rp 3.000.000**
-  - S1 Sistem Komputer / D3 Manajemen Informatika: Potongan DPP sebesar **Rp 2.000.000**
-  - International Dual Degree (DNUI/HELP): Potongan DPP sebesar **Rp 10.000.000**
-
-• **Gelombang I (Gelombang Awal)**:
-  - S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital: Potongan DPP sebesar **Rp 2.000.000**
-  - S1 Sistem Komputer / D3 Manajemen Informatika: Potongan DPP sebesar **Rp 1.000.000**
-  - International Dual Degree (DNUI/HELP): Potongan DPP sebesar **Rp 8.000.000**
-
-• **Gelombang Lanjutan**:
-  - Gelombang II: Potongan DPP Rp 1.500.000 (S1 SI/TI/BD) / Rp 750.000 (S1 SK & D3 MI)
-  - Gelombang III: Potongan DPP Rp 1.000.000 (S1 SI/TI/BD) / Rp 500.000 (D3 MI)
-  - Gelombang IV: Potongan DPP Rp 500.000 (S1 SI/TI/BD)
-
-**Ketentuan Tambahan**:
-1. Pembayaran DPP secara tunai (lunas) mendapatkan tambahan potongan sebesar **10%**.
-2. Khusus bagi alumni SMK TI Bali Global dan SMK Pandawa Bali Global, potongan beasiswa DPP diberikan dalam bentuk persentase, yaitu sebesar **60% pada Gelombang Khusus** dan **50% pada Gelombang I**.
-
-Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
-      return appendMissingAspectNote(dppDiscountAnswer);
-    }
-
-    const scholarshipAnswer = `Di ITB STIKOM Bali, tersedia beberapa program beasiswa dan potongan biaya pendidikan:
-
-1. **Beasiswa KIP Kuliah**: Bantuan biaya pendidikan penuh bagi calon mahasiswa berprestasi yang memenuhi kriteria ekonomi.
-2. **Beasiswa Potongan DPP Gelombang**: Potongan Dana Pendidikan Pokok (DPP) Rp 2.000.000 s.d. Rp 3.000.000 pada gelombang awal pendaftaran untuk S1 reguler, dengan diskon tambahan 10% jika dibayar tunai (serta hingga 60% khusus alumni SMK TI Bali Global).
-3. **Beasiswa Yayasan & SKSS**: Bantuan keringanan biaya bagi penerima beasiswa Satu Keluarga Satu Sarjana atau prestasi akademik/non-akademik.
-
-Informasi lengkap mengenai persyaratan berkas dan alur pendaftaran beasiswa dapat diakses melalui portal https://pmb.stikom-bali.ac.id atau layanan admisi kampus.`;
-    return appendMissingAspectNote(scholarshipAnswer);
-  }
-
-
 
   // 3. Facilities Inquiry
   if (semanticFrame.domain !== 'CAREER_CENTER' && (semanticFrame.domain === 'FACILITIES' || (semanticFrame.aspects && (semanticFrame.aspects.includes('facilities') || semanticFrame.aspects.includes('lab') || semanticFrame.aspects.includes('campus_infrastructure'))))) {
@@ -2606,6 +2552,20 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
         reason: 'unsupported_degree_scope'
       };
     }
+
+    const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, arbitratedEvidence.accepted || [], arbitratedEvidence);
+    if (!synthesizedText) {
+      return {
+        success: false,
+        answer: null,
+        reason: 'unsupported_degree_scope'
+      };
+    }
+    return {
+      success: true,
+      answer: synthesizedText,
+      source: 'grounded_deterministic_summary'
+    };
   }
 
   // Explicit Unsupported Entity handling (e.g. Teknik Nuklir)
@@ -2786,7 +2746,10 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
   const { systemPrompt, userPrompt } = buildSynthesisPrompt(
     semanticFrame,
     generationEvidence,
-    recommendationResult || arbitratedEvidence?.recommendationResult || null
+    recommendationResult || arbitratedEvidence?.recommendationResult || null,
+    {
+      conversationHistory: arbitratedEvidence?.sessionData?.conversationHistory || arbitratedEvidence?.conversationHistory || semanticFrame?.conversationHistory || []
+    }
   );
 
   try {
@@ -3447,7 +3410,16 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     }
   }
 
-  if (semanticFrame?.domain === 'PMB' && (semanticFrame?.intent === 'ADMISSION_PROCEDURE' || semanticFrame?.intent === 'GENERAL_PMB_INQUIRY')) {
+  if (
+    semanticFrame?.domain === 'PMB' ||
+    semanticFrame?.intent === 'ADMISSION_SCHEDULE' ||
+    semanticFrame?.intent === 'ADMISSION_PROCEDURE' ||
+    semanticFrame?.intent === 'GENERAL_PMB_INQUIRY'
+  ) {
+    const yearLabel = semanticFrame?.academicYear || '2026/2027';
+    if (!extractiveText.includes(yearLabel)) {
+      extractiveText = `Informasi Penerimaan Mahasiswa Baru (PMB) ITB STIKOM Bali Tahun Akademik ${yearLabel}:\n\n` + extractiveText;
+    }
     if (!extractiveText.includes('pmb.stikom-bali.ac.id')) {
       extractiveText += isEn
         ? '\n\nOfficial PMB registration portal: https://pmb.stikom-bali.ac.id'

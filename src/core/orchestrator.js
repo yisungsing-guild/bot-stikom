@@ -844,6 +844,23 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       }
     }
 
+    let currentAcademicYear = primaryFrame.academicYear || primaryFrame.temporal?.academicYear || null;
+    if (!currentAcademicYear && primaryFrame.domain === 'PMB') {
+      if (sessionData.academicYear) {
+        currentAcademicYear = sessionData.academicYear;
+      } else {
+        const yearMatch = finalAnswer.match(/\b(?:tahun\s+(?:akademik|ajaran)|t\.?a\.?)\s*:?\s*(20\d{2}\s*\/\s*20\d{2})\b/i) ||
+          finalAnswer.match(/\b(2026\s*\/\s*2027)\b/);
+        currentAcademicYear = yearMatch ? yearMatch[1].replace(/\s+/g, '') : '2026/2027';
+      }
+    }
+
+    // Isolate active academicYear per turn: only retained when query is in PMB domain or carries explicit year
+    const activeAcademicYear = (primaryFrame.domain === 'PMB' || primaryFrame.academicYear)
+      ? currentAcademicYear
+      : null;
+    const historicalAcademicYear = currentAcademicYear || sessionData.academicYear || sessionData.historicalAcademicYear || null;
+
     await updateSession(chatId, {
       dataPatch: {
         activeDomain: primaryFrame.domain,
@@ -855,6 +872,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         isProximityComparison: Boolean(primaryFrame.isProximityComparison || primaryFrame.aspects?.includes('proximity_comparison')),
         userOrigin: primaryFrame.userOrigin || sessionData.userOrigin || null,
         lastActiveWave: currentWave || sessionData.lastActiveWave || null,
+        academicYear: activeAcademicYear,
+        historicalAcademicYear: historicalAcademicYear,
         lastQuery: rawQuery,
         lastAnswer: finalAnswer,
         conversationHistory: appendConciseTurnHistory(sessionData.conversationHistory || [], rawQuery, finalAnswer)

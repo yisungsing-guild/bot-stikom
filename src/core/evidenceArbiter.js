@@ -343,7 +343,10 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   }
 
   // 0.2 PMB Registration Form Fee vs DPP Discount / Wave Discount Gate
-  const isAskingFormFee = /\b(?:biaya\s+formulir|biaya\s+pendaftaran|uang\s+pendaftaran|biaya\s+daftar)\b/i.test(queryText) ||
+  // INVARIANT: Use the user's direct query intent, NEVER internal query expansion variants,
+  // to avoid falsely interpreting scholarship queries as form fee queries.
+  const userDirectQuery = (retrievalPlan.rawQuery || retrievalPlan.query || '').toLowerCase();
+  const isAskingFormFee = /\b(?:biaya\s+formulir|biaya\s+pendaftaran|uang\s+pendaftaran|biaya\s+daftar)\b/i.test(userDirectQuery) ||
     retrievalPlan.intent === 'ADMISSION_FORM_FEE' ||
     (Array.isArray(requiredAspects) && requiredAspects.includes('registration_form_fee'));
   if (isAskingFormFee) {
@@ -613,6 +616,14 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
       if (MODIFIER_FAMILIES.has(fam)) {
         if (!modifierFamilyMap.has(fam)) modifierFamilyMap.set(fam, []);
         modifierFamilyMap.get(fam).push(ent);
+      } else if (
+        canonicalEntry?.canonical === 'Kampus ITB STIKOM Bali' &&
+        retrievalPlan.intent !== 'CAMPUS_LOCATION' &&
+        retrievalPlan.domain !== 'FACILITIES'
+      ) {
+        // Parent institution reference ("di kampus ITB STIKOM Bali") is an institutional scope,
+        // NOT a physical branch restriction that filters out institutional fee/scholarship/PMB chunks!
+        continue;
       } else {
         primaryTargets.push({ ent, fam });
       }

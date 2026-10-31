@@ -193,8 +193,17 @@ function buildRetrievalContract(semanticFrame = {}, options = {}) {
   if (primaryEntityCanonical) {
     const canonObj = findCanonicalEntity(primaryEntityCanonical);
     if (canonObj) {
-      entityFamily = canonObj.family || (canonObj.type === 'program' ? 'academic_program' : 'campus_service');
-      targetEntityIds.push(canonObj.id || canonObj.canonical);
+      if (
+        canonObj.canonical === 'Kampus ITB STIKOM Bali' &&
+        semanticFrame.intent !== 'CAMPUS_LOCATION' &&
+        semanticFrame.domain !== 'FACILITIES'
+      ) {
+        entityFamily = 'institution';
+        targetEntityIds.push('INSTITUTION_ITB_STIKOM_BALI');
+      } else {
+        entityFamily = canonObj.family || (canonObj.type === 'program' ? 'academic_program' : 'campus_service');
+        targetEntityIds.push(canonObj.id || canonObj.canonical);
+      }
     }
   }
 

@@ -33,9 +33,20 @@ function buildRetrievalPlan(semanticFrame) {
   const { normalizedQuery, domain, intent, entities, aspects, temporal } = semanticFrame;
   const retrievalContract = buildRetrievalContract(semanticFrame);
   const contractTargets = retrievalContract.scopeConstraints?.targetEntities || [];
-  const targetEntities = contractTargets.length > 0
+  let targetEntities = contractTargets.length > 0
     ? contractTargets
     : (entities || []).map(e => e.canonical || e.name || String(e));
+
+  // If the query is an institutional inquiry (e.g. scholarship, PMB, fees) and the only target entity
+  // is 'Kampus ITB STIKOM Bali', do not constrain targetEntities to a single physical campus location.
+  if (
+    targetEntities.length === 1 &&
+    targetEntities[0] === 'Kampus ITB STIKOM Bali' &&
+    domain !== 'FACILITIES' &&
+    intent !== 'CAMPUS_LOCATION'
+  ) {
+    targetEntities = [];
+  }
   const normalizedText = String(normalizedQuery || semanticFrame.rawQuery || '').toLowerCase();
 
   const GENERIC_COMMON_WORDS = new Set([
@@ -325,6 +336,15 @@ function buildRetrievalPlan(semanticFrame) {
     queryVariants.push('alur pendaftaran mahasiswa baru pmb.stikom-bali.ac.id');
   }
 
+  // PMB Schedule & Wave Calendar query variants
+  if (intent === 'ADMISSION_SCHEDULE' || (domain === 'PMB' && aspects && aspects.includes('schedule'))) {
+    const yr = semanticFrame.academicYear || temporal?.academicYear || '2026/2027';
+    queryVariants.push(`jadwal pendaftaran penerimaan mahasiswa baru PMB ${yr} gelombang`);
+    queryVariants.push(`kalender pendaftaran mahasiswa baru ${yr} ITB STIKOM Bali`);
+    queryVariants.push('Kalender Pendaftaran.xlsx');
+    queryVariants.push('kalender pendaftaran mahasiswa baru masa pendaftaran testing pengumuman registrasi ulang');
+  }
+
   // Academic Curriculum query variants (guarded: do not inject curriculum keywords into accreditation or thesis guidance queries)
   if (((domain === 'ACADEMIC_CURRICULUM' && (!aspects || !aspects.includes('accreditation')) && intent !== 'THESIS_GUIDANCE_PROCEDURE') || intent === 'CURRICULUM_INQUIRY' || (aspects && (aspects.includes('curriculum') || aspects.includes('courses')))) && (!aspects || !aspects.includes('accreditation') || aspects.includes('curriculum')) && intent !== 'THESIS_GUIDANCE_PROCEDURE') {
     if (targetEntities.length > 0) {
@@ -484,7 +504,10 @@ function buildRetrievalPlan(semanticFrame) {
     targetEntities,
     excludedConflictingEntities,
     requiredAspects: aspects || [],
+    academicYear: semanticFrame.academicYear || temporal?.academicYear || '2026/2027',
     temporalConstraint: temporal ? temporal.constraint : 'GENERAL',
+    rawQuery: semanticFrame.rawQuery || normalizedQuery || '',
+    query: normalizedQuery || semanticFrame.rawQuery || '',
     queryVariants,
     unsupportedEntity: Boolean(semanticFrame.unsupportedEntity || semanticFrame.isUnsupportedEntity),
     unsupportedEntityName: semanticFrame.unsupportedEntityName || semanticFrame.unsupportedProgramName || null,

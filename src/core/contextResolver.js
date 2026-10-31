@@ -176,6 +176,16 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     (/\bgelombang\b/i.test(query) && (hasScheduleOrCalendarFocus || /\bpmb\b/i.test(query)))
   );
   if (isAdmissionScheduleOrStatus) {
+    if (sessionData.activeDomain === 'PMB' || sessionData.activeIntent === 'GENERAL_PMB_INQUIRY' || sessionData.academicYear) {
+      return {
+        shouldInherit: true,
+        reason: 'pmb_schedule_continuation',
+        inheritedDomain: 'PMB',
+        inheritedIntent: 'ADMISSION_SCHEDULE',
+        inheritedEntity: null,
+        inheritedAcademicYear: sessionData.academicYear || '2026/2027'
+      };
+    }
     return {
       shouldInherit: false,
       reason: 'admission_schedule_isolation'
@@ -311,6 +321,29 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     }
   }
 
+  // PMB General Continuation (e.g. Turn 1: "Tanya PMB", Turn 2: "Jadwal pendaftaran")
+  const isPmbContinuationQuery = /\b(?:jadwal(?:\s+pendaftaran)?|kapan(?:\s+pendaftaran|\s+dibuka|\s+tutup)?|tanggal(?:\s+pendaftaran|\s+penting)?|alur(?:\s+pendaftaran)?|cara\s+daftar|syarat(?:\s+pendaftaran)?|persyaratan|biaya\s+daftar|link\s+pendaftaran|gelombang)\b/i.test(query);
+  const isPmbActiveSession = (sessionData.activeDomain === 'PMB' ||
+    sessionData.activeIntent === 'GENERAL_PMB_INQUIRY' ||
+    sessionData.activeIntent === 'ADMISSION_SCHEDULE' ||
+    sessionData.activeIntent === 'ADMISSION_PROCEDURE' ||
+    /\bpmb\b/i.test(sessionData.lastQuery || ''));
+
+  if (isPmbActiveSession && (isProceduralInquiry || isDateInquiry || isPmbContinuationQuery || (isAttributeInquiry && !sessionData.activeEntity))) {
+    const isExplicitUnrelatedDomain = /\b(?:kampus\s+(?:renon|jimbaran|abiansemal)|wisuda|yudisium|ukm|inbis|organisasi)\b/i.test(query);
+    if (!isExplicitUnrelatedDomain) {
+      const isScheduleFocus = isDateInquiry || /\b(?:jadwal|kapan|tanggal|gelombang|dibuka|tutup)\b/i.test(query);
+      return {
+        shouldInherit: true,
+        reason: isScheduleFocus ? 'pmb_schedule_continuation' : 'pmb_procedural_continuation',
+        inheritedDomain: 'PMB',
+        inheritedIntent: isScheduleFocus ? 'ADMISSION_SCHEDULE' : 'GENERAL_PMB_INQUIRY',
+        inheritedEntity: null,
+        inheritedAcademicYear: sessionData.academicYear || '2026/2027'
+      };
+    }
+  }
+
   if ((isAttributeInquiry || isProceduralInquiry || isDateInquiry) && sessionData.activeEntity) {
     const isFee = /\b(rincian\s+biaya|biaya|spp|dpp)\b/i.test(query);
     const isContact = isInstitutionalContactQuery;
@@ -328,7 +361,8 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
       shouldInherit: true,
       reason: isDateInquiry ? 'date_continuation' : (isAttributeInquiry ? 'attribute_continuation' : 'procedural_continuation'),
       inheritedDomain,
-      inheritedEntity: sessionData.activeEntity
+      inheritedEntity: sessionData.activeEntity,
+      inheritedAcademicYear: sessionData.academicYear || null
     };
   }
 

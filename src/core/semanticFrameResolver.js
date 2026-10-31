@@ -1155,9 +1155,21 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
 
   // 3. Temporal Resolution
   const isCurrent = TEMPORAL_NOW_REGEX.test(normalized);
+  const academicYearMatch = raw.match(/\b(?:tahun\s+(?:akademik|ajaran)|t\.?a\.?)\s*:?\s*(\d{4}\s*\/\s*\d{4})\b/i) ||
+    raw.match(/\b(20\d{2}\s*\/\s*20\d{2})\b/);
+  const detectedAcademicYear = academicYearMatch ? academicYearMatch[1].replace(/\s+/g, '') : null;
+
+  // Separate historical academicYear from effective turn academicYear:
+  // Only inherit if context dependency explicitly permits inheritance for the current turn
+  const inheritedAcademicYear = contextDep.shouldInherit
+    ? (contextDep.inheritedAcademicYear || sessionData.academicYear || null)
+    : null;
+  const effectiveAcademicYear = detectedAcademicYear || inheritedAcademicYear;
+
   const temporal = {
     isCurrentConstraint: isCurrent,
-    constraint: isCurrent ? 'NOW' : 'GENERAL'
+    constraint: isCurrent ? 'NOW' : 'GENERAL',
+    academicYear: effectiveAcademicYear
   };
 
   // 4. Infer Domain & Intent
@@ -1173,12 +1185,35 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     } else if (contextDep.inheritedDomain === 'ACADEMIC_EVENT' && !/\b(?:pmb|mahasiswa\s+baru|calon\s+mahasiswa|kuliah\s+di|masuk\s+stikom)\b/i.test(normalized)) {
       domain = 'ACADEMIC_EVENT';
       intent = 'GRADUATION_INQUIRY';
+    } else if (contextDep.inheritedDomain === 'PMB') {
+      if (domain === 'GENERAL' || domain === 'OUT_OF_DOMAIN') {
+        domain = 'PMB';
+        intent = contextDep.inheritedIntent || 'GENERAL_PMB_INQUIRY';
+      } else if (intent === 'ADMISSION_SCHEDULE') {
+        domain = 'PMB';
+      }
     } else if (domain === 'GENERAL' || domain === 'OUT_OF_DOMAIN') {
       domain = contextDep.inheritedDomain;
       if (contextDep.inheritedIntent || sessionData.activeIntent) {
         intent = contextDep.inheritedIntent || sessionData.activeIntent;
       }
     }
+  }
+
+  // If the query is not a facilities/campus location query, "Kampus ITB STIKOM Bali" or "ITB STIKOM Bali"
+  // represents the parent institution, NOT a physical branch restriction that filters out institutional fee/scholarship/PMB chunks.
+  if (domain !== 'FACILITIES' && intent !== 'CAMPUS_LOCATION') {
+    effectiveTargetEntities = effectiveTargetEntities.map(e => {
+      if (e.canonical === 'Kampus ITB STIKOM Bali') {
+        return { ...e, family: 'institution', type: 'institution' };
+      }
+      return e;
+    });
+  }
+
+  // If PMB domain and academicYear still null, default to current intake 2026/2027
+  if (domain === 'PMB' && !temporal.academicYear) {
+    temporal.academicYear = '2026/2027';
   }
 
   // Ensure campus entity is present for genuine CAMPUS_LOCATION inquiries without overriding academic entities
@@ -1319,8 +1354,9 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     relation: inferred.relation,
     locationScope: inferred.locationScope || (inferred.targetBranch ? 'SINGLE' : (finalAspects.includes('all_locations') ? 'ALL' : 'GENERAL')),
     targetBranch: inferred.targetBranch || null,
-    isProximityComparison: Boolean(inferred.isProximityComparison || (sessionData.isProximityComparison && contextDep.shouldInherit)),
+    isProximityComparison: Boolean(inferred.isProximityComparison || (!inferred.targetBranch && sessionData.isProximityComparison && contextDep.shouldInherit)),
     userOrigin: inferred.userOrigin || extractUserOriginLocation(raw, sessionData) || null,
+    academicYear: temporal.academicYear || null,
     aspects: finalAspects,
     temporal,
     userState: inferred.userState,
