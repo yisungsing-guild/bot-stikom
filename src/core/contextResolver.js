@@ -211,6 +211,25 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     };
   }
 
+  // Explicit general admission procedural inquiry (tahapan/alur/syarat pendaftaran mahasiswa baru/PMB/TA)
+  // is university-wide and must NOT inherit previous international or program-specific entities unless explicitly requested.
+  const hasSpecificProgramAnaphoraOrMention = /\b(?:dnui|help(?:\s+university)?|dual\s+degree|double\s+degree|internasional|international|luar\s+negeri|cina|china|malaysia|(?:program|jurusan|prodi)\s+(?:itu|tersebut|ini|terkait))\b/i.test(query);
+  const hasGeneralAdmissionKeywords = /\b(?:mahasiswa\s+baru|pmb|ta\s*\d{4}\/\d{4})\b/i.test(query);
+  const isGeneralAdmissionProcedural = !isWaveFeeFollowup && !hasFeeFocus && !hasSpecificProgramAnaphoraOrMention && (
+    (hasGeneralAdmissionKeywords && /\b(?:daftar|pendaftaran|masuk|tahap(?:an)?|alur|prosedur|syarat|cara|langkah)\b/i.test(query)) ||
+    /\b(?:tahap(?:an)?|alur|prosedur|cara|langkah)\s+pendaftaran\s+(?:mahasiswa\s+baru|pmb|ta\s*\d{4}\/\d{4}|itb\s+stikom\s+bali)\b/i.test(query)
+  );
+  if (isGeneralAdmissionProcedural) {
+    return {
+      shouldInherit: true,
+      reason: 'general_pmb_procedural_continuation',
+      inheritedDomain: 'PMB',
+      inheritedIntent: 'GENERAL_PMB_INQUIRY',
+      inheritedEntity: null,
+      inheritedAcademicYear: sessionData.academicYear || '2026/2027'
+    };
+  }
+
   // Explicit academic event check: wisuda/yudisium must NOT inherit previous PMB or program entity
   const hasExplicitAcademicEvent = /\b(?:wisuda|yudisium)\b/i.test(query);
   if (hasExplicitAcademicEvent) {

@@ -19,7 +19,7 @@
  */
 
 const { getSession, updateSession } = require('./conversationState');
-const { decomposeQuery, decomposeQueryAsync, hasMultipleIntents } = require('./multiIntentResolver');
+const { decomposeQuery, decomposeQueryAsync, hasMultipleIntents, hasAnaphoricReference } = require('./multiIntentResolver');
 const { buildRetrievalPlan } = require('./retrievalPlanner');
 const { retrieveCandidates } = require('./retrievalService');
 const { arbitrateEvidence } = require('./evidenceArbiter');
@@ -826,11 +826,27 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
   }
 
   // Combine answers if multiple subqueries with deduplication
+  const hasSuccessfulCampusAnswer = subQueryResults.some(r =>
+    r.answer && (r.answerability === ANSWERABILITY_STATUS.ANSWERABLE || r.verification?.pass || r.verification?.isGrounded) &&
+    r.frame && r.frame.domain !== 'OUT_OF_DOMAIN'
+  );
+
   const seenAnswerNorms = new Set();
   const uniqueAnswers = [];
   for (const r of subQueryResults) {
     const ans = (r.answer || '').trim();
     if (!ans) continue;
+
+    // Suppress contradictory out-of-domain refusal if another campus subquery in the same turn was successfully answered
+    // and this subquery is a short dependent/anaphoric clause (e.g. "apa layanannya")
+    if (r.frame && (r.frame.domain === 'OUT_OF_DOMAIN' || r.status === 'out_of_domain') && hasSuccessfulCampusAnswer) {
+      const q = String(r.frame.rawQuery || '').trim();
+      const isAnaphoricServiceOrDetail = hasAnaphoricReference(q) || /\b(?:layanan(?:nya)?|fasilitas(?:nya)?|program(?:nya)?|manfaat(?:nya)?|syarat(?:nya)?)\b/i.test(q);
+      if (isAnaphoricServiceOrDetail) {
+        continue;
+      }
+    }
+
     const norm = ans.toLowerCase().replace(/\s+/g, ' ');
     if (!seenAnswerNorms.has(norm)) {
       seenAnswerNorms.add(norm);

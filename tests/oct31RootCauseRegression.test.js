@@ -1692,4 +1692,103 @@ describe('31 October Root Cause Regression Suite', () => {
 
   });
 
+  describe('14. Case 14: November 1 WhatsApp Production Hardening', () => {
+
+    test('14a. BOT_IDENTITY precedence: "Halo, kamu siapa?" and "Hai siapa kamu" answer Tiko identity, plain greetings answer greeting', async () => {
+      const f1 = resolveSemanticFrame('Halo, kamu siapa?');
+      expect(f1.domain).toBe('CONVERSATIONAL');
+      expect(f1.intent).toBe('BOT_IDENTITY');
+
+      const f2 = resolveSemanticFrame('Halo');
+      expect(f2.domain).toBe('CONVERSATIONAL');
+      expect(f2.intent).toBe('CONVERSATIONAL_GREETING');
+
+      const f3 = resolveSemanticFrame('Hai siapa kamu');
+      expect(f3.domain).toBe('CONVERSATIONAL');
+      expect(f3.intent).toBe('BOT_IDENTITY');
+
+      const res1 = await runPhase1DeterministicPipeline('test_14a_identity', 'Halo, kamu siapa?', {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(res1.finalAnswer).toMatch(/Tiko/i);
+      expect(res1.finalAnswer).toMatch(/asisten virtual resmi/i);
+      expect(res1.finalAnswer).toMatch(/ITB STIKOM Bali/i);
+    });
+
+    test('14b. Context Resolution: DNUI session does NOT leak to general new student admission stages', async () => {
+      const dnuiSession = {
+        activeEntity: 'Double Degree DNUI',
+        activeDomain: 'INTERNATIONAL',
+        academicYear: '2026/2027'
+      };
+
+      const qGeneral = 'Apa saja tahapan pendaftaran mahasiswa baru TA 2026/2027?';
+      const frameGeneral = resolveSemanticFrame(qGeneral, dnuiSession);
+      expect(frameGeneral.domain).toBe('PMB');
+      expect(frameGeneral.entities.some(e => (e.canonical || '').includes('DNUI'))).toBe(false);
+
+      const resGeneral = await runPhase1DeterministicPipeline('test_14b_pmb', qGeneral, {
+        sessionSnapshot: { chatId: 'test_14b_pmb', data: dnuiSession },
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(resGeneral.finalAnswer).toMatch(/penerimaan mahasiswa baru|pmb/i);
+      expect(resGeneral.finalAnswer).toMatch(/masa pendaftaran/i);
+      expect(resGeneral.finalAnswer).not.toMatch(/DNUI|Dalian Neusoft|China/i);
+
+      // Program-specific anaphoric inquiry must retain DNUI context
+      const qSpecific = 'Bagaimana tahapan pendaftaran program tersebut?';
+      const frameSpecific = resolveSemanticFrame(qSpecific, dnuiSession);
+      expect(frameSpecific.domain).toBe('INTERNATIONAL');
+      expect(frameSpecific.entities.some(e => (e.canonical || '').includes('DNUI'))).toBe(true);
+    });
+
+    test('14c. Multi-Intent INBIS: "Apakah ada inkubator bisnis dan apa layanannya?" answers without contradictory refusal', async () => {
+      const q = 'Apakah ada inkubator bisnis dan apa layanannya?';
+      const res = await runPhase1DeterministicPipeline('test_14c_inbis', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toMatch(/Inkubator Bisnis|INBIS/i);
+      expect(res.finalAnswer).toMatch(/Mentoring|Pendampingan/i);
+      expect(res.finalAnswer).toMatch(/startup|ruang kerja|coworking/i);
+      // Invariant: Must NOT contain contradictory out-of-domain scope refusal
+      expect(res.finalAnswer).not.toMatch(/di luar cakupan layanan informasi kampus kami/i);
+
+      // Verifies that genuinely out-of-domain queries still receive safe refusal
+      const qOod = 'Berapa biaya kuliah TI dan bagaimana resep nasi goreng?';
+      const resOod = await runPhase1DeterministicPipeline('test_14c_ood', qOod, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(resOod.finalAnswer).toMatch(/Teknologi Informasi/i);
+      expect(resOod.finalAnswer).toMatch(/di luar cakupan layanan informasi kampus kami/i);
+    });
+
+    test('14d. Program Comparison: Sistem Informasi vs Teknologi Informasi renders balanced key differences', async () => {
+      const q = 'Apa perbedaan Sistem Informasi dan Teknologi Informasi?';
+      const res = await runPhase1DeterministicPipeline('test_14d_comp', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toMatch(/S1 Teknologi Informasi/i);
+      expect(res.finalAnswer).toMatch(/S1 Sistem Informasi/i);
+      expect(res.finalAnswer).toMatch(/Perbedaan Utama/i);
+
+      // Both programs must appear under Perbedaan Utama
+      const parts = res.finalAnswer.split(/Perbedaan Utama:?/i);
+      expect(parts.length).toBeGreaterThan(1);
+      const diffSection = parts[1];
+      expect(diffSection).toMatch(/S1 Teknologi Informasi/i);
+      expect(diffSection).toMatch(/S1 Sistem Informasi/i);
+      // Grounded competencies from canonical documents without hallucination
+      expect(diffSection).toMatch(/IT Security|Integrator Sistem|Technopreneurship/i);
+      expect(diffSection).toMatch(/sistem informasi|merancang|mengembangkan|enterprise/i);
+    });
+
+  });
+
 });

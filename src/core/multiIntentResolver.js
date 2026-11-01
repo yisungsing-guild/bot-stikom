@@ -25,8 +25,10 @@ function hasMultipleIntents(rawQuery) {
     !/,\s*(?:dan|serta)\s+/i.test(rawQuery);
   const isContactCoord = /\b(?:nomor|telepon|telp|wa|whatsapp|hp)\s+(?:dan|serta|plus)\s+(?:kontak|nomor|telepon|wa|whatsapp)\b/i.test(rawQuery) ||
     /\bkontak\s+(?:dan|serta|plus)\s+(?:nomor|telepon|wa|whatsapp)\b/i.test(rawQuery);
-  const isFacilityServiceCoord = /\b(?:fasilitas|sarana)\s+(?:dan|serta)\s+(?:layanan|prasarana|program)\b/i.test(rawQuery) &&
-    !/\b(?:dan|serta)\s+(?:bagaimana|cara|berapa|apa|apakah|kapan|di\s*mana|dimana)\b/i.test(rawQuery);
+  const isFacilityServiceCoord = (
+    /\b(?:fasilitas|sarana)\s+(?:dan|serta)\s+(?:layanan|prasarana|program)\b/i.test(rawQuery) ||
+    /\b(?:apakah\s+ada|ada\s+gak|ada\s+tidak|tersedia)\s+(?:inkubator(?:\s+bisnis)?|inbis|career\s+center|cdc)\s+(?:dan|serta)\s+(?:apa\s+saja\s+|apa\s+)?(?:layanan|fasilitas|program)(?:nya)?\b/i.test(rawQuery)
+  ) && !/\b(?:dan|serta)\s+(?:bagaimana|cara|berapa|kapan|di\s*mana|dimana)\b/i.test(rawQuery);
   if (isComparison || isContactCoord || isFacilityServiceCoord) return false;
 
   return MULTI_SPLIT_REGEX.test(rawQuery);
@@ -65,7 +67,7 @@ function resolveCompatibleAntecedent(part, subFrames, idx) {
     const isCampusPart = /\b(?:fasilitas|fasilitasnya|lab|gedung|ruang|alamat|lokasi)\b/i.test(part);
     const isCampusEntity = candFamily === 'campus_location' || cand.type === 'campus';
 
-    const isGeneralBenefit = /\b(?:keuntungan|manfaat|benefit|layanan)\b/i.test(part);
+    const isGeneralBenefit = /\b(?:keuntungan|manfaat|benefit|layanan(?:nya)?|fasilitas(?:nya)?)\b/i.test(part);
 
     if ((isAcademicPart && isAcademicEntity) || (isCampusPart && isCampusEntity) || (isGeneralBenefit && (isAcademicEntity || candFamily === 'campus_service'))) {
       return { entity: cand.canonical, domain: prevFrame.domain };
@@ -88,8 +90,10 @@ function decomposeQuery(rawQuery, sessionData = {}) {
     !/,\s*(?:dan|serta)\s+/i.test(query);
   const isContactCoord = /\b(?:nomor|telepon|telp|wa|whatsapp|hp)\s+(?:dan|serta|plus)\s+(?:kontak|nomor|telepon|wa|whatsapp)\b/i.test(query) ||
     /\bkontak\s+(?:dan|serta|plus)\s+(?:nomor|telepon|wa|whatsapp)\b/i.test(query);
-  const isFacilityServiceCoord = /\b(?:fasilitas|sarana)\s+(?:dan|serta)\s+(?:layanan|prasarana|program)\b/i.test(query) &&
-    !/\b(?:dan|serta)\s+(?:bagaimana|cara|berapa|apa|apakah|kapan|di\s*mana|dimana)\b/i.test(query);
+  const isFacilityServiceCoord = (
+    /\b(?:fasilitas|sarana)\s+(?:dan|serta)\s+(?:layanan|prasarana|program)\b/i.test(query) ||
+    /\b(?:apakah\s+ada|ada\s+gak|ada\s+tidak|tersedia)\s+(?:inkubator(?:\s+bisnis)?|inbis|career\s+center|cdc)\s+(?:dan|serta)\s+(?:apa\s+saja\s+|apa\s+)?(?:layanan|fasilitas|program)(?:nya)?\b/i.test(query)
+  ) && !/\b(?:dan|serta)\s+(?:bagaimana|cara|berapa|kapan|di\s*mana|dimana)\b/i.test(query);
 
   let parts = [query];
   if (!isComparison && !isContactCoord && !isFacilityServiceCoord && MULTI_SPLIT_REGEX.test(query)) {
@@ -146,8 +150,10 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
     !/,\s*(?:dan|serta)\s+/i.test(query);
   const isContactCoord = /\b(?:nomor|telepon|telp|wa|whatsapp|hp)\s+(?:dan|serta|plus)\s+(?:kontak|nomor|telepon|wa|whatsapp)\b/i.test(query) ||
     /\bkontak\s+(?:dan|serta|plus)\s+(?:nomor|telepon|wa|whatsapp)\b/i.test(query);
-  const isFacilityServiceCoord = /\b(?:fasilitas|sarana)\s+(?:dan|serta)\s+(?:layanan|prasarana|program)\b/i.test(query) &&
-    !/\b(?:dan|serta)\s+(?:bagaimana|cara|berapa|apa|apakah|kapan|di\s*mana|dimana)\b/i.test(query);
+  const isFacilityServiceCoord = (
+    /\b(?:fasilitas|sarana)\s+(?:dan|serta)\s+(?:layanan|prasarana|program)\b/i.test(query) ||
+    /\b(?:apakah\s+ada|ada\s+gak|ada\s+tidak|tersedia)\s+(?:inkubator(?:\s+bisnis)?|inbis|career\s+center|cdc)\s+(?:dan|serta)\s+(?:apa\s+saja\s+|apa\s+)?(?:layanan|fasilitas|program)(?:nya)?\b/i.test(query)
+  ) && !/\b(?:dan|serta)\s+(?:bagaimana|cara|berapa|kapan|di\s*mana|dimana)\b/i.test(query);
   const isSingleClauseRecommendation = /\b(?:saya|aku|anak\s+saya)\b.*\b(?:suka|senang|gemar|tertarik|hobi|minat|passion|ingin\s+kuliah|mau\s+kuliah|bingung)\b/i.test(query) &&
     !/\b(?:berapa|bagaimana\s+cara|kapan|di\s*mana)\b/i.test(query);
 
@@ -199,5 +205,6 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
 module.exports = {
   hasMultipleIntents,
   decomposeQuery,
-  decomposeQueryAsync
+  decomposeQueryAsync,
+  hasAnaphoricReference
 };

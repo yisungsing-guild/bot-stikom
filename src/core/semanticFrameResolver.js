@@ -282,21 +282,7 @@ function normalizeQueryText(text) {
  * Extracts domain and primary intent based on semantic patterns
  */
 function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unstemmed = '', raw = '') {
-  // 0. Conversational Greeting & Small Talk (Non-Retrieval)
-  if (/^(hallo+|halo+|hai+|hi+|hei+|pagi|siang|sore|malam|assalamu'?alaikum|selamat\s+(pagi|siang|sore|malam)|sampurasun|om\s+swastiastu)\b/i.test(normalized) &&
-    !/\b(biaya|daftar|jurusan|prodi|beasiswa|kuliah|akreditasi|perwalian|krs|mata\s*kuliah|sks|lokasi|alamat|fasilitas|kontak|telepon|inbis|career|cdc|jadwal|syarat|alur|tanya|mau\s+tanya|ingin\s+tahu|di\s*mana|dimana|gedung)\b/i.test(normalized)) {
-    return {
-      domain: 'CONVERSATIONAL',
-      intent: 'CONVERSATIONAL_GREETING',
-      retrievalRequired: false,
-      userState: 'GREETING',
-      desiredAction: 'GREET_USER',
-      aspects: ['greeting'],
-      relation: 'GREETING'
-    };
-  }
-
-  // 0.02 Bot Identity / Creator Inquiry
+  // 0.02 Bot Identity / Creator Inquiry (Evaluated BEFORE general greeting to capture queries like "Halo, kamu siapa?")
   if (/\b(?:siapa\s+(?:yang\s+)?(?:membuat|menciptakan|mengembangkan|merancang|bikin)\s+(?:kamu|anda|bot|tiko)|siapa\s+pembuat(?:mu)?|siapa\s+pengembang(?:mu)?)\b/i.test(normalized)) {
     return {
       domain: 'CONVERSATIONAL',
@@ -318,6 +304,20 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       desiredAction: 'STATE_BOT_IDENTITY',
       aspects: ['bot_identity'],
       relation: 'BOT_IDENTITY'
+    };
+  }
+
+  // 0. Conversational Greeting & Small Talk (Non-Retrieval)
+  if (/^(hallo+|halo+|hai+|hi+|hei+|pagi|siang|sore|malam|assalamu'?alaikum|selamat\s+(pagi|siang|sore|malam)|sampurasun|om\s+swastiastu)\b/i.test(normalized) &&
+    !/\b(biaya|daftar|jurusan|prodi|beasiswa|kuliah|akreditasi|perwalian|krs|mata\s*kuliah|sks|lokasi|alamat|fasilitas|kontak|telepon|inbis|career|cdc|jadwal|syarat|alur|tanya|mau\s+tanya|ingin\s+tahu|di\s*mana|dimana|gedung)\b/i.test(normalized)) {
+    return {
+      domain: 'CONVERSATIONAL',
+      intent: 'CONVERSATIONAL_GREETING',
+      retrievalRequired: false,
+      userState: 'GREETING',
+      desiredAction: 'GREET_USER',
+      aspects: ['greeting'],
+      relation: 'GREETING'
     };
   }
 
@@ -1811,6 +1811,9 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     if (syncFrame.intent === 'ADVERSARIAL_INJECTION_DEFENSE') {
       domain = 'CONVERSATIONAL';
       intent = 'ADVERSARIAL_INJECTION_DEFENSE';
+    } else if (syncFrame.intent === 'BOT_IDENTITY' || modelPrimaryIntent === 'BOT_IDENTITY') {
+      domain = 'CONVERSATIONAL';
+      intent = 'BOT_IDENTITY';
     } else if (modelPrimaryIntent === 'CONVERSATIONAL_GREETING' || (!modelPrimaryIntent && speechAct === 'GENERAL_GREETING')) {
       domain = 'CONVERSATIONAL';
       intent = 'CONVERSATIONAL_GREETING';

@@ -337,7 +337,7 @@ function isolateTargetPassages(text, targetEntities = [], excludedEntities = [])
   }
 
   const markers = [];
-  const headingPat = '(?:^|\\n|•|\\d+\\.|(?:Program\\s+Studi|Prodi|Penjelasan\\s+Prodi\\s+dan\\s+Karier\\s+Masa\\s+Depan|Sheet\\d+)\\s*(?::|\\|)?\\s*)';
+  const headingPat = '(?:^|\\n|•|\\d+\\.)\\s*(?:(?:Program\\s+Studi|Prodi|Penjelasan\\s+Prodi\\s+dan\\s+Karier\\s+Masa\\s+Depan|Sheet\\d+)\\s*(?::|\\|)?\\s*)?';
 
   // Find target matches as headings/titles
   for (const te of targetEntities) {
@@ -2669,6 +2669,27 @@ function extractProgramProfile(ent, acceptedChunks, allTargetEntities = []) {
           }
         }
       }
+
+      // Robust fallback on raw row for baseName if any column was not extracted
+      if (!extracted.competencies || !extracted.curriculum || !extracted.careers) {
+        const rowRegex = new RegExp('(?:^|\\n)[^\\n]*' + baseName.replace(/\s+/g, '\\s+') + '[^\\n]*', 'i');
+        const rowM = raw.match(rowRegex);
+        if (rowM && rowM[0]) {
+          const rText = rowM[0];
+          if (!extracted.competencies) {
+            const mC2 = rText.match(/(?:col2\s*:\s*|Penjelasan\s*:\s*)([^|]+?)(?=\||$)/i);
+            if (mC2 && mC2[1].trim().length > 25) extracted.competencies = mC2[1].replace(/\s+/g, ' ').trim();
+          }
+          if (!extracted.curriculum) {
+            const mC3 = rText.match(/(?:col3\s*:\s*|Yang\s+Dipelajari\s*:\s*)([^|]+?)(?=\||$)/i);
+            if (mC3 && mC3[1].trim().length > 10) extracted.curriculum = cleanTruncatedList(mC3[1].replace(/\s+/g, ' ').trim());
+          }
+          if (!extracted.careers) {
+            const mC5 = rText.match(/(?:col5\s*:\s*|Peluang\s+Kerja\s*:\s*)([^|]+?)(?=\||$)/i);
+            if (mC5 && mC5[1].trim().length > 10) extracted.careers = cleanTruncatedList(mC5[1].replace(/\s+/g, ' ').trim());
+          }
+        }
+      }
     }
   }
 
@@ -2726,6 +2747,10 @@ function buildProgramComparisonAnswer(semanticFrame, evidenceList = [], arbitrat
     } else if (p.competencies) {
       const shortComp = p.competencies.split('.')[0] + '.';
       diffLines.push(`• **${p.canonical}:** ${shortComp}`);
+    } else if (p.curriculum) {
+      diffLines.push(isEn
+        ? `• **${p.canonical}:** Focus on study areas including ${p.curriculum}.`
+        : `• **${p.canonical}:** Berfokus pada materi dan bidang studi ${p.curriculum}.`);
     }
   }
   sections.push(diffLines.join('\n'));
