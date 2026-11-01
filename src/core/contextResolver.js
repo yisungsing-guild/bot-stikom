@@ -170,6 +170,25 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     };
   }
 
+  // Scholarship follow-up / stacking inquiry check (e.g. "Apakah potongan gelombang bisa digabung dengan tambahan 60%?", "Bisa digabung tidak?", "Syaratnya apa?")
+  const isScholarshipActive = sessionData.activeDomain === 'SCHOLARSHIP' || sessionData.activeIntent === 'SCHOLARSHIP_INQUIRY';
+  const hasScholarshipContinuationFocus = !hasScheduleOrCalendarFocus && (
+    (/\b(?:tambahan\s+\d+%|beasiswa|potongan|diskon|keringanan)\b/i.test(query) &&
+     /\b(?:digabung|gabung|kombinasi|akumulasi|tumpuk|dobel|syarat|persyaratan|ketentuan)\b/i.test(query)) ||
+    (/\b(?:digabung|gabung|kombinasi|akumulasi|tumpuk|dobel)\b/i.test(query) &&
+     /\b(?:potongan|diskon|gelombang|tambahan|persen|%)\b/i.test(query))
+  );
+
+  if (isScholarshipActive && hasScholarshipContinuationFocus) {
+    return {
+      shouldInherit: true,
+      reason: 'scholarship_continuation',
+      inheritedDomain: 'SCHOLARSHIP',
+      inheritedIntent: 'SCHOLARSHIP_INQUIRY',
+      inheritedEntity: sessionData.activeEntity
+    };
+  }
+
   // Explicit admission wave schedule/status inquiry is university-wide and must NOT inherit fee or specific program entities
   const isAdmissionScheduleOrStatus = !isWaveFeeFollowup && !hasFeeFocus && (
     /\b(?:sekarang\s+buka|buka\s+gelombang|buka\s+pendaftaran|kapan\s+(?:buka|dibuka|ditutup|tutup)|jadwal\s+(?:gelombang|pendaftaran|pmb)|periode\s+(?:gelombang|pendaftaran)|kalender\s+pmb|gelombang\s+berapa)\b/i.test(query) ||

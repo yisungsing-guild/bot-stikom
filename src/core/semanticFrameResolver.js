@@ -633,7 +633,12 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 10. Scholarship Inquiry
-  if (entities.some(e => e.family === 'scholarship') || /\b(beasiswa(?:nya)?|kip\s*kuliah|kip-?k|potongan\s+dpp|keringanan\s+biaya|bantuan\s+dana\s+pendidikan)\b/i.test(normalized)) {
+  const isScholarshipKeyword = entities.some(e => e.family === 'scholarship') ||
+    /\b(beasiswa(?:nya)?|kip\s*kuliah|kip-?k|potongan\s+dpp|keringanan\s+biaya|bantuan\s+dana\s+pendidikan)\b/i.test(normalized) ||
+    (/\b(?:potongan|diskon|tambahan)\b/i.test(normalized) && /\b(?:tambahan\s+\d+%|\d+%\s*dpp|digabung|akumulasi|kombinasi|tumpuk)\b/i.test(normalized)) ||
+    (/\b(?:digabung|akumulasi|kombinasi)\b/i.test(normalized) && /\b(?:potongan|gelombang|tambahan|60%)\b/i.test(normalized));
+
+  if (isScholarshipKeyword) {
     return {
       domain: 'SCHOLARSHIP',
       intent: 'SCHOLARSHIP_INQUIRY',
@@ -871,9 +876,10 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 15. Admission / PMB Schedule & General Topic Opener
-  if (/\b(?:pmb|pendaftaran|mendaftar|daftar\s+(?:kuliah|online|ulang|pmb|mahasiswa|stikom)|syarat|persyaratan|dokumen|berkas|gelombang|masih dibuka|kapan buka|jalur pendaftaran|mulai dari mana|proses masuk|cara masuk)\b/i.test(normalized) ||
+  const isScholarshipOrFeeDiscounts = /\b(?:potongan\s+gelombang|tambahan\s+\d+%|digabung|kombinasi|akumulasi|beasiswa|potongan\s+dpp)\b/i.test(normalized);
+  if (!isScholarshipOrFeeDiscounts && (/\b(?:pmb|pendaftaran|mendaftar|daftar\s+(?:kuliah|online|ulang|pmb|mahasiswa|stikom)|syarat|persyaratan|dokumen|berkas|gelombang|masih dibuka|kapan buka|jalur pendaftaran|mulai dari mana|proses masuk|cara masuk)\b/i.test(normalized) ||
     (/\b(?:daftar|mendaftar)\b/i.test(normalized) && !/\b(?:daftar\s+harga|daftar\s+menu|daftar\s+matkul|daftar\s+mata\s+kuliah|daftar\s+prodi|daftar\s+jurusan|daftar\s+program)\b/i.test(normalized)) ||
-    isPmbContext) {
+    isPmbContext)) {
     const isWhenQuestion = /\b(?:kapan|sampai\s+kapan)\b/i.test(normalized);
     const isNow = TEMPORAL_NOW_REGEX.test(normalized) || /\b(?:status\s+pendaftaran|status\s+pmb)\b/i.test(normalized);
     if (isNow && !isWhenQuestion && /\b(?:gelombang|buka|dibuka|ditutup|tutup|jadwal|periode|status)\b/i.test(normalized)) {
@@ -1198,6 +1204,9 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
       } else if (intent === 'ADMISSION_SCHEDULE') {
         domain = 'PMB';
       }
+    } else if (contextDep.inheritedDomain === 'SCHOLARSHIP') {
+      domain = 'SCHOLARSHIP';
+      intent = 'SCHOLARSHIP_INQUIRY';
     } else if (domain === 'GENERAL' || domain === 'OUT_OF_DOMAIN') {
       domain = contextDep.inheritedDomain;
       if (contextDep.inheritedIntent || sessionData.activeIntent) {

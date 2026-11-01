@@ -221,7 +221,8 @@ function detectFeeScope(rawQuery = '', secondArg = '') {
     const genericWaveMatch = q.match(/\b(?:gelombang|gel)\s+([a-z0-9\-_]+)\b/i);
     if (genericWaveMatch && genericWaveMatch[1]) {
       const wName = genericWaveMatch[1].trim();
-      if (!/^(?:berapa|apa|kapan|buka|tutup|ini|pmb|pendaftaran)$/i.test(wName)) {
+      const isIndonesianFunctionOrModalWord = /^(?:berapa|apa|apakah|kapan|dimana|bagaimana|gimana|kenapa|mengapa|siapa|mana|buka|tutup|ini|itu|tersebut|tadi|pmb|pendaftaran|daftar|bisa|dapat|boleh|harus|mau|ingin|ada|adalah|dan|atau|dengan|di|ke|dari|untuk|pada|oleh|tentang|mengenai|yang|jika|kalau|kalo|apabila|bila|seperti|sama|saja|lagi|masih|sudah|telah|belum|tidak|bukan|pun|juga|kah|lah|tah)$/i.test(wName);
+      if (!isIndonesianFunctionOrModalWord) {
         registrationWave = `Gelombang ${wName.toUpperCase()}`;
         isWaveExplicit = true;
         isWaveVerified = false;

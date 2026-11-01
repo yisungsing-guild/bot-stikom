@@ -57,6 +57,42 @@ function selectBalancedEvidenceByEntity(accepted = [], targetEntities = [], maxC
     return Array.isArray(accepted) ? [...accepted] : [];
   }
   if (!Array.isArray(targetEntities) || targetEntities.length <= 1) {
+    const docBuckets = new Map();
+    for (const chunk of accepted) {
+      const docKey = chunk.sourceFile || chunk.filename || (chunk.program ? `prog_${chunk.program}` : "default");
+      if (!docBuckets.has(docKey)) docBuckets.set(docKey, []);
+      docBuckets.get(docKey).push(chunk);
+    }
+
+    if (docBuckets.size > 1) {
+      const selected = [];
+      const seen = new Set();
+      let addedInRound = true;
+
+      while (selected.length < maxCount && addedInRound) {
+        addedInRound = false;
+        for (const [, list] of docBuckets.entries()) {
+          const next = list.find(c => !seen.has(c.id || c.chunkId || c.text || c));
+          if (next && selected.length < maxCount) {
+            seen.add(next.id || next.chunkId || next.text || next);
+            selected.push(next);
+            addedInRound = true;
+          }
+        }
+      }
+
+      for (const chunk of accepted) {
+        if (selected.length >= maxCount) break;
+        const key = chunk.id || chunk.chunkId || chunk.text || chunk;
+        if (!seen.has(key)) {
+          seen.add(key);
+          selected.push(chunk);
+        }
+      }
+
+      return selected;
+    }
+
     return accepted.slice(0, maxCount);
   }
 
@@ -576,9 +612,11 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     frame.retrievalPlan = plan;
 
     // 3. Stage A: Wide Candidate Recall (scale topK for multi-entity queries)
+    const isBroadScholarshipOrFeeInquiry = (frame.domain === 'SCHOLARSHIP' || (Array.isArray(frame.aspects) && frame.aspects.includes('scholarship')) || /\b(?:beasiswa|potongan\s+dpp|potongan\s+biaya|biaya.*gelombang)\b/i.test(frame.rawQuery || '')) &&
+      (!plan.targetEntities || plan.targetEntities.length <= 1);
     const candidateTopK = Array.isArray(plan.targetEntities) && plan.targetEntities.length > 1
       ? Math.max(16, plan.targetEntities.length * 10)
-      : 16;
+      : (isBroadScholarshipOrFeeInquiry ? 25 : 16);
     const candidates = await retrieveCandidates(plan, { topK: candidateTopK });
 
     // 4. Stage B: Strict Evidence Arbitration (Hard Entity Lock, Temporal, Aspect)
@@ -586,8 +624,9 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     arbitrated.retrievalPlan = plan;
     arbitrated.sessionData = sessionData;
     arbitrated.rawAccepted = [...arbitrated.accepted];
-    if (arbitrated.accepted.length > 10) {
-      arbitrated.accepted = selectBalancedEvidenceByEntity(arbitrated.accepted, plan.targetEntities, 10);
+    const maxAcceptedCount = isBroadScholarshipOrFeeInquiry ? 12 : 10;
+    if (arbitrated.accepted.length > maxAcceptedCount) {
+      arbitrated.accepted = selectBalancedEvidenceByEntity(arbitrated.accepted, plan.targetEntities, maxAcceptedCount);
     }
 
     // 5. Evaluate Answerability

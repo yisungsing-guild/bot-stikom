@@ -2724,6 +2724,11 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     }
   }
 
+  // Handle discount stacking / combination inquiries fail-closed (SOURCE_GAP)
+  if (isDiscountStackingInquiry(semanticFrame?.rawQuery, semanticFrame)) {
+    return buildDiscountStackingAnswer(semanticFrame);
+  }
+
   // In test environment, when OpenAI key is absent/circuit open, or fast fallback requested, use generic extractive fallback
   // Institutional catalog/governance intents (katalog prodi, fakultas, lokasi kampus, jadwal tahapan PMB) preserve structured institutional data.
   const isTestOrNoKey = !arbitratedEvidence?.aiEngine && (
@@ -3220,6 +3225,61 @@ function extractGroundedScholarshipClaims(evidenceList = []) {
  * Generic Extractive Fallback based purely on verified evidence passages.
  * Extracts clean, deduplicated factual passages without domain-specific templates.
  */
+/**
+ * Detects whether an inquiry asks if intake wave discounts can be combined / stacked
+ * with other scholarships (e.g. additional 60% SMK TI / SMK Pandawa discount).
+ */
+function isDiscountStackingInquiry(rawQuery = '', semanticFrame = null) {
+  const combined = `${rawQuery || ''} ${semanticFrame?.rawQuery || ''} ${semanticFrame?.normalizedQuery || ''}`.toLowerCase();
+  const hasStackingAction = /\b(?:digabung|gabung(?:kan)?|kombinasi|akumulasi|dobel|tumpuk|bersamaan|sekaligus)\b/i.test(combined);
+  const hasDiscountOrScholarship = /\b(?:potongan|diskon|keringanan|beasiswa|tambahan|60%|dpp)\b/i.test(combined);
+  return hasStackingAction && hasDiscountOrScholarship;
+}
+
+/**
+ * Builds a fail-closed, grounded answer for discount stacking inquiries.
+ * States documented facts (wave DPP discounts, 60% scholarship for partner vocational schools),
+ * explicitly identifies the SOURCE_GAP regarding stacking rules in the PMB decree,
+ * avoids concluding yes/no, and directs applicant to official PMB contacts.
+ */
+function buildDiscountStackingAnswer(semanticFrame = null) {
+  const userLang = semanticFrame?.language || detectQueryLanguage(semanticFrame?.rawQuery || '');
+  const isEn = userLang === 'en';
+
+  const answer = isEn
+    ? 'Regarding the combination of tuition discounts and scholarships at ITB STIKOM Bali:\n\n' +
+      '1. **Wave-based DPP Reductions**:\n' +
+      '   Official admissions decrees (SK PMB) specify base tuition fee (DPP) reductions depending on the intake wave (e.g., Gelombang Khusus, Gelombang I, etc.).\n\n' +
+      '2. **Additional 60% Scholarship**:\n' +
+      '   The additional 60% scholarship is specifically designated for graduates of SMK TI Bali Global and SMK Pandawa Bali Global during the Gelombang Khusus intake (including S1 Computer Systems and D3 Informatics Management).\n\n' +
+      '3. **Combination / Stacking Rules (SOURCE_GAP)**:\n' +
+      '   The available official SK documents do not specify whether wave-based DPP nominal discounts can be stacked/combined with the 60% additional scholarship, nor do they state explicit exclusion clauses.\n\n' +
+      'Therefore, we cannot confirm whether stacking is permitted or calculate combined totals. For authoritative verification and final payment calculations, please consult the Admissions and Finance Office of PMB ITB STIKOM Bali directly:\n' +
+      '🌐 **Official PMB Portal**: https://pmb.stikom-bali.ac.id\n' +
+      '📞 **Admissions Office**: (0361) 244445\n' +
+      '🏢 **PMB Service Room**: Main Campus (Jl. Raya Puputan No. 86, Renon, Denpasar)'
+    : 'Mengenai ketentuan penggabungan potongan biaya kuliah dan beasiswa di ITB STIKOM Bali:\n\n' +
+      '1. **Potongan Nominal DPP per Gelombang**:\n' +
+      '   Dokumen resmi (SK PMB) menetapkan potongan Dana Pendidikan Pokok (DPP) sesuai gelombang pendaftaran (misalnya Gelombang Khusus, Gelombang I, dst.).\n\n' +
+      '2. **Tambahan Beasiswa 60%**:\n' +
+      '   Tambahan beasiswa sebesar 60% tercantum secara khusus bagi lulusan SMK TI Bali Global dan SMK Pandawa Bali Global pada Gelombang Khusus (termasuk untuk S1 Sistem Komputer dan D3 Manajemen Informatika).\n\n' +
+      '3. **Ketentuan Penggabungan (SOURCE_GAP)**:\n' +
+      '   SK PMB yang tersedia saat ini tidak memuat aturan eksplisit mengenai apakah potongan nominal DPP per gelombang dapat diakumulasikan/digabung dengan beasiswa tambahan 60%, ataupun klausul yang secara tegas melarangnya.\n\n' +
+      'Oleh karena itu, sistem tidak menyimpulkan apakah kedua potongan tersebut dapat digabung atau menghitung akumulasi totalnya. Untuk kepastian aturan penggabungan potongan dan simulasi pembayaran final, silakan konfirmasi langsung ke bagian Admisi dan Keuangan PMB ITB STIKOM Bali:\n' +
+      '🌐 **Portal Resmi PMB**: https://pmb.stikom-bali.ac.id\n' +
+      '📞 **Layanan Telepon PMB**: (0361) 244445\n' +
+      '🏢 **Ruang Layanan PMB**: Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)';
+
+  return {
+    success: true,
+    answer,
+    source: 'discount_stacking_fail_closed',
+    isExtractive: true,
+    handledSafely: true,
+    isSourceGap: true
+  };
+}
+
 function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitratedEvidence = {}) {
   const userLang = semanticFrame?.language || detectQueryLanguage(semanticFrame?.rawQuery || '');
   const isEn = userLang === 'en';
@@ -3597,6 +3657,11 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     };
   }
 
+  // Fail-closed handling for discount stacking inquiries
+  if (isDiscountStackingInquiry(semanticFrame?.rawQuery, semanticFrame)) {
+    return buildDiscountStackingAnswer(semanticFrame);
+  }
+
   // Structured grounded response for scholarship inquiries
   if (
     semanticFrame?.domain === 'SCHOLARSHIP' ||
@@ -3888,5 +3953,7 @@ module.exports = {
   INSTITUTIONAL_ACADEMIC_CATALOG,
   extractGroundedCampusAddresses,
   extractGroundedCampusDirectory,
-  extractGroundedScholarshipClaims
+  extractGroundedScholarshipClaims,
+  isDiscountStackingInquiry,
+  buildDiscountStackingAnswer
 };
