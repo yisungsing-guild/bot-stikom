@@ -482,7 +482,10 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
     let contextEntities = sectionProg ? [sectionProg] : (ctx ? ctx.entities : []);
 
     if (sectionProg) {
-      if (!rawText.toLowerCase().includes(sectionProg.toLowerCase())) {
+      const baseProg = sectionProg.replace(/^(S1|D3|S2)\s+/i, '').trim();
+      const hasProg = rawText.toLowerCase().includes(sectionProg.toLowerCase()) ||
+        (baseProg.length >= 3 && rawText.toLowerCase().includes(baseProg.toLowerCase()));
+      if (!hasProg) {
         enrichedText = `[Program: ${sectionProg}] ${rawText}`;
       }
     } else if (ctx && ctx.entities && ctx.entities.length > 0) {
@@ -613,7 +616,10 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
         let enrichedText = rawText;
         let contextEntities = sectionProg ? [sectionProg] : (ctx ? ctx.entities : []);
         if (sectionProg) {
-          if (!rawText.toLowerCase().includes(sectionProg.toLowerCase())) {
+          const baseProg = sectionProg.replace(/^(S1|D3|S2)\s+/i, '').trim();
+          const hasProg = rawText.toLowerCase().includes(sectionProg.toLowerCase()) ||
+            (baseProg.length >= 3 && rawText.toLowerCase().includes(baseProg.toLowerCase()));
+          if (!hasProg) {
             enrichedText = `[Program: ${sectionProg}] ${rawText}`;
           }
         } else if (ctx && ctx.entities && ctx.entities.length > 0) {
@@ -719,7 +725,10 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
         let enrichedText = rawText;
         let contextEntities = sectionProg ? [sectionProg] : (ctx ? ctx.entities : []);
         if (sectionProg) {
-          if (!rawText.toLowerCase().includes(sectionProg.toLowerCase())) {
+          const baseProg = sectionProg.replace(/^(S1|D3|S2)\s+/i, '').trim();
+          const hasProg = rawText.toLowerCase().includes(sectionProg.toLowerCase()) ||
+            (baseProg.length >= 3 && rawText.toLowerCase().includes(baseProg.toLowerCase()));
+          if (!hasProg) {
             enrichedText = `[Program: ${sectionProg}] ${rawText}`;
           }
         } else if (ctx && ctx.entities && ctx.entities.length > 0) {

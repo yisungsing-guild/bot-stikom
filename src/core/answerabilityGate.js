@@ -259,6 +259,14 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         allProvidedAspects.add('location');
         allProvidedAspects.add('campus_location');
         allProvidedAspects.add('address');
+        if (/\b(?:renon|puputan)\b/i.test(text)) allProvidedAspects.add('branch_renon');
+        if (/\b(?:jimbaran|udayana)\b/i.test(text)) allProvidedAspects.add('branch_jimbaran');
+        if (/\b(?:abiansemal|janger|dauh\s+yeh\s+cani)\b/i.test(text)) allProvidedAspects.add('branch_abiansemal');
+      }
+      if (/\b(?:laboratorium|lab\b|perpustakaan|asrama|sarana|prasarana|ruang\s+kelas|gedung\s+kampus|fasilitas)\b/i.test(text)) {
+        allProvidedAspects.add('facilities');
+        allProvidedAspects.add('campus_infrastructure');
+        allProvidedAspects.add('lab');
       }
       if (/\b(?:karir|karier|kerja|loker|lowongan|magang|pelatihan|cv|wawancara|alumni|rekrutmen|profesi|pekerjaan)\b/i.test(text)) {
         allProvidedAspects.add('career_services');
@@ -436,6 +444,26 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
     const missingAspects = requiredAspects.filter(req => !allProvidedAspects.has(req));
 
     if (coveredAspects.length === 0) {
+      if (
+        (semanticFrame.domain === 'FACILITIES' || semanticFrame.intent === 'FACILITY_INQUIRY') &&
+        semanticFrame.targetBranch &&
+        ['jimbaran', 'abiansemal'].includes(semanticFrame.targetBranch)
+      ) {
+        const branchKey = 'branch_' + semanticFrame.targetBranch;
+        const hasBranchEvidence = allProvidedAspects.has(branchKey) ||
+          accepted.some(c => new RegExp(semanticFrame.targetBranch, 'i').test(c.text || c.chunk || ''));
+        if (hasBranchEvidence) {
+          return {
+            status: ANSWERABILITY_STATUS.PARTIAL,
+            reason: 'verified_branch_facility_gap',
+            coveredAspects: [branchKey],
+            missingAspects: ['facilities', 'lab', 'campus_infrastructure'],
+            guidance: isEn
+              ? 'Official records confirm the location and contact for Kampus ' + semanticFrame.targetBranch.toUpperCase() + ', but specific laboratory details are not listed.'
+              : 'Dokumen resmi mencatat alamat dan kontak Kampus ' + semanticFrame.targetBranch.toUpperCase() + ', tetapi rincian sarana laboratorium belum tercantum.'
+          };
+        }
+      }
       if (semanticFrame.domain === 'TUITION_FEE' || requiredAspects.some(a => ['fee', 'tuition', 'dpp'].includes(a))) {
         return {
           status: ANSWERABILITY_STATUS.UNKNOWN,

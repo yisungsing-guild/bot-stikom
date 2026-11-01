@@ -164,10 +164,16 @@ function buildRetrievalPlan(semanticFrame) {
 
   // Facilities query variants (guarded: campus location queries must not retrieve lab equipment)
   if ((domain === 'FACILITIES' && intent !== 'CAMPUS_LOCATION') || (aspects && (aspects.includes('facilities') || aspects.includes('lab')) && intent !== 'CAMPUS_LOCATION')) {
+    queryVariants.push('fasilitas di STIKOM Bali Career Center Inkubator Bisnis LLC UKM sarana penunjang');
     queryVariants.push('fasilitas laboratorium praktikum mahasiswa hardware networking database smart intelligent system ITB STIKOM Bali');
     queryVariants.push('laboratorium riset dan praktik mahasiswa embedded system IoT mobile technology');
     queryVariants.push('fasilitas laboratorium komputer perpustakaan asrama kampus ITB STIKOM Bali');
     queryVariants.push('sarana dan prasarana fasilitas mahasiswa');
+    if (semanticFrame.targetBranch === 'jimbaran') {
+      queryVariants.push('fasilitas sarana prasarana kampus Jimbaran laboratorium komputer kontak');
+    } else if (semanticFrame.targetBranch === 'abiansemal') {
+      queryVariants.push('fasilitas sarana prasarana kampus Abiansemal kontak');
+    }
   }
 
   // Organization & UKM query variants
@@ -200,15 +206,41 @@ function buildRetrievalPlan(semanticFrame) {
   }
 
   // Career Center & Internship query variants
-  if (domain === 'CAREER_CENTER' || (aspects && (aspects.includes('career') || aspects.includes('internship') || aspects.includes('career_prospects')))) {
-    if (targetEntities.length > 0) {
+  if (domain === 'CAREER_CENTER' || (aspects && (aspects.includes('career') || aspects.includes('internship') || aspects.includes('career_prospects') || aspects.includes('job_guarantee')))) {
+    const isJobGuarantee = (aspects && aspects.includes('job_guarantee')) ||
+      /\b(?:jaminan|menjamin|dijamin|pasti|langsung)\s+(?:kerja|pekerjaan|dapat\s+kerja|bekerja)\b/i.test(normalizedText);
+
+    if (isJobGuarantee) {
+      queryVariants.push('Apakah ITB STIKOM Bali membantu lulusannya mendapatkan pekerjaan kewenangan perusahaan seleksi');
+      queryVariants.push('Career Center memfasilitasi mahasiswa dan alumni proses penerimaan kerja mitra');
+      queryVariants.push('layanan bursa kerja job fair campus hiring rekrutmen mitra industri');
+    } else if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
         queryVariants.push(`peluang karir prospek kerja profesi lulusan ${ent}`);
         queryVariants.push(`peluang pekerjaan ${ent}`);
       }
     } else {
-      queryVariants.push('career center inkubator bisnis inbis magang kerja sama industri ITB STIKOM Bali');
+      queryVariants.push('career center bursa kerja magang kerja sama industri ITB STIKOM Bali');
       queryVariants.push('layanan bursa kerja dan kemitraan');
+    }
+  }
+
+  // Inkubator Bisnis (INBIS) & P2MW query variants
+  const isInbisQuery = (aspects && (aspects.includes('inbis_overview') || aspects.includes('tenant_programs') || aspects.includes('p2mw') || aspects.includes('inbis_services') || aspects.includes('incubation_programs'))) ||
+    /\b(?:inbis|inkubator\s+bisnis|p2mw|tenant|startup|kewirausahaan|wirausaha\s+(?:pemula|mahasiswa)|inkubasi)\b/i.test(normalizedText) ||
+    targetEntities.some(ent => /inbis|inkubator/i.test(ent));
+
+  if (isInbisQuery) {
+    queryVariants.push('Inkubator Bisnis INBIS ITB STIKOM Bali pendirian 2014 Direktorat Kerja Sama Layanan Industri');
+    queryVariants.push('Profil INBIS lembaga inkubator bisnis peringkat 4 nasional Kemenkop UKM tenant startup');
+    if (/\b(?:p2mw|hibah|gowjus|sehabit|dikerajinin)\b/i.test(normalizedText) || (aspects && aspects.includes('p2mw'))) {
+      queryVariants.push('P2MW Program Pembinaan Wirausaha Mahasiswa tim binaan lolos seleksi nasional GOWJUS Sehabit Dikerajinin');
+    }
+    if (/\b(?:tenant|program|tahapan?|pra-?inkubasi|pasca-?inkubasi)\b/i.test(normalizedText) || (aspects && aspects.includes('tenant_programs'))) {
+      queryVariants.push('tahapan inkubasi tenant pra-inkubasi inkubasi pasca-inkubasi start learn growth pembinaan usaha');
+    }
+    if (/\b(?:layanan|fasilitas|mentor|coworking|kantor)\b/i.test(normalizedText) || (aspects && aspects.includes('inbis_services'))) {
+      queryVariants.push('layanan inkubator bisnis mentoring pendampingan mentor akademisi industri coworking space legalitas usaha');
     }
   }
 

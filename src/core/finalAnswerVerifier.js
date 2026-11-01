@@ -51,6 +51,9 @@ function failVerification(reason, extra = {}) {
 }
 
 function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEvidence = {}, comparisonEnvelope = null, recommendationResult = null) {
+  if (Array.isArray(arbitratedEvidence)) {
+    arbitratedEvidence = { accepted: arbitratedEvidence, rejected: [] };
+  }
   const isRecommendation = (recommendationResult && (recommendationResult.mode === 'RECOMMENDATION' || recommendationResult.provenance?.version === 'phase2-step7')) ||
     (semanticFrame && (semanticFrame.domain === 'ACADEMIC_RECOMMENDATION' || semanticFrame.intent === 'PROGRAM_RECOMMENDATION'));
 
@@ -393,10 +396,15 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   }
 
   // 7b. Facilities negative control: Must not use facility list as substantive Double Degree claim
-  const isFacilityInquiry = semanticFrame.domain === 'FACILITIES' ||
-    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['facilities', 'lab', 'campus_infrastructure'].includes(a)));
+  const isInbisQuery = (semanticFrame.aspects && semanticFrame.aspects.some(a => ['inbis_overview', 'tenant_programs', 'p2mw', 'inbis_services', 'incubation_programs'].includes(a))) ||
+    semanticFrame.relation === 'INBIS_SERVICE' ||
+    /\b(?:inbis|inkubator\s+bisnis|p2mw|tenant|startup|kewirausahaan|wirausaha\s+(?:pemula|mahasiswa)|inkubasi)\b/i.test(rawQuery) ||
+    (Array.isArray(semanticFrame.entities) && semanticFrame.entities.some(e => /inbis|inkubator/i.test(e.canonical || '')));
+  const isFacilityInquiry = !isInbisQuery && (semanticFrame.domain === 'FACILITIES' ||
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['facilities', 'lab', 'campus_infrastructure'].includes(a))));
   if (isFacilityInquiry && !/\b(?:double|dual)\s*degree\b/i.test(rawQuery)) {
-    if (/\b(?:dual|double)\s*degree\s+(?:national|nasional)\b/i.test(text) && !/\b(?:lab|laboratorium|ruang\s+kuliah|perpustakaan|wi-?fi|gedung)\b/i.test(text)) {
+    const isGroundedFacilityList = /\b(?:fasilitas|laboratorium|career\s+center|inkubator\s+bisnis|language\s+learning\s+center|ukm)\b/i.test(text);
+    if (!isGroundedFacilityList && /\b(?:dual|double)\s*degree\s+(?:national|nasional)\b/i.test(text)) {
       return failVerification('domain_aspect_mismatch_facilities_answered_with_double_degree');
     }
   }
@@ -404,9 +412,9 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   // 7c. National Double Degree Integrity Checks
   const isNationalDDQuery = /\bnasional\b/i.test(rawQuery) &&
     (semanticFrame.aspects?.includes('double_degree') ||
-     semanticFrame.relation === 'NATIONAL_DOUBLE_DEGREE' ||
-     /\b(?:dual|double)\s*degree|dua\s*gelar\b/i.test(rawQuery) ||
-     semanticFrame.contextDependencies?.some(cd => /double\s*degree/i.test(cd.inheritedEntity || '')));
+      semanticFrame.relation === 'NATIONAL_DOUBLE_DEGREE' ||
+      /\b(?:dual|double)\s*degree|dua\s*gelar\b/i.test(rawQuery) ||
+      semanticFrame.contextDependencies?.some(cd => /double\s*degree/i.test(cd.inheritedEntity || '')));
 
   if (isNationalDDQuery) {
     // Cannot claim partner is Universitas Teknologi Bali (must be Bandung / UTB)
@@ -534,8 +542,8 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     // 5. D3 fee classification invariant: D3's Biaya Registrasi must NEVER be classified or labeled as DPP
     if (/D3\s+Manajemen\s+Informatika/i.test(text)) {
       if (/\b(?:DPP|Dana\s+Pendidikan\s+Pokok)(?:\s+dasar)?\s*:\s*(?:Rp\s*)?10\.000\.000/i.test(text) ||
-          /\bD3\s+Manajemen\s+Informatika[^\n]*\bDPP\s*:\s*Rp/i.test(text) ||
-          /\bDPP\s+D3\s+Manajemen/i.test(text)) {
+        /\bD3\s+Manajemen\s+Informatika[^\n]*\bDPP\s*:\s*Rp/i.test(text) ||
+        /\bDPP\s+D3\s+Manajemen/i.test(text)) {
         return failVerification('d3_fee_misclassified_as_dpp');
       }
     }
@@ -665,11 +673,11 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
 
       const reqWave = semanticFrame.registrationWave ||
         (rawQuery.match(/\b(?:gelombang\s*(?:ii\b|2\b)|gel\s*(?:ii\b|2\b))/i) ? 'Gelombang II' :
-         rawQuery.match(/\b(?:gelombang\s*(?:i\b|1\b)|gel\s*(?:i\b|1\b))/i) ? 'Gelombang I' :
-         rawQuery.match(/\b(?:gelombang\s*khusus|gel\s*khusus)/i) ? 'Gelombang Khusus' :
-         rawQuery.match(/\b(?:gelombang\s*(?:iii\b|3\b)|gel\s*(?:iii\b|3\b))/i) ? 'Gelombang III' :
-         rawQuery.match(/\b(?:gelombang\s*(?:iv\b|4\b)|gel\s*(?:iv\b|4\b))/i) ? 'Gelombang IV' :
-         rawQuery.match(/\b(?:gelombang\s*sisipan|gel\s*sisipan)/i) ? 'Gelombang Sisipan' : null);
+          rawQuery.match(/\b(?:gelombang\s*(?:i\b|1\b)|gel\s*(?:i\b|1\b))/i) ? 'Gelombang I' :
+            rawQuery.match(/\b(?:gelombang\s*khusus|gel\s*khusus)/i) ? 'Gelombang Khusus' :
+              rawQuery.match(/\b(?:gelombang\s*(?:iii\b|3\b)|gel\s*(?:iii\b|3\b))/i) ? 'Gelombang III' :
+                rawQuery.match(/\b(?:gelombang\s*(?:iv\b|4\b)|gel\s*(?:iv\b|4\b))/i) ? 'Gelombang IV' :
+                  rawQuery.match(/\b(?:gelombang\s*sisipan|gel\s*sisipan)/i) ? 'Gelombang Sisipan' : null);
 
       const isWaveComparisonQuery = /\b(?:beda|perbedaan|bandingkan|versus|vs)\b/i.test(rawQuery) && /\bgelombang\b/i.test(rawQuery);
 
@@ -1036,6 +1044,20 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     }
   }
 
+  // 3. Prohibit unsupported affirmative claims of guaranteed employment
+  const isJobGuaranteeQuery = (semanticFrame?.aspects && semanticFrame.aspects.includes('job_guarantee')) ||
+    /\b(?:jaminan|menjamin|dijamin|pasti)\s+(?:kerja|pekerjaan|dapat\s+kerja|bekerja)\b/i.test(semanticFrame?.rawQuery || '') ||
+    /\b(?:langsung\s+(?:dapat\s+)?kerja)\b/i.test(semanticFrame?.rawQuery || '');
+
+  if (isJobGuaranteeQuery) {
+    // Flag if answer affirms guaranteed job without stating the grounded company selection authority
+    if (/\b(?:jawaban:\s*ya\b|menjamin\s+(?:100%|lulusan\s+pasti|langsung\s+bekerja))\b/i.test(text) &&
+      !/\bkewenangan\s+perusahaan\b/i.test(text) &&
+      !/\btidak\s+(?:menjamin|ada\s+jaminan)\b/i.test(text)) {
+      return failVerification('unsupported_job_guarantee_affirmation');
+    }
+  }
+
   // Outcome Classification (when all structural failure gates pass)
   if (isUnsupported) {
     return {
@@ -1093,6 +1115,22 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     // Substantive content accompanied by missing aspect disclosure (grounded partial answer)
 
     if (arbitratedEvidence?.accepted && arbitratedEvidence.accepted.length > 0) {
+      const isBranchFacility = (semanticFrame?.domain === 'FACILITIES' || semanticFrame?.intent === 'FACILITY_INQUIRY') &&
+        semanticFrame?.targetBranch &&
+        ['jimbaran', 'abiansemal'].includes(semanticFrame.targetBranch);
+
+      if (isBranchFacility) {
+        return {
+          pass: true,
+          outcome: 'PARTIAL',
+          status: 'PARTIAL',
+          reason: 'verified_branch_contact_with_facility_source_gap',
+          isGrounded: true,
+          handledSafely: true,
+          sourceGap: true
+        };
+      }
+
       return {
         pass: true,
         outcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
@@ -1210,6 +1248,22 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
           }
         }
       }
+    }
+
+    const isBranchFacility = (semanticFrame?.domain === 'FACILITIES' || semanticFrame?.intent === 'FACILITY_INQUIRY') &&
+      semanticFrame?.targetBranch &&
+      ['jimbaran', 'abiansemal'].includes(semanticFrame.targetBranch);
+
+    if (isBranchFacility) {
+      return {
+        pass: true,
+        outcome: 'PARTIAL',
+        status: 'PARTIAL',
+        reason: 'verified_branch_contact_with_facility_source_gap',
+        isGrounded: true,
+        handledSafely: true,
+        sourceGap: true
+      };
     }
 
     return {

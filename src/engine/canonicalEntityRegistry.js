@@ -807,7 +807,7 @@ function hasExplicitProgramSemantics(text) {
 
 function hasExplicitCampusLocationSemantics(text) {
   const s = String(text || '').toLowerCase();
-  return /\b(?:kampus|stikom|itb\s+stikom|kuliah|universitas|institut|gedung|lokasi|alamat|prodi|jurusan|biaya|asrama|parkir|fasilitas|pmb|daftar|pendaftaran|cabang)\b/i.test(s);
+  return /\b(?:kampus|stikom|itb\s+stikom|kuliah|universitas|institut|gedung|lokasi|alamat|prodi|jurusan|biaya|asrama|parkir|fasilitas|laboratorium|lab|pmb|daftar|pendaftaran|cabang)\b/i.test(s);
 }
 
 function hasPriorProgramContext(priorState, canonicalName, code) {

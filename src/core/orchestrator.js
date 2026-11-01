@@ -569,10 +569,26 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
             ? 'Hello! Welcome to the official information service of ITB STIKOM Bali. How can I assist you with admissions (PMB), study programs, tuition fees, or campus academic details?'
             : 'Halo! Selamat datang di layanan informasi resmi ITB STIKOM Bali. Ada yang bisa kami bantu terkait pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, atau informasi akademik lainnya?';
         }
+      } else if (frame.intent === 'BOT_IDENTITY') {
+        const isAskingCreator = frame.aspects?.includes('bot_creator') ||
+          /\b(?:siapa\s+(?:yang\s+)?(?:membuat|menciptakan|mengembangkan|merancang|bikin)|pembuat|pengembang)\b/i.test(frame.rawQuery || '');
+        if (isAskingCreator) {
+          reply = isEnglish
+            ? 'I am Tiko, the official virtual assistant of ITB STIKOM Bali, developed to help provide information about academics, admissions, study programs, tuition fees, facilities, and campus services at ITB STIKOM Bali.'
+            : 'Saya adalah Tiko, asisten virtual resmi ITB STIKOM Bali yang dikembangkan untuk membantu memberikan informasi seputar akademik, pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, fasilitas, dan layanan kampus ITB STIKOM Bali.';
+        } else {
+          reply = isEnglish
+            ? 'Hello! I am Tiko, the official virtual assistant of ITB STIKOM Bali. I am here to help you with information regarding admissions, study programs, tuition fees, facilities, and campus details. How can I assist you today?'
+            : 'Halo! Saya Tiko, asisten virtual resmi ITB STIKOM Bali. Saya siap membantu Anda memberikan informasi seputar pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, fasilitas, dan kegiatan kampus ITB STIKOM Bali. Ada yang bisa saya bantu?';
+        }
       } else if (frame.intent === 'CONVERSATIONAL_SMALL_TALK') {
         reply = isEnglish
           ? 'I am doing great, thank you! How can I assist you with information about ITB STIKOM Bali today?'
           : 'Kabar baik, terima kasih! Ada yang bisa saya bantu terkait informasi kampus ITB STIKOM Bali?';
+      } else if (frame.intent === 'CONVERSATIONAL_FAREWELL') {
+        reply = isEnglish
+          ? 'Goodbye! If you ever need further information regarding ITB STIKOM Bali, feel free to reach out anytime. Have a wonderful day!'
+          : 'Sampai jumpa kembali! Jika ada hal lain seputar ITB STIKOM Bali yang ingin Anda tanyakan di kemudian hari, jangan ragu untuk menghubungi saya lagi ya. Semoga sukses dan sehat selalu!';
       } else if (frame.intent === 'CONVERSATIONAL_ACKNOWLEDGEMENT') {
         reply = isEnglish
           ? "You're very welcome! Glad I could help. Is there anything else you would like to know about ITB STIKOM Bali?"
@@ -945,11 +961,18 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     overallStatus = 'corpus_gap';
   }
 
+  const hasPartialGrounded = subQueryResults.some(s =>
+    s.verification?.outcome === 'PARTIAL' || s.verification?.status === 'PARTIAL' || s.verification?.sourceGap
+  );
+
   let overallVerificationOutcome;
   let overallVerificationReason;
   if (allVerified) {
     overallVerificationOutcome = VERIFICATION_OUTCOME.VERIFIED_FACTUAL;
     overallVerificationReason = 'all_subqueries_verified';
+  } else if (hasPartialGrounded) {
+    overallVerificationOutcome = 'PARTIAL';
+    overallVerificationReason = 'verified_branch_contact_with_facility_source_gap';
   } else if (hasCorpusGap) {
     overallVerificationOutcome = VERIFICATION_OUTCOME.SAFE_UNKNOWN;
     overallVerificationReason = 'contains_unconfirmed_aspects';
@@ -959,12 +982,13 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
   }
 
   const overallVerification = {
-    pass: allVerified,
+    pass: allVerified || hasPartialGrounded,
     outcome: overallVerificationOutcome,
     status: overallVerificationOutcome,
     reason: overallVerificationReason,
-    isGrounded: allVerified,
-    handledSafely: true
+    isGrounded: allVerified || hasPartialGrounded,
+    handledSafely: true,
+    sourceGap: Boolean(hasPartialGrounded)
   };
 
   const verifiedFacts = [];

@@ -11,17 +11,18 @@
  * 5. Grounded scholarship & fee answer invariants: no fabricated external scholarships, fail-closed when evidence is missing.
  */
 
-const { resolveSemanticFrame } = require('../src/core/semanticFrameResolver');
+const { resolveSemanticFrame, resolveSemanticFrameAsync } = require('../src/core/semanticFrameResolver');
 const { evaluateContextDependency } = require('../src/core/contextResolver');
 const { buildRetrievalPlan } = require('../src/core/retrievalPlanner');
 const { retrieveCandidates } = require('../src/core/retrievalService');
 const { arbitrateEvidence, evaluateEvidenceCompatibility, curateCandidatePassages } = require('../src/core/evidenceArbiter');
 const { evaluateAnswerability, ANSWERABILITY_STATUS } = require('../src/core/answerabilityGate');
-const { buildGenericExtractiveFallback, extractGroundedCampusDirectory, extractGroundedScholarshipClaims } = require('../src/core/groundedAnswerGenerator');
-const { runPhase1DeterministicPipeline } = require('../src/core/orchestrator');
+const { buildGenericExtractiveFallback, extractGroundedCampusDirectory, extractGroundedScholarshipClaims, synthesizeAnswer } = require('../src/core/groundedAnswerGenerator');
+const { runPhase1DeterministicPipeline, handleInboundMessage } = require('../src/core/orchestrator');
 const { generateFeeAnswer } = require('../src/core/feeCalculationEngine');
 const { evaluateRecommendation } = require('../src/reasoning/recommendationEngine');
 const { generateGroundedCatalogSummary } = require('../src/core/academicCatalog');
+const { decomposeQuery, decomposeQueryAsync, hasMultipleIntents } = require('../src/core/multiIntentResolver');
 
 describe('31 October Root Cause Regression Suite', () => {
 
@@ -582,6 +583,1111 @@ describe('31 October Root Cause Regression Suite', () => {
       expect(res.answer).toContain('S1 Sistem Informasi');
       expect(res.answer).toContain('Gelombang Khusus');
       expect(res.answer).toContain('DPP');
+    });
+
+  });
+
+
+  describe('8. Case 8: Scholarship Stacking & Combination Precedence (November 1 Hardening)', () => {
+
+    test('8a. Stacking handler must take precedence over Fee Engine even if frame has TUITION_FEE / fee aspect', async () => {
+      const stackingQuery = 'Apakah potongan gelombang bisa digabung dengan tambahan 60%?';
+      const artificialFeeFrame = {
+        domain: 'TUITION_FEE',
+        intent: 'TUITION_FEE_INQUIRY',
+        rawQuery: stackingQuery,
+        entities: [],
+        aspects: ['fee']
+      };
+
+      const res = await synthesizeAnswer(artificialFeeFrame, { accepted: [{ text: 'SK PMB' }] });
+      expect(res.source).toBe('discount_stacking_fail_closed');
+      expect(res.answer).not.toContain('Rincian biaya pendidikan di ITB STIKOM Bali T.A 2026/2027 berbeda tergantung pada program studi');
+      expect(res.answer).not.toContain('S1 Sistem Informasi, Teknologi Informasi, & Bisnis Digital');
+      expect(res.answer).toContain('SOURCE_GAP');
+      expect(res.answer).toContain('SMK TI Bali Global');
+      expect(res.answer).toContain('SMK Pandawa Bali Global');
+    });
+
+    test('8b. Model semantic parser domain must NOT override stacking inquiry to TUITION_FEE_INQUIRY', async () => {
+      const stackingQuery = 'Apakah potongan gelombang bisa digabung dengan tambahan 60%?';
+      const mockClient = {
+        chat: {
+          completions: {
+            create: async () => ({
+              choices: [{
+                message: {
+                  content: JSON.stringify({
+                    speechAct: 'INQUIRE_PROPERTY',
+                    primaryIntent: 'TUITION_FEE_INQUIRY',
+                    userInterest: 'potongan gelombang',
+                    semanticConcepts: ['FINANCIAL_COST'],
+                    candidateEntities: [],
+                    requestedAspects: ['fee'],
+                    scopeConstraints: {
+                      academicLevel: null,
+                      studyMode: null,
+                      locationConstraint: null,
+                      locationScope: 'GENERAL'
+                    },
+                    contextDependency: {
+                      isFollowUp: true,
+                      referenceType: 'anaphoric',
+                      topicContinuity: 'CONTINUATION',
+                      relevantPriorContext: 'beasiswa'
+                    },
+                    executionRoute: 'RAG_RETRIEVAL',
+                    confidence: 0.95,
+                    ambiguityLevel: 'LOW'
+                  })
+                }
+              }]
+            })
+          }
+        }
+      };
+
+      const frame = await resolveSemanticFrameAsync(stackingQuery, {}, { client: mockClient });
+      expect(frame.domain).toBe('SCHOLARSHIP');
+      expect(frame.intent).toBe('SCHOLARSHIP_INQUIRY');
+      expect(frame.aspects).toContain('scholarship');
+    });
+
+    test('8c. Follow-up preserves valid active program entity when supported by conversation context', async () => {
+      const sessionData = {
+        activeDomain: 'SCHOLARSHIP',
+        activeIntent: 'SCHOLARSHIP_INQUIRY',
+        activeEntity: 'S1 Sistem Komputer',
+        lastQuery: 'Apakah ada beasiswa tambahan 60% untuk S1 Sistem Komputer?',
+        lastAnswer: 'Tambahan beasiswa 60% untuk S1 Sistem Komputer tersedia pada Gelombang Khusus.',
+        conversationHistory: [
+          { role: 'user', content: 'Apakah ada beasiswa tambahan 60% untuk S1 Sistem Komputer?' },
+          { role: 'assistant', content: 'Tambahan beasiswa 60% untuk S1 Sistem Komputer tersedia pada Gelombang Khusus.' }
+        ]
+      };
+
+      const query = 'Apakah potongan gelombang bisa digabung dengan tambahan 60%?';
+      const contextDep = evaluateContextDependency(query, sessionData);
+      expect(contextDep.shouldInherit).toBe(true);
+      expect(contextDep.inheritedDomain).toBe('SCHOLARSHIP');
+      expect(contextDep.inheritedEntity).toBe('S1 Sistem Komputer');
+
+      const res = await runPhase1DeterministicPipeline('test_stacking_inherited', query, {
+        syncOnly: true,
+        fastFallback: true,
+        sessionSnapshot: { data: sessionData }
+      });
+
+      expect(res.finalAnswer).toContain('S1 Sistem Komputer');
+      expect(res.finalAnswer).toContain('SMK TI Bali Global');
+      expect(res.finalAnswer).toContain('SOURCE_GAP');
+    });
+
+    test('8d. Ambiguous broad scholarship context clarifies programs without forced S1 Sistem Komputer lock', async () => {
+      const sessionData = {
+        activeDomain: 'SCHOLARSHIP',
+        activeIntent: 'SCHOLARSHIP_INQUIRY',
+        activeEntity: null,
+        lastQuery: 'Beasiswa apa saja yang tersedia di ITB STIKOM Bali?',
+        lastAnswer: 'Berikut informasi beasiswa: S1 SI/TI/BD, S1 Sistem Komputer, D3 Manajemen Informatika.',
+        conversationHistory: [
+          { role: 'user', content: 'Beasiswa apa saja yang tersedia di ITB STIKOM Bali?' },
+          { role: 'assistant', content: 'Berikut informasi beasiswa: S1 SI/TI/BD, S1 Sistem Komputer, D3 Manajemen Informatika.' }
+        ]
+      };
+
+      const query = 'Apakah potongan gelombang bisa digabung dengan tambahan 60%?';
+      const frame = resolveSemanticFrame(query, sessionData);
+      expect(frame.entities.length).toBe(0); // Not forcefully locked to S1 SK
+
+      const res = await runPhase1DeterministicPipeline('test_stacking_ambiguous', query, {
+        syncOnly: true,
+        fastFallback: true,
+        sessionSnapshot: { data: sessionData }
+      });
+
+      expect(res.finalAnswer).toContain('S1 Sistem Komputer');
+      expect(res.finalAnswer).toContain('D3 Manajemen Informatika');
+      expect(res.finalAnswer).toContain('silakan sebutkan program studi yang dimaksud');
+      expect(res.finalAnswer).not.toContain('Rincian biaya pendidikan di ITB STIKOM Bali T.A 2026/2027 berbeda');
+    });
+
+    test('8e. Stacking inquiry strictly prevents default Gelombang II multi-program simulation', async () => {
+      const query = 'Apakah potongan gelombang bisa digabung dengan tambahan 60%?';
+      const res = await runPhase1DeterministicPipeline('test_no_wave2_simulation', query, {
+        syncOnly: true,
+        fastFallback: true,
+        sessionSnapshot: { data: {} }
+      });
+
+      expect(res.finalAnswer).not.toContain('Gelombang II');
+      expect(res.finalAnswer).not.toContain('Dana Pendidikan Pokok (DPP): Rp 12.500.000');
+      expect(res.finalAnswer).not.toContain('Biaya Pendidikan Per Semester: Rp 6.500.000');
+      expect(res.finalAnswer).toContain('SOURCE_GAP');
+      // Direct statement that combination rules are not officially verified; zero allow/disallow conclusion
+      expect(res.finalAnswer).toContain('belum terverifikasi secara resmi');
+      expect(res.finalAnswer).not.toContain('bisa digabung');
+      expect(res.finalAnswer).not.toContain('dapat digabung');
+      expect(res.finalAnswer).not.toContain('tidak bisa digabung');
+      expect(res.finalAnswer).not.toContain('tidak boleh digabung');
+    });
+
+    test('8f. Standard tuition fee inquiries remain completely functional through Fee Engine', () => {
+      const res1 = generateFeeAnswer('Berapa biaya pendaftaran Gelombang II?');
+      expect(res1.success).toBe(true);
+      expect(res1.answer).toContain('Biaya pendaftaran');
+
+      const res2 = generateFeeAnswer('Berapa biaya kuliah S1 Sistem Komputer?');
+      expect(res2.success).toBe(true);
+      expect(res2.answer).toContain('S1 Sistem Komputer');
+      expect(res2.answer).toContain('DPP');
+    });
+
+  });
+
+  describe('9. Case 9: Career Center & Job Guarantee Safety Hardening (Tahap A)', () => {
+
+    test('9a. Job guarantee query does NOT produce affirmative "Ya" or claim guaranteed jobs; explicitly states company hiring authority from FAQ CC', async () => {
+      const q = 'Apakah ITB STIKOM Bali menjamin lulusan langsung dapat kerja?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('CAREER_CENTER');
+      expect(frame.intent).toBe('CAREER_CENTER_INQUIRY');
+      expect(frame.aspects).toContain('job_guarantee');
+
+      const res = await runPhase1DeterministicPipeline('career_t1', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      // Must NOT extract raw "Jawaban: Ya" from unrelated FAQs
+      expect(res.finalAnswer).not.toMatch(/^Jawaban:\s*Ya/im);
+      expect(res.finalAnswer).not.toContain('Jawaban:Ya');
+      // Grounded in official FAQ CC: "proses penerimaan kerja tetap menjadi kewenangan perusahaan berdasarkan hasil seleksi"
+      expect(res.finalAnswer).toContain('kewenangan perusahaan berdasarkan hasil seleksi');
+      expect(res.finalAnswer).toContain('tidak memberikan jaminan');
+      // Must communicate verified Career Center facilitation services without false promises
+      expect(res.finalAnswer).toContain('Career Development Center');
+      expect(res.finalAnswer).toContain('Job Fair');
+      expect(res.finalAnswer).toContain('Magang Industri');
+      // Verification must pass as factual / safe
+      expect(res.verification.pass || res.verification.handledSafely).toBe(true);
+    });
+
+    test('9b. Career guidance and consultation inquiry correctly utilizes CDC services without job guarantee claims', async () => {
+      const q = 'Apakah ada bimbingan karier di ITB STIKOM Bali?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('CAREER_CENTER');
+      expect(frame.intent).toBe('CAREER_CENTER_INQUIRY');
+
+      const res = await runPhase1DeterministicPipeline('career_t2', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer).toContain('Career Center');
+      expect(res.finalAnswer).not.toContain('menjamin 100%');
+      expect(res.verification.pass || res.verification.handledSafely).toBe(true);
+    });
+
+    test('9c. Internship program inquiry correctly returns internship information from official documents', async () => {
+      const q = 'Apakah ada program magang di ITB STIKOM Bali?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('CAREER_CENTER');
+      expect(frame.intent).toBe('CAREER_CENTER_INQUIRY');
+
+      const res = await runPhase1DeterministicPipeline('career_t3', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer.toLowerCase()).toContain('magang');
+      expect(res.verification.pass || res.verification.handledSafely).toBe(true);
+    });
+
+    test('9d. Job fair inquiry correctly returns campus job fair info without cross-contaminating unrelated FAQ answers', async () => {
+      const q = 'Apakah ada job fair di kampus?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('CAREER_CENTER');
+      expect(frame.intent).toBe('CAREER_CENTER_INQUIRY');
+
+      const res = await runPhase1DeterministicPipeline('career_t4', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer.toLowerCase()).toMatch(/job\s*fair|career|rekrutmen|perusahaan/);
+      expect(res.finalAnswer).not.toMatch(/^Jawaban:\s*Ya[.!?]?$/m);
+      expect(res.verification.pass || res.verification.handledSafely).toBe(true);
+    });
+
+    test('9e. Safety Verifier Gate: Verifier strictly blocks any answer claiming unsupported affirmative job guarantee', () => {
+      const { verifyFinalAnswer } = require('../src/core/finalAnswerVerifier');
+      const frame = {
+        rawQuery: 'Apakah ITB STIKOM Bali menjamin lulusan langsung dapat kerja?',
+        domain: 'CAREER_CENTER',
+        intent: 'CAREER_CENTER_INQUIRY',
+        aspects: ['job_guarantee']
+      };
+
+      // Case 1: Bad answer claiming "Jawaban: Ya" as affirmative guarantee
+      const badAnswer1 = 'Jawaban: Ya. ITB STIKOM Bali menjamin lulusan pasti langsung bekerja setelah lulus kuliah.';
+      const verif1 = verifyFinalAnswer(badAnswer1, frame, []);
+      expect(verif1.pass).toBe(false);
+      expect(verif1.reason).toBe('unsupported_job_guarantee_affirmation');
+
+      // Case 2: Good answer stating company selection authority and no guarantee
+      const goodAnswer = 'Dokumen resmi menegaskan bahwa proses penerimaan kerja tetap menjadi kewenangan perusahaan berdasarkan hasil seleksi. Kampus tidak memberikan jaminan otomatis bekerja.';
+      const verif2 = verifyFinalAnswer(goodAnswer, frame, []);
+      expect(verif2.reason).not.toBe('unsupported_job_guarantee_affirmation');
+    });
+
+    test('9f. Non-Career Regression Guard: Scholarship stacking and tuition fee inquiries remain completely functional', async () => {
+      // Stacking query remains fail-closed to SOURCE_GAP
+      const stackQuery = 'Apakah potongan gelombang bisa digabung dengan tambahan 60%?';
+      const resStack = await runPhase1DeterministicPipeline('reg_stack', stackQuery, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(resStack.finalAnswer).toContain('SOURCE_GAP');
+      expect(resStack.finalAnswer).not.toContain('Biaya Pendidikan Per Semester: Rp 6.500.000');
+
+      // Standard fee query remains accurate
+      const feeRes = generateFeeAnswer('Berapa biaya kuliah Sistem Informasi Gelombang 1?');
+      expect(feeRes.success).toBe(true);
+      expect(feeRes.answer).toContain('S1 Sistem Informasi');
+      expect(feeRes.answer).toContain('Gelombang I');
+    });
+
+    // =========================================================================
+    // 10. Case 10: Business Incubator (INBIS) & Entrepreneurship Safety Hardening (Tahap B)
+    // =========================================================================
+
+    test('10a. INBIS Overview: "Apa itu INBIS di ITB STIKOM Bali?" returns verified identity, 2014 SK, and top 4 national recognition', async () => {
+      const q = 'Apa itu INBIS di ITB STIKOM Bali?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('CAMPUS_SERVICE');
+      expect(frame.intent).toBe('CAMPUS_SERVICE_INQUIRY');
+      expect(frame.aspects).not.toContain('facilities');
+
+      const res = await runPhase1DeterministicPipeline('inbis_10a', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer).toContain('Inkubator Bisnis');
+      expect(res.finalAnswer).toContain('2014');
+      expect(res.finalAnswer).toMatch(/4\s+Lembaga\s+Inkubator\s+Bisnis\s+Terbaik|Kemenkop/i);
+      expect(res.finalAnswer).not.toContain('domain_aspect_mismatch_facilities_answered_with_double_degree');
+      expect(res.verification.pass || res.verification.handledSafely).toBe(true);
+    });
+
+    test('10b. INBIS Services: "Layanan apa saja yang disediakan Inkubator Bisnis?" returns mentoring, coworking space, and legality assistance', async () => {
+      const q = 'Layanan apa saja yang disediakan Inkubator Bisnis?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('CAMPUS_SERVICE');
+      expect(frame.intent).toBe('CAMPUS_SERVICE_INQUIRY');
+
+      const res = await runPhase1DeterministicPipeline('inbis_10b', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer).toMatch(/mentor|mentoring/i);
+      expect(res.finalAnswer).toMatch(/coworking\s+space|ruang\s+kerja/i);
+      expect(res.finalAnswer).toMatch(/legalitas|badan\s+usaha|pendanaan/i);
+      expect(res.verification.pass || res.verification.handledSafely).toBe(true);
+    });
+
+    test('10c. Tenant Programs: "Program apa yang tersedia bagi tenant INBIS?" returns Start-Learn-Growth incubation phases', async () => {
+      const q = 'Program apa yang tersedia bagi tenant INBIS?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('CAMPUS_SERVICE');
+      expect(frame.intent).toBe('CAMPUS_SERVICE_INQUIRY');
+      expect(frame.aspects).toContain('tenant_programs');
+
+      const res = await runPhase1DeterministicPipeline('inbis_10c', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer).toMatch(/Pra-?Inkubasi/i);
+      expect(res.finalAnswer).toMatch(/Inkubasi/i);
+      expect(res.finalAnswer).toMatch(/Pasca-?Inkubasi/i);
+      expect(res.finalAnswer).toMatch(/Start-?Learn-?Growth/i);
+      expect(res.verification.pass || res.verification.handledSafely).toBe(true);
+    });
+
+    test('10d. P2MW Relation: "Apa hubungan INBIS dengan P2MW?" returns student teams GOWJUS, Sehabit, and Dikerajinin', async () => {
+      const q = 'Apa hubungan INBIS dengan P2MW?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('CAMPUS_SERVICE');
+      expect(frame.intent).toBe('CAMPUS_SERVICE_INQUIRY');
+      expect(frame.aspects).toContain('p2mw');
+
+      const res = await runPhase1DeterministicPipeline('inbis_10d', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer).toMatch(/P2MW|Program\s+Pembinaan\s+Wirausaha\s+Mahasiswa/i);
+      expect(res.finalAnswer).toContain('GOWJUS');
+      expect(res.finalAnswer).toContain('Sehabit');
+      expect(res.finalAnswer).toContain('Dikerajinin');
+      expect(res.verification.pass || res.verification.handledSafely).toBe(true);
+    });
+
+    test('10e. Paraphrased Query without "INBIS": "program wirausaha pemula di kampus" correctly routes to INBIS profile', async () => {
+      const q = 'program wirausaha pemula di kampus';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('CAMPUS_SERVICE');
+      expect(frame.intent).toBe('CAMPUS_SERVICE_INQUIRY');
+
+      const res = await runPhase1DeterministicPipeline('inbis_10e', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer).toContain('Inkubator Bisnis');
+      expect(res.verification.pass || res.verification.handledSafely).toBe(true);
+    });
+
+    test('10f. Facility Isolation: Facility queries do not trigger false Double Degree verifier errors', async () => {
+      const q = 'Apa saja fasilitas di kampus ITB STIKOM Bali?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('FACILITIES');
+      expect(frame.intent).toBe('FACILITY_INQUIRY');
+
+      const res = await runPhase1DeterministicPipeline('inbis_10f', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.verification.reason).not.toBe('domain_aspect_mismatch_facilities_answered_with_double_degree');
+    });
+
+    test('10g. Double Degree Non-Interference: National Double Degree inquiries remain strictly protected', async () => {
+      const q = 'Bagaimana program National Dual Degree di ITB STIKOM Bali?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('INTERNATIONAL');
+
+      const res = await runPhase1DeterministicPipeline('inbis_10g', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer).toMatch(/Universitas\s+Teknologi\s+Bandung|UTB/i);
+      expect(res.finalAnswer).not.toContain('Universitas Teknologi Bali');
+    });
+
+    test('10h. Regression Guard: Career/CDC (Tahap A) and Scholarship Stacking remain completely functional', async () => {
+      // Career job guarantee safety check
+      const jobQ = 'Apakah ITB STIKOM Bali menjamin lulusan langsung dapat kerja?';
+      const jobRes = await runPhase1DeterministicPipeline('inbis_10h_job', jobQ, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(jobRes.finalAnswer).not.toMatch(/^Jawaban:\s*Ya[.!?]?$/m);
+      expect(jobRes.finalAnswer).toContain('kewenangan perusahaan');
+
+      // Scholarship stacking check
+      const stackQ = 'Apakah potongan gelombang bisa digabung dengan tambahan 60%?';
+      const stackRes = await runPhase1DeterministicPipeline('inbis_10h_stack', stackQ, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(stackRes.finalAnswer).toContain('SOURCE_GAP');
+      expect(stackRes.finalAnswer).not.toContain('Biaya Pendidikan Per Semester: Rp 6.500.000');
+    });
+
+    // =========================================================================
+    // 11. Case 11: Academic Program Definition & Multi-Entity Comparison Integrity (Tahap C)
+    // =========================================================================
+
+    test('11a. Bisnis Digital Definition Integrity: "Apa itu program studi Bisnis Digital?" contains zero Sistem Komputer contamination', async () => {
+      const q = 'Apa itu program studi Bisnis Digital?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('ACADEMIC_PROGRAM');
+      expect(frame.entities.map(e => e.canonical)).toContain('S1 Bisnis Digital');
+
+      const res = await runPhase1DeterministicPipeline('prog_11a', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer).toMatch(/bisnis berbasis digital|e-commerce/i);
+      // Strict negative assertions against Sistem Komputer contamination
+      expect(res.finalAnswer).not.toMatch(/\b(embedded system|robotika|mikrocontroller|perangkat elektronik|robot)\b/i);
+      expect(res.verification.pass || res.verification.handledSafely).toBe(true);
+    });
+
+    test('11b. Bisnis Digital Paraphrase: "Tolong jelaskan prodi Bisnis Digital" returns clean BD competencies without cross-prodi noise', async () => {
+      const q = 'Tolong jelaskan prodi Bisnis Digital';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('ACADEMIC_PROGRAM');
+      expect(frame.entities.map(e => e.canonical)).toContain('S1 Bisnis Digital');
+
+      const res = await runPhase1DeterministicPipeline('prog_11b', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer).toMatch(/digital marketing|e-commerce|bisnis digital/i);
+      expect(res.finalAnswer).not.toMatch(/\b(robotika|embedded system)\b/i);
+      expect(res.verification.pass || res.verification.handledSafely).toBe(true);
+    });
+
+    test('11c. Sistem Komputer Subjects: "Apa yang dipelajari mahasiswa Sistem Komputer?" retains hardware/IoT curriculum', async () => {
+      const q = 'Apa yang dipelajari mahasiswa Sistem Komputer?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('ACADEMIC_CURRICULUM');
+      expect(frame.entities.map(e => e.canonical)).toContain('S1 Sistem Komputer');
+
+      const res = await runPhase1DeterministicPipeline('prog_11c', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer).toMatch(/Sistem Komputer/i);
+      expect(res.verification.pass || res.verification.handledSafely).toBe(true);
+    });
+
+    test('11d. Program Comparison (SI vs TI): "Apa perbedaan Sistem Informasi dan Teknologi Informasi?" covers both programs factually', async () => {
+      const q = 'Apa perbedaan Sistem Informasi dan Teknologi Informasi?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('ACADEMIC_PROGRAM');
+      expect(frame.intent).toBe('PROGRAM_COMPARISON');
+      const canEnts = frame.entities.map(e => e.canonical);
+      expect(canEnts).toContain('S1 Sistem Informasi');
+      expect(canEnts).toContain('S1 Teknologi Informasi');
+
+      const res = await runPhase1DeterministicPipeline('prog_11d', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      // Both entities must be present
+      expect(res.finalAnswer).toMatch(/Sistem Informasi/i);
+      expect(res.finalAnswer).toMatch(/Teknologi Informasi/i);
+      // Highlights key grounded focus for both
+      expect(res.finalAnswer).toMatch(/IT Security|Integrator Sistem|infrastruktur/i);
+      expect(res.finalAnswer).toMatch(/analisis|database|bisnis/i);
+      // Verifier passes without multi_entity_missing_supported_entity_in_answer
+      expect(res.verification.pass || res.verification.handledSafely).toBe(true);
+      expect(res.verification.reason).not.toMatch(/multi_entity_missing_supported_entity/i);
+    });
+
+    test('11e. Program Comparison (TI vs Bisnis Digital): "Apa perbedaan TI dan Bisnis Digital?" covers both programs factually', async () => {
+      const q = 'Apa perbedaan TI dan Bisnis Digital?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('ACADEMIC_PROGRAM');
+      expect(frame.intent).toBe('PROGRAM_COMPARISON');
+      const canEnts = frame.entities.map(e => e.canonical);
+      expect(canEnts).toContain('S1 Teknologi Informasi');
+      expect(canEnts).toContain('S1 Bisnis Digital');
+
+      const res = await runPhase1DeterministicPipeline('prog_11e', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer).toMatch(/Teknologi Informasi/i);
+      expect(res.finalAnswer).toMatch(/Bisnis Digital/i);
+      expect(res.verification.pass || res.verification.handledSafely).toBe(true);
+      expect(res.verification.reason).not.toMatch(/multi_entity_missing_supported_entity/i);
+    });
+
+    test('11f. Multi-Program Comparison (3 prodi): "Bandingkan prodi Sistem Informasi, Teknologi Informasi, dan Sistem Komputer" covers all 3 programs', async () => {
+      const q = 'Bandingkan prodi Sistem Informasi, Teknologi Informasi, dan Sistem Komputer';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('ACADEMIC_PROGRAM');
+      expect(frame.intent).toBe('PROGRAM_COMPARISON');
+      const canEnts = frame.entities.map(e => e.canonical);
+      expect(canEnts).toContain('S1 Sistem Informasi');
+      expect(canEnts).toContain('S1 Teknologi Informasi');
+      expect(canEnts).toContain('S1 Sistem Komputer');
+
+      const res = await runPhase1DeterministicPipeline('prog_11f', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer).toMatch(/Sistem Informasi/i);
+      expect(res.finalAnswer).toMatch(/Teknologi Informasi/i);
+      expect(res.finalAnswer).toMatch(/Sistem Komputer/i);
+      expect(res.verification.pass || res.verification.handledSafely).toBe(true);
+      expect(res.verification.reason).not.toMatch(/multi_entity_missing_supported_entity/i);
+    });
+
+    test('11g. Regression Guard: Career/CDC (Tahap A), INBIS (Tahap B), and Discount Stacking remain 100% intact', async () => {
+      // Tahap A
+      const jobRes = await runPhase1DeterministicPipeline('guard_11g_job', 'Apakah ITB STIKOM Bali menjamin lulusan langsung dapat kerja?', {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(jobRes.finalAnswer).not.toMatch(/^Jawaban:\s*Ya[.!?]?$/m);
+      expect(jobRes.finalAnswer).toContain('kewenangan perusahaan');
+
+      // Tahap B
+      const inbisRes = await runPhase1DeterministicPipeline('guard_11g_inbis', 'Apa itu INBIS di ITB STIKOM Bali?', {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(inbisRes.finalAnswer).toContain('Inkubator Bisnis');
+      expect(inbisRes.finalAnswer).toContain('2014');
+
+      // Discount Stacking
+      const stackRes = await runPhase1DeterministicPipeline('guard_11g_stack', 'Apakah potongan gelombang bisa digabung dengan tambahan 60%?', {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(stackRes.finalAnswer).toContain('SOURCE_GAP');
+    });
+
+  });
+
+  describe('12. Case 12: Multi-Intent Subquery Context Isolation & Decomposition (Tahap D)', () => {
+
+    test('12a. Zero Cross-Contamination: "Di mana lokasi kampus Renon dan ada beasiswa apa saja?"', async () => {
+      const q = 'Di mana lokasi kampus Renon dan ada beasiswa apa saja?';
+      expect(hasMultipleIntents(q)).toBe(true);
+
+      const subFrames = decomposeQuery(q, {});
+      expect(subFrames.length).toBe(2);
+
+      // Subquery 1: Kampus Renon
+      expect(subFrames[0].domain).toBe('FACILITIES');
+      expect(subFrames[0].intent).toBe('CAMPUS_LOCATION');
+      const f1Entities = subFrames[0].entities.map(e => e.canonical);
+      expect(f1Entities).toContain('Kampus Denpasar (Renon)');
+      expect(f1Entities).not.toContain('Kampus ITB STIKOM Bali');
+
+      // Subquery 2: Beasiswa (Must NOT inherit Kampus Denpasar (Renon))
+      expect(subFrames[1].domain).toBe('SCHOLARSHIP');
+      expect(subFrames[1].intent).toBe('SCHOLARSHIP_INQUIRY');
+      const f2Entities = subFrames[1].entities.map(e => e.canonical);
+      expect(f2Entities).not.toContain('Kampus Denpasar (Renon)');
+      expect(f2Entities).not.toContain('Kampus ITB STIKOM Bali');
+
+      const res = await runPhase1DeterministicPipeline('multi_12a', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.subQueryResults.length).toBe(2);
+      expect(res.finalAnswer).toMatch(/Puputan.*Renon/i);
+      expect(res.finalAnswer).toMatch(/beasiswa|potongan/i);
+      expect(res.subQueryResults[0].verification.pass || res.subQueryResults[0].verification.handledSafely).toBe(true);
+      expect(res.subQueryResults[1].verification.pass || res.subQueryResults[1].verification.handledSafely).toBe(true);
+      expect(res.subQueryResults[0].verification.reason).not.toMatch(/multi_entity_missing_supported_entity/i);
+    });
+
+    test('12b. Independent Academic & Admission: "Apa perbedaan Sistem Informasi dan bagaimana cara mendaftar?"', async () => {
+      const q = 'Apa perbedaan Sistem Informasi dan bagaimana cara mendaftar?';
+      expect(hasMultipleIntents(q)).toBe(true);
+
+      const subFrames = decomposeQuery(q, {});
+      expect(subFrames.length).toBe(2);
+
+      expect(subFrames[0].entities.map(e => e.canonical)).toContain('S1 Sistem Informasi');
+      // Subquery 2 is general procedure, should not be locked into S1 Sistem Informasi
+      expect(subFrames[1].domain).toBe('PMB');
+      expect(subFrames[1].intent).toBe('ADMISSION_PROCEDURE');
+
+      const res = await runPhase1DeterministicPipeline('multi_12b', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.subQueryResults.length).toBe(2);
+      expect(res.finalAnswer).toMatch(/Sistem Informasi/i);
+      expect(res.finalAnswer).toMatch(/pendaftaran|PMB/i);
+      expect(res.subQueryResults[0].verification.pass || res.subQueryResults[0].verification.handledSafely).toBe(true);
+      expect(res.subQueryResults[1].verification.pass || res.subQueryResults[1].verification.handledSafely).toBe(true);
+    });
+
+    test('12c. Facility Safe Gap & Double Degree Independence: "Jelaskan fasilitas kampus Jimbaran dan program Double Degree"', async () => {
+      const q = 'Jelaskan fasilitas kampus Jimbaran dan program Double Degree';
+      expect(hasMultipleIntents(q)).toBe(true);
+
+      const subFrames = decomposeQuery(q, {});
+      expect(subFrames.length).toBe(2);
+
+      expect(subFrames[0].entities.map(e => e.canonical)).toContain('Kampus Jimbaran');
+      expect(subFrames[1].entities.map(e => e.canonical)).toContain('International Dual Degree');
+
+      const res = await runPhase1DeterministicPipeline('multi_12c', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.subQueryResults.length).toBe(2);
+      // Subquery 1 handled as safe corpus gap without crashing
+      expect(res.subQueryResults[0].verification.handledSafely).toBe(true);
+      // Subquery 2 verified factual
+      expect(res.subQueryResults[1].verification.outcome).toBe('VERIFIED_FACTUAL');
+      expect(res.finalAnswer).toMatch(/Dual Degree|HELP UNIVERSITY/i);
+    });
+
+    test('12d. Service Coordination: "Apa itu INBIS dan bagaimana layanan Career Center?"', async () => {
+      const q = 'Apa itu INBIS dan bagaimana layanan Career Center?';
+      expect(hasMultipleIntents(q)).toBe(true);
+
+      const subFrames = decomposeQuery(q, {});
+      expect(subFrames.length).toBe(2);
+
+      expect(subFrames[0].domain).toBe('CAMPUS_SERVICE');
+      expect(subFrames[0].entities.map(e => e.canonical)).toContain('Inkubator Bisnis (INBIS)');
+      expect(subFrames[1].domain).toBe('CAREER_CENTER');
+      expect(subFrames[1].entities.map(e => e.canonical)).toContain('Career Development Center (CDC)');
+
+      const res = await runPhase1DeterministicPipeline('multi_12d', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.subQueryResults.length).toBe(2);
+      expect(res.finalAnswer).toMatch(/Inkubator Bisnis/i);
+      expect(res.finalAnswer).toMatch(/Career Center/i);
+      expect(res.subQueryResults[0].verification.outcome).toBe('VERIFIED_FACTUAL');
+      expect(res.subQueryResults[1].verification.outcome).toBe('VERIFIED_FACTUAL');
+    });
+
+    test('12e. Greeting Guard & 3-Way Compound with Anaphora: "Halo kak, mau tanya lokasi kampus Renon di mana ya, terus kalau mau daftar prodi TI syaratnya apa dan biayanya berapa?"', async () => {
+      const q = 'Halo kak, mau tanya lokasi kampus Renon di mana ya, terus kalau mau daftar prodi TI syaratnya apa dan biayanya berapa?';
+      expect(hasMultipleIntents(q)).toBe(true);
+
+      const subFrames = decomposeQuery(q, {});
+      expect(subFrames.length).toBe(3);
+
+      // Part 1: Greeting guard allows query to route to FACILITIES
+      expect(subFrames[0].domain).toBe('FACILITIES');
+      expect(subFrames[0].intent).toBe('CAMPUS_LOCATION');
+      expect(subFrames[0].entities.map(e => e.canonical)).toContain('Kampus Denpasar (Renon)');
+
+      // Part 2: Admission TI
+      expect(subFrames[1].domain).toBe('PMB');
+      expect(subFrames[1].entities.map(e => e.canonical)).toContain('S1 Teknologi Informasi');
+
+      // Part 3: Tuition Fee TI inherited via anaphoric 'biayanya'
+      expect(subFrames[2].domain).toBe('TUITION_FEE');
+      expect(subFrames[2].entities.map(e => e.canonical)).toContain('S1 Teknologi Informasi');
+
+      const res = await runPhase1DeterministicPipeline('multi_12e', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.subQueryResults.length).toBe(3);
+      expect(res.subQueryResults[0].verification.outcome).toBe('VERIFIED_FACTUAL');
+      expect(res.subQueryResults[1].verification.outcome).toBe('VERIFIED_FACTUAL');
+      expect(res.subQueryResults[2].verification.outcome).toBe('VERIFIED_FACTUAL');
+      expect(res.finalAnswer).toMatch(/Puputan.*Renon/i);
+      expect(res.finalAnswer).toMatch(/Teknologi Informasi/i);
+      expect(res.finalAnswer).toMatch(/Biaya Kuliah S1 Teknologi Informasi/i);
+    });
+
+    test('12f. Tuition Fee & Campus Location: "Berapa biaya kuliah di Sistem Informasi dan di mana lokasi kampus Jimbaran?"', async () => {
+      const q = 'Berapa biaya kuliah di Sistem Informasi dan di mana lokasi kampus Jimbaran?';
+      expect(hasMultipleIntents(q)).toBe(true);
+
+      const subFrames = decomposeQuery(q, {});
+      expect(subFrames.length).toBe(2);
+
+      expect(subFrames[0].domain).toBe('TUITION_FEE');
+      expect(subFrames[0].entities.map(e => e.canonical)).toContain('S1 Sistem Informasi');
+      expect(subFrames[1].domain).toBe('FACILITIES');
+      expect(subFrames[1].entities.map(e => e.canonical)).toContain('Kampus Jimbaran');
+
+      const res = await runPhase1DeterministicPipeline('multi_12f', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.subQueryResults.length).toBe(2);
+      expect(res.subQueryResults[0].verification.outcome).toBe('VERIFIED_FACTUAL');
+      expect(res.subQueryResults[1].verification.outcome).toBe('PARTIAL');
+      expect(res.subQueryResults[1].verification.sourceGap).toBe(true);
+      expect(res.finalAnswer).toMatch(/Biaya Kuliah S1 Sistem Informasi/i);
+      expect(res.finalAnswer).toMatch(/Kampus Udayana.*Jimbaran/i);
+    });
+
+    test('12g. Program Strengths & Career Prospects Anaphora: "Apa keunggulan prodi Bisnis Digital dan apa saja prospek kerjanya?"', async () => {
+      const q = 'Apa keunggulan prodi Bisnis Digital dan apa saja prospek kerjanya?';
+      expect(hasMultipleIntents(q)).toBe(true);
+
+      const subFrames = decomposeQuery(q, {});
+      expect(subFrames.length).toBe(2);
+
+      expect(subFrames[0].entities.map(e => e.canonical)).toContain('S1 Bisnis Digital');
+      // Subquery 2 inherits S1 Bisnis Digital via anaphora 'prospek kerjanya'
+      expect(subFrames[1].entities.map(e => e.canonical)).toContain('S1 Bisnis Digital');
+
+      const res = await runPhase1DeterministicPipeline('multi_12g', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.subQueryResults.length).toBe(2);
+      expect(res.subQueryResults[0].verification.pass || res.subQueryResults[0].verification.handledSafely).toBe(true);
+      expect(res.subQueryResults[1].verification.pass || res.subQueryResults[1].verification.handledSafely).toBe(true);
+      expect(res.finalAnswer).toMatch(/Bisnis Digital/i);
+    });
+
+    test('12h. Fee Inquiry & Unsupported Program Safe Refusal: "Berapa biaya pendaftaran dan apakah ada jurusan teknik nuklir?"', async () => {
+      const q = 'Berapa biaya pendaftaran dan apakah ada jurusan teknik nuklir?';
+      expect(hasMultipleIntents(q)).toBe(true);
+
+      const subFrames = decomposeQuery(q, {});
+      expect(subFrames.length).toBe(2);
+
+      expect(subFrames[0].domain).toBe('TUITION_FEE');
+      expect(subFrames[1].domain).toBe('UNSUPPORTED_PROGRAM');
+
+      const res = await runPhase1DeterministicPipeline('multi_12h', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.subQueryResults.length).toBe(2);
+      expect(res.subQueryResults[0].verification.outcome).toBe('VERIFIED_FACTUAL');
+      expect(res.subQueryResults[1].verification.outcome).toBe('SAFE_UNKNOWN');
+      expect(res.subQueryResults[1].verification.reason).toBe('unsupported_program_safe_refusal');
+      expect(res.finalAnswer).toMatch(/Tarif biaya pendaftaran/i);
+      expect(res.finalAnswer).toMatch(/teknik nuklir.*tidak diselenggarakan/i);
+    });
+
+    test('12i. Regression Guard: Prior Tahap A, B, C and Stacking remain 100% functional', async () => {
+      // Prior Tahap A
+      const jobRes = await runPhase1DeterministicPipeline('guard_12i_job', 'Apakah ITB STIKOM Bali menjamin lulusan langsung dapat kerja?', {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(jobRes.finalAnswer).toContain('kewenangan perusahaan');
+
+      // Prior Tahap B
+      const inbisRes = await runPhase1DeterministicPipeline('guard_12i_inbis', 'Apa itu INBIS di ITB STIKOM Bali?', {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(inbisRes.finalAnswer).toContain('Inkubator Bisnis');
+
+      // Prior Tahap C
+      const compRes = await runPhase1DeterministicPipeline('guard_12i_comp', 'Apa perbedaan Sistem Informasi dan Teknologi Informasi?', {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(compRes.finalAnswer).toMatch(/Sistem Informasi/i);
+      expect(compRes.finalAnswer).toMatch(/Teknologi Informasi/i);
+
+      // Discount Stacking
+      const stackRes = await runPhase1DeterministicPipeline('guard_12i_stack', 'Apakah potongan gelombang bisa digabung dengan tambahan 60%?', {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(stackRes.finalAnswer).toContain('SOURCE_GAP');
+    });
+
+  });
+
+
+  describe('Case 13: Tahap E — Perbaikan Fasilitas Kampus dan Small Talk / Identitas Bot', () => {
+
+    test('13a. General Campus Facilities: "Apa saja fasilitas ITB STIKOM Bali?"', async () => {
+      const q = 'Apa saja fasilitas ITB STIKOM Bali?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('FACILITIES');
+      expect(frame.intent).toBe('FACILITY_INQUIRY');
+
+      const res = await runPhase1DeterministicPipeline('test_13a', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.verification.outcome).toBe('VERIFIED_FACTUAL');
+      expect(res.finalAnswer).toMatch(/Laboratorium & Sarana Praktikum/i);
+      expect(res.finalAnswer).toMatch(/Inkubator Bisnis \(INBIS\)/i);
+      expect(res.finalAnswer).toMatch(/Career Development Center \(CDC\)/i);
+    });
+
+    test('13b. Renon Campus Facilities: "Apa saja fasilitas kampus Renon?"', async () => {
+      const q = 'Apa saja fasilitas kampus Renon?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('FACILITIES');
+      expect(frame.intent).toBe('FACILITY_INQUIRY');
+      expect(frame.targetBranch).toBe('renon');
+
+      const res = await runPhase1DeterministicPipeline('test_13b', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.verification.outcome).toBe('VERIFIED_FACTUAL');
+      expect(res.finalAnswer).toMatch(/Fasilitas resmi penunjang perkuliahan/i);
+      expect(res.finalAnswer).toMatch(/Laboratorium Hardware/i);
+    });
+
+    test('13c. Branch Isolation & Lab Gap Jimbaran: "Apakah ada laboratorium komputer di Jimbaran?"', async () => {
+      const q = 'Apakah ada laboratorium komputer di Jimbaran?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('FACILITIES');
+      expect(frame.intent).toBe('FACILITY_INQUIRY');
+      expect(frame.targetBranch).toBe('jimbaran');
+      expect(frame.entities.map(e => e.canonical)).toContain('Kampus Jimbaran');
+
+      const res = await runPhase1DeterministicPipeline('test_13c', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.verification.outcome).toBe('PARTIAL');
+      expect(res.verification.sourceGap).toBe(true);
+      // Verifies official Jimbaran location and contact disclosure
+      expect(res.finalAnswer).toMatch(/Kampus Jimbaran/i);
+      expect(res.finalAnswer).toMatch(/Jl\. Raya Kampus Udayana/i);
+      expect(res.finalAnswer).toMatch(/8953534|081288778840/);
+      // Verifies explicit unrecorded lab gap statement without claiming it definitively doesn't exist
+      expect(res.finalAnswer).toMatch(/belum tercantum dalam panduan resmi/i);
+    });
+
+    test('13d. Branch Isolation & Facility Gap Abiansemal: "Apa fasilitas kampus Abiansemal?"', async () => {
+      const q = 'Apa fasilitas kampus Abiansemal?';
+      const frame = resolveSemanticFrame(q, {});
+      expect(frame.domain).toBe('FACILITIES');
+      expect(frame.intent).toBe('FACILITY_INQUIRY');
+      expect(frame.targetBranch).toBe('abiansemal');
+      expect(frame.entities.map(e => e.canonical)).toContain('Kampus Abiansemal');
+
+      const res = await runPhase1DeterministicPipeline('test_13d', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.verification.outcome).toBe('PARTIAL');
+      expect(res.verification.sourceGap).toBe(true);
+      expect(res.finalAnswer).toMatch(/Kampus Abiansemal/i);
+      expect(res.finalAnswer).toMatch(/belum tercantum dalam panduan resmi/i);
+    });
+
+    test('13e. Non-Interference: INBIS & Career Center Distinct Grounding', async () => {
+      // INBIS service inquiry
+      const inbisRes = await runPhase1DeterministicPipeline('test_13e_inbis', 'Apa layanan INBIS?', {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(inbisRes.verification.outcome).toBe('VERIFIED_FACTUAL');
+      expect(inbisRes.finalAnswer).toMatch(/Inkubator Bisnis \(INBIS\)/i);
+      expect(inbisRes.finalAnswer).toMatch(/Mentoring & Pendampingan Bisnis/i);
+
+      // CDC service inquiry
+      const cdcRes = await runPhase1DeterministicPipeline('test_13e_cdc', 'Apa fasilitas dan layanan Career Center?', {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(cdcRes.verification.outcome).toBe('VERIFIED_FACTUAL');
+      expect(cdcRes.finalAnswer).toMatch(/Career Development Center \(CDC\)/i);
+      expect(cdcRes.finalAnswer).toMatch(/Bursa Kerja & Campus Hiring/i);
+    });
+
+    test('13f. Bot Identity: Tiko & Creator/Developer Inquiries', async () => {
+      // Identity
+      const identityFrame = resolveSemanticFrame('Kamu siapa?', {});
+      expect(identityFrame.domain).toBe('CONVERSATIONAL');
+      expect(identityFrame.intent).toBe('BOT_IDENTITY');
+
+      const identityTurn = await handleInboundMessage({ from: '628100000001', body: 'Kamu siapa?' });
+      expect(identityTurn.turnResult.finalAnswer).toMatch(/Tiko/i);
+      expect(identityTurn.turnResult.finalAnswer).toMatch(/asisten (?:virtual|informasi) resmi ITB STIKOM Bali/i);
+
+      // Creator
+      const creatorFrame = resolveSemanticFrame('Siapa yang membuat kamu?', {});
+      expect(creatorFrame.domain).toBe('CONVERSATIONAL');
+      expect(creatorFrame.intent).toBe('BOT_IDENTITY');
+
+      const creatorTurn = await handleInboundMessage({ from: '628100000002', body: 'Siapa yang membuat kamu?' });
+      expect(creatorTurn.turnResult.finalAnswer).toMatch(/Tiko/i);
+      expect(creatorTurn.turnResult.finalAnswer).toMatch(/ITB STIKOM Bali/i);
+    });
+
+    test('13g. Conversational Small Talk: Greeting, How Are You, Thanks, Farewell', async () => {
+      // Greeting
+      const gFrame = resolveSemanticFrame('Selamat pagi.', {});
+      expect(gFrame.domain).toBe('CONVERSATIONAL');
+      expect(gFrame.intent).toBe('CONVERSATIONAL_GREETING');
+
+      // How are you
+      const hFrame = resolveSemanticFrame('Apa kabar?', {});
+      expect(hFrame.domain).toBe('CONVERSATIONAL');
+      expect(hFrame.intent).toBe('CONVERSATIONAL_SMALL_TALK');
+
+      const hTurn = await handleInboundMessage({ from: '628100000003', body: 'Apa kabar?' });
+      expect(hTurn.turnResult.finalAnswer).toMatch(/Kabar baik/i);
+
+      // Acknowledgement / Thanks
+      const thxFrame = resolveSemanticFrame('Terima kasih.', {});
+      expect(thxFrame.domain).toBe('CONVERSATIONAL');
+      expect(thxFrame.intent).toBe('CONVERSATIONAL_ACKNOWLEDGEMENT');
+
+      const thxTurn = await handleInboundMessage({ from: '628100000004', body: 'Terima kasih.' });
+      expect(thxTurn.turnResult.finalAnswer).toMatch(/Sama-sama/i);
+
+      // Farewell
+      const byeFrame = resolveSemanticFrame('Sampai jumpa.', {});
+      expect(byeFrame.domain).toBe('CONVERSATIONAL');
+      expect(byeFrame.intent).toBe('CONVERSATIONAL_FAREWELL');
+
+      const byeTurn = await handleInboundMessage({ from: '628100000005', body: 'Sampai jumpa.' });
+      expect(byeTurn.turnResult.finalAnswer).toMatch(/Sampai jumpa/i);
+    });
+
+    test('13h. Greeting followed by Factual Query: Seamless RAG Passthrough', async () => {
+      const q = 'Halo kak, mau tanya apa itu Sistem Informasi?';
+      const frame = resolveSemanticFrame(q, {});
+      // Greeting prefix does not halt RAG
+      expect(frame.intent).toBe('PROGRAM_OVERVIEW');
+      expect(frame.entities.map(e => e.canonical)).toContain('S1 Sistem Informasi');
+
+      const res = await runPhase1DeterministicPipeline('test_13h', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.verification.outcome).toBe('VERIFIED_FACTUAL');
+      expect(res.finalAnswer).toMatch(/Sistem Informasi/i);
+    });
+
+    test('13i. Regression Guard: Prior Tahap A, B, C, D and Stacking remain 100% functional', async () => {
+      // Tahap A
+      const jobRes = await runPhase1DeterministicPipeline('guard_13i_job', 'Apakah ITB STIKOM Bali menjamin lulusan langsung dapat kerja?', {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(jobRes.finalAnswer).toContain('kewenangan perusahaan');
+
+      // Tahap B
+      const inbisRes = await runPhase1DeterministicPipeline('guard_13i_inbis', 'Apa itu INBIS di ITB STIKOM Bali?', {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(inbisRes.finalAnswer).toContain('Inkubator Bisnis');
+
+      // Tahap C
+      const compRes = await runPhase1DeterministicPipeline('guard_13i_comp', 'Apa perbedaan Sistem Informasi dan Teknologi Informasi?', {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(compRes.finalAnswer).toMatch(/Sistem Informasi/i);
+      expect(compRes.finalAnswer).toMatch(/Teknologi Informasi/i);
+
+      // Tahap D
+      const multiRes = await runPhase1DeterministicPipeline('guard_13i_multi', 'Di mana lokasi kampus Renon dan ada beasiswa apa saja?', {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(multiRes.subQueryResults.length).toBe(2);
+
+      // Discount Stacking
+      const stackRes = await runPhase1DeterministicPipeline('guard_13i_stack', 'Apakah potongan gelombang bisa digabung dengan tambahan 60%?', {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+      expect(stackRes.finalAnswer).toContain('SOURCE_GAP');
+    });
+
+    test('13j. Async & Sync Multi-Intent Parity: CDC query preserved as single query while compound queries decompose', async () => {
+      const cdcQuery = 'Apa fasilitas dan layanan Career Center?';
+      expect(hasMultipleIntents(cdcQuery)).toBe(false);
+      const syncCDC = decomposeQuery(cdcQuery);
+      const asyncCDC = await decomposeQueryAsync(cdcQuery);
+      expect(syncCDC.length).toBe(1);
+      expect(asyncCDC.length).toBe(1);
+      expect(syncCDC[0].rawQuery || syncCDC[0].query).toBe(cdcQuery);
+      expect(asyncCDC[0].rawQuery || asyncCDC[0].query).toBe(cdcQuery);
+
+      const compoundQuery = 'Di mana lokasi kampus Renon dan ada beasiswa apa saja?';
+      const syncCompound = decomposeQuery(compoundQuery);
+      const asyncCompound = await decomposeQueryAsync(compoundQuery);
+      expect(syncCompound.length).toBe(2);
+      expect(asyncCompound.length).toBe(2);
+      // Scholarship subquery must not be polluted with Kampus Renon entity
+      const syncSub2 = syncCompound[1].rawQuery || syncCompound[1].query || '';
+      const asyncSub2 = asyncCompound[1].rawQuery || asyncCompound[1].query || '';
+      expect(syncSub2.toLowerCase()).not.toContain('renon');
+      expect(asyncSub2.toLowerCase()).not.toContain('renon');
+    });
+
+    test('13k. International Double Degree Fallback: HELP and DNUI evidence isolation', () => {
+      // HELP University
+      const helpFallback = buildGenericExtractiveFallback(
+        { rawQuery: 'Bagaimana program dual degree HELP University?' },
+        [{
+          text: 'Program Internasional Dual Degree bekerjasama dengan HELP University Malaysia untuk S1 Sistem Informasi. Lulusan memperoleh dua gelar yaitu S.Kom dan Bachelor of Information Technology (BIT). Perkuliahan 4 tahun diselesaikan di kampus ITB STIKOM Bali.',
+          source: 'brosur_internasional_help.pdf'
+        }]
+      );
+      expect(helpFallback.answer).toContain('HELP University');
+      expect(helpFallback.answer).toContain('Malaysia');
+      expect(helpFallback.answer).toContain('S1 Sistem Informasi');
+      expect(helpFallback.answer).toContain('S.Kom');
+      expect(helpFallback.answer).toContain('BIT');
+      expect(helpFallback.answer).not.toContain('Dalian');
+      expect(helpFallback.answer).not.toContain('China');
+      expect(helpFallback.answer).not.toContain('DNUI');
+      expect(helpFallback.answer).not.toContain('Bisnis Digital');
+
+      // DNUI (Dalian Neusoft)
+      const dnuiFallback = buildGenericExtractiveFallback(
+        { rawQuery: 'Bagaimana program dual degree DNUI?' },
+        [{
+          text: 'Program International Dual Degree bersama Dalian Neusoft University of Information (DNUI) China pada Program Studi S1 Bisnis Digital. Gelar yang diperoleh S.Bns dan Bachelor of Management (BM). Skema perkuliahan: Tahun 1-2 di Bali, Tahun 3 online, Tahun 4 di Dalian China dengan fasilitas asrama gratis.',
+          source: 'brosur_internasional_dnui.pdf'
+        }]
+      );
+      expect(dnuiFallback.answer).toContain('Dalian Neusoft University of Information (DNUI)');
+      expect(dnuiFallback.answer).toContain('China');
+      expect(dnuiFallback.answer).toContain('S1 Bisnis Digital');
+      expect(dnuiFallback.answer).toContain('S.Bns');
+      expect(dnuiFallback.answer).toContain('Bachelor of Management');
+      expect(dnuiFallback.answer).toContain('BM');
+      expect(dnuiFallback.answer).toContain('asrama');
+      expect(dnuiFallback.answer).toContain('gratis');
+      expect(dnuiFallback.answer).not.toContain('HELP');
+      expect(dnuiFallback.answer).not.toContain('Malaysia');
+      expect(dnuiFallback.answer).not.toContain('Sistem Informasi');
+      expect(dnuiFallback.answer).not.toContain('BIT');
+    });
+
+    test('13l. Unsupported Study Program: Safe rejection with official program listing', async () => {
+      const q = 'Apakah ITB STIKOM Bali membuka jurusan kedokteran?';
+      const res = await runPhase1DeterministicPipeline('test_13l_unsupported', q, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      expect(res.finalAnswer).toMatch(/tidak di?selenggarakan/i);
+      expect(res.finalAnswer).toMatch(/kedokteran/i);
+      // Official programs listed accurately
+      expect(res.finalAnswer).toMatch(/S1 Sistem Informasi/i);
+      expect(res.finalAnswer).toMatch(/S1 Sistem Komputer/i);
+      expect(res.finalAnswer).toMatch(/S1 Teknologi Informasi/i);
+      expect(res.finalAnswer).toMatch(/S1 Bisnis Digital/i);
+      expect(res.finalAnswer).toMatch(/D3 Manajemen Informatika/i);
     });
 
   });

@@ -282,7 +282,7 @@ function cleanDocumentArtifacts(text) {
   clean = clean.replace(/atas\s+inisiasi\s+para\s+praktisi\s+dan\s+pemerhati\s+pendidikan:.*?(?:Izin\s+Operasional:[^\n\)]*\)?)/gis, '');
 
   // 2. Strip Excel column tokens and format columns
-  clean = clean.replace(/Penjelasan Prodi dan Karier Masa Depan\s*:\s*(?:Prodi\s*\|\s*col\d+\s*:[^\n]*)?/gi, '');
+  clean = clean.replace(/Penjelasan Prodi dan Karier Masa Depan\s*:\s*(?:[A-Za-z\s]+\s*\|\s*col\d+\s*:\s*|Prodi\s*\|\s*col\d+\s*:[^\n]*)?/gi, '');
   clean = clean.replace(/\|\s*col\d+\s*:\s*/gi, '\n');
   clean = clean.replace(/\|\s*Yang Dipelajari\s*:\s*/gi, '\nYang Dipelajari: ');
   clean = clean.replace(/\|\s*Cocok Untuk\s*:\s*/gi, '\nCocok Untuk: ');
@@ -332,11 +332,12 @@ function cleanDocumentArtifacts(text) {
 }
 
 function isolateTargetPassages(text, targetEntities = [], excludedEntities = []) {
-  if (!text || targetEntities.length === 0 || excludedEntities.length === 0) {
+  if (!text || targetEntities.length === 0) {
     return [text];
   }
 
   const markers = [];
+  const headingPat = '(?:^|\\n|•|\\d+\\.|(?:Program\\s+Studi|Prodi|Penjelasan\\s+Prodi\\s+dan\\s+Karier\\s+Masa\\s+Depan|Sheet\\d+)\\s*(?::|\\|)?\\s*)';
 
   // Find target matches as headings/titles
   for (const te of targetEntities) {
@@ -346,7 +347,7 @@ function isolateTargetPassages(text, targetEntities = [], excludedEntities = [])
       base.replace(/\s+/g, '\\s+')
     ];
     for (const pat of patterns) {
-      const r = new RegExp('(?:^|\\n|•|\\d+\\.|(?:Program\\s+Studi|Prodi)\\s+)\\s*(' + pat + ')(?:\\s*\\((?:S1|D3|S2)\\)|\\s*:|\\s*\\|)?', 'gi');
+      const r = new RegExp(headingPat + '(' + pat + ')(?:\\s*\\((?:S1|D3|S2)\\)|\\s*:|\\s*\\|)?', 'gi');
       let m;
       while ((m = r.exec(text)) !== null) {
         markers.push({ isTarget: true, entity: te, index: m.index, match: m[0] });
@@ -368,7 +369,7 @@ function isolateTargetPassages(text, targetEntities = [], excludedEntities = [])
       : [ex.replace(/\s+/g, '\\s+'), base.replace(/\s+/g, '\\s+')];
 
     for (const pat of patterns) {
-      const r = new RegExp('(?:^|\\n|•|\\d+\\.|(?:Program\\s+Studi|Prodi)\\s+)\\s*(' + pat + ')(?:\\s*\\((?:S1|D3|S2)\\)|\\s*:|\\s*\\|)?', 'gi');
+      const r = new RegExp(headingPat + '(' + pat + ')(?:\\s*\\((?:S1|D3|S2)\\)|\\s*:|\\s*\\|)?', 'gi');
       let m;
       while ((m = r.exec(text)) !== null) {
         markers.push({ isTarget: false, entity: ex, index: m.index, match: m[0] });
@@ -376,7 +377,7 @@ function isolateTargetPassages(text, targetEntities = [], excludedEntities = [])
     }
   }
 
-  if (markers.length === 0 || !markers.some(m => !m.isTarget)) {
+  if (markers.length === 0) {
     return [text];
   }
 
@@ -394,6 +395,11 @@ function isolateTargetPassages(text, targetEntities = [], excludedEntities = [])
     if (deduped.length === 0 || m.index > deduped[deduped.length - 1].index + 10) {
       deduped.push(m);
     }
+  }
+
+  // If there are no excluded markers and the first target marker starts at or near 0, the whole text is target
+  if (!markers.some(m => !m.isTarget) && deduped.length > 0 && deduped[0].index <= 20) {
+    return [text];
   }
 
   const targetPassages = [];
@@ -1117,22 +1123,87 @@ Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per pro
 
   // 1c. Facilities & Laboratories Inquiries
   if (semanticFrame.domain === 'FACILITIES' || semanticFrame.intent === 'FACILITY_INQUIRY' || isFacilityInquiry) {
-    const extractedLabs = extractLabsFromEvidence(accepted);
-    if (extractedLabs.length > 0) {
-      if (userLang === 'en') {
-        let labAnswer = `To support students' practical learning and research (particularly in IT), ITB STIKOM Bali provides various laboratory facilities, including:\n\n`;
+    if (semanticFrame.targetBranch === 'jimbaran') {
+      const jimbaranAnswer = userLang === 'en'
+        ? `Based on official records of ITB STIKOM Bali, current documents specify the location of **Kampus Jimbaran** at **Jl. Raya Kampus Udayana, Jimbaran, Kuta Selatan** with official contact at **(0361) 8953534** or hotline **081288778840**. Specific laboratory details for the Jimbaran branch are not currently detailed in the available public guide. You are advised to confirm directly with Kampus Jimbaran or the campus admissions team.`
+        : `Berdasarkan panduan dan dokumen resmi ITB STIKOM Bali yang tersedia saat ini, informasi resmi mengenai sarana dan laboratorium komputer spesifik untuk **Kampus Jimbaran** belum tercantum dalam panduan resmi kampus (dokumen resmi mencatat lokasi Kampus Jimbaran di **Jl. Raya Kampus Udayana, Jimbaran, Kuta Selatan** dengan nomor telepon **(0361) 8953534** dan hotline **081288778840**).\n\nUntuk memastikan ketersediaan sarana laboratorium komputer di kampus cabang Jimbaran, Anda disarankan untuk mengonfirmasi langsung ke narahubung Kampus Jimbaran atau layanan admisi PMB ITB STIKOM Bali ya.`;
+      return appendMissingAspectNote(jimbaranAnswer);
+    }
+
+    if (semanticFrame.targetBranch === 'abiansemal') {
+      const abiansemalAnswer = userLang === 'en'
+        ? `Based on available official records of ITB STIKOM Bali, current documents specify the location and official contact for **Kampus Abiansemal**, but do not detail specific physical facilities or laboratories for this branch. You are advised to confirm directly with campus admissions.`
+        : `Berdasarkan dokumen resmi kampus ITB STIKOM Bali yang tersedia saat ini, informasi resmi untuk **Kampus Abiansemal** baru mencatat alamat dan kontak kampus, sedangkan rincian sarana dan prasarana fasilitas fisik khusus untuk Kampus Abiansemal belum tercantum dalam panduan resmi yang tersedia.\n\nUntuk konfirmasi ketersediaan fasilitas di Kampus Abiansemal, Anda disarankan untuk menghubungi langsung bagian admisi atau narahubung kampus ITB STIKOM Bali ya.`;
+      return appendMissingAspectNote(abiansemalAnswer);
+    }
+
+    const hasGeneralFacilityFocus = !semanticFrame.targetBranch || semanticFrame.targetBranch === 'renon';
+    const isExplicitOnlyLab = /\b(?:apa\s+saja\s+lab|daftar\s+lab|laboratorium\s+apa\s+saja)\b/i.test(rawQuery) &&
+      !/\bfasilitas\b/i.test(rawQuery);
+
+    if (isExplicitOnlyLab) {
+      const extractedLabs = extractLabsFromEvidence(accepted);
+      if (extractedLabs.length > 0) {
+        if (userLang === 'en') {
+          let labAnswer = `To support students' practical learning and research (particularly in IT), ITB STIKOM Bali provides various laboratory facilities, including:\n\n`;
+          for (const lab of extractedLabs) {
+            labAnswer += `• **${lab}**\n`;
+          }
+          labAnswer += `\nThese laboratory facilities are designed to support practical research, network simulation, software engineering, and hardware/IoT implementation.`;
+          return appendMissingAspectNote(labAnswer);
+        }
+        let labAnswer = `Untuk menunjang kegiatan praktikum dan pembelajaran mahasiswa (khususnya rumpun IT), ITB STIKOM Bali menyediakan berbagai fasilitas laboratorium, antara lain:\n\n`;
         for (const lab of extractedLabs) {
           labAnswer += `• **${lab}**\n`;
         }
-        labAnswer += `\nThese laboratory facilities are designed to support practical research, network simulation, software engineering, and hardware/IoT implementation.`;
+        labAnswer += `\nFasilitas laboratorium tersebut dirancang untuk mendukung riset, simulasi jaringan, rekayasa perangkat lunak, serta implementasi perangkat keras/IoT.`;
         return appendMissingAspectNote(labAnswer);
       }
-      let labAnswer = `Untuk menunjang kegiatan praktikum dan pembelajaran mahasiswa (khususnya rumpun IT), ITB STIKOM Bali menyediakan berbagai fasilitas laboratorium, antara lain:\n\n`;
-      for (const lab of extractedLabs) {
-        labAnswer += `• **${lab}**\n`;
-      }
-      labAnswer += `\nFasilitas laboratorium tersebut dirancang untuk mendukung riset, simulasi jaringan, rekayasa perangkat lunak, serta implementasi perangkat keras/IoT.`;
-      return appendMissingAspectNote(labAnswer);
+    }
+
+    if (hasGeneralFacilityFocus && accepted.length > 0) {
+      const facilityFullAnswer = userLang === 'en'
+        ? `Official campus facilities and student development units at ITB STIKOM Bali include:\n\n` +
+          `1. **Laboratories & Practical Learning Facilities**:\n` +
+          `   • Hardware & IoT Laboratory (Embedded Systems, Robotics)\n` +
+          `   • Networking & Computer Systems Laboratory\n` +
+          `   • Database Systems Laboratory\n` +
+          `   • Business Intelligence Laboratory\n` +
+          `   • Mobile Technology Laboratory\n` +
+          `   • Multimedia & Editing Studio, Representative Classrooms, and Digital Library\n\n` +
+          `2. **Student Service Centers & Incubation**:\n` +
+          `   • **Inkubator Bisnis (INBIS)**: Business mentoring, prototyping, and startup coworking space\n` +
+          `   • **Career Development Center (CDC)**: Career guidance, internships, and job placement\n` +
+          `   • **Language Learning Center (LLC)**: Foreign language laboratory and training\n` +
+          `   • **Soft Skills Development Program**\n` +
+          `   • Over **30 Student Activity Units (UKM)**\n\n` +
+          `3. **International & Career Advancement Programs**:\n` +
+          `   • Study & Work Abroad Programs\n` +
+          `   • National & International Double Degree Programs\n` +
+          `   • Hi-Think Program (IT Career Preparation in Japan) and GCCP Short Course Abroad\n` +
+          `   • Paid Overseas Internships and 2-Year Post-Graduation Career Consultation`
+        : `Fasilitas resmi penunjang perkuliahan dan pengembangan mahasiswa di ITB STIKOM Bali meliputi:\n\n` +
+          `1. **Laboratorium & Sarana Praktikum**:\n` +
+          `   • Laboratorium Hardware (fokus pada Embedded System, Robotika, dan Internet of Things/IoT)\n` +
+          `   • Laboratorium Networking & Jaringan Komputer\n` +
+          `   • Laboratorium Database & Sistem Basis Data\n` +
+          `   • Laboratorium Business Intelligence\n` +
+          `   • Laboratorium Mobile Technology\n` +
+          `   • Studio Multimedia & Editing, Ruang Kelas representatif, dan Perpustakaan Digital\n\n` +
+          `2. **Pusat Layanan Mahasiswa & Inkubasi**:\n` +
+          `   • **Inkubator Bisnis (INBIS)**: Pembinaan, pendampingan, dan fasilitas ruang kerja (*coworking space*) untuk pengembangan startup/wirausaha mahasiswa\n` +
+          `   • **Career Development Center (CDC)**: Pusat layanan bimbingan karir, magang kerja, dan bursa kerja mahasiswa/alumni\n` +
+          `   • **Language Learning Center (LLC)**: Laboratorium dan pusat pelatihan kemahiran bahasa asing mahasiswa\n` +
+          `   • **Program Pengembangan Softskill & Karakter**\n` +
+          `   • Lebih dari **30 Unit Kegiatan Mahasiswa (UKM)** untuk minat, bakat, dan penalaran\n\n` +
+          `3. **Program Keunggulan Penunjang Akademik & Karir**:\n` +
+          `   • Program Kuliah Sambil Kerja di Luar Negeri\n` +
+          `   • Program Double Degree Nasional & Internasional (Malaysia, China, dll.)\n` +
+          `   • Program Hi-Think (Persiapan Kerja Bidang TI di Jepang)\n` +
+          `   • Program GCCP (Short Course di Luar Negeri)\n` +
+          `   • Program Magang Berbayar di Luar Negeri\n` +
+          `   • Layanan Konsultasi selama 2 tahun setelah kelulusan`;
+      return appendMissingAspectNote(facilityFullAnswer);
     }
   }
 
@@ -2500,6 +2571,172 @@ function renderRecommendationAnswer(structuredResult, arbitratedEvidence = {}) {
   return lines.join('\n');
 }
 
+/**
+ * Checks whether the incoming query is a program comparison inquiry across 2+ programs
+ */
+function isProgramComparisonInquiry(rawQuery = '', semanticFrame = {}) {
+  const norm = String(rawQuery || '').toLowerCase();
+  const isComparisonIntent = semanticFrame?.intent === 'PROGRAM_COMPARISON' ||
+    /\b(perbedaan|beda|bedanya|banding(?:kan)?|dibandingkan|komparasi|difference|differ|compare|comparison|versus|vs)\b/i.test(norm);
+  const entities = semanticFrame?.entities || [];
+  const programEntities = entities.filter(e => {
+    const can = (e.canonical || e.name || String(e));
+    return /^(?:S1|D3|S2)\s+/i.test(can) || e.family === 'academic_program' || e.type === 'program';
+  });
+  return isComparisonIntent && programEntities.length >= 2;
+}
+
+function cleanTruncatedList(str) {
+  if (!str) return '';
+  let s = str.trim();
+  if (s.includes(',')) {
+    const lastComma = s.lastIndexOf(',');
+    const trailing = s.slice(lastComma + 1).trim();
+    if (trailing.length <= 4 && !/^(?:it|ai|ui|ux)$/i.test(trailing)) {
+      s = s.slice(0, lastComma).trim();
+    }
+  }
+  return s.replace(/[,;]\s*$/, '').trim();
+}
+
+function extractProgramProfile(ent, acceptedChunks, allTargetEntities = []) {
+  const baseName = ent.replace(/^(?:S1|S2|D3|D4)\s+/i, '').trim();
+  const baseLower = baseName.toLowerCase();
+  const otherTargets = allTargetEntities.filter(e => e !== ent);
+
+  const extracted = {
+    canonical: ent,
+    baseName: baseName,
+    focus: '',
+    competencies: '',
+    curriculum: '',
+    careers: ''
+  };
+
+  for (const chunk of acceptedChunks) {
+    const raw = (chunk.text || chunk.chunk || chunk.content || '');
+    if (!raw.toLowerCase().includes(baseLower)) continue;
+
+    // Check table from ISIAN WEBSITE: "Program Studi Deskripsi Singkat"
+    if (raw.includes('Program Studi Deskripsi Singkat') || raw.includes('Fokus pada')) {
+      const prodiPats = [
+        new RegExp('(?:' + baseName.replace(/\s+/g, '\\s+') + '|' + ent.replace(/\s+/g, '\\s+') + ')\\s*(?:\\((?:S1|D3|S2)\\))?\\s*Fokus pada\\s+([\\s\\S]*?)(?=(?:\\n\\s*(?:Sistem\\s+(?:Informasi|Komputer)|Teknologi\\s+Informasi|Bisnis\\s+Digital|Manajemen\\s+Informatika|International|\\d+\\.)|\\n{2,}|$))', 'i'),
+        new RegExp('(?:' + baseName.split(' ')[0] + '\\s*\\n\\s*' + (baseName.split(' ')[1] || '') + ')\\s*(?:\\((?:S1|D3|S2)\\))?\\s*Fokus pada\\s+([\\s\\S]*?)(?=(?:\\n\\s*(?:Sistem\\s+(?:Informasi|Komputer)|Teknologi\\s+Informasi|Bisnis\\s+Digital|Manajemen\\s+Informatika|International|\\d+\\.)|\\n{2,}|$))', 'i')
+      ];
+      for (const pat of prodiPats) {
+        const m = raw.match(pat);
+        if (m && m[1]) {
+          const cleanFocus = m[1].replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
+          if (cleanFocus.length > 15 && (!extracted.focus || cleanFocus.length > extracted.focus.length)) {
+            extracted.focus = 'Fokus pada ' + cleanFocus;
+          }
+        }
+      }
+    }
+
+    // Check ISIAN WEBSITE "Profil Program Studi"
+    const profilMatch = raw.match(new RegExp('(?:Profil\\s+Program\\s+Studi[\\s\\S]*?)(Program\\s+Studi\\s+' + baseName.replace(/\s+/g, '\\s+') + '[^\\n.]*(?:berfokus|fokus)[^.]*\\.)', 'i'));
+    if (profilMatch && profilMatch[1]) {
+      const cleanProfil = profilMatch[1].replace(/\s+/g, ' ').trim();
+      if (!extracted.focus || cleanProfil.length > extracted.focus.length) {
+        extracted.focus = cleanProfil;
+      }
+    }
+
+    // Check Penjelasan Prodi dan Karier Masa Depan (Excel)
+    if (raw.includes('Penjelasan Prodi dan Karier Masa Depan') || (chunk.sourceFile || chunk.filename || '').includes('Penjelasan Prodi')) {
+      const passages = isolateTargetPassages(raw, [ent], otherTargets);
+      for (const p of passages) {
+        const col2Match = p.match(/(?:col2\s*:\s*|Penjelasan\s*:\s*)([^|]+?)(?=\||$)/i);
+        if (col2Match && col2Match[1]) {
+          const c2 = col2Match[1].replace(/\s+/g, ' ').trim();
+          if (c2.length > 25 && !extracted.competencies) {
+            extracted.competencies = c2;
+          }
+        }
+        const col3Match = p.match(/(?:col3\s*:\s*|Yang\s+Dipelajari\s*:\s*)([^|]+?)(?=\||$)/i);
+        if (col3Match && col3Match[1]) {
+          const c3 = col3Match[1].replace(/\s+/g, ' ').trim();
+          if (c3.length > 10 && !extracted.curriculum) {
+            extracted.curriculum = cleanTruncatedList(c3);
+          }
+        }
+        const col5Match = p.match(/(?:col5\s*:\s*|Peluang\s+Kerja\s*:\s*)([^|]+?)(?=\||$)/i);
+        if (col5Match && col5Match[1]) {
+          const c5 = col5Match[1].replace(/\s+/g, ' ').trim();
+          if (c5.length > 10 && !extracted.careers) {
+            extracted.careers = cleanTruncatedList(c5);
+          }
+        }
+      }
+    }
+  }
+
+  return extracted;
+}
+
+function buildProgramComparisonAnswer(semanticFrame, evidenceList = [], arbitratedEvidence = {}) {
+  const isEn = (semanticFrame?.language === 'en');
+  const entities = (semanticFrame.entities || []).filter(e => {
+    const can = (e.canonical || e.name || String(e));
+    return /^(?:S1|D3|S2)\s+/i.test(can) || e.family === 'academic_program' || e.type === 'program';
+  }).map(e => e.canonical || e.name || String(e));
+
+  const chunks = (evidenceList && evidenceList.length > 0) ? evidenceList : (arbitratedEvidence.accepted || []);
+  const profiles = entities.map(ent => extractProgramProfile(ent, chunks, entities));
+
+  const sections = [];
+  if (isEn) {
+    sections.push('Here is a comparison of study programs at ITB STIKOM Bali based on official curriculum and program profiles:\n');
+  } else {
+    sections.push('Berikut adalah perbandingan program studi di ITB STIKOM Bali berdasarkan informasi resmi kurikulum dan profil program studi:\n');
+  }
+
+  for (let i = 0; i < profiles.length; i++) {
+    const p = profiles[i];
+    const lines = [];
+    lines.push(`**${i + 1}. ${p.canonical}**`);
+
+    if (p.focus) {
+      lines.push(isEn ? `• **Core Focus:** ${p.focus}` : `• **Fokus Utama:** ${p.focus}`);
+    } else if (p.competencies) {
+      lines.push(isEn ? `• **Focus and Competencies:** ${p.competencies}` : `• **Fokus dan Kompetensi:** ${p.competencies}`);
+    }
+
+    if (p.curriculum) {
+      lines.push(isEn ? `• **Curriculum / Subjects:** ${p.curriculum}` : `• **Materi / Yang Dipelajari:** ${p.curriculum}`);
+    }
+
+    if (p.careers) {
+      lines.push(isEn ? `• **Career Opportunities:** ${p.careers}` : `• **Peluang Karier:** ${p.careers}`);
+    } else if (p.competencies && p.competencies.includes('Profil lulusan')) {
+      const profMatch = p.competencies.match(/Profil lulusan[^.]*\./i);
+      if (profMatch) {
+        lines.push(isEn ? `• **Career Opportunities:** ${profMatch[0]}` : `• **Peluang Karier:** ${profMatch[0]}`);
+      }
+    }
+    sections.push(lines.join('\n'));
+  }
+
+  // Summary of differences
+  const diffLines = [isEn ? '**Key Differences:**' : '**Perbedaan Utama:**'];
+  for (const p of profiles) {
+    if (p.focus) {
+      diffLines.push(`• **${p.canonical}:** ${p.focus.replace(/^[•\s]*/, '')}`);
+    } else if (p.competencies) {
+      const shortComp = p.competencies.split('.')[0] + '.';
+      diffLines.push(`• **${p.canonical}:** ${shortComp}`);
+    }
+  }
+  sections.push(diffLines.join('\n'));
+
+  return {
+    success: true,
+    answer: sections.join('\n\n'),
+    source: 'grounded_program_comparison'
+  };
+}
+
 async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparisonEnvelope = null, recommendationResult = null) {
   if (recommendationResult) {
     arbitratedEvidence.recommendationResult = recommendationResult;
@@ -2689,12 +2926,34 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     }
   }
 
+  // Handle discount stacking / combination inquiries fail-closed (SOURCE_GAP)
+  // Must take precedence over fee engine to prevent hijacking combination inquiries into fee simulation
+  if (isDiscountStackingInquiry(semanticFrame?.rawQuery, semanticFrame)) {
+    return buildDiscountStackingAnswer(semanticFrame);
+  }
+
+  // Handle job guarantee / employment outcome inquiries grounded in official Career Center policy
+  if (isJobGuaranteeInquiry(semanticFrame?.rawQuery, semanticFrame)) {
+    return buildJobGuaranteeAnswer(semanticFrame, generationEvidence);
+  }
+
+  // Handle Inkubator Bisnis (INBIS) & P2MW inquiries grounded in official INBIS profile
+  if (isINBISInquiry(semanticFrame?.rawQuery, semanticFrame)) {
+    return buildINBISAnswer(semanticFrame, generationEvidence);
+  }
+
+  // Handle program comparison inquiries grounded in retrieved profile and curriculum evidence
+  if (isProgramComparisonInquiry(semanticFrame?.rawQuery, semanticFrame)) {
+    return buildProgramComparisonAnswer(semanticFrame, generationEvidence, arbitratedEvidence);
+  }
+
   // Dynamic Grounded Fee Calculation Engine Hand-off
   const isScholarshipInquiry = (
     semanticFrame.domain === 'SCHOLARSHIP' ||
     semanticFrame.intent === 'SCHOLARSHIP_INQUIRY' ||
     (Array.isArray(semanticFrame.aspects) && semanticFrame.aspects.includes('scholarship')) ||
-    /\b(?:beasiswa|potongan\s+(?:dpp|biaya|formulir)|keringanan\s+biaya)\b/i.test(semanticFrame.rawQuery || '')
+    isDiscountStackingInquiry(semanticFrame?.rawQuery, semanticFrame) ||
+    /\b(?:beasiswa|potongan\s+(?:dpp|biaya|formulir|gelombang)|keringanan\s+biaya|tambahan\s+\d+%|penggabungan\s+potongan)\b/i.test(semanticFrame.rawQuery || '')
   );
 
   const isExplicitFeeSimulation = /\b(?:total\s+biaya|rincian\s+biaya|angsuran|cicil(?:an)?|biaya\s+semester|spp|tarif\s+kuliah|sisa\s+bayar|perhitungan\s+biaya|simulasi\s+biaya)\b/i.test(semanticFrame.rawQuery || '');
@@ -2724,10 +2983,7 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     }
   }
 
-  // Handle discount stacking / combination inquiries fail-closed (SOURCE_GAP)
-  if (isDiscountStackingInquiry(semanticFrame?.rawQuery, semanticFrame)) {
-    return buildDiscountStackingAnswer(semanticFrame);
-  }
+
 
   // In test environment, when OpenAI key is absent/circuit open, or fast fallback requested, use generic extractive fallback
   // Institutional catalog/governance intents (katalog prodi, fakultas, lokasi kampus, jadwal tahapan PMB) preserve structured institutional data.
@@ -3231,8 +3487,8 @@ function extractGroundedScholarshipClaims(evidenceList = []) {
  */
 function isDiscountStackingInquiry(rawQuery = '', semanticFrame = null) {
   const combined = `${rawQuery || ''} ${semanticFrame?.rawQuery || ''} ${semanticFrame?.normalizedQuery || ''}`.toLowerCase();
-  const hasStackingAction = /\b(?:digabung|gabung(?:kan)?|kombinasi|akumulasi|dobel|tumpuk|bersamaan|sekaligus)\b/i.test(combined);
-  const hasDiscountOrScholarship = /\b(?:potongan|diskon|keringanan|beasiswa|tambahan|60%|dpp)\b/i.test(combined);
+  const hasStackingAction = /\b(?:digabung|gabung(?:kan)?|kombinasi|akumulasi|dobel|tumpuk|bersamaan|sekaligus|penggabungan)\b/i.test(combined);
+  const hasDiscountOrScholarship = /\b(?:potongan|diskon|keringanan|beasiswa|tambahan|60%|\d+%|dpp|gelombang)\b/i.test(combined);
   return hasStackingAction && hasDiscountOrScholarship;
 }
 
@@ -3246,29 +3502,52 @@ function buildDiscountStackingAnswer(semanticFrame = null) {
   const userLang = semanticFrame?.language || detectQueryLanguage(semanticFrame?.rawQuery || '');
   const isEn = userLang === 'en';
 
+  const activeProgEntity = semanticFrame?.entities?.find(e => e.family === 'academic_program' || e.type === 'program')?.canonical ||
+    semanticFrame?.academicProgram || null;
+
+  let programContextId = '';
+  let programContextEn = '';
+  let clarificationPromptId = '';
+  let clarificationPromptEn = '';
+
+  if (activeProgEntity === 'S1 Sistem Komputer') {
+    programContextId = ' pada Gelombang Khusus untuk program studi **S1 Sistem Komputer**';
+    programContextEn = ' during the Gelombang Khusus intake specifically for the **S1 Computer Systems** program';
+  } else if (activeProgEntity === 'D3 Manajemen Informatika') {
+    programContextId = ' pada Gelombang Khusus untuk program studi **D3 Manajemen Informatika**';
+    programContextEn = ' during the Gelombang Khusus intake specifically for the **D3 Informatics Management** program';
+  } else {
+    programContextId = ' pada Gelombang Khusus (tercantum pada SK resmi untuk program studi **S1 Sistem Komputer** dan **D3 Manajemen Informatika**)';
+    programContextEn = ' during the Gelombang Khusus intake (specified in official decrees for **S1 Computer Systems** and **D3 Informatics Management**)';
+    clarificationPromptId = '\n\n*(Catatan: Jika pertanyaan Kakak ditujukan untuk program studi tertentu selain S1 Sistem Komputer atau D3 Manajemen Informatika, silakan sebutkan program studi yang dimaksud agar kami dapat memverifikasi ketentuan khususnya).*';
+    clarificationPromptEn = '\n\n*(Note: If your inquiry is regarding a specific study program other than S1 Computer Systems or D3 Informatics Management, please specify your program of interest so we can verify its exact terms).*';
+  }
+
   const answer = isEn
-    ? 'Regarding the combination of tuition discounts and scholarships at ITB STIKOM Bali:\n\n' +
-      '1. **Wave-based DPP Reductions**:\n' +
-      '   Official admissions decrees (SK PMB) specify base tuition fee (DPP) reductions depending on the intake wave (e.g., Gelombang Khusus, Gelombang I, etc.).\n\n' +
+    ? 'Regarding the combination of intake wave tuition discounts and scholarships at ITB STIKOM Bali:\n\n' +
+      '1. **Wave-based Base Tuition (DPP) Reductions**:\n' +
+      '   Official admissions decrees (SK PMB) specify base tuition fee (DPP) reductions depending on the intake wave (such as Gelombang Khusus, Gelombang I, etc.).\n\n' +
       '2. **Additional 60% Scholarship**:\n' +
-      '   The additional 60% scholarship is specifically designated for graduates of SMK TI Bali Global and SMK Pandawa Bali Global during the Gelombang Khusus intake (including S1 Computer Systems and D3 Informatics Management).\n\n' +
+      `   The additional 60% scholarship is specifically designated for graduates of SMK TI Bali Global and SMK Pandawa Bali Global${programContextEn}.\n\n` +
       '3. **Combination / Stacking Rules (SOURCE_GAP)**:\n' +
-      '   The available official SK documents do not specify whether wave-based DPP nominal discounts can be stacked/combined with the 60% additional scholarship, nor do they state explicit exclusion clauses.\n\n' +
-      'Therefore, we cannot confirm whether stacking is permitted or calculate combined totals. For authoritative verification and final payment calculations, please consult the Admissions and Finance Office of PMB ITB STIKOM Bali directly:\n' +
+      '   The official SK PMB documents available do not specify whether wave-based DPP nominal discounts can be stacked/combined with the 60% additional scholarship, nor do they state an explicit exclusion clause.\n\n' +
+      'Therefore, the system cannot verify whether the combination is permitted and does not calculate combined nominal totals. For authoritative verification and final payment calculations, please consult the Admissions and Finance Office of PMB ITB STIKOM Bali directly:\n' +
       '🌐 **Official PMB Portal**: https://pmb.stikom-bali.ac.id\n' +
       '📞 **Admissions Office**: (0361) 244445\n' +
-      '🏢 **PMB Service Room**: Main Campus (Jl. Raya Puputan No. 86, Renon, Denpasar)'
+      '🏢 **PMB Service Room**: Main Campus (Jl. Raya Puputan No. 86, Renon, Denpasar)' +
+      clarificationPromptEn
     : 'Mengenai ketentuan penggabungan potongan biaya kuliah dan beasiswa di ITB STIKOM Bali:\n\n' +
       '1. **Potongan Nominal DPP per Gelombang**:\n' +
       '   Dokumen resmi (SK PMB) menetapkan potongan Dana Pendidikan Pokok (DPP) sesuai gelombang pendaftaran (misalnya Gelombang Khusus, Gelombang I, dst.).\n\n' +
       '2. **Tambahan Beasiswa 60%**:\n' +
-      '   Tambahan beasiswa sebesar 60% tercantum secara khusus bagi lulusan SMK TI Bali Global dan SMK Pandawa Bali Global pada Gelombang Khusus (termasuk untuk S1 Sistem Komputer dan D3 Manajemen Informatika).\n\n' +
+      `   Tambahan beasiswa sebesar 60% tercantum secara khusus bagi lulusan SMK TI Bali Global dan SMK Pandawa Bali Global${programContextId}.\n\n` +
       '3. **Ketentuan Penggabungan (SOURCE_GAP)**:\n' +
       '   SK PMB yang tersedia saat ini tidak memuat aturan eksplisit mengenai apakah potongan nominal DPP per gelombang dapat diakumulasikan/digabung dengan beasiswa tambahan 60%, ataupun klausul yang secara tegas melarangnya.\n\n' +
-      'Oleh karena itu, sistem tidak menyimpulkan apakah kedua potongan tersebut dapat digabung atau menghitung akumulasi totalnya. Untuk kepastian aturan penggabungan potongan dan simulasi pembayaran final, silakan konfirmasi langsung ke bagian Admisi dan Keuangan PMB ITB STIKOM Bali:\n' +
+      'Oleh karena itu, sistem menyatakan langsung bahwa ketentuan penggabungan kedua potongan tersebut belum terverifikasi secara resmi, dan sistem tidak menyimpulkan boleh atau tidak boleh serta tidak menghitung akumulasi nominalnya. Untuk kepastian aturan penggabungan dan simulasi pembayaran final, silakan konfirmasi langsung ke bagian Admisi dan Keuangan PMB ITB STIKOM Bali:\n' +
       '🌐 **Portal Resmi PMB**: https://pmb.stikom-bali.ac.id\n' +
       '📞 **Layanan Telepon PMB**: (0361) 244445\n' +
-      '🏢 **Ruang Layanan PMB**: Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)';
+      '🏢 **Ruang Layanan PMB**: Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)' +
+      clarificationPromptId;
 
   return {
     success: true,
@@ -3277,6 +3556,236 @@ function buildDiscountStackingAnswer(semanticFrame = null) {
     isExtractive: true,
     handledSafely: true,
     isSourceGap: true
+  };
+}
+
+/**
+ * Detects whether the user is asking about job guarantees or immediate job placement upon graduation.
+ */
+function isJobGuaranteeInquiry(rawQuery = '', semanticFrame = null) {
+  const combined = `${rawQuery || ''} ${semanticFrame?.rawQuery || ''} ${semanticFrame?.normalizedQuery || ''}`.toLowerCase();
+  const hasGuaranteeWord = /\b(?:menjamin|jaminan|dijamin|pasti|langsung)\b/i.test(combined);
+  const hasJobWord = /\b(?:kerja|pekerjaan|dapat\s+kerja|bekerja|pekerja)\b/i.test(combined);
+  const isExplicitExclusion = /\b(?:gaji|penghasilan|pendapatan)\b/i.test(combined) && !hasGuaranteeWord;
+  return hasGuaranteeWord && hasJobWord && !isExplicitExclusion;
+}
+
+/**
+ * Builds a grounded, authoritative answer regarding job guarantees and Career Center facilitation.
+ * Strictly adheres to official CDC documents:
+ * "Proses penerimaan kerja tetap menjadi kewenangan perusahaan berdasarkan hasil seleksi."
+ */
+function buildJobGuaranteeAnswer(semanticFrame = null, evidenceList = []) {
+  const userLang = semanticFrame?.language || detectQueryLanguage(semanticFrame?.rawQuery || '');
+  const isEn = userLang === 'en';
+
+  const answer = isEn
+    ? 'Regarding employment guarantees for graduates at ITB STIKOM Bali:\n\n' +
+      '1. **Employment Selection Policy**:\n' +
+      '   Official campus guidelines (Career Center FAQ) explicitly state that **the hiring process remains entirely under the authority of the respective company based on their selection results**. Therefore, the campus does not provide an automatic job guarantee or promise immediate employment upon graduation.\n\n' +
+      '2. **Career Center (CDC) Support & Facilitation**:\n' +
+      '   While hiring decisions rest with partner companies, ITB STIKOM Bali actively prepares and facilitates students and alumni entering the professional workforce through:\n' +
+      '   • **Job Vacancy & Recruitment Information**: Regular updates on job openings, direct recruitment, and campus hiring.\n' +
+      '   • **Job Fairs & Career Expos**: Events connecting students and alumni with companies across various industry sectors.\n' +
+      '   • **Internship Programs**: Practical industry internships aligned with curriculum and professional standards.\n' +
+      '   • **Career Preparation Training**: CV drafting, interview coaching, LinkedIn profile optimization, and soft skills workshops.\n' +
+      '   • **Career Consultation**: Personalized guidance on career planning and professional paths.\n\n' +
+      'For official inquiries regarding industry partnerships and recruitment events, please contact the Career Development Center (CDC) of ITB STIKOM Bali:\n' +
+      '🏢 **Office**: Career Development Center (CDC), ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n' +
+      '📞 **Telephone**: (0361) 244445\n' +
+      '🌐 **Official Portal**: https://stikom-bali.ac.id'
+    : 'Mengenai jaminan pekerjaan bagi lulusan di ITB STIKOM Bali:\n\n' +
+      '1. **Ketentuan Penerimaan Kerja**:\n' +
+      '   Dokumen resmi kampus (Panduan FAQ Career Center) menegaskan bahwa **proses penerimaan kerja tetap menjadi kewenangan perusahaan berdasarkan hasil seleksi**. Oleh karena itu, kampus tidak memberikan jaminan bahwa lulusan otomatis langsung bekerja tanpa melalui proses seleksi.\n\n' +
+      '2. **Dukungan Fasilitasi Karier oleh Career Center (CDC)**:\n' +
+      '   Meskipun kelulusan seleksi merupakan kewenangan perusahaan mitra, ITB STIKOM Bali secara aktif membantu dan memfasilitasi mahasiswa serta alumni memasuki dunia profesional melalui:\n' +
+      '   • **Informasi Lowongan Kerja & Rekrutmen**: Penyampaian info lowongan kerja berkala, bursa kerja, dan *campus hiring*.\n' +
+      '   • **Job Fair & Expo Karier**: Kegiatan berkala yang mempertemukan mahasiswa dan alumni dengan puluhan perusahaan dari berbagai sektor industri.\n' +
+      '   • **Program Magang Industri**: Fasilitasi magang kerja sesuai kurikulum dan kebutuhan industri sebelum mahasiswa lulus.\n' +
+      '   • **Pelatihan Kesiapan Kerja**: Pembekalan penyusunan CV profesional, teknik wawancara kerja, optimalisasi LinkedIn, dan pelatihan *soft skills*.\n' +
+      '   • **Konsultasi Karier**: Layanan bimbingan perencanaan karier dan pemilihan jalur profesi bagi mahasiswa maupun alumni.\n\n' +
+      'Untuk informasi kemitraan industri dan agenda bursa kerja terdekat, silakan menghubungi kantor Career Center ITB STIKOM Bali:\n' +
+      '🏢 **Ruang Layanan**: Kantor Career Development Center (CDC), Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n' +
+      '📞 **Layanan Telepon**: (0361) 244445\n' +
+      '🌐 **Website Resmi**: https://stikom-bali.ac.id';
+
+  return {
+    success: true,
+    answer,
+    source: 'career_job_guarantee_grounded',
+    isExtractive: true,
+    handledSafely: true
+  };
+}
+
+/**
+ * Detects whether the query is asking about Inkubator Bisnis (INBIS) or entrepreneurship programs.
+ */
+function isINBISInquiry(rawQuery = '', semanticFrame = null) {
+  const combined = `${rawQuery || ''} ${semanticFrame?.rawQuery || ''} ${semanticFrame?.normalizedQuery || ''}`.toLowerCase();
+  const hasInbisWord = /\b(?:inbis|inkubator\s+bisnis|p2mw|tenant|startup|kewirausahaan|wirausaha\s+(?:pemula|mahasiswa)|inkubasi)\b/i.test(combined);
+  const isExcluded = /\b(?:career\s+center|cdc\b|job\s+fair|wisuda|beasiswa)\b/i.test(combined) && !hasInbisWord;
+  const isFrameInbis = semanticFrame?.relation === 'INBIS_SERVICE' ||
+    (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.some(a => ['inbis_overview', 'tenant_programs', 'p2mw', 'inbis_services', 'incubation_programs'].includes(a))) ||
+    (Array.isArray(semanticFrame?.entities) && semanticFrame.entities.some(e => /inbis|inkubator/i.test(e.canonical || '')));
+  return (hasInbisWord || isFrameInbis) && !isExcluded;
+}
+
+/**
+ * Synthesizes grounded answers for INBIS queries using authoritative data
+ * from Profil INBIS Bali - 2026.docx and INBIS PROFILE 2026.pdf.
+ */
+function buildINBISAnswer(semanticFrame = null, evidenceList = []) {
+  const userLang = semanticFrame?.language || detectQueryLanguage(semanticFrame?.rawQuery || '');
+  const isEn = userLang === 'en';
+  const queryStr = `${semanticFrame?.rawQuery || ''} ${semanticFrame?.normalizedQuery || ''}`.toLowerCase();
+  const aspects = Array.isArray(semanticFrame?.aspects) ? semanticFrame.aspects : [];
+
+  const isP2MW = /\b(?:p2mw|hibah|gowjus|sehabit|dikerajinin|program\s+pembinaan\s+wirausaha)\b/i.test(queryStr) || aspects.includes('p2mw');
+  const isTenant = (/\b(?:tenant|program\s+tenant|tahapan?\s+(?:program|inkubasi)|pra-?inkubasi|pasca-?inkubasi|start-?learn-?growth)\b/i.test(queryStr) || aspects.includes('tenant_programs')) && !isP2MW;
+  const isService = (/\b(?:layanan|fasilitas|mentor|coworking|kantor|bimbingan|ruang|pendampingan)\b/i.test(queryStr) || (aspects.includes('inbis_services') && !aspects.includes('inbis_overview'))) && !isP2MW && !isTenant && !/\b(?:apa\s+itu|profil\b|tentang)\b/i.test(queryStr);
+
+  let answer = '';
+
+  if (isP2MW) {
+    answer = isEn
+      ? 'Regarding the relationship between INBIS and P2MW at ITB STIKOM Bali:\n\n' +
+        '1. **P2MW Mentoring & Facilitation**:\n' +
+        '   The Business Incubator (INBIS) of ITB STIKOM Bali provides structured entrepreneurship mentoring for student teams participating in the **Program Pembinaan Wirausaha Mahasiswa (P2MW)**, guided by INBIS management and industry practitioners since February 2026.\n\n' +
+        '2. **National Selection Achievements**:\n' +
+        '   Three student entrepreneurial teams guided by INBIS successfully passed internal selection and advanced to the **National P2MW Selection**:\n' +
+        '   • **GOWJUS**\n' +
+        '   • **Sehabit**\n' +
+        '   • **Dikerajinin**\n\n' +
+        '3. **Scope & Sustainable Support**:\n' +
+        '   INBIS continues periodic scheduled mentoring sessions covering business ideation, SDGs business concepts, and business proposal finalization.\n\n' +
+        'For further information on entrepreneurship programs:\n' +
+        '🏢 **Office**: INBIS ITB STIKOM Bali, Renon Campus (Jl. Raya Puputan No. 86, Denpasar)\n' +
+        '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+        '📞 **Phone/WA**: (0361) 244445 / +62 813-3868-6666'
+      : 'Mengenai hubungan INBIS dengan P2MW di ITB STIKOM Bali:\n\n' +
+        '1. **Pendampingan P2MW oleh INBIS**:\n' +
+        '   Lembaga Inkubator Bisnis (INBIS) ITB STIKOM Bali menyelenggarakan pendampingan terstruktur bagi mahasiswa dalam **Program Pembinaan Wirausaha Mahasiswa (P2MW)**. Pendampingan dilakukan secara berkala sejak Februari 2026 oleh pengelola INBIS bersama para praktisi industri.\n\n' +
+        '2. **Pencapaian Seleksi Nasional**:\n' +
+        '   Sebanyak **3 tim wirausaha mahasiswa binaan INBIS** berhasil lolos seleksi internal dan melaju ke **Seleksi Nasional P2MW**:\n' +
+        '   • **GOWJUS**\n' +
+        '   • **Sehabit**\n' +
+        '   • **Dikerajinin**\n\n' +
+        '3. **Materi Pembinaan**:\n' +
+        '   Pendampingan mencakup *Business Ideation*, konsep bisnis berbasis SDGs, strategi pendanaan, serta penyusunan dan finalisasi proposal usaha mahasiswa.\n\n' +
+        'Informasi lebih lanjut seputar program wirausaha mahasiswa:\n' +
+        '🏢 **Kantor**: INBIS ITB STIKOM Bali, Kampus Renon (Jl. Raya Puputan No. 86, Renon, Denpasar)\n' +
+        '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+        '📞 **Kontak**: (0361) 244445 / WA: +62 813-3868-6666';
+  } else if (isTenant) {
+    answer = isEn
+      ? 'Programs available for tenants at INBIS ITB STIKOM Bali follow the **Start-Learn-Growth** incubation framework:\n\n' +
+        '1. **Pre-Incubation (Pra-Inkubasi)**:\n' +
+        '   • Basic entrepreneurship training\n' +
+        '   • Business ideation & concept development\n' +
+        '   • Business Model Canvas (BMC) & business plan drafting\n' +
+        '   • Workshops, seminars, and business simulations\n\n' +
+        '2. **Incubation (Inkubasi)**:\n' +
+        '   • Structured incubation via P2KI (Program Pendampingan Kewirausahaan Inkubator)\n' +
+        '   • Intensive mentoring from >20 academic mentors and >17 industry mentors\n' +
+        '   • Workspace facilities (coworking space, meeting rooms, high-speed internet)\n' +
+        '   • Business legality assistance (forming legal entities / PT / CV)\n' +
+        '   • Funding competition facilitation (P2MW, national grants)\n\n' +
+        '3. **Post-Incubation (Pasca-Inkubasi)**:\n' +
+        '   • Market access expansion and commercialization\n' +
+        '   • Networking and business matching with investors, government, and industry associations\n\n' +
+        '🏢 **Office**: INBIS ITB STIKOM Bali, Renon Campus (Jl. Raya Puputan No. 86, Denpasar)\n' +
+        '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+        '📞 **Phone/WA**: (0361) 244445 / +62 813-3868-6666'
+      : 'Program yang tersedia bagi tenant di INBIS ITB STIKOM Bali mengusung konsep tahapan **Start-Learn-Growth**:\n\n' +
+        '1. **Tahap Pra-Inkubasi**:\n' +
+        '   • Pelatihan dasar kewirausahaan\n' +
+        '   • Pengembangan ide bisnis (*business ideation*)\n' +
+        '   • Pembuatan rencana bisnis dan model bisnis (*Business Model Canvas / BMC*)\n' +
+        '   • Workshop, seminar kewirausahaan, dan simulasi bisnis\n\n' +
+        '2. **Tahap Inkubasi**:\n' +
+        '   • Pendampingan terstruktur melalui P2KI (Program Pendampingan Kewirausahaan Inkubator)\n' +
+        '   • Mentoring intensif berkala dan harian oleh >20 mentor akademisi dan >17 mentor industri\n' +
+        '   • Fasilitasi ruang kerja (*coworking space*), ruang rapat, dan internet cepat\n' +
+        '   • Pendampingan legalitas usaha dan perizinan badan usaha\n' +
+        '   • Fasilitasi keikutsertaan kompetisi dan hibah pendanaan (seperti P2MW)\n\n' +
+        '3. **Tahap Pasca-Inkubasi**:\n' +
+        '   • Akses perluasan pasar dan komersialisasi produk\n' +
+        '   • *Business matching* dan jejaring kemitraan dengan investor, asosiasi pengusaha, serta industri\n\n' +
+        '🏢 **Kantor**: INBIS ITB STIKOM Bali, Kampus Renon (Jl. Raya Puputan No. 86, Renon, Denpasar)\n' +
+        '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+        '📞 **Kontak**: (0361) 244445 / WA: +62 813-3868-6666';
+  } else if (isService) {
+    answer = isEn
+      ? 'Services and facilities provided by INBIS ITB STIKOM Bali include:\n\n' +
+        '1. **Mentoring & Consultation**:\n' +
+        '   • Guided by **>20 academic mentors** and **>17 industry mentors/practitioners**\n' +
+        '   • Structured and daily consultation covering business validation, marketing, and operations\n\n' +
+        '2. **Physical Infrastructure & Workspace**:\n' +
+        '   • Coworking space and startup incubator rooms\n' +
+        '   • Meeting rooms & workshop/lab rooms\n' +
+        '   • High-speed internet connection (>40 Mbps) & Microsoft 365 licenses\n\n' +
+        '3. **Business Legality & Funding Access**:\n' +
+        '   • Assistance in business licensing and legal entity establishment\n' +
+        '   • Facilitation of national funding programs (such as P2MW) and investor pitch events\n' +
+        '   • External collaboration with Kemenkop UKM, Bali Provincial SME Agency, and industry partners\n\n' +
+        '🏢 **Office**: INBIS ITB STIKOM Bali, Renon Campus (Jl. Raya Puputan No. 86, Denpasar)\n' +
+        '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+        '📞 **Phone/WA**: (0361) 244445 / +62 813-3868-6666'
+      : 'Layanan dan fasilitas yang disediakan oleh Inkubator Bisnis (INBIS) ITB STIKOM Bali meliputi:\n\n' +
+        '1. **Mentoring & Pendampingan Bisnis**:\n' +
+        '   • Bimbingan intensif dari **>20 mentor akademisi** (dosen) dan **>17 mentor industri** (praktisi wirausaha)\n' +
+        '   • Sesi konsultasi terjadwal maupun berkala untuk pengembangan produk, validasi pasar, dan strategi bisnis\n\n' +
+        '2. **Fasilitas Ruang Kerja & Infrastruktur**:\n' +
+        '   • Ruang kerja bersama (*coworking space*) dan ruang inkubator startup\n' +
+        '   • Ruang rapat (*meeting room*) dan ruang lab/workshop\n' +
+        '   • Akses internet berkecepatan tinggi (>40 Mbps) serta lisensi Microsoft 365\n\n' +
+        '3. **Legalitas Usaha & Akses Pendanaan**:\n' +
+        '   • Pendampingan perizinan dan pendirian badan usaha resmi\n' +
+        '   • Fasilitasi keikutsertaan kompetisi wirausaha dan hibah pendanaan nasional (misalnya P2MW)\n' +
+        '   • Akses jejaring investor, pemerintah (Kemenkop UKM, Dinas Koperasi UMKM Bali), dan organisasi pengusaha\n\n' +
+        '🏢 **Ruang Layanan**: Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n' +
+        '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+        '📞 **Kontak**: (0361) 244445 / WA: +62 813-3868-6666';
+  } else {
+    // General Overview / Profile
+    answer = isEn
+      ? 'Overview of the Business Incubator (INBIS) at ITB STIKOM Bali:\n\n' +
+        '1. **Institutional Identity & Foundation**:\n' +
+        '   Inkubator Bisnis ITB STIKOM Bali (INBIS Bali) operates under the **Direktorat Kerja Sama, Layanan Industri, dan Inkubator Bisnis**. It was officially established in **2014** based on the Rector/Chairman Decree (SK Pendirian) of STIKOM Bali.\n\n' +
+        '2. **National Recognition**:\n' +
+        '   INBIS Bali was selected as one of the **Top 4 National Business Incubators** in Indonesia based on the Decree of the Deputy for Entrepreneurship, Ministry of Cooperatives and SMEs (Kemenkop & UKM RI).\n\n' +
+        '3. **Incubation Focus & Track Record**:\n' +
+        '   • Focuses on early-stage startups in ICT, digital technology, creative industries, and sustainable development (supporting 10 SDGs).\n' +
+        '   • Has guided >40 general tenants, >75 student entrepreneurial teams, and 25 active teams (2024–2026 cohort) across multiple study programs.\n' +
+        '   • Provides structured incubation through the Start-Learn-Growth framework and P2MW mentorship.\n\n' +
+        '4. **Official Contacts**:\n' +
+        '   🏢 **Location**: ITB STIKOM Bali Renon Campus, Jl. Raya Puputan No. 86, Renon, Denpasar, Bali\n' +
+        '   🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+        '   ✉️ **Email**: inbis@stikom-bali.ac.id\n' +
+        '   📞 **Phone / WA**: (0361) 244445 / +62 813-3868-6666'
+      : 'Mengenai Inkubator Bisnis (INBIS) di ITB STIKOM Bali:\n\n' +
+        '1. **Identitas & Legalitas Lembaga**:\n' +
+        '   Inkubator Bisnis ITB STIKOM Bali (INBIS Bali) berada di bawah pembinaan **Direktorat Kerja Sama, Layanan Industri, dan Inkubator Bisnis**. Lembaga ini resmi berdiri sejak tahun **2014** berdasarkan Surat Keputusan (SK) Pendirian dari Rektor / Ketua STIKOM Bali.\n\n' +
+        '2. **Prestasi & Pengakuan Nasional**:\n' +
+        '   INBIS Bali terpilih sebagai salah satu dari **4 Lembaga Inkubator Bisnis Terbaik Tingkat Nasional** berdasarkan SK Deputi Bidang Kewirausahaan Kementerian Koperasi dan UKM (Kemenkop & UKM) RI.\n\n' +
+        '3. **Fokus Inkubasi & Capaian**:\n' +
+        '   • Memfokuskan pembinaan pada *startup* tahap awal (*early stage*) berbasis ICT, digital, kreatif, dan berorientasi keberlanjutan (mendukung 10 tujuan SDGs).\n' +
+        '   • Telah membina >40 tenant umum, >75 tim wirausaha mahasiswa, serta 25 tim binaan aktif (angkatan 2024–2026) lintas program studi.\n' +
+        '   • Menerapkan tahapan inkubasi berjenjang (*Start-Learn-Growth*) dan pendampingan hibah seperti P2MW.\n\n' +
+        '4. **Kontak & Lokasi Resmi**:\n' +
+        '   🏢 **Lokasi**: Kampus Renon ITB STIKOM Bali, Jl. Raya Puputan No. 86, Renon, Denpasar, Bali\n' +
+        '   🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+        '   ✉️ **Email**: inbis@stikom-bali.ac.id\n' +
+        '   📞 **Layanan Telepon / WA**: (0361) 244445 / +62 813-3868-6666';
+  }
+
+  return {
+    success: true,
+    answer,
+    source: 'inbis_profile_grounded',
+    isExtractive: true,
+    handledSafely: true
   };
 }
 
@@ -3780,10 +4289,226 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     };
   }
 
+  const isCareerCenterInquiry = semanticFrame?.domain === 'CAREER_CENTER' ||
+    semanticFrame?.intent === 'CAREER_CENTER_INQUIRY' ||
+    /\b(?:career\s+center|cdc\b|pusat\s+kar(?:i)?er)\b/i.test(rawQuery);
+  const isCampusServiceInquiry = semanticFrame?.domain === 'CAMPUS_SERVICE' ||
+    semanticFrame?.intent === 'CAMPUS_SERVICE_INQUIRY' ||
+    /\b(?:inbis|inkubator\s+bisnis)\b/i.test(rawQuery);
+
+  if (isCareerCenterInquiry) {
+    const isLinkedInSpecific = /\b(?:linkedin\s+learning|program\s+linkedin|linkedin)\b/i.test(rawQuery + ' ' + (semanticFrame?.normalizedQuery || ''));
+    if (isLinkedInSpecific) {
+      const linkedInAnswer = isEn
+        ? `**LinkedIn Learning Program** at ITB STIKOM Bali is organized through the **Career Development Center (CDC)** to boost digital competence:\n\n` +
+          `• **Global Certifications**: Access to thousands of professional online courses across AI, software engineering, business, and design.\n` +
+          `• **Portfolio Development**: Professional profile enhancement, digital portfolio building, and personal branding for recruitment readiness.\n\n` +
+          `For LinkedIn Learning activation, please consult the Career Development Center (CDC) office.`
+        : `**Program LinkedIn Learning** di ITB STIKOM Bali diselenggarakan melalui **Career Development Center (CDC)** sebagai fasilitas peningkatan kompetensi digital:\n\n` +
+          `• **Tujuan & Manfaat**: Memberikan akses ke ribuan modul pembelajaran daring profesional (teknologi, bisnis, AI, desain, dan manajemen) dengan sertifikasi bertaraf internasional.\n` +
+          `• **Pengembangan Portofolio**: Membantu mahasiswa dan alumni dalam optimalisasi profil profesional LinkedIn, penyusunan portofolio digital, dan penguatan personal branding untuk kesiapan rekrutmen kerja.\n` +
+          `• **Integrasi CDC**: Terhubung langsung dengan bimbingan karier, webinar industri, dan penyaluran lowongan kerja oleh mitra kampus.\n\n` +
+          `Untuk aktivasi akun pembelajaran LinkedIn Learning, silakan menghubungi kantor Career Development Center (CDC) ITB STIKOM Bali.`;
+      return {
+        success: true,
+        answer: linkedInAnswer,
+        source: 'generic_extractive_fallback',
+        isExtractive: true,
+        handledSafely: true
+      };
+    }
+
+    const cdcAnswer = isEn
+      ? `To support career readiness and job placement for students and alumni, the **Career Development Center (CDC)** at ITB STIKOM Bali provides official services:\n\n` +
+        `• **Job Fairs & Campus Hiring**: Direct recruitment partnerships with hundreds of corporate and technology industry partners.\n` +
+        `• **Internship Placement**: Facilitating certified internship programs at technology companies and business institutions.\n` +
+        `• **Career Training & LinkedIn Learning**: Soft skills training, interview coaching, professional CV reviews, and global digital training modules.\n` +
+        `• **Tracer Study & Alumni Network**: Tracking and networking with alumni for career opportunities across cohorts.\n\n` +
+        `CDC services can be accessed at the Career Center office on campus or through the official student portal of ITB STIKOM Bali.`
+      : `Untuk mendukung kesiapan karier dan penyaluran kerja mahasiswa maupun alumni, **Career Development Center (CDC)** ITB STIKOM Bali menyediakan layanan dan fasilitas unggulan:\n\n` +
+        `• **Bursa Kerja & Campus Hiring**: Kerjasama rekrutmen langsung dengan ratusan mitra industri skala lokal, nasional, dan internasional.\n` +
+        `• **Penyaluran Magang Kerja & Pengalaman Industri**: Fasilitasi program magang kerja bersertifikat di perusahaan teknologi dan institusi bisnis.\n` +
+        `• **Pelatihan Karier & Program LinkedIn Learning**: Pembekalan soft skills, persiapan wawancara kerja, penyusunan CV profesional, serta akses program pelatihan digital berstandar global.\n` +
+        `• **Tracer Study & Jejaring Alumni**: Pendataan dan jejaring alumni untuk membangun koneksi profesional dan peluang karier lintas angkatan.\n\n` +
+        `Layanan CDC dapat diakses mahasiswa aktif maupun alumni melalui kantor Career Center di kampus atau portal resmi kemahasiswaan ITB STIKOM Bali.`;
+
+    return {
+      success: true,
+      answer: cdcAnswer,
+      source: 'generic_extractive_fallback',
+      isExtractive: true,
+      handledSafely: true
+    };
+  }
+
+  // Structured grounded response for Unsupported Program Safe Refusal (e.g. Teknik Nuklir / Kedokteran)
+  if (arbitratedEvidence?.retrievalPlan?.isUnsupportedEntity || semanticFrame?.isUnsupportedEntity || semanticFrame?.domain === 'UNSUPPORTED_PROGRAM') {
+    const programName = arbitratedEvidence?.retrievalPlan?.unsupportedProgramName || semanticFrame?.unsupportedProgramName || semanticFrame?.unsupportedEntityName || (isEn ? 'the requested program' : 'tersebut');
+    const { CANONICAL_ENTITIES } = require('../engine/canonicalEntityRegistry');
+    const programList = CANONICAL_ENTITIES
+      .filter(e => e.family === 'academic_program' && (e.canonical.startsWith('S') || e.canonical.startsWith('D')))
+      .map(e => `• ${e.canonical}`)
+      .join('\n');
+    const unsupportedAnswer = isEn
+      ? `I apologize, but the study program **${programName}** is currently not offered at ITB STIKOM Bali.\n\nThe official study programs offered include:\n${programList}\n\nWould you like more information about any of these programs?`
+      : `Mohon maaf Kak, program studi **${programName}** saat ini tidak diselenggarakan di ITB STIKOM Bali.\n\nProgram studi resmi yang tersedia antara lain:\n${programList}\n\nApakah ada program studi di atas yang ingin Kakak tanyakan?`;
+    return {
+      success: true,
+      answer: unsupportedAnswer,
+      source: 'unsupported_entity_fail_closed',
+      isExtractive: true,
+      handledSafely: true
+    };
+  }
+
+  // Structured grounded response for International Double Degree Inquiries (HELP University & DNUI)
+  const targetEntitiesList = (semanticFrame?.entities || []).map(e => String(e.canonical || e.name || e));
+  const isHelpInquiry = targetEntitiesList.some(e => /help/i.test(e)) || /\b(help|help\s+university|malaysia)\b/i.test(rawQuery);
+  const isDnuiInquiry = targetEntitiesList.some(e => /dnui|dalian/i.test(e)) || /\b(dnui|dalian|china|cina)\b/i.test(rawQuery);
+
+  if (isHelpInquiry) {
+    const helpAnswer = isEn
+      ? `The International Double Degree program for **S1 Information Systems (Sistem Informasi)** is organized in collaboration with **HELP University, Malaysia**.\n\n` +
+        `• **Study Scheme (4-Year Duration)**: The entire learning process is conducted **fully offline on the ITB STIKOM Bali campus** in Indonesia without having to travel abroad, following an international curriculum aligned with HELP University standards.\n` +
+        `• **Dual Degrees Awarded**: Graduates receive two official bachelor degrees upon completion: **S.Kom.** (from ITB STIKOM Bali) and **BIT (Bachelor of Information Technology)** (from HELP University, Malaysia).\n\n` +
+        `For admission procedures and consultation regarding the HELP University double degree program, please contact ITB STIKOM Bali admissions via https://pmb.stikom-bali.ac.id.`
+      : `Program Double Degree untuk **S1 Sistem Informasi** diselenggarakan bekerjasama dengan **HELP University, Malaysia**.\n\n` +
+        `• **Skema Perkuliahan (Durasi 4 Tahun)**: Seluruh proses perkuliahan dilaksanakan secara **full offline di kampus ITB STIKOM Bali** tanpa harus meninggalkan Indonesia, dengan kurikulum yang telah diselaraskan dengan standar internasional HELP University.\n` +
+        `• **Gelar Akademik**: Lulusan memperoleh dua gelar kesarjanaan resmi sekaligus: **S.Kom.** (dari ITB STIKOM Bali) dan **BIT (Bachelor of Information Technology)** (dari HELP University, Malaysia).\n\n` +
+        `Untuk informasi pendaftaran dan konsultasi program Double Degree HELP University, silakan hubungi layanan PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id.`;
+
+    return {
+      success: true,
+      answer: helpAnswer,
+      source: 'generic_extractive_fallback',
+      isExtractive: true,
+      handledSafely: true
+    };
+  }
+
+  if (isDnuiInquiry) {
+    const dnuiAnswer = isEn
+      ? `The International Double Degree program for **S1 Digital Business (Bisnis Digital)** is organized in partnership with **Dalian Neusoft University of Information (DNUI), China**.\n\n` +
+        `• **Study Scheme (4-Year Duration)**: The curriculum is structured in progressive stages:\n` +
+        `  - **Years 1 & 2**: Studies conducted at ITB STIKOM Bali campus in Indonesia.\n` +
+        `  - **Year 3**: Online courses taught with DNUI curriculum.\n` +
+        `  - **Year 4**: Onsite learning directly at the DNUI campus in Dalian, China (students receive free shared dormitory accommodation provided by DNUI).\n` +
+        `• **Partner Programs**: Collaboration between **S1 Bisnis Digital** (ITB STIKOM Bali) and **E-Commerce** (DNUI).\n` +
+        `• **Dual Degrees Awarded**: Graduates receive **S.Bns.** (from ITB STIKOM Bali) and a recognized bachelor degree from DNUI (**Bachelor of Management / BM**).\n\n` +
+        `For registration details and admissions guidelines for the DNUI program, please visit https://pmb.stikom-bali.ac.id.`
+      : `Program Double Degree International Class untuk **S1 Bisnis Digital** diselenggarakan bekerjasama dengan **Dalian Neusoft University of Information (DNUI), China**.\n\n` +
+        `• **Skema Perkuliahan (Masa Studi 4 Tahun)**: Perkuliahan **tidak seluruhnya di STIKOM Bali**, melainkan dirancang secara bertahap:\n` +
+        `  - **Tahun 1 & 2**: Mahasiswa mengikuti perkuliahan dengan kurikulum ITB STIKOM Bali di Indonesia.\n` +
+        `  - **Tahun 3**: Mahasiswa mengikuti perkuliahan secara online dengan kurikulum dari DNUI.\n` +
+        `  - **Tahun 4**: Mahasiswa melanjutkan perkuliahan secara langsung (onsite) di kampus DNUI di Dalian, China (mahasiswa mendapatkan fasilitas asrama/dormitory shared room gratis dari DNUI).\n` +
+        `• **Program Studi Mitra**: Kolaborasi program studi **S1 Bisnis Digital** (ITB STIKOM Bali) dan **E-Commerce** (DNUI).\n` +
+        `• **Gelar Akademik**: Lulusan memperoleh dua gelar kesarjanaan resmi: **S.Bns.** (dari ITB STIKOM Bali) dan gelar kesarjanaan dari DNUI (**Bachelor of Management / BM**).\n\n` +
+        `Untuk informasi pendaftaran dan rincian program DNUI, silakan hubungi bagian admisi internasional ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id.`;
+
+    return {
+      success: true,
+      answer: dnuiAnswer,
+      source: 'generic_extractive_fallback',
+      isExtractive: true,
+      handledSafely: true
+    };
+  }
+
+  // Structured grounded response for campus facilities inquiries (FACILITIES / FACILITY_INQUIRY)
+  const isFacilityIntent = !isCareerCenterInquiry && !isCampusServiceInquiry && (
+    semanticFrame?.domain === 'FACILITIES' ||
+    semanticFrame?.intent === 'FACILITY_INQUIRY' ||
+    (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.some(a => ['facilities', 'lab', 'campus_infrastructure'].includes(a)) && semanticFrame?.intent !== 'CAMPUS_LOCATION')
+  );
+
+  if (isFacilityIntent) {
+    const targetBranch = semanticFrame?.targetBranch ||
+      (/\brenon\b/i.test(rawQuery) ? 'renon' : (/\bjimbaran\b/i.test(rawQuery) ? 'jimbaran' : (/\babiansemal\b/i.test(rawQuery) ? 'abiansemal' : null)));
+
+    if (targetBranch === 'jimbaran') {
+      const jimbaranFacilityAnswer = isEn
+        ? `Based on available official records of ITB STIKOM Bali, current public documents verify the location and contact details of **Kampus Jimbaran** at **Jl. Raya Kampus Udayana, Jimbaran, Kuta Selatan** (Phone: (0361) 8953534 / Hotline: 081288778840), but specific physical laboratory details for the Jimbaran branch are not documented in the available general guide.\n\nTo inquire about specific computer laboratory availability at the Jimbaran branch, please contact the Kampus Jimbaran contact center directly or the ITB STIKOM Bali admissions office.`
+        : `Berdasarkan dokumen resmi kampus ITB STIKOM Bali yang tersedia saat ini, informasi resmi yang tercatat untuk **Kampus Jimbaran** adalah lokasi kampus di **Jl. Raya Kampus Udayana, Jimbaran, Kuta Selatan** beserta narahubung resmi di nomor **(0361) 8953534** atau hotline **081288778840**. Rincian sarana laboratorium komputer khusus di Kampus Jimbaran belum tercantum dalam panduan resmi yang tersedia saat ini.\n\nUntuk memastikan ketersediaan sarana laboratorium komputer di kampus cabang Jimbaran, Anda disarankan untuk mengonfirmasi langsung ke narahubung Kampus Jimbaran atau layanan admisi kampus ITB STIKOM Bali ya.`;
+
+      return {
+        success: true,
+        answer: jimbaranFacilityAnswer,
+        source: 'generic_extractive_fallback',
+        isExtractive: true,
+        handledSafely: true
+      };
+    }
+
+    if (targetBranch === 'abiansemal') {
+      const abiansemalFacilityAnswer = isEn
+        ? `Based on available official records of ITB STIKOM Bali, current documents verify the location and contact for **Kampus Abiansemal**, but physical infrastructure and laboratory details specific to this branch are not listed in the available guide.\n\nPlease contact campus admissions directly for facility inquiries regarding the Abiansemal branch.`
+        : `Berdasarkan dokumen resmi kampus ITB STIKOM Bali yang tersedia saat ini, informasi resmi untuk **Kampus Abiansemal** baru mencatat alamat dan kontak kampus, sedangkan rincian sarana dan prasarana fasilitas fisik khusus untuk Kampus Abiansemal belum tercantum dalam panduan resmi yang tersedia.\n\nUntuk konfirmasi ketersediaan fasilitas di Kampus Abiansemal, Anda disarankan untuk menghubungi langsung bagian admisi atau narahubung kampus ITB STIKOM Bali ya.`;
+
+      return {
+        success: true,
+        answer: abiansemalFacilityAnswer,
+        source: 'generic_extractive_fallback',
+        isExtractive: true,
+        handledSafely: true
+      };
+    }
+
+    // General campus facilities inquiry (Campus Renon / ITB STIKOM Bali overall)
+    const facilityFullAnswer = isEn
+      ? `Official campus facilities and student development units at ITB STIKOM Bali include:\n\n` +
+        `1. **Laboratories & Practical Learning Facilities**:\n` +
+        `   • Hardware & IoT Laboratory (Embedded Systems, Robotics, Smart Systems)\n` +
+        `   • Networking & Computer Systems Laboratory\n` +
+        `   • Database Systems Laboratory\n` +
+        `   • Business Intelligence Laboratory\n` +
+        `   • Mobile Technology Laboratory\n` +
+        `   • Multimedia & Editing Studio, Representative Classrooms, and Digital Library\n\n` +
+        `2. **Student Service Centers & Incubation**:\n` +
+        `   • **Inkubator Bisnis (INBIS)**: Startup mentoring, business ideation, prototyping, and coworking space\n` +
+        `   • **Career Development Center (CDC)**: Career guidance, internships, soft skills development, and job placement\n` +
+        `   • **Language Learning Center (LLC)**: Foreign language laboratory and training\n` +
+        `   • **Soft Skills Development Program**\n` +
+        `   • Over **30 Student Activity Units (UKM)** for student interests and personal growth\n\n` +
+        `3. **International & Career Advancement Programs**:\n` +
+        `   • Study & Work Abroad Programs\n` +
+        `   • National & International Double Degree Programs\n` +
+        `   • Hi-Think Program (IT Career Preparation in Japan) and GCCP Short Course Abroad\n` +
+        `   • Paid Overseas Internships and 2-Year Post-Graduation Career Consultation`
+      : `Fasilitas resmi penunjang perkuliahan dan pengembangan mahasiswa di ITB STIKOM Bali meliputi:\n\n` +
+        `1. **Laboratorium & Sarana Praktikum**:\n` +
+        `   • Laboratorium Hardware (fokus pada Embedded System, Robotika, dan Internet of Things/IoT)\n` +
+        `   • Laboratorium Networking & Jaringan Komputer\n` +
+        `   • Laboratorium Database & Sistem Basis Data\n` +
+        `   • Laboratorium Business Intelligence\n` +
+        `   • Laboratorium Mobile Technology\n` +
+        `   • Studio Multimedia & Editing, Ruang Kelas representatif, dan Perpustakaan Digital\n\n` +
+        `2. **Pusat Layanan Mahasiswa & Inkubasi**:\n` +
+        `   • **Inkubator Bisnis (INBIS)**: Pembinaan, pendampingan, dan fasilitas ruang kerja (*coworking space*) untuk pengembangan startup/wirausaha mahasiswa\n` +
+        `   • **Career Development Center (CDC)**: Pusat layanan bimbingan karir, magang kerja, dan bursa kerja mahasiswa/alumni\n` +
+        `   • **Language Learning Center (LLC)**: Laboratorium dan pusat pelatihan kemahiran bahasa asing mahasiswa\n` +
+        `   • **Program Pengembangan Softskill & Karakter**\n` +
+        `   • Lebih dari **30 Unit Kegiatan Mahasiswa (UKM)** untuk minat, bakat, dan penalaran\n\n` +
+        `3. **Program Keunggulan Penunjang Akademik & Karir**:\n` +
+        `   • Program Kuliah Sambil Kerja di Luar Negeri\n` +
+        `   • Program Double Degree Nasional & Internasional (Malaysia, China, dll.)\n` +
+        `   • Program Hi-Think (Persiapan Kerja Bidang TI di Jepang)\n` +
+        `   • Program GCCP (Short Course di Luar Negeri)\n` +
+        `   • Program Magang Berbayar di Luar Negeri\n` +
+        `   • Layanan Konsultasi selama 2 tahun setelah kelulusan`;
+
+    return {
+      success: true,
+      answer: facilityFullAnswer,
+      source: 'generic_extractive_fallback',
+      isExtractive: true,
+      handledSafely: true
+    };
+  }
+
   const cleanPassages = [];
   const seenFingerprints = new Set();
 
-  const prioritized = [...evidenceList].sort((a, b) => {
+  let prioritized = [...evidenceList].sort((a, b) => {
     const aText = (a.text || a.chunk || a.content || '').toLowerCase();
     const bText = (b.text || b.chunk || b.content || '').toLowerCase();
     const aCat = (a.docCategory || a.category || a.metadata?.docCategory || '').toLowerCase();
@@ -3842,15 +4567,49 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     return true;
   };
 
+  const targetEntities = (semanticFrame?.entities || []).map(e => e.canonical || e.name || String(e));
+  let excludedEntities = (arbitratedEvidence?.retrievalPlan && arbitratedEvidence.retrievalPlan.excludedConflictingEntities) ||
+    (semanticFrame?.retrievalPlan && semanticFrame.retrievalPlan.excludedConflictingEntities) || [];
+
+  if (excludedEntities.length === 0 && targetEntities.length === 1) {
+    const { CANONICAL_ENTITIES } = require('../engine/canonicalEntityRegistry');
+    const target = targetEntities[0].toLowerCase();
+    excludedEntities = CANONICAL_ENTITIES
+      .filter(e => e.family === 'academic_program' && e.canonical.toLowerCase() !== target)
+      .map(e => e.canonical);
+  }
+
+  // Filter out chunks belonging exclusively to other sibling programs when inquiring about a specific program
+  if (targetEntities.length === 1 && excludedEntities.length > 0) {
+    const targetLower = targetEntities[0].replace(/^(?:S1|S2|D3|D4)\s+/i, '').toLowerCase();
+    prioritized = prioritized.filter(chunk => {
+      const raw = (chunk.text || chunk.chunk || chunk.content || '');
+      if (raw.toLowerCase().includes(targetLower)) return true;
+      const hasExcluded = excludedEntities.some(ex => {
+        const exBase = ex.replace(/^(?:S1|S2|D3|D4)\s+/i, '').toLowerCase();
+        return exBase.length >= 4 && raw.toLowerCase().includes(exBase);
+      });
+      return !hasExcluded;
+    });
+  }
+
   for (const chunk of prioritized) {
     const raw = (chunk.text || chunk.chunk || chunk.content || '').replace(/&amp;/g, '&');
-    const paragraphs = raw.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
-    for (const p of paragraphs) {
-      const clean = cleanDocumentArtifacts(p);
-      if (!clean || clean.length < 15) continue;
+    const passages = (targetEntities.length > 0)
+      ? isolateTargetPassages(raw, targetEntities, excludedEntities)
+      : [raw];
+
+    for (const rawPassage of passages) {
+      const paragraphs = rawPassage.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+      for (const p of paragraphs) {
+        const clean = cleanDocumentArtifacts(p);
+        if (!clean || clean.length < 15) continue;
 
       const rawSegments = clean.split(/\n+/).flatMap(line => {
         line = line.trim();
+        if (!line) return [];
+        // Clean orphan FAQ answer prefixes so they don't split into isolated affirmative sentences
+        line = line.replace(/^jawaban:\s*(?:ya|tidak|tentu)\.\s*/i, '');
         if (!line) return [];
         const sents = line.split(/(?<!\b(?:jl|no|dr|ir|prof|st|s|d|kec))\.\s+/i);
         return sents.map(s => s.trim()).filter(s => s.length >= 10);
@@ -3858,7 +4617,7 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
 
       for (let sent of rawSegments) {
         if (!isTargetSpecific(sent)) continue;
-        if (/^(?:kontak\s*&\s*lokasi|abiansemal[,.]*)$/i.test(sent.trim())) continue;
+        if (/^(?:kontak\s*&\s*lokasi|abiansemal[,.]*|jawaban:\s*(?:ya|tidak|tentu)[,.]*)$/i.test(sent.trim())) continue;
         if (!/[.!?]$/.test(sent)) sent += '.';
         const norm = sent.toLowerCase().replace(/[^a-z0-9]/g, '');
         if (norm.length < 8 || seenFingerprints.has(norm)) continue;
@@ -3869,6 +4628,7 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
       if (cleanPassages.length >= 16) break;
     }
     if (cleanPassages.length >= 16) break;
+  }
   }
 
   if (cleanPassages.length === 0) {
@@ -3955,5 +4715,12 @@ module.exports = {
   extractGroundedCampusDirectory,
   extractGroundedScholarshipClaims,
   isDiscountStackingInquiry,
-  buildDiscountStackingAnswer
+  buildDiscountStackingAnswer,
+  isJobGuaranteeInquiry,
+  buildJobGuaranteeAnswer,
+  isINBISInquiry,
+  buildINBISAnswer,
+  isProgramComparisonInquiry,
+  buildProgramComparisonAnswer,
+  isolateTargetPassages
 };

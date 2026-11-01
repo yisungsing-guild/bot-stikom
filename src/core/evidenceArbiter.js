@@ -698,7 +698,9 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     !(candidateFile && /kalender\s+akademik/i.test(candidateFile));
   const isOverviewChunk = /\b(deskripsi singkat|profil|fokus pada|fokus pendidikan|keahlian dalam bidang|visi|misi|program studi terlihat|penjelasan prodi|peluang kerja|yang dipelajari|perbedaan)\b/i.test(text);
   const isCareerChunk = /\b(peluang kerja|prospek karir|prospek karier|profesi lulusan|career center|magang|internship|cdc)\b/i.test(text) ||
-    (candidateFile && /(?:company-profile-cdc|penjelasan prodi dan karier)/i.test(candidateFile));
+    (candidateFile && /(?:company-profile-cdc|penjelasan prodi dan karier|faq cc)/i.test(candidateFile));
+  const isInbisChunk = /\b(inkubator\s+bisnis|inbis|p2mw|tenant|startup|kewirausahaan|pra-?inkubasi|pasca-?inkubasi)\b/i.test(text) ||
+    (candidateFile && /(?:Profil INBIS|INBIS PROFILE|inbis|inkubator)/i.test(candidateFile));
   const isScholarshipChunk = /\b(beasiswa|kip-?kuliah|potongan\s+dpp|keringanan\s+biaya|bantuan\s+dana|skss)\b/i.test(text);
   const isFacilityChunk = /\b(laboratorium|lab\b|perpustakaan|asrama|dormitory|sarana\s+dan\s+prasarana|ruang\s+kelas|gedung\s+kampus)\b/i.test(text) ||
     (/\bfasilitas\b/i.test(text) && !/kurikulum|keunggulan\s+program|visi|misi/i.test(text));
@@ -729,12 +731,20 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     providedAspects.push('recommendation', 'program_fit');
   }
   if (isContactChunk) providedAspects.push('contact');
-  if (isLocationChunk) providedAspects.push('location', 'campus_location', 'address');
+  if (isLocationChunk) {
+    providedAspects.push('location', 'campus_location', 'address');
+    if (/\b(?:renon|puputan)\b/i.test(candTextLower)) providedAspects.push('branch_renon');
+    if (/\b(?:jimbaran|udayana)\b/i.test(candTextLower)) providedAspects.push('branch_jimbaran');
+    if (/\b(?:abiansemal|janger|dauh\s+yeh\s+cani)\b/i.test(candTextLower)) providedAspects.push('branch_abiansemal');
+  }
   if (isStudyLocationChunk) providedAspects.push('study_location', 'location');
   if (isScheduleChunk) providedAspects.push('schedule', 'waves', 'wave_info');
   if (isPaymentProcedureChunk) providedAspects.push('procedure', 'payment_procedure');
   if (isScholarshipChunk) providedAspects.push('scholarship', 'discount', 'requirements');
   if (isFacilityChunk) providedAspects.push('facilities', 'lab', 'campus_infrastructure', 'campus_service', 'service_info', 'support');
+  if (isInbisChunk) {
+    providedAspects.push('inbis_overview', 'tenant_programs', 'p2mw', 'inbis_services', 'incubation_programs', 'campus_service', 'service_info', 'entrepreneurship');
+  }
   if (/\b(?:program\s+pengembangan\s+soft\s*skills?|language\s+learning\s+center|\bllc\b|career\s+center|pusat\s+karier|cdc)\b/i.test(candTextLower)) {
     providedAspects.push('facilities', 'campus_service', 'activities', 'student_development', 'service_info', 'support');
   }
@@ -844,6 +854,10 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     const wantsOverview = requiredAspects.some(a => ['overview', 'definition', 'curriculum_difference'].includes(a));
     const wantsScholarship = requiredAspects.some(a => ['scholarship', 'discount'].includes(a)) || retrievalPlan.domain === 'SCHOLARSHIP';
     const wantsFacilities = !wantsLocation && (requiredAspects.some(a => ['facilities', 'lab'].includes(a)) || retrievalPlan.domain === 'FACILITIES');
+    const wantsInbis = (Array.isArray(requiredAspects) && requiredAspects.some(a => ['inbis_overview', 'tenant_programs', 'p2mw', 'inbis_services', 'incubation_programs'].includes(a))) ||
+      retrievalPlan.relation === 'INBIS_SERVICE' ||
+      /\b(?:inbis|inkubator\s+bisnis|p2mw|tenant|startup|kewirausahaan|wirausaha\s+(?:pemula|mahasiswa)|inkubasi)\b/i.test(retrievalPlan.rawQuery || retrievalPlan.query || '') ||
+      (Array.isArray(retrievalPlan.targetEntities) && retrievalPlan.targetEntities.some(e => /inbis|inkubator/i.test(e)));
     const wantsOrg = requiredAspects.some(a => ['student_organization', 'ukm'].includes(a)) || retrievalPlan.domain === 'ORGANIZATION_UKM';
     const wantsPmbGeneral = requiredAspects.some(a => ['admission_overview', 'procedure', 'admission_pathways'].includes(a)) ||
       retrievalPlan.intent === 'PROGRAM_PROCEDURE' ||
@@ -945,14 +959,25 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     } else if (wantsFacilities) {
       const isCareerCenterDomain = retrievalPlan.domain === 'CAREER_CENTER' || retrievalPlan.intent === 'CAREER_CENTER_INQUIRY' ||
         (Array.isArray(requiredAspects) && requiredAspects.some(a => ['career_services', 'internship'].includes(a)));
-      if (!isFacilityChunk && !(isCareerCenterDomain && isCareerChunk)) {
+      const queryStr = (retrievalPlan.query || retrievalPlan.rawQuery || (retrievalPlan.queryVariants && retrievalPlan.queryVariants.join(' ')) || '').toLowerCase();
+      const isExplicitInbisQuery = /\b(?:inbis|inkubator\s+bisnis|p2mw|tenant)\b/i.test(queryStr) ||
+        retrievalPlan.domain === 'CAMPUS_SERVICE' || retrievalPlan.intent === 'CAMPUS_SERVICE_INQUIRY';
+      if (!isExplicitInbisQuery && isInbisChunk) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_SCOPE_MISMATCH',
+          reason: 'inbis_operational_grant_not_campus_facility'
+        };
+      }
+      const isBranchFacilityQuery = Boolean(retrievalPlan.targetBranch || (Array.isArray(requiredAspects) && requiredAspects.some(a => a.startsWith('branch_'))));
+      const isBranchEvidence = isBranchFacilityQuery && (isLocationChunk || isContactChunk || /\b(?:kampus\s+(?:jimbaran|abiansemal)|jl\.\s*raya\s+kampus\s+udayana|dauh\s+yeh\s+cani|janger)\b/i.test(text));
+      if (!isFacilityChunk && !(isCareerCenterDomain && isCareerChunk) && !isBranchEvidence) {
         return {
           accepted: false,
           disposition: 'REJECT_ASPECT_MISMATCH',
           reason: 'evidence_does_not_contain_facility_aspect'
         };
       }
-      const queryStr = (retrievalPlan.query || retrievalPlan.rawQuery || (retrievalPlan.queryVariants && retrievalPlan.queryVariants.join(' ')) || '').toLowerCase();
       const isPublicRentalQuery = /\b(?:sewa|tarif|biaya|harga)\b/i.test(queryStr) &&
         /\b(?:resepsi|pernikahan|wedding|acara\s+umum)\b/i.test(queryStr);
       if (isPublicRentalQuery) {
@@ -1060,6 +1085,32 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
           accepted: false,
           disposition: 'REJECT_ASPECT_MISMATCH',
           reason: 'evidence_does_not_contain_career_aspect'
+        };
+      }
+    }
+
+    if (wantsInbis) {
+      const isInternalAdminDoc = candidateFile && /analisis\s+jabatan|revisi\s+sk\s+pengelola/i.test(candidateFile);
+      if (isInternalAdminDoc) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_SCOPE_MISMATCH',
+          reason: 'internal_administrative_document_not_inbis_profile'
+        };
+      }
+      const isGenericFacilityDoc = candidateFile && /fasilitas-stikom\.pdf/i.test(candidateFile);
+      if (isGenericFacilityDoc) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'generic_facility_document_not_inbis_profile'
+        };
+      }
+      if (!isInbisChunk && !isOverviewChunk) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_does_not_contain_inbis_aspect'
         };
       }
     }
@@ -1177,6 +1228,22 @@ function curateCandidatePassages(candidate, retrievalPlan = {}) {
           curatedText: curatedLines.join('\n')
         };
       }
+    }
+  }
+
+  const isJobGuaranteePlan = (Array.isArray(retrievalPlan.requiredAspects) && retrievalPlan.requiredAspects.includes('job_guarantee')) ||
+    /\b(?:jaminan|menjamin|dijamin|pasti|langsung)\s+(?:kerja|pekerjaan|dapat\s+kerja|bekerja)\b/i.test(retrievalPlan.rawQuery || '');
+
+  if (isJobGuaranteePlan) {
+    // If chunk starts with an unrelated FAQ affirmative answer (e.g. training FAQ #8), curate it out so it doesn't affirm job guarantee
+    const isUnrelatedFaqYes = /^(?:jawaban:\s*ya\.\s*career\s+center\s+menyelenggarakan\s+berbagai\s+pelatihan)/i.test(rawText.trim());
+    if (isUnrelatedFaqYes) {
+      return {
+        ...candidate,
+        disposition: 'REJECTED',
+        isCompatible: false,
+        reason: 'unrelated_faq_affirmation_for_job_guarantee'
+      };
     }
   }
 
