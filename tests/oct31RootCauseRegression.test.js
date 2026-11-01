@@ -482,4 +482,108 @@ describe('31 October Root Cause Regression Suite', () => {
 
   });
 
+  describe('7. Case 7: November 1 Grounding & RAG Regression Validation', () => {
+
+    test('7a. Beasiswa DPP D3: Query answers Rp 2.000.000 and never outputs Biaya Registrasi Rp 10.000.000 as scholarship', async () => {
+      const query = 'Berapa beasiswa DPP D3 Manajemen Informatika pada Gelombang Khusus?';
+      const frame = resolveSemanticFrame(query);
+      expect(frame.domain).toBe('SCHOLARSHIP');
+      expect(frame.intent).toBe('SCHOLARSHIP_INQUIRY');
+
+      const res = await runPhase1DeterministicPipeline('test_d3_scholarship', query, {
+        syncOnly: true,
+        fastFallback: true,
+        sessionSnapshot: { data: {} }
+      });
+
+      expect(res.intent).toBe('SCHOLARSHIP_INQUIRY');
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer).toContain('Rp 2.000.000');
+      expect(res.finalAnswer).toContain('Gelombang Khusus');
+      expect(res.finalAnswer).toContain('D3 Manajemen Informatika');
+      // Must NOT conflate registration fee with scholarship amount
+      expect(res.finalAnswer).not.toContain('Biaya Registrasi (Jas, Topi, GMTI) Dasar: Rp 10.000.000');
+      expect(res.finalAnswer).not.toContain('Total Kewajiban Biaya Registrasi Bersih: Rp 8.000.000');
+    });
+
+    test('7b. D3 Registration Fee Guard: Querying registration fee still produces Rp 10.000.000', () => {
+      const res = generateFeeAnswer('Berapa biaya registrasi D3 Manajemen Informatika?');
+      expect(res.success).toBe(true);
+      expect(res.answer).toContain('D3 Manajemen Informatika');
+      expect(res.answer).toContain('10.000.000');
+    });
+
+    test('7c. Tahapan PMB: Query classifies as PMB and returns 4 official stages from Kalender Pendaftaran', async () => {
+      const query = 'Apa saja tahapan pendaftaran mahasiswa baru TA 2026/2027?';
+      const frame = resolveSemanticFrame(query);
+      expect(frame.domain).toBe('PMB');
+      expect(frame.intent).toBe('ADMISSION_SCHEDULE');
+
+      const res = await runPhase1DeterministicPipeline('test_pmb_stages', query, {
+        syncOnly: true,
+        fastFallback: true,
+        sessionSnapshot: { data: {} }
+      });
+
+      expect(res.intent).toBe('ADMISSION_SCHEDULE');
+      expect(res.finalAnswer).toBeDefined();
+      expect(res.finalAnswer).toContain('Masa Pendaftaran');
+      expect(res.finalAnswer).toContain('Testing');
+      expect(res.finalAnswer).toContain('Pengumuman');
+      expect(res.finalAnswer).toContain('Masa Registrasi Ulang');
+      expect(res.finalAnswer).toContain('https://pmb.stikom-bali.ac.id');
+      // Must not return thesis / proposal or ungrounded fallback
+      expect(res.finalAnswer).not.toContain('skripsi');
+      expect(res.finalAnswer).not.toContain('Tugas Akhir');
+      expect(res.finalAnswer).not.toContain('belum dapat dipastikan secara lengkap');
+    });
+
+    test('7d. Beasiswa Lintas Prodi: Returns DPP discounts for S1 SI/TI/BD, S1 SK, and D3 MI bound to their programs', async () => {
+      const query = 'Sebutkan potongan beasiswa DPP per prodi';
+      const frame = resolveSemanticFrame(query);
+      expect(frame.domain).toBe('SCHOLARSHIP');
+      expect(frame.intent).toBe('SCHOLARSHIP_INQUIRY');
+
+      const res = await runPhase1DeterministicPipeline('test_multi_scholarship', query, {
+        syncOnly: true,
+        fastFallback: true,
+        sessionSnapshot: { data: {} }
+      });
+
+      expect(res.intent).toBe('SCHOLARSHIP_INQUIRY');
+      expect(res.finalAnswer).toBeDefined();
+
+      // S1 SI/TI/BD claim
+      expect(res.finalAnswer).toContain('S1 Sistem Informasi, S1 Teknologi Informasi, dan S1 Bisnis Digital');
+      expect(res.finalAnswer).toContain('Rp 3.000.000,-');
+
+      // S1 SK claim
+      expect(res.finalAnswer).toContain('S1 Sistem Komputer');
+      expect(res.finalAnswer).toContain('Rp 2.000.000,-');
+
+      // D3 MI claim
+      expect(res.finalAnswer).toContain('D3 Manajemen Informatika');
+      expect(res.finalAnswer).toContain('Rp 2.000.000,-');
+    });
+
+    test('7e. Regression Guard: Thesis proposal registration remains in ACADEMIC_CURRICULUM', () => {
+      const frame = resolveSemanticFrame('Bagaimana prosedur pendaftaran proposal skripsi?');
+      expect(frame.domain).toBe('ACADEMIC_CURRICULUM');
+      expect(frame.intent).toBe('THESIS_REQUIREMENTS');
+
+      const frame2 = resolveSemanticFrame('Syarat pendaftaran tugas akhir apa saja?');
+      expect(frame2.domain).toBe('ACADEMIC_CURRICULUM');
+      expect(frame2.intent).toBe('THESIS_REQUIREMENTS');
+    });
+
+    test('7f. Regression Guard: S1 tuition fee and existing fee calculations remain intact', () => {
+      const res = generateFeeAnswer('Berapa biaya kuliah S1 Sistem Informasi Gelombang Khusus?');
+      expect(res.success).toBe(true);
+      expect(res.answer).toContain('S1 Sistem Informasi');
+      expect(res.answer).toContain('Gelombang Khusus');
+      expect(res.answer).toContain('DPP');
+    });
+
+  });
+
 });

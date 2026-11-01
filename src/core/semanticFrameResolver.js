@@ -462,7 +462,11 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 4b. Thesis / Final Project / Skripsi Requirements & Academic Guidelines (e.g. Q056)
-  if (/\b(?:tugas\s+akhir|skripsi|pedoman\s+ta|menulis\s+ta|syarat\s+ta|\bta\b|final\s+project|thesis|thesis\s+defense|final\s+project\s+defense)\b/i.test(normalized)) {
+  const isPmbContext = /\b(?:pmb|mahasiswa\s+baru|calon\s+mahasiswa|camaba|maba)\b/i.test(normalized);
+  const isThesisExplicit = /\b(?:tugas\s+akhir|skripsi|pedoman\s+ta|menulis\s+ta|syarat\s+ta|sidang\s+ta|ujian\s+ta|bimbingan\s+ta|daftar\s+ta|pendaftaran\s+ta|proposal\s+ta|final\s+project|thesis|thesis\s+defense|final\s+project\s+defense)\b/i.test(normalized);
+  const isStandaloneTa = /\bta\b/i.test(normalized) && !/\b(?:ta\s*202\d|ta\s*\d{4}|tahun\s*(?:akademik|ajaran))\b/i.test(normalized);
+
+  if (!isPmbContext && (isThesisExplicit || isStandaloneTa)) {
     return {
       domain: 'ACADEMIC_CURRICULUM',
       intent: 'THESIS_REQUIREMENTS',
@@ -868,7 +872,8 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
 
   // 15. Admission / PMB Schedule & General Topic Opener
   if (/\b(?:pmb|pendaftaran|mendaftar|daftar\s+(?:kuliah|online|ulang|pmb|mahasiswa|stikom)|syarat|persyaratan|dokumen|berkas|gelombang|masih dibuka|kapan buka|jalur pendaftaran|mulai dari mana|proses masuk|cara masuk)\b/i.test(normalized) ||
-    (/\b(?:daftar|mendaftar)\b/i.test(normalized) && !/\b(?:daftar\s+harga|daftar\s+menu|daftar\s+matkul|daftar\s+mata\s+kuliah|daftar\s+prodi|daftar\s+jurusan|daftar\s+program)\b/i.test(normalized))) {
+    (/\b(?:daftar|mendaftar)\b/i.test(normalized) && !/\b(?:daftar\s+harga|daftar\s+menu|daftar\s+matkul|daftar\s+mata\s+kuliah|daftar\s+prodi|daftar\s+jurusan|daftar\s+program)\b/i.test(normalized)) ||
+    isPmbContext) {
     const isWhenQuestion = /\b(?:kapan|sampai\s+kapan)\b/i.test(normalized);
     const isNow = TEMPORAL_NOW_REGEX.test(normalized) || /\b(?:status\s+pendaftaran|status\s+pmb)\b/i.test(normalized);
     if (isNow && !isWhenQuestion && /\b(?:gelombang|buka|dibuka|ditutup|tutup|jadwal|periode|status)\b/i.test(normalized)) {
@@ -884,9 +889,10 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     }
 
     const isProcedureOrRequirements = /\b(?:cara\s+(?:daftar|mendaftar)|bagaimana\s+(?:cara\s+)?(?:daftar|mendaftar)|syarat|persyaratan|dokumen|berkas|alur|prosedur|mulai\s+dari\s+mana|proses\s+masuk|cara\s+masuk)\b/i.test(normalized);
+    const isAdmissionStages = /\b(?:tahap(?:an)?|jadwal|kalender|gelombang|periode|kapan)\b/i.test(normalized);
     const isTopicOpener = isProcedureOrRequirements ||
       /\b(saya\s+ingin\s+bertanya\s+tentang\s+pmb|mau\s+tanya\s+pmb|info\s+pmb|tentang\s+pmb|informasi\s+pmb|bagaimana\s+pmb|pendaftaran\s+stikom|daftar\s+stikom)\b/i.test(normalized) ||
-      (!/\b(gelombang|kapan|jadwal|tanggal|buka sampai|periode)\b/i.test(normalized) && /\b(pmb|pendaftaran)\b/i.test(normalized) && !/\b(biaya|bayar|kurikulum|beasiswa)\b/i.test(normalized));
+      (!isAdmissionStages && /\b(pmb|pendaftaran)\b/i.test(normalized) && !/\b(biaya|bayar|kurikulum|beasiswa)\b/i.test(normalized));
 
     if (isTopicOpener) {
       return {
@@ -906,7 +912,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       retrievalRequired: true,
       userState: 'INQUIRING',
       desiredAction: 'PROVIDE_PMB_STATUS',
-      aspects: ['schedule', 'status', 'wave_info'],
+      aspects: ['schedule', 'status', 'wave_info', 'stages'],
       relation: 'ADMISSION_WINDOW'
     };
   }
@@ -1871,7 +1877,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       } else if (domain === 'FACILITIES' || aspects.includes('facilities') || aspects.includes('lab') || aspects.includes('campus_infrastructure') || (primaryConcept === 'CAMPUS_LIFE' && !syncFrame.domain?.includes('SERVICE') && !(validated.candidateEntities || []).some(e => e.inferredCategory === 'campus_service'))) {
         intent = 'FACILITY_INQUIRY';
         domain = 'FACILITIES';
-      } else if (/\b(?:tugas\s+akhir|skripsi|pedoman\s+ta)\b/i.test(rawQuery)) {
+      } else if (/\b(?:tugas\s+akhir|skripsi|pedoman\s+ta)\b/i.test(rawQuery) && !/\b(?:pmb|mahasiswa\s+baru|calon\s+mahasiswa|camaba|maba)\b/i.test(rawQuery)) {
         intent = 'THESIS_REQUIREMENTS';
         domain = 'ACADEMIC_CURRICULUM';
       } else if (aspects.includes('requirements') || primaryConcept === 'ADMISSION_ONBOARDING') {
@@ -1908,7 +1914,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       } else if (domain === 'CAREER_CENTER' || syncFrame.domain === 'CAREER_CENTER' || /\b(?:career\s+center|cdc\b|magang|internship)\b/i.test(rawQuery)) {
         domain = 'CAREER_CENTER';
         intent = 'CAREER_CENTER_INQUIRY';
-      } else if (/\b(?:tugas\s+akhir|skripsi|pedoman\s+ta)\b/i.test(rawQuery)) {
+      } else if (/\b(?:tugas\s+akhir|skripsi|pedoman\s+ta)\b/i.test(rawQuery) && !/\b(?:pmb|mahasiswa\s+baru|calon\s+mahasiswa|camaba|maba)\b/i.test(rawQuery)) {
         intent = 'THESIS_REQUIREMENTS';
         domain = 'ACADEMIC_CURRICULUM';
       } else if (domain === 'INTERNATIONAL' || syncFrame.domain === 'INTERNATIONAL' || primaryConcept === 'INTERNATIONAL_STUDY' || resolvedEntities.some(e => e.family === 'international_program') || /\b(pertukaran\s+(?:pelajar|mahasiswa)|student\s+exchange)\b/i.test(rawQuery)) {
@@ -1938,7 +1944,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
         intent = 'ADMISSION_SCHEDULE';
         domain = 'PMB';
       } else if (aspects.includes('requirements')) {
-        if (/\b(?:tugas\s+akhir|skripsi|pedoman\s+ta)\b/i.test(rawQuery)) {
+        if (/\b(?:tugas\s+akhir|skripsi|pedoman\s+ta)\b/i.test(rawQuery) && !/\b(?:pmb|mahasiswa\s+baru|calon\s+mahasiswa|camaba|maba)\b/i.test(rawQuery)) {
           intent = 'THESIS_REQUIREMENTS';
           domain = 'ACADEMIC_CURRICULUM';
         } else {

@@ -148,10 +148,13 @@ function buildRetrievalPlan(semanticFrame) {
 
   // Scholarship query variants
   if (domain === 'SCHOLARSHIP' || (aspects && aspects.includes('scholarship'))) {
-    queryVariants.push('informasi beasiswa potongan DPP KIP Kuliah STIKOM Bali');
-    queryVariants.push('program beasiswa KIP Kuliah beasiswa yayasan beasiswa prestasi ITB STIKOM Bali');
-    queryVariants.push('beasiswa dana pendidikan pokok DPP potongan biaya pendaftaran ITB STIKOM Bali');
-    queryVariants.push('syarat pendaftaran beasiswa mahasiswa baru');
+    queryVariants.push('beasiswa dana pendidikan pokok DPP potongan biaya ITB STIKOM Bali');
+    queryVariants.push('potongan beasiswa DPP Gelombang Khusus S1 Sistem Informasi Teknologi Informasi Bisnis Digital');
+    queryVariants.push('potongan beasiswa DPP Gelombang Khusus S1 Sistem Komputer');
+    queryVariants.push('potongan beasiswa DPP Gelombang Khusus D3 Manajemen Informatika');
+    queryVariants.push('beasiswa potongan DPP Dual Degree UTB Gelombang Khusus');
+    queryVariants.push('beasiswa potongan DPP Double Degree HELP DNUI');
+    queryVariants.push('informasi beasiswa potongan DPP KIP Kuliah yayasan prestasi STIKOM Bali');
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
         queryVariants.push(`beasiswa ${ent}`);

@@ -2690,11 +2690,23 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
   }
 
   // Dynamic Grounded Fee Calculation Engine Hand-off
-  const isFeeInquiry = (semanticFrame.domain === 'TUITION_FEE' ||
+  const isScholarshipInquiry = (
+    semanticFrame.domain === 'SCHOLARSHIP' ||
+    semanticFrame.intent === 'SCHOLARSHIP_INQUIRY' ||
+    (Array.isArray(semanticFrame.aspects) && semanticFrame.aspects.includes('scholarship')) ||
+    /\b(?:beasiswa|potongan\s+(?:dpp|biaya|formulir)|keringanan\s+biaya)\b/i.test(semanticFrame.rawQuery || '')
+  );
+
+  const isExplicitFeeSimulation = /\b(?:total\s+biaya|rincian\s+biaya|angsuran|cicil(?:an)?|biaya\s+semester|spp|tarif\s+kuliah|sisa\s+bayar|perhitungan\s+biaya|simulasi\s+biaya)\b/i.test(semanticFrame.rawQuery || '');
+  const isPureScholarship = isScholarshipInquiry && !isExplicitFeeSimulation;
+
+  const isFeeInquiry = !isPureScholarship && (
+    semanticFrame.domain === 'TUITION_FEE' ||
     (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp', 'installment_procedure', 'payment_schedule'].includes(a))) ||
-    /\b(?:biaya|spp|dpp|uang kuliah|uang gedung|rincian biaya|cicil|cicilan|angsuran)\b/i.test(semanticFrame.rawQuery || '')) &&
-    !arbitratedEvidence.unsupportedEntity &&
-    semanticFrame.domain !== 'UNSUPPORTED_PROGRAM';
+    /\b(?:biaya|spp|dpp|uang kuliah|uang gedung|rincian biaya|cicil|cicilan|angsuran)\b/i.test(semanticFrame.rawQuery || '')
+  ) &&
+  !arbitratedEvidence.unsupportedEntity &&
+  semanticFrame.domain !== 'UNSUPPORTED_PROGRAM';
 
   if (isFeeInquiry) {
     const feeRes = generateFeeAnswer(semanticFrame.rawQuery || '', arbitratedEvidence.sessionData || {}, {
@@ -3663,7 +3675,9 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
   // Structured grounded response for admission schedule inquiries
   if (
     semanticFrame?.domain === 'PMB' &&
-    semanticFrame?.intent === 'ADMISSION_SCHEDULE'
+    (semanticFrame?.intent === 'ADMISSION_SCHEDULE' ||
+     (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.includes('stages')) ||
+     /\b(?:tahap(?:an)?\s+pendaftaran|tahapan\s+seleksi|alur\s+tahapan)\b/i.test(semanticFrame?.rawQuery || ''))
   ) {
     const yearLabel = semanticFrame?.academicYear || '2026/2027';
     const scheduleAnswer = isEn

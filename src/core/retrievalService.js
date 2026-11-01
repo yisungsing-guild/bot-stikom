@@ -239,7 +239,22 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
     const sectionProg = chunkSectionMap.get(idx);
     const ctx = fileContextMap.get(f);
     const entStr = sectionProg || (ctx && ctx.entities && ctx.entities.length > 0 ? ctx.entities.join(' ') : '');
-    const raw = doc.chunk || doc.text || (doc.metadata && (doc.metadata.chunk || doc.metadata.text)) || '';
+    let raw = doc.chunk || doc.text || (doc.metadata && (doc.metadata.chunk || doc.metadata.text)) || '';
+    if (/rincian\s+biaya/i.test(f) || (ctx && ctx.category === 'BIAYA')) {
+      if (/^\s*\(dpp\)\s*:/i.test(raw)) {
+        raw = 'Beasiswa untuk Dana Pendidikan Pokok ' + raw;
+      }
+      if (/beasiswa\s+untuk\s+dana\s+pendidikan\s+pokok|\(dpp\)\s*:|potongan\s+biaya/i.test(raw)) {
+        if (idx + 1 < corpus.length && (corpus[idx + 1].sourceFile || corpus[idx + 1].filename) === f) {
+          raw += ' ' + (corpus[idx + 1].chunk || corpus[idx + 1].text || '');
+        }
+        if (idx + 2 < corpus.length && (corpus[idx + 2].sourceFile || corpus[idx + 2].filename) === f) {
+          raw += ' ' + (corpus[idx + 2].chunk || corpus[idx + 2].text || '');
+        }
+      } else if (/^\s*(?:rp\.?\s*\d|gelombang\s+khusus)/i.test(raw) && idx > 0 && (corpus[idx - 1].sourceFile || corpus[idx - 1].filename) === f) {
+        raw = (corpus[idx - 1].chunk || corpus[idx - 1].text || '') + ' ' + raw;
+      }
+    }
     const textWithContext = entStr ? `${entStr} ${f} ${raw}` : `${f} ${raw}`;
     return { text: textWithContext };
   });
@@ -477,6 +492,22 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       }
     }
 
+    if (/rincian\s+biaya/i.test(sourceFile) || (ctx && ctx.category === 'BIAYA')) {
+      if (/^\s*\(dpp\)\s*:/i.test(rawText)) {
+        enrichedText = 'Beasiswa untuk Dana Pendidikan Pokok ' + enrichedText;
+      }
+      if (/beasiswa\s+untuk\s+dana\s+pendidikan\s+pokok|\(dpp\)\s*:|potongan\s+biaya/i.test(rawText)) {
+        if (item.index + 1 < corpus.length && (corpus[item.index + 1].sourceFile || corpus[item.index + 1].filename) === sourceFile) {
+          enrichedText += '\n' + (corpus[item.index + 1].chunk || corpus[item.index + 1].text || '');
+        }
+        if (item.index + 2 < corpus.length && (corpus[item.index + 2].sourceFile || corpus[item.index + 2].filename) === sourceFile) {
+          enrichedText += '\n' + (corpus[item.index + 2].chunk || corpus[item.index + 2].text || '');
+        }
+      } else if (/^\s*(?:rp\.?\s*\d|gelombang\s+khusus)/i.test(rawText) && item.index > 0 && (corpus[item.index - 1].sourceFile || corpus[item.index - 1].filename) === sourceFile) {
+        enrichedText = (corpus[item.index - 1].chunk || corpus[item.index - 1].text || '') + '\n' + enrichedText;
+      }
+    }
+
     const entityIds = doc.entityIds || metadata.entityIds ||
       (contextEntities && contextEntities.length > 0 ? contextEntities : (doc.program ? [doc.program] : []));
 
@@ -508,6 +539,7 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       rawText,
       chunk: enrichedText,
       source,
+      sourceFile,
       source_file: sourceFile,
       sourceDocument: sourceFile,
       program: doc.program || metadata.program || null,
