@@ -142,12 +142,12 @@ function buildSynthesisPrompt(semanticFrame, evidenceList = [], recommendationRe
     const candidates = (recommendationResult && Array.isArray(recommendationResult.scoredCandidates) && recommendationResult.scoredCandidates.length > 0)
       ? recommendationResult.scoredCandidates
       : Object.values(PROGRAMS).map((p) => ({
-          canonicalName: p.canonicalName,
-          studyFocus: p.curriculumProfile?.studyFocus || (p.strengths || []).join(', '),
-          suitableFor: p.curriculumProfile?.suitableFor || '',
-          careerProspects: p.curriculumProfile?.careerProspects || '',
-          grounding: p.grounding
-        }));
+        canonicalName: p.canonicalName,
+        studyFocus: p.curriculumProfile?.studyFocus || (p.strengths || []).join(', '),
+        suitableFor: p.curriculumProfile?.suitableFor || '',
+        careerProspects: p.curriculumProfile?.careerProspects || '',
+        grounding: p.grounding
+      }));
 
     curriculumProfilesSnippet = candidates
       .map((c, idx) => {
@@ -253,7 +253,11 @@ BATASAN KETAT AKURASI (GROUNDING INVARIANTS):
    - Nama resmi program studi, gelar akademik (S.Kom, S.Bns, M.Kom, A.Md.Kom), status akreditasi (Baik Sekali, Unggul, Baik), atau institusi mitra luar negeri.
    - Ketentuan dan berkas syarat pendaftaran.
 3. Jika bukti yang tersedia belum memuat jawaban lengkap atas aspek yang ditanyakan pengguna, sampaikan bagian yang belum tercantum tersebut dengan jujur dan bersahabat dalam bahasa alami, lalu arahkan untuk konfirmasi langsung ke admisi/layanan resmi kampus. Dilarang menutup-nutupi ketidaktahuan dengan asumsi yang tampak meyakinkan.
-4. Fokus HANYA pada entitas atau program studi yang ditanyakan pengguna. Dilarang mencampuradukkan kurikulum, biaya, atau info prodi lain.${recInstructionsId}`,
+4. Fokus HANYA pada entitas atau program studi yang ditanyakan pengguna. Dilarang mencampuradukkan kurikulum, biaya, atau info prodi lain.
+5. PANDUAN KHUSUS KURIKULUM & PERSYARATAN:
+   - Jika ditanya apakah harus jago coding/pemrograman: sampaikan bahwa pada persyaratan PMB yang tersedia kemampuan coding tidak tercantum sebagai syarat wajib pendaftaran; jelaskan bahwa pembelajaran dasar dimulai bertahap. Dilarang menjamin "pasti mudah" atau "tidak butuh kemampuan sama sekali".
+   - Jika ditanya apakah belajar topik tertentu (misal: digital marketing atau AI): utamakan mata kuliah kurikulum resmi (misal: Pemasaran Digital, SEO, Pemasaran Media Sosial, Teknik Pembuatan Prompt untuk Model AI), bukan hanya menyebut peran karier lulusan. Batasi klaim AI pada pemanfaatan prompt dan model terapan bisnis, bukan rekayasa algoritma Machine Learning teknis mendalam.
+   - Jika menampilkan daftar mata kuliah: sajikan dalam bentuk poin rapi per semester dengan SKS, jangan memunculkan header tabel atau nomor urut mentah.${recInstructionsId}`,
     userPrompt: `${conversationHistorySnippet}Pertanyaan Pengguna: "${semanticFrame.rawQuery}"${semanticInterpretationSnippet}
 FAKTA RESMI YANG TERSEDIA:
 ${contextSnippet}
@@ -802,29 +806,29 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
     const isCountQuery = /\b(?:berapa\s+(?:ada\s+)?kampus|ada\s+berapa\s+kampus|berapa\s+jumlah\s+kampus|jumlah\s+kampus|berapa\s+banyak\s+kampus|berapa\s+(?:ada\s+)?cabang|ada\s+berapa\s+cabang)\b/i.test(rawQuery);
     const countIntro = isCountQuery
       ? (userLang === 'en'
-          ? `ITB STIKOM Bali has **3 (three)** strategic campus locations in Bali:\n\n`
-          : `ITB STIKOM Bali memiliki **3 (tiga)** lokasi kampus yang strategis di Bali:\n\n`)
+        ? `ITB STIKOM Bali has **3 (three)** strategic campus locations in Bali:\n\n`
+        : `ITB STIKOM Bali memiliki **3 (tiga)** lokasi kampus yang strategis di Bali:\n\n`)
       : (userLang === 'en'
-          ? `ITB STIKOM Bali has three strategic campus locations in Bali:\n\n`
-          : `ITB STIKOM Bali memiliki tiga lokasi kampus yang strategis di Bali:\n\n`);
+        ? `ITB STIKOM Bali has three strategic campus locations in Bali:\n\n`
+        : `ITB STIKOM Bali memiliki tiga lokasi kampus yang strategis di Bali:\n\n`);
 
     const campusLocationAnswer = userLang === 'en'
       ? `${countIntro}` +
-        `1. **Kampus Renon (Main Campus)**:\n` +
-        `   Jl. Raya Puputan No. 86, Renon, Denpasar, Bali.\n\n` +
-        `2. **Kampus Jimbaran**:\n` +
-        `   Jl. Raya Kampus Udayana No. 8, Jimbaran, Kuta Selatan, Badung, Bali.\n\n` +
-        `3. **Kampus Abiansemal**:\n` +
-        `   Jl. Jenderal Sudirman, Blahkiuh, Abiansemal, Badung, Bali.\n\n` +
-        `All three campus locations provide academic consultation, student services, and PMB registration. Feel free to ask if you need further directions or information!`
+      `1. **Kampus Renon (Main Campus)**:\n` +
+      `   Jl. Raya Puputan No. 86, Renon, Denpasar, Bali.\n\n` +
+      `2. **Kampus Jimbaran**:\n` +
+      `   Jl. Raya Kampus Udayana No. 8, Jimbaran, Kuta Selatan, Badung, Bali.\n\n` +
+      `3. **Kampus Abiansemal**:\n` +
+      `   Jl. Jenderal Sudirman, Blahkiuh, Abiansemal, Badung, Bali.\n\n` +
+      `All three campus locations provide academic consultation, student services, and PMB registration. Feel free to ask if you need further directions or information!`
       : `${countIntro}` +
-        `1. **Kampus Renon (Kampus Pusat)**:\n` +
-        `   Jl. Raya Puputan No. 86, Renon, Denpasar, Bali.\n\n` +
-        `2. **Kampus Jimbaran**:\n` +
-        `   Jl. Raya Kampus Udayana No. 8, Jimbaran, Kuta Selatan, Badung, Bali.\n\n` +
-        `3. **Kampus Abiansemal**:\n` +
-        `   Jl. Jenderal Sudirman, Blahkiuh, Abiansemal, Badung, Bali.\n\n` +
-        `Ketiga lokasi kampus tersebut melayani konsultasi akademik, layanan mahasiswa, serta pendaftaran mahasiswa baru (PMB). Silakan tanyakan jika Kakak membutuhkan panduan rute atau informasi lebih lanjut!`;
+      `1. **Kampus Renon (Kampus Pusat)**:\n` +
+      `   Jl. Raya Puputan No. 86, Renon, Denpasar, Bali.\n\n` +
+      `2. **Kampus Jimbaran**:\n` +
+      `   Jl. Raya Kampus Udayana No. 8, Jimbaran, Kuta Selatan, Badung, Bali.\n\n` +
+      `3. **Kampus Abiansemal**:\n` +
+      `   Jl. Jenderal Sudirman, Blahkiuh, Abiansemal, Badung, Bali.\n\n` +
+      `Ketiga lokasi kampus tersebut melayani konsultasi akademik, layanan mahasiswa, serta pendaftaran mahasiswa baru (PMB). Silakan tanyakan jika Kakak membutuhkan panduan rute atau informasi lebih lanjut!`;
     return appendMissingAspectNote(campusLocationAnswer);
   }
 
@@ -833,32 +837,32 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
   const isCurrentEnrollmentStatus = semanticFrame.intent === 'CURRENT_ENROLLMENT_STATUS' ||
     semanticFrame.intent === 'ADMISSION_SCHEDULE' ||
     (/\b(?:sekarang\s+buka\s+gelombang|gelombang\s+berapa\s+(?:sekarang|saat\s*ini)|apakah\s+(?:sekarang|saat\s*ini)\s+buka\s+gelombang|status\s+gelombang|jadwal\s+pendaftaran|kapan\s+pendaftaran)\b/i.test(rawQuery) &&
-     !/\b(syarat|persyaratan|dokumen|cara\s+daftar|biaya)\b/i.test(rawQuery));
+      !/\b(syarat|persyaratan|dokumen|cara\s+daftar|biaya)\b/i.test(rawQuery));
 
   if (isCurrentEnrollmentStatus) {
     const isEn = userLang === 'en';
     const scheduleAnswer = isEn
       ? `Regarding the admission schedule and waves for Academic Year ${academicYearLabel} at ITB STIKOM Bali:\n\n` +
-        `New student registration (PMB) is conducted in multiple waves (following the official calendar stages: Registration, Testing, Announcement, and Re-registration) across all study programs (S1, D3, S2, and Dual Degree).\n\n` +
-        `To ensure you have the most up-to-date and verified active wave dates and deadlines for Academic Year ${academicYearLabel} without discrepancies, please check the official PMB portal or reach out directly to the admissions team:\n` +
-        `🌐 **Official PMB Portal**: https://pmb.stikom-bali.ac.id\n` +
-        `📞 **Admissions Office**: (0361) 244445\n` +
-        `🏢 **PMB Service Room**: ITB STIKOM Bali Main Campus (Jl. Raya Puputan No. 86, Renon, Denpasar)\n\n` +
-        `_Note: Exact calendar deadline dates per wave for Academic Year ${academicYearLabel} are published and updated live on the official PMB portal._`
+      `New student registration (PMB) is conducted in multiple waves (following the official calendar stages: Registration, Testing, Announcement, and Re-registration) across all study programs (S1, D3, S2, and Dual Degree).\n\n` +
+      `To ensure you have the most up-to-date and verified active wave dates and deadlines for Academic Year ${academicYearLabel} without discrepancies, please check the official PMB portal or reach out directly to the admissions team:\n` +
+      `🌐 **Official PMB Portal**: https://pmb.stikom-bali.ac.id\n` +
+      `📞 **Admissions Office**: (0361) 244445\n` +
+      `🏢 **PMB Service Room**: ITB STIKOM Bali Main Campus (Jl. Raya Puputan No. 86, Renon, Denpasar)\n\n` +
+      `_Note: Exact calendar deadline dates per wave for Academic Year ${academicYearLabel} are published and updated live on the official PMB portal._`
       : `Mengenai informasi jadwal pendaftaran Penerimaan Mahasiswa Baru (PMB) Tahun Akademik ${academicYearLabel} di ITB STIKOM Bali:\n\n` +
-        `Pendaftaran mahasiswa baru dibuka secara bertahap melalui beberapa periode gelombang (sesuai tahapan kalender resmi PMB: Masa Pendaftaran, Testing, Pengumuman, dan Masa Registrasi Ulang) untuk seluruh jenjang program studi (S1, D3, S2, dan Dual Degree).\n\n` +
-        `Untuk memastikan rincian tanggal kalender pasti pembukaan dan penutupan tiap gelombang TA ${academicYearLabel} secara teraktual tanpa kekeliruan data, calon mahasiswa disarankan memeriksa langsung kanal resmi PMB:\n` +
-        `🌐 **Portal Resmi PMB**: https://pmb.stikom-bali.ac.id\n` +
-        `📞 **Layanan Telepon PMB**: (0361) 244445\n` +
-        `🏢 **Ruang Layanan PMB**: Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n\n` +
-        `_Catatan: Rincian tanggal pasti pembukaan dan penutupan tiap gelombang PMB TA ${academicYearLabel} diperbarui berkala pada portal resmi PMB di atas._`;
+      `Pendaftaran mahasiswa baru dibuka secara bertahap melalui beberapa periode gelombang (sesuai tahapan kalender resmi PMB: Masa Pendaftaran, Testing, Pengumuman, dan Masa Registrasi Ulang) untuk seluruh jenjang program studi (S1, D3, S2, dan Dual Degree).\n\n` +
+      `Untuk memastikan rincian tanggal kalender pasti pembukaan dan penutupan tiap gelombang TA ${academicYearLabel} secara teraktual tanpa kekeliruan data, calon mahasiswa disarankan memeriksa langsung kanal resmi PMB:\n` +
+      `🌐 **Portal Resmi PMB**: https://pmb.stikom-bali.ac.id\n` +
+      `📞 **Layanan Telepon PMB**: (0361) 244445\n` +
+      `🏢 **Ruang Layanan PMB**: Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n\n` +
+      `_Catatan: Rincian tanggal pasti pembukaan dan penutupan tiap gelombang PMB TA ${academicYearLabel} diperbarui berkala pada portal resmi PMB di atas._`;
     return appendMissingAspectNote(scheduleAnswer);
   }
 
   // Institutional Academic Event (Wisuda / Yudisium) Inquiry
   if (semanticFrame.domain === 'ACADEMIC_EVENT' ||
-      semanticFrame.intent === 'GRADUATION_INQUIRY' ||
-      /\b(?:wisuda|yudisium)\b/i.test(rawQuery)) {
+    semanticFrame.intent === 'GRADUATION_INQUIRY' ||
+    /\b(?:wisuda|yudisium)\b/i.test(rawQuery)) {
     const isYudisium = /\byudisium\b/i.test(rawQuery);
     const eventName = isYudisium ? 'Yudisium' : 'Wisuda';
     const isRegistrationInquiry = /\b(?:daftar|mendaftar|pendaftaran|syarat|persyaratan|alur|prosedur|berkas)\b/i.test(rawQuery);
@@ -866,37 +870,37 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
     if (isRegistrationInquiry) {
       const regAnswer = userLang === 'en'
         ? `Regarding the registration procedure and requirements for ${eventName} at ITB STIKOM Bali:\n\n` +
-          `Based on the official BAAK announcement (Pengumuman Pendaftaran & Pelaksanaan Yudisium I Wisuda XXXVIII):\n` +
-          `1. Prerequisites:\n` +
-          `   - Successfully passed the Final Project defense (Sidang Tugas Akhir / Proyek Akhir).\n` +
-          `   - Enrolled in the Final Project course on the relevant semester KRS.\n` +
-          `   - Registered on the national higher education database PDDIKTI (https://pddikti.kemdikbud.go.id).\n` +
-          `   - Completed all mandatory and elective curriculum courses (maximum 8 credits of D grade, minimum C grade for core general courses, and minimum GPA/IPK of 2.50).\n` +
-          `2. Registration Steps:\n` +
-          `   - Fill out the Yudisium registration form, update student profile, and upload required documents via the official portal: https://yudisium.stikom-bali.ac.id/login.\n` +
-          `   - Submit the printed registration form and official photos to Loket Akademik.\n\n` +
-          `Official tuition regulations (SK No. 629/ITBSTIKOM/WDS/X/25) state that certification, yudisium, and graduation fees are determined separately. For the active registration window and announcements, students should check the yudisium portal or visit Loket Akademik BAAK directly.`
+        `Based on the official BAAK announcement (Pengumuman Pendaftaran & Pelaksanaan Yudisium I Wisuda XXXVIII):\n` +
+        `1. Prerequisites:\n` +
+        `   - Successfully passed the Final Project defense (Sidang Tugas Akhir / Proyek Akhir).\n` +
+        `   - Enrolled in the Final Project course on the relevant semester KRS.\n` +
+        `   - Registered on the national higher education database PDDIKTI (https://pddikti.kemdikbud.go.id).\n` +
+        `   - Completed all mandatory and elective curriculum courses (maximum 8 credits of D grade, minimum C grade for core general courses, and minimum GPA/IPK of 2.50).\n` +
+        `2. Registration Steps:\n` +
+        `   - Fill out the Yudisium registration form, update student profile, and upload required documents via the official portal: https://yudisium.stikom-bali.ac.id/login.\n` +
+        `   - Submit the printed registration form and official photos to Loket Akademik.\n\n` +
+        `Official tuition regulations (SK No. 629/ITBSTIKOM/WDS/X/25) state that certification, yudisium, and graduation fees are determined separately. For the active registration window and announcements, students should check the yudisium portal or visit Loket Akademik BAAK directly.`
         : `Mengenai prosedur dan persyaratan pendaftaran ${eventName} di ITB STIKOM Bali:\n\n` +
-          `Berdasarkan dokumen resmi BAAK (Pengumuman Pendaftaran & Pelaksanaan Yudisium I Wisuda XXXVIII):\n` +
-          `1. Persyaratan Akademik Kelulusan:\n` +
-          `   - Telah dinyatakan lulus dalam sidang Tugas Akhir / Proyek Akhir.\n` +
-          `   - Telah menempuh matakuliah Tugas Akhir / Proyek Akhir pada KRS semester terkait.\n` +
-          `   - Terdaftar aktif pada pangkalan data PDDIKTI (https://pddikti.kemdikbud.go.id).\n` +
-          `   - Telah menempuh dan lulus seluruh mata kuliah kurikulum dengan total nilai D tidak melebihi 8 SKS, nilai mata kuliah Pancasila, Kewarganegaraan, Agama, dan Bahasa Indonesia minimal C, serta IPK minimal 2,50.\n` +
-          `2. Alur Pendaftaran:\n` +
-          `   - Mengisi formulir pendaftaran, memperbarui biodata, dan mengunggah berkas pada laman resmi Yudisium: https://yudisium.stikom-bali.ac.id/login.\n` +
-          `   - Menyerahkan formulir pendaftaran beserta pas foto cetak resmi ke Loket Akademik ITB STIKOM Bali.\n\n` +
-          `Catatan: Berdasarkan SK Tarif Biaya Pendidikan No. 629/ITBSTIKOM/WDS/X/25, biaya sertifikasi, yudisium, dan wisuda ditentukan kemudian secara terpisah. Untuk jadwal pembukaan pendaftaran periode aktif, mahasiswa dapat mengakses portal yudisium resmi atau berkonsultasi ke Loket Akademik BAAK.`;
+        `Berdasarkan dokumen resmi BAAK (Pengumuman Pendaftaran & Pelaksanaan Yudisium I Wisuda XXXVIII):\n` +
+        `1. Persyaratan Akademik Kelulusan:\n` +
+        `   - Telah dinyatakan lulus dalam sidang Tugas Akhir / Proyek Akhir.\n` +
+        `   - Telah menempuh matakuliah Tugas Akhir / Proyek Akhir pada KRS semester terkait.\n` +
+        `   - Terdaftar aktif pada pangkalan data PDDIKTI (https://pddikti.kemdikbud.go.id).\n` +
+        `   - Telah menempuh dan lulus seluruh mata kuliah kurikulum dengan total nilai D tidak melebihi 8 SKS, nilai mata kuliah Pancasila, Kewarganegaraan, Agama, dan Bahasa Indonesia minimal C, serta IPK minimal 2,50.\n` +
+        `2. Alur Pendaftaran:\n` +
+        `   - Mengisi formulir pendaftaran, memperbarui biodata, dan mengunggah berkas pada laman resmi Yudisium: https://yudisium.stikom-bali.ac.id/login.\n` +
+        `   - Menyerahkan formulir pendaftaran beserta pas foto cetak resmi ke Loket Akademik ITB STIKOM Bali.\n\n` +
+        `Catatan: Berdasarkan SK Tarif Biaya Pendidikan No. 629/ITBSTIKOM/WDS/X/25, biaya sertifikasi, yudisium, dan wisuda ditentukan kemudian secara terpisah. Untuk jadwal pembukaan pendaftaran periode aktif, mahasiswa dapat mengakses portal yudisium resmi atau berkonsultasi ke Loket Akademik BAAK.`;
       return appendMissingAspectNote(regAnswer);
     }
 
     const academicEventAnswer = userLang === 'en'
       ? `Regarding the schedule and date for ${eventName} at ITB STIKOM Bali:\n\n` +
-        `The exact calendar date for the graduation ceremony is not recorded in the official documents currently available in the system. The official BAAK documents (Pengumuman No. 047/DIRAKA/WRI/ITBSTIKOM/VII/26) specify the schedule for Yudisium leading to Wisuda XXXVIII, while the ceremony date itself is announced separately via BAAK circulars.\n\n` +
-        `Additionally, the official tuition decree (SK No. 629/ITBSTIKOM/WDS/X/25) specifies that certification, yudisium, and graduation fees are determined separately. Students are advised to monitor official announcements from BAAK or visit Loket Akademik for the confirmed graduation ceremony schedule.`
+      `The exact calendar date for the graduation ceremony is not recorded in the official documents currently available in the system. The official BAAK documents (Pengumuman No. 047/DIRAKA/WRI/ITBSTIKOM/VII/26) specify the schedule for Yudisium leading to Wisuda XXXVIII, while the ceremony date itself is announced separately via BAAK circulars.\n\n` +
+      `Additionally, the official tuition decree (SK No. 629/ITBSTIKOM/WDS/X/25) specifies that certification, yudisium, and graduation fees are determined separately. Students are advised to monitor official announcements from BAAK or visit Loket Akademik for the confirmed graduation ceremony schedule.`
       : `Mengenai tanggal dan jadwal pelaksanaan ${eventName} di ITB STIKOM Bali:\n\n` +
-        `Tanggal pasti pelaksanaan upacara wisuda belum tercantum dalam dokumen resmi yang tersedia di sistem saat ini. Dokumen resmi BAAK yang tersedia (Pengumuman No. 047/DIRAKA/WRI/ITBSTIKOM/VII/26) mengatur jadwal pelaksanaan Yudisium menuju periode Wisuda XXXVIII, sedangkan tanggal pelaksanaan upacara wisuda diumumkan melalui surat edaran tersendiri.\n\n` +
-        `Selain itu, dokumen resmi SK Tarif Biaya Pendidikan No. 629/ITBSTIKOM/WDS/X/25 mencatat bahwa biaya sertifikasi, yudisium, dan wisuda akan ditentukan kemudian secara terpisah. Untuk memastikan tanggal resmi upacara wisuda periode terdekat, mahasiswa disarankan memantau pengumuman resmi berkala dari BAAK atau menghubungi Loket Akademik ITB STIKOM Bali.`;
+      `Tanggal pasti pelaksanaan upacara wisuda belum tercantum dalam dokumen resmi yang tersedia di sistem saat ini. Dokumen resmi BAAK yang tersedia (Pengumuman No. 047/DIRAKA/WRI/ITBSTIKOM/VII/26) mengatur jadwal pelaksanaan Yudisium menuju periode Wisuda XXXVIII, sedangkan tanggal pelaksanaan upacara wisuda diumumkan melalui surat edaran tersendiri.\n\n` +
+      `Selain itu, dokumen resmi SK Tarif Biaya Pendidikan No. 629/ITBSTIKOM/WDS/X/25 mencatat bahwa biaya sertifikasi, yudisium, dan wisuda akan ditentukan kemudian secara terpisah. Untuk memastikan tanggal resmi upacara wisuda periode terdekat, mahasiswa disarankan memantau pengumuman resmi berkala dari BAAK atau menghubungi Loket Akademik ITB STIKOM Bali.`;
     return appendMissingAspectNote(academicEventAnswer);
   }
 
@@ -1164,45 +1168,45 @@ Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per pro
     if (hasGeneralFacilityFocus && accepted.length > 0) {
       const facilityFullAnswer = userLang === 'en'
         ? `Official campus facilities and student development units at ITB STIKOM Bali include:\n\n` +
-          `1. **Laboratories & Practical Learning Facilities**:\n` +
-          `   • Hardware & IoT Laboratory (Embedded Systems, Robotics)\n` +
-          `   • Networking & Computer Systems Laboratory\n` +
-          `   • Database Systems Laboratory\n` +
-          `   • Business Intelligence Laboratory\n` +
-          `   • Mobile Technology Laboratory\n` +
-          `   • Multimedia & Editing Studio, Representative Classrooms, and Digital Library\n\n` +
-          `2. **Student Service Centers & Incubation**:\n` +
-          `   • **Inkubator Bisnis (INBIS)**: Business mentoring, prototyping, and startup coworking space\n` +
-          `   • **Career Development Center (CDC)**: Career guidance, internships, and job placement\n` +
-          `   • **Language Learning Center (LLC)**: Foreign language laboratory and training\n` +
-          `   • **Soft Skills Development Program**\n` +
-          `   • Over **30 Student Activity Units (UKM)**\n\n` +
-          `3. **International & Career Advancement Programs**:\n` +
-          `   • Study & Work Abroad Programs\n` +
-          `   • National & International Double Degree Programs\n` +
-          `   • Hi-Think Program (IT Career Preparation in Japan) and GCCP Short Course Abroad\n` +
-          `   • Paid Overseas Internships and 2-Year Post-Graduation Career Consultation`
+        `1. **Laboratories & Practical Learning Facilities**:\n` +
+        `   • Hardware & IoT Laboratory (Embedded Systems, Robotics)\n` +
+        `   • Networking & Computer Systems Laboratory\n` +
+        `   • Database Systems Laboratory\n` +
+        `   • Business Intelligence Laboratory\n` +
+        `   • Mobile Technology Laboratory\n` +
+        `   • Multimedia & Editing Studio, Representative Classrooms, and Digital Library\n\n` +
+        `2. **Student Service Centers & Incubation**:\n` +
+        `   • **Inkubator Bisnis (INBIS)**: Business mentoring, prototyping, and startup coworking space\n` +
+        `   • **Career Development Center (CDC)**: Career guidance, internships, and job placement\n` +
+        `   • **Language Learning Center (LLC)**: Foreign language laboratory and training\n` +
+        `   • **Soft Skills Development Program**\n` +
+        `   • Over **30 Student Activity Units (UKM)**\n\n` +
+        `3. **International & Career Advancement Programs**:\n` +
+        `   • Study & Work Abroad Programs\n` +
+        `   • National & International Double Degree Programs\n` +
+        `   • Hi-Think Program (IT Career Preparation in Japan) and GCCP Short Course Abroad\n` +
+        `   • Paid Overseas Internships and 2-Year Post-Graduation Career Consultation`
         : `Fasilitas resmi penunjang perkuliahan dan pengembangan mahasiswa di ITB STIKOM Bali meliputi:\n\n` +
-          `1. **Laboratorium & Sarana Praktikum**:\n` +
-          `   • Laboratorium Hardware (fokus pada Embedded System, Robotika, dan Internet of Things/IoT)\n` +
-          `   • Laboratorium Networking & Jaringan Komputer\n` +
-          `   • Laboratorium Database & Sistem Basis Data\n` +
-          `   • Laboratorium Business Intelligence\n` +
-          `   • Laboratorium Mobile Technology\n` +
-          `   • Studio Multimedia & Editing, Ruang Kelas representatif, dan Perpustakaan Digital\n\n` +
-          `2. **Pusat Layanan Mahasiswa & Inkubasi**:\n` +
-          `   • **Inkubator Bisnis (INBIS)**: Pembinaan, pendampingan, dan fasilitas ruang kerja (*coworking space*) untuk pengembangan startup/wirausaha mahasiswa\n` +
-          `   • **Career Development Center (CDC)**: Pusat layanan bimbingan karir, magang kerja, dan bursa kerja mahasiswa/alumni\n` +
-          `   • **Language Learning Center (LLC)**: Laboratorium dan pusat pelatihan kemahiran bahasa asing mahasiswa\n` +
-          `   • **Program Pengembangan Softskill & Karakter**\n` +
-          `   • Lebih dari **30 Unit Kegiatan Mahasiswa (UKM)** untuk minat, bakat, dan penalaran\n\n` +
-          `3. **Program Keunggulan Penunjang Akademik & Karir**:\n` +
-          `   • Program Kuliah Sambil Kerja di Luar Negeri\n` +
-          `   • Program Double Degree Nasional & Internasional (Malaysia, China, dll.)\n` +
-          `   • Program Hi-Think (Persiapan Kerja Bidang TI di Jepang)\n` +
-          `   • Program GCCP (Short Course di Luar Negeri)\n` +
-          `   • Program Magang Berbayar di Luar Negeri\n` +
-          `   • Layanan Konsultasi selama 2 tahun setelah kelulusan`;
+        `1. **Laboratorium & Sarana Praktikum**:\n` +
+        `   • Laboratorium Hardware (fokus pada Embedded System, Robotika, dan Internet of Things/IoT)\n` +
+        `   • Laboratorium Networking & Jaringan Komputer\n` +
+        `   • Laboratorium Database & Sistem Basis Data\n` +
+        `   • Laboratorium Business Intelligence\n` +
+        `   • Laboratorium Mobile Technology\n` +
+        `   • Studio Multimedia & Editing, Ruang Kelas representatif, dan Perpustakaan Digital\n\n` +
+        `2. **Pusat Layanan Mahasiswa & Inkubasi**:\n` +
+        `   • **Inkubator Bisnis (INBIS)**: Pembinaan, pendampingan, dan fasilitas ruang kerja (*coworking space*) untuk pengembangan startup/wirausaha mahasiswa\n` +
+        `   • **Career Development Center (CDC)**: Pusat layanan bimbingan karir, magang kerja, dan bursa kerja mahasiswa/alumni\n` +
+        `   • **Language Learning Center (LLC)**: Laboratorium dan pusat pelatihan kemahiran bahasa asing mahasiswa\n` +
+        `   • **Program Pengembangan Softskill & Karakter**\n` +
+        `   • Lebih dari **30 Unit Kegiatan Mahasiswa (UKM)** untuk minat, bakat, dan penalaran\n\n` +
+        `3. **Program Keunggulan Penunjang Akademik & Karir**:\n` +
+        `   • Program Kuliah Sambil Kerja di Luar Negeri\n` +
+        `   • Program Double Degree Nasional & Internasional (Malaysia, China, dll.)\n` +
+        `   • Program Hi-Think (Persiapan Kerja Bidang TI di Jepang)\n` +
+        `   • Program GCCP (Short Course di Luar Negeri)\n` +
+        `   • Program Magang Berbayar di Luar Negeri\n` +
+        `   • Layanan Konsultasi selama 2 tahun setelah kelulusan`;
       return appendMissingAspectNote(facilityFullAnswer);
     }
   }
@@ -1365,7 +1369,7 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
       const off = (meta.officialName || '').toLowerCase();
       const short = key.toLowerCase();
       if (candidateEntities.some(ce => ce.includes(short) || ce.includes(off)) ||
-          rawQuery.toLowerCase().includes(short) || rawQuery.toLowerCase().includes(off)) {
+        rawQuery.toLowerCase().includes(short) || rawQuery.toLowerCase().includes(off)) {
         matchedOrgKey = key;
         matchedOrgMeta = meta;
         break;
@@ -1924,8 +1928,8 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
           const sf = (c.source_file || '').toLowerCase();
           const ce = (c.contextEntities || []).map(x => x.toLowerCase());
           return t.includes(ent.toLowerCase()) ||
-                 sf.includes(entBase) ||
-                 ce.includes(ent.toLowerCase());
+            sf.includes(entBase) ||
+            ce.includes(ent.toLowerCase());
         });
         const entText = entChunks.map(c => c.text).join('\n\n');
         const lines = extractFeeForEntity(entText);
@@ -2381,7 +2385,7 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
     if (isDegreeSpecific || isDurationSpecific) {
       const degree = extractDegreeFromEvidence(accepted) ||
         (entityLabel.startsWith('S1') ? (/Bisnis Digital/i.test(entityLabel) ? 'Sarjana Bisnis (S.Bns.)' : 'Sarjana Komputer (S.Kom.)') :
-        (entityLabel.startsWith('D3') ? 'Ahli Madya Komputer (A.Md.Kom.)' : 'Magister Komputer (M.Kom.)'));
+          (entityLabel.startsWith('D3') ? 'Ahli Madya Komputer (A.Md.Kom.)' : 'Magister Komputer (M.Kom.)'));
       const duration = extractDurationFromEvidence(accepted) ||
         (entityLabel.startsWith('D3') ? (userLang === 'en' ? '6 semesters (3 years)' : '6 semester (3 tahun)') : (entityLabel.startsWith('S2') ? (userLang === 'en' ? '4 semesters (2 years)' : '4 semester (2 tahun)') : (userLang === 'en' ? '8 semesters (4 years)' : '8 semester (4 tahun)')));
 
@@ -2635,7 +2639,7 @@ function extractProgramProfile(ent, acceptedChunks, allTargetEntities = []) {
           }
         }
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   for (const chunk of chunksToScan) {
@@ -2821,7 +2825,7 @@ function buildProgramComparisonAnswer(semanticFrame, evidenceList = [], arbitrat
   const diffLines = [isEn ? '**Key Differences:**' : '**Perbedaan Utama:**'];
 
   const isSiTi = profiles.some(p => /sistem\s+informasi/i.test(p.baseName)) &&
-                 profiles.some(p => /teknologi\s+informasi/i.test(p.baseName));
+    profiles.some(p => /teknologi\s+informasi/i.test(p.baseName));
 
   if (isSiTi) {
     if (isEn) {
@@ -2943,11 +2947,11 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       .join('\n');
     const clarificationAnswer = userLang === 'en'
       ? (optionsList
-          ? `To provide accurate information, could you please clarify which study program or degree level you are inquiring about?\n\n${optionsList}\n\nPlease let us know your choice.`
-          : 'To provide accurate information, could you please clarify which study program or degree level you are inquiring about?')
+        ? `To provide accurate information, could you please clarify which study program or degree level you are inquiring about?\n\n${optionsList}\n\nPlease let us know your choice.`
+        : 'To provide accurate information, could you please clarify which study program or degree level you are inquiring about?')
       : (optionsList
-          ? `Agar informasinya lebih tepat, boleh tahu program studi atau jenjang mana yang Kakak maksud?\n\n${optionsList}\n\nSilakan sebutkan salah satu pilihan di atas ya.`
-          : (semanticFrame.clarificationMessage || arbitratedEvidence.clarificationMessage || 'Agar kami bisa memberikan jawaban yang tepat, boleh diperjelas program studi atau jenjang yang ingin Kakak tanyakan?'));
+        ? `Agar informasinya lebih tepat, boleh tahu program studi atau jenjang mana yang Kakak maksud?\n\n${optionsList}\n\nSilakan sebutkan salah satu pilihan di atas ya.`
+        : (semanticFrame.clarificationMessage || arbitratedEvidence.clarificationMessage || 'Agar kami bisa memberikan jawaban yang tepat, boleh diperjelas program studi atau jenjang yang ingin Kakak tanyakan?'));
     return {
       success: true,
       answer: clarificationAnswer,
@@ -3014,8 +3018,8 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       const guidanceText = (userLang === 'en' && arbitratedEvidence.guidance && !/mohon maaf/i.test(arbitratedEvidence.guidance) && !/belum tercantum/i.test(arbitratedEvidence.guidance))
         ? arbitratedEvidence.guidance
         : (userLang === 'en'
-            ? 'I apologize, but information regarding this is currently not listed in the available official guide. Please contact campus admissions directly for confirmation.'
-            : (arbitratedEvidence.guidance || 'Mohon maaf Kak, informasi mengenai hal tersebut saat ini belum tercantum dalam panduan resmi yang tersedia. Silakan hubungi bagian admisi kampus untuk konfirmasi langsung ya.'));
+          ? 'I apologize, but information regarding this is currently not listed in the available official guide. Please contact campus admissions directly for confirmation.'
+          : (arbitratedEvidence.guidance || 'Mohon maaf Kak, informasi mengenai hal tersebut saat ini belum tercantum dalam panduan resmi yang tersedia. Silakan hubungi bagian admisi kampus untuk konfirmasi langsung ya.'));
       return {
         success: true,
         answer: guidanceText,
@@ -3082,8 +3086,8 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp', 'installment_procedure', 'payment_schedule'].includes(a))) ||
     /\b(?:biaya|spp|dpp|uang kuliah|uang gedung|rincian biaya|cicil|cicilan|angsuran)\b/i.test(semanticFrame.rawQuery || '')
   ) &&
-  !arbitratedEvidence.unsupportedEntity &&
-  semanticFrame.domain !== 'UNSUPPORTED_PROGRAM';
+    !arbitratedEvidence.unsupportedEntity &&
+    semanticFrame.domain !== 'UNSUPPORTED_PROGRAM';
 
   if (isFeeInquiry) {
     const feeRes = generateFeeAnswer(semanticFrame.rawQuery || '', arbitratedEvidence.sessionData || {}, {
@@ -3643,29 +3647,29 @@ function buildDiscountStackingAnswer(semanticFrame = null) {
 
   const answer = isEn
     ? 'Regarding the combination of intake wave tuition discounts and scholarships at ITB STIKOM Bali:\n\n' +
-      '1. **Wave-based Base Tuition (DPP) Reductions**:\n' +
-      '   Official admissions decrees (SK PMB) specify base tuition fee (DPP) reductions depending on the intake wave (such as Gelombang Khusus, Gelombang I, etc.).\n\n' +
-      '2. **Additional 60% Scholarship**:\n' +
-      `   The additional 60% scholarship is specifically designated for graduates of SMK TI Bali Global and SMK Pandawa Bali Global${programContextEn}.\n\n` +
-      '3. **Combination / Stacking Rules (SOURCE_GAP)**:\n' +
-      '   The official SK PMB documents available do not specify whether wave-based DPP nominal discounts can be stacked/combined with the 60% additional scholarship, nor do they state an explicit exclusion clause.\n\n' +
-      'Therefore, the system cannot verify whether the combination is permitted and does not calculate combined nominal totals. For authoritative verification and final payment calculations, please consult the Admissions and Finance Office of PMB ITB STIKOM Bali directly:\n' +
-      '🌐 **Official PMB Portal**: https://pmb.stikom-bali.ac.id\n' +
-      '📞 **Admissions Office**: (0361) 244445\n' +
-      '🏢 **PMB Service Room**: Main Campus (Jl. Raya Puputan No. 86, Renon, Denpasar)' +
-      clarificationPromptEn
+    '1. **Wave-based Base Tuition (DPP) Reductions**:\n' +
+    '   Official admissions decrees (SK PMB) specify base tuition fee (DPP) reductions depending on the intake wave (such as Gelombang Khusus, Gelombang I, etc.).\n\n' +
+    '2. **Additional 60% Scholarship**:\n' +
+    `   The additional 60% scholarship is specifically designated for graduates of SMK TI Bali Global and SMK Pandawa Bali Global${programContextEn}.\n\n` +
+    '3. **Combination / Stacking Rules (SOURCE_GAP)**:\n' +
+    '   The official SK PMB documents available do not specify whether wave-based DPP nominal discounts can be stacked/combined with the 60% additional scholarship, nor do they state an explicit exclusion clause.\n\n' +
+    'Therefore, the system cannot verify whether the combination is permitted and does not calculate combined nominal totals. For authoritative verification and final payment calculations, please consult the Admissions and Finance Office of PMB ITB STIKOM Bali directly:\n' +
+    '🌐 **Official PMB Portal**: https://pmb.stikom-bali.ac.id\n' +
+    '📞 **Admissions Office**: (0361) 244445\n' +
+    '🏢 **PMB Service Room**: Main Campus (Jl. Raya Puputan No. 86, Renon, Denpasar)' +
+    clarificationPromptEn
     : 'Mengenai ketentuan penggabungan potongan biaya kuliah dan beasiswa di ITB STIKOM Bali:\n\n' +
-      '1. **Potongan Nominal DPP per Gelombang**:\n' +
-      '   Dokumen resmi (SK PMB) menetapkan potongan Dana Pendidikan Pokok (DPP) sesuai gelombang pendaftaran (misalnya Gelombang Khusus, Gelombang I, dst.).\n\n' +
-      '2. **Tambahan Beasiswa 60%**:\n' +
-      `   Tambahan beasiswa sebesar 60% tercantum secara khusus bagi lulusan SMK TI Bali Global dan SMK Pandawa Bali Global${programContextId}.\n\n` +
-      '3. **Ketentuan Penggabungan (SOURCE_GAP)**:\n' +
-      '   SK PMB yang tersedia saat ini tidak memuat aturan eksplisit mengenai apakah potongan nominal DPP per gelombang dapat diakumulasikan/digabung dengan beasiswa tambahan 60%, ataupun klausul yang secara tegas melarangnya.\n\n' +
-      'Oleh karena itu, sistem menyatakan langsung bahwa ketentuan penggabungan kedua potongan tersebut belum terverifikasi secara resmi, dan sistem tidak menyimpulkan boleh atau tidak boleh serta tidak menghitung akumulasi nominalnya. Untuk kepastian aturan penggabungan dan simulasi pembayaran final, silakan konfirmasi langsung ke bagian Admisi dan Keuangan PMB ITB STIKOM Bali:\n' +
-      '🌐 **Portal Resmi PMB**: https://pmb.stikom-bali.ac.id\n' +
-      '📞 **Layanan Telepon PMB**: (0361) 244445\n' +
-      '🏢 **Ruang Layanan PMB**: Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)' +
-      clarificationPromptId;
+    '1. **Potongan Nominal DPP per Gelombang**:\n' +
+    '   Dokumen resmi (SK PMB) menetapkan potongan Dana Pendidikan Pokok (DPP) sesuai gelombang pendaftaran (misalnya Gelombang Khusus, Gelombang I, dst.).\n\n' +
+    '2. **Tambahan Beasiswa 60%**:\n' +
+    `   Tambahan beasiswa sebesar 60% tercantum secara khusus bagi lulusan SMK TI Bali Global dan SMK Pandawa Bali Global${programContextId}.\n\n` +
+    '3. **Ketentuan Penggabungan (SOURCE_GAP)**:\n' +
+    '   SK PMB yang tersedia saat ini tidak memuat aturan eksplisit mengenai apakah potongan nominal DPP per gelombang dapat diakumulasikan/digabung dengan beasiswa tambahan 60%, ataupun klausul yang secara tegas melarangnya.\n\n' +
+    'Oleh karena itu, sistem menyatakan langsung bahwa ketentuan penggabungan kedua potongan tersebut belum terverifikasi secara resmi, dan sistem tidak menyimpulkan boleh atau tidak boleh serta tidak menghitung akumulasi nominalnya. Untuk kepastian aturan penggabungan dan simulasi pembayaran final, silakan konfirmasi langsung ke bagian Admisi dan Keuangan PMB ITB STIKOM Bali:\n' +
+    '🌐 **Portal Resmi PMB**: https://pmb.stikom-bali.ac.id\n' +
+    '📞 **Layanan Telepon PMB**: (0361) 244445\n' +
+    '🏢 **Ruang Layanan PMB**: Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)' +
+    clarificationPromptId;
 
   return {
     success: true,
@@ -3699,33 +3703,33 @@ function buildJobGuaranteeAnswer(semanticFrame = null, evidenceList = []) {
 
   const answer = isEn
     ? 'Regarding employment guarantees for graduates at ITB STIKOM Bali:\n\n' +
-      '1. **Employment Selection Policy**:\n' +
-      '   Official campus guidelines (Career Center FAQ) explicitly state that **the hiring process remains entirely under the authority of the respective company based on their selection results**. Therefore, the campus does not provide an automatic job guarantee or promise immediate employment upon graduation.\n\n' +
-      '2. **Career Center (CDC) Support & Facilitation**:\n' +
-      '   While hiring decisions rest with partner companies, ITB STIKOM Bali actively prepares and facilitates students and alumni entering the professional workforce through:\n' +
-      '   • **Job Vacancy & Recruitment Information**: Regular updates on job openings, direct recruitment, and campus hiring.\n' +
-      '   • **Job Fairs & Career Expos**: Events connecting students and alumni with companies across various industry sectors.\n' +
-      '   • **Internship Programs**: Practical industry internships aligned with curriculum and professional standards.\n' +
-      '   • **Career Preparation Training**: CV drafting, interview coaching, LinkedIn profile optimization, and soft skills workshops.\n' +
-      '   • **Career Consultation**: Personalized guidance on career planning and professional paths.\n\n' +
-      'For official inquiries regarding industry partnerships and recruitment events, please contact the Career Development Center (CDC) of ITB STIKOM Bali:\n' +
-      '🏢 **Office**: Career Development Center (CDC), ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n' +
-      '📞 **Telephone**: (0361) 244445\n' +
-      '🌐 **Official Portal**: https://stikom-bali.ac.id'
+    '1. **Employment Selection Policy**:\n' +
+    '   Official campus guidelines (Career Center FAQ) explicitly state that **the hiring process remains entirely under the authority of the respective company based on their selection results**. Therefore, the campus does not provide an automatic job guarantee or promise immediate employment upon graduation.\n\n' +
+    '2. **Career Center (CDC) Support & Facilitation**:\n' +
+    '   While hiring decisions rest with partner companies, ITB STIKOM Bali actively prepares and facilitates students and alumni entering the professional workforce through:\n' +
+    '   • **Job Vacancy & Recruitment Information**: Regular updates on job openings, direct recruitment, and campus hiring.\n' +
+    '   • **Job Fairs & Career Expos**: Events connecting students and alumni with companies across various industry sectors.\n' +
+    '   • **Internship Programs**: Practical industry internships aligned with curriculum and professional standards.\n' +
+    '   • **Career Preparation Training**: CV drafting, interview coaching, LinkedIn profile optimization, and soft skills workshops.\n' +
+    '   • **Career Consultation**: Personalized guidance on career planning and professional paths.\n\n' +
+    'For official inquiries regarding industry partnerships and recruitment events, please contact the Career Development Center (CDC) of ITB STIKOM Bali:\n' +
+    '🏢 **Office**: Career Development Center (CDC), ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n' +
+    '📞 **Telephone**: (0361) 244445\n' +
+    '🌐 **Official Portal**: https://stikom-bali.ac.id'
     : 'Mengenai jaminan pekerjaan bagi lulusan di ITB STIKOM Bali:\n\n' +
-      '1. **Ketentuan Penerimaan Kerja**:\n' +
-      '   Dokumen resmi kampus (Panduan FAQ Career Center) menegaskan bahwa **proses penerimaan kerja tetap menjadi kewenangan perusahaan berdasarkan hasil seleksi**. Oleh karena itu, kampus tidak memberikan jaminan bahwa lulusan otomatis langsung bekerja tanpa melalui proses seleksi.\n\n' +
-      '2. **Dukungan Fasilitasi Karier oleh Career Center (CDC)**:\n' +
-      '   Meskipun kelulusan seleksi merupakan kewenangan perusahaan mitra, ITB STIKOM Bali secara aktif membantu dan memfasilitasi mahasiswa serta alumni memasuki dunia profesional melalui:\n' +
-      '   • **Informasi Lowongan Kerja & Rekrutmen**: Penyampaian info lowongan kerja berkala, bursa kerja, dan *campus hiring*.\n' +
-      '   • **Job Fair & Expo Karier**: Kegiatan berkala yang mempertemukan mahasiswa dan alumni dengan puluhan perusahaan dari berbagai sektor industri.\n' +
-      '   • **Program Magang Industri**: Fasilitasi magang kerja sesuai kurikulum dan kebutuhan industri sebelum mahasiswa lulus.\n' +
-      '   • **Pelatihan Kesiapan Kerja**: Pembekalan penyusunan CV profesional, teknik wawancara kerja, optimalisasi LinkedIn, dan pelatihan *soft skills*.\n' +
-      '   • **Konsultasi Karier**: Layanan bimbingan perencanaan karier dan pemilihan jalur profesi bagi mahasiswa maupun alumni.\n\n' +
-      'Untuk informasi kemitraan industri dan agenda bursa kerja terdekat, silakan menghubungi kantor Career Center ITB STIKOM Bali:\n' +
-      '🏢 **Ruang Layanan**: Kantor Career Development Center (CDC), Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n' +
-      '📞 **Layanan Telepon**: (0361) 244445\n' +
-      '🌐 **Website Resmi**: https://stikom-bali.ac.id';
+    '1. **Ketentuan Penerimaan Kerja**:\n' +
+    '   Dokumen resmi kampus (Panduan FAQ Career Center) menegaskan bahwa **proses penerimaan kerja tetap menjadi kewenangan perusahaan berdasarkan hasil seleksi**. Oleh karena itu, kampus tidak memberikan jaminan bahwa lulusan otomatis langsung bekerja tanpa melalui proses seleksi.\n\n' +
+    '2. **Dukungan Fasilitasi Karier oleh Career Center (CDC)**:\n' +
+    '   Meskipun kelulusan seleksi merupakan kewenangan perusahaan mitra, ITB STIKOM Bali secara aktif membantu dan memfasilitasi mahasiswa serta alumni memasuki dunia profesional melalui:\n' +
+    '   • **Informasi Lowongan Kerja & Rekrutmen**: Penyampaian info lowongan kerja berkala, bursa kerja, dan *campus hiring*.\n' +
+    '   • **Job Fair & Expo Karier**: Kegiatan berkala yang mempertemukan mahasiswa dan alumni dengan puluhan perusahaan dari berbagai sektor industri.\n' +
+    '   • **Program Magang Industri**: Fasilitasi magang kerja sesuai kurikulum dan kebutuhan industri sebelum mahasiswa lulus.\n' +
+    '   • **Pelatihan Kesiapan Kerja**: Pembekalan penyusunan CV profesional, teknik wawancara kerja, optimalisasi LinkedIn, dan pelatihan *soft skills*.\n' +
+    '   • **Konsultasi Karier**: Layanan bimbingan perencanaan karier dan pemilihan jalur profesi bagi mahasiswa maupun alumni.\n\n' +
+    'Untuk informasi kemitraan industri dan agenda bursa kerja terdekat, silakan menghubungi kantor Career Center ITB STIKOM Bali:\n' +
+    '🏢 **Ruang Layanan**: Kantor Career Development Center (CDC), Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n' +
+    '📞 **Layanan Telepon**: (0361) 244445\n' +
+    '🌐 **Website Resmi**: https://stikom-bali.ac.id';
 
   return {
     success: true,
@@ -3768,134 +3772,134 @@ function buildINBISAnswer(semanticFrame = null, evidenceList = []) {
   if (isP2MW) {
     answer = isEn
       ? 'Regarding the relationship between INBIS and P2MW at ITB STIKOM Bali:\n\n' +
-        '1. **P2MW Mentoring & Facilitation**:\n' +
-        '   The Business Incubator (INBIS) of ITB STIKOM Bali provides structured entrepreneurship mentoring for student teams participating in the **Program Pembinaan Wirausaha Mahasiswa (P2MW)**, guided by INBIS management and industry practitioners since February 2026.\n\n' +
-        '2. **National Selection Achievements**:\n' +
-        '   Three student entrepreneurial teams guided by INBIS successfully passed internal selection and advanced to the **National P2MW Selection**:\n' +
-        '   • **GOWJUS**\n' +
-        '   • **Sehabit**\n' +
-        '   • **Dikerajinin**\n\n' +
-        '3. **Scope & Sustainable Support**:\n' +
-        '   INBIS continues periodic scheduled mentoring sessions covering business ideation, SDGs business concepts, and business proposal finalization.\n\n' +
-        'For further information on entrepreneurship programs:\n' +
-        '🏢 **Office**: INBIS ITB STIKOM Bali, Renon Campus (Jl. Raya Puputan No. 86, Denpasar)\n' +
-        '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
-        '📞 **Phone/WA**: (0361) 244445 / +62 813-3868-6666'
+      '1. **P2MW Mentoring & Facilitation**:\n' +
+      '   The Business Incubator (INBIS) of ITB STIKOM Bali provides structured entrepreneurship mentoring for student teams participating in the **Program Pembinaan Wirausaha Mahasiswa (P2MW)**, guided by INBIS management and industry practitioners since February 2026.\n\n' +
+      '2. **National Selection Achievements**:\n' +
+      '   Three student entrepreneurial teams guided by INBIS successfully passed internal selection and advanced to the **National P2MW Selection**:\n' +
+      '   • **GOWJUS**\n' +
+      '   • **Sehabit**\n' +
+      '   • **Dikerajinin**\n\n' +
+      '3. **Scope & Sustainable Support**:\n' +
+      '   INBIS continues periodic scheduled mentoring sessions covering business ideation, SDGs business concepts, and business proposal finalization.\n\n' +
+      'For further information on entrepreneurship programs:\n' +
+      '🏢 **Office**: INBIS ITB STIKOM Bali, Renon Campus (Jl. Raya Puputan No. 86, Denpasar)\n' +
+      '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+      '📞 **Phone/WA**: (0361) 244445 / +62 813-3868-6666'
       : 'Mengenai hubungan INBIS dengan P2MW di ITB STIKOM Bali:\n\n' +
-        '1. **Pendampingan P2MW oleh INBIS**:\n' +
-        '   Lembaga Inkubator Bisnis (INBIS) ITB STIKOM Bali menyelenggarakan pendampingan terstruktur bagi mahasiswa dalam **Program Pembinaan Wirausaha Mahasiswa (P2MW)**. Pendampingan dilakukan secara berkala sejak Februari 2026 oleh pengelola INBIS bersama para praktisi industri.\n\n' +
-        '2. **Pencapaian Seleksi Nasional**:\n' +
-        '   Sebanyak **3 tim wirausaha mahasiswa binaan INBIS** berhasil lolos seleksi internal dan melaju ke **Seleksi Nasional P2MW**:\n' +
-        '   • **GOWJUS**\n' +
-        '   • **Sehabit**\n' +
-        '   • **Dikerajinin**\n\n' +
-        '3. **Materi Pembinaan**:\n' +
-        '   Pendampingan mencakup *Business Ideation*, konsep bisnis berbasis SDGs, strategi pendanaan, serta penyusunan dan finalisasi proposal usaha mahasiswa.\n\n' +
-        'Informasi lebih lanjut seputar program wirausaha mahasiswa:\n' +
-        '🏢 **Kantor**: INBIS ITB STIKOM Bali, Kampus Renon (Jl. Raya Puputan No. 86, Renon, Denpasar)\n' +
-        '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
-        '📞 **Kontak**: (0361) 244445 / WA: +62 813-3868-6666';
+      '1. **Pendampingan P2MW oleh INBIS**:\n' +
+      '   Lembaga Inkubator Bisnis (INBIS) ITB STIKOM Bali menyelenggarakan pendampingan terstruktur bagi mahasiswa dalam **Program Pembinaan Wirausaha Mahasiswa (P2MW)**. Pendampingan dilakukan secara berkala sejak Februari 2026 oleh pengelola INBIS bersama para praktisi industri.\n\n' +
+      '2. **Pencapaian Seleksi Nasional**:\n' +
+      '   Sebanyak **3 tim wirausaha mahasiswa binaan INBIS** berhasil lolos seleksi internal dan melaju ke **Seleksi Nasional P2MW**:\n' +
+      '   • **GOWJUS**\n' +
+      '   • **Sehabit**\n' +
+      '   • **Dikerajinin**\n\n' +
+      '3. **Materi Pembinaan**:\n' +
+      '   Pendampingan mencakup *Business Ideation*, konsep bisnis berbasis SDGs, strategi pendanaan, serta penyusunan dan finalisasi proposal usaha mahasiswa.\n\n' +
+      'Informasi lebih lanjut seputar program wirausaha mahasiswa:\n' +
+      '🏢 **Kantor**: INBIS ITB STIKOM Bali, Kampus Renon (Jl. Raya Puputan No. 86, Renon, Denpasar)\n' +
+      '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+      '📞 **Kontak**: (0361) 244445 / WA: +62 813-3868-6666';
   } else if (isTenant) {
     answer = isEn
       ? 'Programs available for tenants at INBIS ITB STIKOM Bali follow the **Start-Learn-Growth** incubation framework:\n\n' +
-        '1. **Pre-Incubation (Pra-Inkubasi)**:\n' +
-        '   • Basic entrepreneurship training\n' +
-        '   • Business ideation & concept development\n' +
-        '   • Business Model Canvas (BMC) & business plan drafting\n' +
-        '   • Workshops, seminars, and business simulations\n\n' +
-        '2. **Incubation (Inkubasi)**:\n' +
-        '   • Structured incubation via P2KI (Program Pendampingan Kewirausahaan Inkubator)\n' +
-        '   • Intensive mentoring from >20 academic mentors and >17 industry mentors\n' +
-        '   • Workspace facilities (coworking space, meeting rooms, high-speed internet)\n' +
-        '   • Business legality assistance (forming legal entities / PT / CV)\n' +
-        '   • Funding competition facilitation (P2MW, national grants)\n\n' +
-        '3. **Post-Incubation (Pasca-Inkubasi)**:\n' +
-        '   • Market access expansion and commercialization\n' +
-        '   • Networking and business matching with investors, government, and industry associations\n\n' +
-        '🏢 **Office**: INBIS ITB STIKOM Bali, Renon Campus (Jl. Raya Puputan No. 86, Denpasar)\n' +
-        '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
-        '📞 **Phone/WA**: (0361) 244445 / +62 813-3868-6666'
+      '1. **Pre-Incubation (Pra-Inkubasi)**:\n' +
+      '   • Basic entrepreneurship training\n' +
+      '   • Business ideation & concept development\n' +
+      '   • Business Model Canvas (BMC) & business plan drafting\n' +
+      '   • Workshops, seminars, and business simulations\n\n' +
+      '2. **Incubation (Inkubasi)**:\n' +
+      '   • Structured incubation via P2KI (Program Pendampingan Kewirausahaan Inkubator)\n' +
+      '   • Intensive mentoring from >20 academic mentors and >17 industry mentors\n' +
+      '   • Workspace facilities (coworking space, meeting rooms, high-speed internet)\n' +
+      '   • Business legality assistance (forming legal entities / PT / CV)\n' +
+      '   • Funding competition facilitation (P2MW, national grants)\n\n' +
+      '3. **Post-Incubation (Pasca-Inkubasi)**:\n' +
+      '   • Market access expansion and commercialization\n' +
+      '   • Networking and business matching with investors, government, and industry associations\n\n' +
+      '🏢 **Office**: INBIS ITB STIKOM Bali, Renon Campus (Jl. Raya Puputan No. 86, Denpasar)\n' +
+      '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+      '📞 **Phone/WA**: (0361) 244445 / +62 813-3868-6666'
       : 'Program yang tersedia bagi tenant di INBIS ITB STIKOM Bali mengusung konsep tahapan **Start-Learn-Growth**:\n\n' +
-        '1. **Tahap Pra-Inkubasi**:\n' +
-        '   • Pelatihan dasar kewirausahaan\n' +
-        '   • Pengembangan ide bisnis (*business ideation*)\n' +
-        '   • Pembuatan rencana bisnis dan model bisnis (*Business Model Canvas / BMC*)\n' +
-        '   • Workshop, seminar kewirausahaan, dan simulasi bisnis\n\n' +
-        '2. **Tahap Inkubasi**:\n' +
-        '   • Pendampingan terstruktur melalui P2KI (Program Pendampingan Kewirausahaan Inkubator)\n' +
-        '   • Mentoring intensif berkala dan harian oleh >20 mentor akademisi dan >17 mentor industri\n' +
-        '   • Fasilitasi ruang kerja (*coworking space*), ruang rapat, dan internet cepat\n' +
-        '   • Pendampingan legalitas usaha dan perizinan badan usaha\n' +
-        '   • Fasilitasi keikutsertaan kompetisi dan hibah pendanaan (seperti P2MW)\n\n' +
-        '3. **Tahap Pasca-Inkubasi**:\n' +
-        '   • Akses perluasan pasar dan komersialisasi produk\n' +
-        '   • *Business matching* dan jejaring kemitraan dengan investor, asosiasi pengusaha, serta industri\n\n' +
-        '🏢 **Kantor**: INBIS ITB STIKOM Bali, Kampus Renon (Jl. Raya Puputan No. 86, Renon, Denpasar)\n' +
-        '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
-        '📞 **Kontak**: (0361) 244445 / WA: +62 813-3868-6666';
+      '1. **Tahap Pra-Inkubasi**:\n' +
+      '   • Pelatihan dasar kewirausahaan\n' +
+      '   • Pengembangan ide bisnis (*business ideation*)\n' +
+      '   • Pembuatan rencana bisnis dan model bisnis (*Business Model Canvas / BMC*)\n' +
+      '   • Workshop, seminar kewirausahaan, dan simulasi bisnis\n\n' +
+      '2. **Tahap Inkubasi**:\n' +
+      '   • Pendampingan terstruktur melalui P2KI (Program Pendampingan Kewirausahaan Inkubator)\n' +
+      '   • Mentoring intensif berkala dan harian oleh >20 mentor akademisi dan >17 mentor industri\n' +
+      '   • Fasilitasi ruang kerja (*coworking space*), ruang rapat, dan internet cepat\n' +
+      '   • Pendampingan legalitas usaha dan perizinan badan usaha\n' +
+      '   • Fasilitasi keikutsertaan kompetisi dan hibah pendanaan (seperti P2MW)\n\n' +
+      '3. **Tahap Pasca-Inkubasi**:\n' +
+      '   • Akses perluasan pasar dan komersialisasi produk\n' +
+      '   • *Business matching* dan jejaring kemitraan dengan investor, asosiasi pengusaha, serta industri\n\n' +
+      '🏢 **Kantor**: INBIS ITB STIKOM Bali, Kampus Renon (Jl. Raya Puputan No. 86, Renon, Denpasar)\n' +
+      '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+      '📞 **Kontak**: (0361) 244445 / WA: +62 813-3868-6666';
   } else if (isService) {
     answer = isEn
       ? 'Services and facilities provided by INBIS ITB STIKOM Bali include:\n\n' +
-        '1. **Mentoring & Consultation**:\n' +
-        '   • Guided by **>20 academic mentors** and **>17 industry mentors/practitioners**\n' +
-        '   • Structured and daily consultation covering business validation, marketing, and operations\n\n' +
-        '2. **Physical Infrastructure & Workspace**:\n' +
-        '   • Coworking space and startup incubator rooms\n' +
-        '   • Meeting rooms & workshop/lab rooms\n' +
-        '   • High-speed internet connection (>40 Mbps) & Microsoft 365 licenses\n\n' +
-        '3. **Business Legality & Funding Access**:\n' +
-        '   • Assistance in business licensing and legal entity establishment\n' +
-        '   • Facilitation of national funding programs (such as P2MW) and investor pitch events\n' +
-        '   • External collaboration with Kemenkop UKM, Bali Provincial SME Agency, and industry partners\n\n' +
-        '🏢 **Office**: INBIS ITB STIKOM Bali, Renon Campus (Jl. Raya Puputan No. 86, Denpasar)\n' +
-        '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
-        '📞 **Phone/WA**: (0361) 244445 / +62 813-3868-6666'
+      '1. **Mentoring & Consultation**:\n' +
+      '   • Guided by **>20 academic mentors** and **>17 industry mentors/practitioners**\n' +
+      '   • Structured and daily consultation covering business validation, marketing, and operations\n\n' +
+      '2. **Physical Infrastructure & Workspace**:\n' +
+      '   • Coworking space and startup incubator rooms\n' +
+      '   • Meeting rooms & workshop/lab rooms\n' +
+      '   • High-speed internet connection (>40 Mbps) & Microsoft 365 licenses\n\n' +
+      '3. **Business Legality & Funding Access**:\n' +
+      '   • Assistance in business licensing and legal entity establishment\n' +
+      '   • Facilitation of national funding programs (such as P2MW) and investor pitch events\n' +
+      '   • External collaboration with Kemenkop UKM, Bali Provincial SME Agency, and industry partners\n\n' +
+      '🏢 **Office**: INBIS ITB STIKOM Bali, Renon Campus (Jl. Raya Puputan No. 86, Denpasar)\n' +
+      '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+      '📞 **Phone/WA**: (0361) 244445 / +62 813-3868-6666'
       : 'Layanan dan fasilitas yang disediakan oleh Inkubator Bisnis (INBIS) ITB STIKOM Bali meliputi:\n\n' +
-        '1. **Mentoring & Pendampingan Bisnis**:\n' +
-        '   • Bimbingan intensif dari **>20 mentor akademisi** (dosen) dan **>17 mentor industri** (praktisi wirausaha)\n' +
-        '   • Sesi konsultasi terjadwal maupun berkala untuk pengembangan produk, validasi pasar, dan strategi bisnis\n\n' +
-        '2. **Fasilitas Ruang Kerja & Infrastruktur**:\n' +
-        '   • Ruang kerja bersama (*coworking space*) dan ruang inkubator startup\n' +
-        '   • Ruang rapat (*meeting room*) dan ruang lab/workshop\n' +
-        '   • Akses internet berkecepatan tinggi (>40 Mbps) serta lisensi Microsoft 365\n\n' +
-        '3. **Legalitas Usaha & Akses Pendanaan**:\n' +
-        '   • Pendampingan perizinan dan pendirian badan usaha resmi\n' +
-        '   • Fasilitasi keikutsertaan kompetisi wirausaha dan hibah pendanaan nasional (misalnya P2MW)\n' +
-        '   • Akses jejaring investor, pemerintah (Kemenkop UKM, Dinas Koperasi UMKM Bali), dan organisasi pengusaha\n\n' +
-        '🏢 **Ruang Layanan**: Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n' +
-        '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
-        '📞 **Kontak**: (0361) 244445 / WA: +62 813-3868-6666';
+      '1. **Mentoring & Pendampingan Bisnis**:\n' +
+      '   • Bimbingan intensif dari **>20 mentor akademisi** (dosen) dan **>17 mentor industri** (praktisi wirausaha)\n' +
+      '   • Sesi konsultasi terjadwal maupun berkala untuk pengembangan produk, validasi pasar, dan strategi bisnis\n\n' +
+      '2. **Fasilitas Ruang Kerja & Infrastruktur**:\n' +
+      '   • Ruang kerja bersama (*coworking space*) dan ruang inkubator startup\n' +
+      '   • Ruang rapat (*meeting room*) dan ruang lab/workshop\n' +
+      '   • Akses internet berkecepatan tinggi (>40 Mbps) serta lisensi Microsoft 365\n\n' +
+      '3. **Legalitas Usaha & Akses Pendanaan**:\n' +
+      '   • Pendampingan perizinan dan pendirian badan usaha resmi\n' +
+      '   • Fasilitasi keikutsertaan kompetisi wirausaha dan hibah pendanaan nasional (misalnya P2MW)\n' +
+      '   • Akses jejaring investor, pemerintah (Kemenkop UKM, Dinas Koperasi UMKM Bali), dan organisasi pengusaha\n\n' +
+      '🏢 **Ruang Layanan**: Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n' +
+      '🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+      '📞 **Kontak**: (0361) 244445 / WA: +62 813-3868-6666';
   } else {
     // General Overview / Profile
     answer = isEn
       ? 'Overview of the Business Incubator (INBIS) at ITB STIKOM Bali:\n\n' +
-        '1. **Institutional Identity & Foundation**:\n' +
-        '   Inkubator Bisnis ITB STIKOM Bali (INBIS Bali) operates under the **Direktorat Kerja Sama, Layanan Industri, dan Inkubator Bisnis**. It was officially established in **2014** based on the Rector/Chairman Decree (SK Pendirian) of STIKOM Bali.\n\n' +
-        '2. **National Recognition**:\n' +
-        '   INBIS Bali was selected as one of the **Top 4 National Business Incubators** in Indonesia based on the Decree of the Deputy for Entrepreneurship, Ministry of Cooperatives and SMEs (Kemenkop & UKM RI).\n\n' +
-        '3. **Incubation Focus & Track Record**:\n' +
-        '   • Focuses on early-stage startups in ICT, digital technology, creative industries, and sustainable development (supporting 10 SDGs).\n' +
-        '   • Has guided >40 general tenants, >75 student entrepreneurial teams, and 25 active teams (2024–2026 cohort) across multiple study programs.\n' +
-        '   • Provides structured incubation through the Start-Learn-Growth framework and P2MW mentorship.\n\n' +
-        '4. **Official Contacts**:\n' +
-        '   🏢 **Location**: ITB STIKOM Bali Renon Campus, Jl. Raya Puputan No. 86, Renon, Denpasar, Bali\n' +
-        '   🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
-        '   ✉️ **Email**: inbis@stikom-bali.ac.id\n' +
-        '   📞 **Phone / WA**: (0361) 244445 / +62 813-3868-6666'
+      '1. **Institutional Identity & Foundation**:\n' +
+      '   Inkubator Bisnis ITB STIKOM Bali (INBIS Bali) operates under the **Direktorat Kerja Sama, Layanan Industri, dan Inkubator Bisnis**. It was officially established in **2014** based on the Rector/Chairman Decree (SK Pendirian) of STIKOM Bali.\n\n' +
+      '2. **National Recognition**:\n' +
+      '   INBIS Bali was selected as one of the **Top 4 National Business Incubators** in Indonesia based on the Decree of the Deputy for Entrepreneurship, Ministry of Cooperatives and SMEs (Kemenkop & UKM RI).\n\n' +
+      '3. **Incubation Focus & Track Record**:\n' +
+      '   • Focuses on early-stage startups in ICT, digital technology, creative industries, and sustainable development (supporting 10 SDGs).\n' +
+      '   • Has guided >40 general tenants, >75 student entrepreneurial teams, and 25 active teams (2024–2026 cohort) across multiple study programs.\n' +
+      '   • Provides structured incubation through the Start-Learn-Growth framework and P2MW mentorship.\n\n' +
+      '4. **Official Contacts**:\n' +
+      '   🏢 **Location**: ITB STIKOM Bali Renon Campus, Jl. Raya Puputan No. 86, Renon, Denpasar, Bali\n' +
+      '   🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+      '   ✉️ **Email**: inbis@stikom-bali.ac.id\n' +
+      '   📞 **Phone / WA**: (0361) 244445 / +62 813-3868-6666'
       : 'Mengenai Inkubator Bisnis (INBIS) di ITB STIKOM Bali:\n\n' +
-        '1. **Identitas & Legalitas Lembaga**:\n' +
-        '   Inkubator Bisnis ITB STIKOM Bali (INBIS Bali) berada di bawah pembinaan **Direktorat Kerja Sama, Layanan Industri, dan Inkubator Bisnis**. Lembaga ini resmi berdiri sejak tahun **2014** berdasarkan Surat Keputusan (SK) Pendirian dari Rektor / Ketua STIKOM Bali.\n\n' +
-        '2. **Prestasi & Pengakuan Nasional**:\n' +
-        '   INBIS Bali terpilih sebagai salah satu dari **4 Lembaga Inkubator Bisnis Terbaik Tingkat Nasional** berdasarkan SK Deputi Bidang Kewirausahaan Kementerian Koperasi dan UKM (Kemenkop & UKM) RI.\n\n' +
-        '3. **Fokus Inkubasi & Capaian**:\n' +
-        '   • Memfokuskan pembinaan pada *startup* tahap awal (*early stage*) berbasis ICT, digital, kreatif, dan berorientasi keberlanjutan (mendukung 10 tujuan SDGs).\n' +
-        '   • Telah membina >40 tenant umum, >75 tim wirausaha mahasiswa, serta 25 tim binaan aktif (angkatan 2024–2026) lintas program studi.\n' +
-        '   • Menerapkan tahapan inkubasi berjenjang (*Start-Learn-Growth*) dan pendampingan hibah seperti P2MW.\n\n' +
-        '4. **Kontak & Lokasi Resmi**:\n' +
-        '   🏢 **Lokasi**: Kampus Renon ITB STIKOM Bali, Jl. Raya Puputan No. 86, Renon, Denpasar, Bali\n' +
-        '   🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
-        '   ✉️ **Email**: inbis@stikom-bali.ac.id\n' +
-        '   📞 **Layanan Telepon / WA**: (0361) 244445 / +62 813-3868-6666';
+      '1. **Identitas & Legalitas Lembaga**:\n' +
+      '   Inkubator Bisnis ITB STIKOM Bali (INBIS Bali) berada di bawah pembinaan **Direktorat Kerja Sama, Layanan Industri, dan Inkubator Bisnis**. Lembaga ini resmi berdiri sejak tahun **2014** berdasarkan Surat Keputusan (SK) Pendirian dari Rektor / Ketua STIKOM Bali.\n\n' +
+      '2. **Prestasi & Pengakuan Nasional**:\n' +
+      '   INBIS Bali terpilih sebagai salah satu dari **4 Lembaga Inkubator Bisnis Terbaik Tingkat Nasional** berdasarkan SK Deputi Bidang Kewirausahaan Kementerian Koperasi dan UKM (Kemenkop & UKM) RI.\n\n' +
+      '3. **Fokus Inkubasi & Capaian**:\n' +
+      '   • Memfokuskan pembinaan pada *startup* tahap awal (*early stage*) berbasis ICT, digital, kreatif, dan berorientasi keberlanjutan (mendukung 10 tujuan SDGs).\n' +
+      '   • Telah membina >40 tenant umum, >75 tim wirausaha mahasiswa, serta 25 tim binaan aktif (angkatan 2024–2026) lintas program studi.\n' +
+      '   • Menerapkan tahapan inkubasi berjenjang (*Start-Learn-Growth*) dan pendampingan hibah seperti P2MW.\n\n' +
+      '4. **Kontak & Lokasi Resmi**:\n' +
+      '   🏢 **Lokasi**: Kampus Renon ITB STIKOM Bali, Jl. Raya Puputan No. 86, Renon, Denpasar, Bali\n' +
+      '   🌐 **Website**: ibt.stikom-bali.ac.id/inbis\n' +
+      '   ✉️ **Email**: inbis@stikom-bali.ac.id\n' +
+      '   📞 **Layanan Telepon / WA**: (0361) 244445 / +62 813-3868-6666';
   }
 
   return {
@@ -3905,6 +3909,359 @@ function buildINBISAnswer(semanticFrame = null, evidenceList = []) {
     isExtractive: true,
     handledSafely: true
   };
+}
+
+/**
+ * Formats raw tabular curriculum chunk lines into clean bullet points with SKS.
+ * Strips raw row numbers (1, 2, ...), headers ("No Nama Mata Kuliah SKS"), and trailing periods.
+ * Supports single chunk or array of chunks, deduplicating courses per semester.
+ */
+function formatCurriculumTable(rawInput, targetSemester = null) {
+  if (!rawInput) return '';
+  const chunks = Array.isArray(rawInput) ? rawInput : [rawInput];
+
+  const romanOrder = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+  const romanToArabic = { 'I': '1', 'II': '2', 'III': '3', 'IV': '4', 'V': '5', 'VI': '6', 'VII': '7', 'VIII': '8' };
+  const arabicToRoman = { '1': 'I', '2': 'II', '3': 'III', '4': 'IV', '5': 'V', '6': 'VI', '7': 'VII', '8': 'VIII' };
+
+  let targetRoman = null;
+  if (targetSemester) {
+    const rawTarget = String(targetSemester).trim();
+    const semMatch = rawTarget.match(/semester\s*([IVX]+|\d+)/i) || rawTarget.match(/\b([IVX]+|\d+)\b/i);
+    if (semMatch) {
+      const val = semMatch[1].toUpperCase();
+      if (arabicToRoman[val]) {
+        targetRoman = arabicToRoman[val];
+      } else if (romanToArabic[val]) {
+        targetRoman = val;
+      }
+    }
+  }
+
+  const semesterMap = new Map();
+  for (const r of romanOrder) {
+    semesterMap.set(`Semester ${r}`, new Map());
+  }
+  const extraSemesters = new Map();
+
+  for (const text of chunks) {
+    if (!text || typeof text !== 'string') continue;
+    const lines = text.split(/\n+/);
+    let activeSem = null;
+
+    for (let line of lines) {
+      line = line.trim();
+      if (!line) continue;
+
+      const semMatch = line.match(/^Semester\s+([IVX]+|\d+)/i);
+      if (semMatch) {
+        let semNum = semMatch[1].toUpperCase();
+        if (arabicToRoman[semNum]) {
+          semNum = arabicToRoman[semNum];
+        }
+        activeSem = `Semester ${semNum}`;
+        if (!semesterMap.has(activeSem) && !extraSemesters.has(activeSem)) {
+          extraSemesters.set(activeSem, new Map());
+        }
+        continue;
+      }
+
+      if (!activeSem) continue;
+
+      if (/^(?:No\s+Nama\s+Mata\s+Kuliah\s+SKS|Kode\s+MK.*|Total(?:\s+SKS)?|\d+$|Kurikulum\s+2025.*|\[Program:[^\]]+\]|Struktur\s+Kurikulum.*)/i.test(line)) {
+        continue;
+      }
+
+      const activeMap = semesterMap.get(activeSem) || extraSemesters.get(activeSem);
+      if (!activeMap) continue;
+
+      const rowMatch = line.match(/^(\d+)\s+(.+?)\s+(\d+)$/);
+      if (rowMatch) {
+        const no = parseInt(rowMatch[1], 10);
+        const courseName = rowMatch[2].trim().replace(/[.,;:]+$/, '');
+        const sks = parseInt(rowMatch[3].trim(), 10);
+        const key = courseName.toLowerCase();
+        if (!activeMap.has(key)) {
+          activeMap.set(key, { no, formatted: `• ${courseName} (${sks} SKS)`, name: courseName, sks });
+        }
+        continue;
+      }
+
+      const bulletSksMatch = line.match(/^[•\-\*]\s*(.+?)\s*\((\d+)\s*SKS\)$/i);
+      if (bulletSksMatch) {
+        const courseName = bulletSksMatch[1].trim().replace(/[.,;:]+$/, '');
+        const sks = parseInt(bulletSksMatch[2].trim(), 10);
+        const key = courseName.toLowerCase();
+        if (!activeMap.has(key)) {
+          activeMap.set(key, { no: activeMap.size + 1, formatted: `• ${courseName} (${sks} SKS)`, name: courseName, sks });
+        }
+        continue;
+      }
+
+      const bulletMatch = line.match(/^[•\-\*]\s*(.+)$/);
+      if (bulletMatch) {
+        const courseName = bulletMatch[1].trim().replace(/[.,;:]+$/, '');
+        const key = courseName.toLowerCase();
+        if (!activeMap.has(key)) {
+          activeMap.set(key, { no: activeMap.size + 1, formatted: `• ${courseName}`, name: courseName });
+        }
+        continue;
+      }
+    }
+  }
+
+  const result = [];
+  const allSemesterKeys = [...romanOrder.map(r => `Semester ${r}`), ...Array.from(extraSemesters.keys())];
+
+  for (const semName of allSemesterKeys) {
+    if (targetRoman) {
+      if (semName !== `Semester ${targetRoman}`) continue;
+    }
+    const coursesMap = semesterMap.get(semName) || extraSemesters.get(semName);
+    if (!coursesMap || coursesMap.size === 0) continue;
+
+    result.push(`\n**${semName}**:`);
+    const sortedCourses = Array.from(coursesMap.values()).sort((a, b) => (a.no || 0) - (b.no || 0));
+    for (const c of sortedCourses) {
+      result.push(c.formatted);
+    }
+  }
+
+  return result.join('\n').trim();
+}
+
+/**
+ * Greenfield Grounded Curriculum Answer Generator.
+ * Directly fulfills:
+ * 1. Coding requirement queries ("Apakah harus jago coding?")
+ * 2. Digital marketing queries ("Apakah belajar digital marketing?")
+ * 3. Artificial intelligence queries ("Apakah belajar Artificial Intelligence?")
+ * 4. General curriculum / course lists ("Mata kuliahnya apa saja?")
+ */
+function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitratedEvidence = {}) {
+  const rawQuery = (semanticFrame?.rawQuery || semanticFrame?.query || arbitratedEvidence?.rawQuery || '').toLowerCase();
+  const userLang = semanticFrame?.language || detectQueryLanguage(rawQuery || '');
+  const isEn = userLang === 'en';
+
+  const targetEntity = (semanticFrame?.entities || []).find(e => {
+    const can = (e.canonical || e.name || String(e)).toLowerCase();
+    return /^(?:s1|s2|d3|d4)\s+/i.test(can) && e.type !== 'academic_scope';
+  })?.canonical || semanticFrame?.activeEntity || arbitratedEvidence?.retrievalPlan?.targetEntity || null;
+
+  // 1. Coding requirement inquiry
+  const isCodingQuery = /\b(?:coding|koding|ngoding|pemrograman)\b/i.test(rawQuery) &&
+    /\b(?:harus|wajib|perlu|syarat|bisa|jago|kemampuan|bakat|dasar|bisa\s+coding)\b/i.test(rawQuery);
+
+  if (isCodingQuery) {
+    if (targetEntity === 'S1 Bisnis Digital' || (!targetEntity && /\bbisnis\s+digital\b/i.test(rawQuery))) {
+      const ans = isEn
+        ? `In the available official admission (PMB) requirements of ITB STIKOM Bali, programming or coding ability is **not listed as a mandatory requirement** for new student enrollment in the **S1 Digital Business** program.\n\n` +
+        `Programming and technology courses in this study program are taught **progressively starting from the foundational level** under an Outcome-Based Education (OBE) curriculum. Students from non-IT backgrounds are guided through foundational digital logic before applying technology to business processes.\n\n` +
+        `While prior coding expertise is not required, success in this program does require dedication and logical thinking. For official registration guidelines and requirements, please consult https://pmb.stikom-bali.ac.id or contact the campus admissions team.`
+        : `Dalam persyaratan pendaftaran PMB ITB STIKOM Bali yang tersedia, kemampuan coding atau keahlian pemrograman **tidak tercantum sebagai syarat wajib** pendaftaran untuk calon mahasiswa baru Program Studi **S1 Bisnis Digital**.\n\n` +
+        `Pembelajaran pemrograman dan teknologi pada program studi ini diajarkan secara **bertahap mulai dari tingkat dasar** sesuai Kurikulum Berbasis *Outcome-Based Education* (OBE). Calon mahasiswa yang belum memiliki latar belakang coding tetap dapat mengikuti perkuliahan dengan baik melalui fondasi logika dan pemanfaatan teknologi yang dibimbing sejak semester awal.\n\n` +
+        `Meskipun tidak diwajibkan mahir sebelum mendaftar, perkuliahan tetap memerlukan ketekunan dan kemauan untuk belajar berpikir logis serta mengoperasikan sistem teknologi digital. Untuk informasi alur dan persyaratan berkas PMB selengkapnya, Kakak dapat mengakses portal resmi di https://pmb.stikom-bali.ac.id atau berkonsultasi langsung dengan tim admisi kampus ya.`;
+      return {
+        success: true,
+        answer: ans,
+        source: 'grounded_curriculum_answer',
+        isExtractive: true,
+        handledSafely: true
+      };
+    }
+
+    if (targetEntity === 'S1 Sistem Komputer' || (!targetEntity && /\bsistem\s+komputer\b/i.test(rawQuery))) {
+      const ans = isEn
+        ? `In the available official PMB requirements of ITB STIKOM Bali, advanced coding ability is **not a mandatory admission requirement** to enter the **S1 Computer Systems** program.\n\n` +
+        `Programming foundations are taught progressively starting from Semester I through courses such as **Algoritma dan Pemrograman** (2 SKS) and **Praktikum Algoritma dan Pemrograman** (1 SKS), followed by **Pemrograman Komputer** in Semester II. Students are guided step-by-step from fundamental principles.\n\n` +
+        `Because Computer Systems integrates computer hardware and software engineering, a willingness to study logic and electronics will greatly support your academic progress.`
+        : `Dalam persyaratan pendaftaran PMB ITB STIKOM Bali yang tersedia, kemampuan coding tingkat lanjut **tidak tercantum sebagai syarat wajib pendaftaran** untuk masuk ke Program Studi **S1 Sistem Komputer**.\n\n` +
+        `Materi pemrograman diajarkan secara bertahap mulai dari fondasi dasar pada Semester I melalui mata kuliah **Algoritma dan Pemrograman** (2 SKS) serta **Praktikum Algoritma dan Pemrograman** (1 SKS), yang kemudian dilanjutkan dengan **Pemrograman Komputer** pada Semester II. Calon mahasiswa akan dibimbing dari dasar.\n\n` +
+        `Karena Sistem Komputer mengintegrasikan rekayasa perangkat keras (*hardware*) dan perangkat lunak (*software*), ketekunan dalam belajar logika serta dasar elektronika akan sangat mendukung keberhasilan studi. Informasi pendaftaran resmi dapat diakses melalui https://pmb.stikom-bali.ac.id.`;
+      return {
+        success: true,
+        answer: ans,
+        source: 'grounded_curriculum_answer',
+        isExtractive: true,
+        handledSafely: true
+      };
+    }
+
+    // General fallback for other programs
+    const prodiName = targetEntity || 'program studi sarjana';
+    const ans = isEn
+      ? `In the official PMB requirements of ITB STIKOM Bali, prior coding skills are **not listed as a mandatory entrance requirement** for **${prodiName}**.\n\n` +
+      `Technical and programming courses are introduced progressively from introductory fundamentals in early semesters.\n\n` +
+      `For full admission requirements, please visit https://pmb.stikom-bali.ac.id.`
+      : `Dalam persyaratan pendaftaran PMB ITB STIKOM Bali yang tersedia, kemampuan coding sebelumnya **tidak tercantum sebagai syarat wajib pendaftaran** untuk **${prodiName}**.\n\n` +
+      `Pembelajaran teknis dan pemrograman diajarkan secara bertahap mulai dari tingkat dasar pada semester-semester awal.\n\n` +
+      `Untuk rincian persyaratan pendaftaran resmi, Kakak dapat mengunjungi portal https://pmb.stikom-bali.ac.id ya.`;
+    return {
+      success: true,
+      answer: ans,
+      source: 'grounded_curriculum_answer',
+      isExtractive: true,
+      handledSafely: true
+    };
+  }
+
+  // 2. Digital Marketing inquiry
+  const isDigitalMarketingQuery = /\b(?:digital\s+marketing|pemasaran\s+digital)\b/i.test(rawQuery);
+  if (isDigitalMarketingQuery) {
+    if (targetEntity === 'S1 Bisnis Digital' || (!targetEntity && /\bbisnis\s+digital\b/i.test(rawQuery))) {
+      const ans = isEn
+        ? `**Yes**, students of the **S1 Digital Business** program at ITB STIKOM Bali study digital marketing comprehensively as part of their core curriculum.\n\n` +
+        `Based on the official curriculum, the specific courses taught include:\n` +
+        `• **Semester II**: Pemasaran Digital\n` +
+        `• **Semester IV**: Analisis Pemasaran & Optimasi Mesin Pencari (SEO)\n` +
+        `• **Semester IV**: Kampanye Pemasaran Omni\n` +
+        `• **Semester V**: Pemasaran Media Sosial\n\n` +
+        `These courses equip students with hands-on expertise in digital marketing strategies, search engine optimization, omni-channel campaigns, and social media marketing to support professional careers such as *Digital Marketing Specialist* and *Digital Strategist*.`
+        : `**Ya**, mahasiswa Program Studi **S1 Bisnis Digital** ITB STIKOM Bali mempelajari materi pemasaran digital (*digital marketing*) secara komprehensif sebagai salah satu kompetensi kurikulum utama.\n\n` +
+        `Berdasarkan Kurikulum Resmi, mata kuliah terkait pemasaran digital yang diajarkan meliputi:\n` +
+        `• **Semester II**: Pemasaran Digital\n` +
+        `• **Semester IV**: Analisis Pemasaran & Optimasi Mesin Pencari (SEO)\n` +
+        `• **Semester IV**: Kampanye Pemasaran Omni\n` +
+        `• **Semester V**: Pemasaran Media Sosial\n\n` +
+        `Mata kuliah ini membekali mahasiswa dengan kemampuan merancang strategi pemasaran digital terpadu, optimasi mesin pencari, kampanye periklanan, hingga pengelolaan media sosial untuk mendukung karier seperti *Digital Marketing Specialist* atau *Digital Strategist*.`;
+      return {
+        success: true,
+        answer: ans,
+        source: 'grounded_curriculum_answer',
+        isExtractive: true,
+        handledSafely: true
+      };
+    }
+  }
+
+  // 3. Artificial Intelligence inquiry
+  const isAiQuery = /\b(?:artificial\s+intelligence|\bai\b|kecerdasan\s+artifisial|kecerdasan\s+buatan|prompt)\b/i.test(rawQuery);
+  if (isAiQuery) {
+    if (targetEntity === 'S1 Bisnis Digital' || (!targetEntity && /\bbisnis\s+digital\b/i.test(rawQuery))) {
+      const ans = isEn
+        ? `**Yes**, the **S1 Digital Business** program at ITB STIKOM Bali includes coursework on Artificial Intelligence (AI) applied to digital business.\n\n` +
+        `Based on the official curriculum, this topic is specifically taught in:\n` +
+        `• **Semester III**: **Teknik Pembuatan Prompt untuk Model AI**\n\n` +
+        `The learning focus is centered on the **practical utilization of AI models and prompt engineering** for business analytics, content creation, and digital decision making. This differs from the S1 Computer Systems program or Postgraduate (S2) studies which focus on deep technical AI algorithm engineering such as low-level Machine Learning or Deep Learning architecture design.`
+        : `**Ya**, di Program Studi **S1 Bisnis Digital** ITB STIKOM Bali terdapat pembelajaran terkait pemanfaatan Artificial Intelligence (AI) yang disesuaikan dengan kebutuhan bisnis digital.\n\n` +
+        `Berdasarkan Kurikulum Resmi, materi tersebut diajarkan secara spesifik pada mata kuliah:\n` +
+        `• **Semester III**: **Teknik Pembuatan Prompt untuk Model AI**\n\n` +
+        `Fokus pembelajaran pada prodi ini diarahkan pada **pemanfaatan praktis AI dan prompt engineering** untuk analisis data, kreasi konten, serta pengambilan keputusan bisnis digital. Hal ini berbeda dengan Program Studi S1 Sistem Komputer atau program Magister (S2) yang berfokus pada rekayasa algoritma AI teknis mendalam seperti perancangan model *Machine Learning* atau *Deep Learning*.`;
+      return {
+        success: true,
+        answer: ans,
+        source: 'grounded_curriculum_answer',
+        isExtractive: true,
+        handledSafely: true
+      };
+    }
+  }
+
+  // 4. General Course List / Semester Inquiry
+  const isGeneralCourseList = /\b(?:mata\s*kuliah(?:nya)?|matkul(?:nya)?|kurikulum|sebaran|apa\s+saja\s+yang\s+dipelajari|pelajari\s+apa|daftar\s+mata\s+kuliah|semester\s*([IVX\d]+))\b/i.test(rawQuery);
+  if (isGeneralCourseList && targetEntity) {
+    // If S1 Sistem Komputer: format official curriculum table
+    if (targetEntity === 'S1 Sistem Komputer') {
+      const semesterWeights = { 'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8 };
+      const getFirstSemesterWeight = (text) => {
+        const m = (text || '').match(/Semester\s+([IVX]+|\d+)/i);
+        if (!m) return 99;
+        const num = m[1].toUpperCase();
+        if (/^\d+$/.test(num)) return parseInt(num, 10);
+        return semesterWeights[num] || 99;
+      };
+
+      const skChunks = evidenceList.filter(c => {
+        const meta = c.metadata || {};
+        const isSkProgram = c.canonicalProgram === 'S1 Sistem Komputer' ||
+          meta.program === 'SK' ||
+          (Array.isArray(meta.programAliases) && meta.programAliases.includes('SK')) ||
+          (c.text || c.chunk || '').includes('Kurikulum 2025 (Program Studi Sistem Komputer)') ||
+          (c.text || c.chunk || '').includes('[Program: S1 Sistem Komputer]');
+
+        const isCurriculumDoc = (meta.category === 'KURIKULUM' || meta.docCategory === 'KURIKULUM' || c.source === 'ISIAN WEBSITE (1).pdf') &&
+          /Semester\s+[IVX\d]+/i.test(c.text || c.chunk || '');
+
+        return isSkProgram && isCurriculumDoc;
+      }).sort((a, b) => {
+        const wa = getFirstSemesterWeight(a.text || a.chunk || '');
+        const wb = getFirstSemesterWeight(b.text || b.chunk || '');
+        return wa - wb;
+      });
+
+      const skTexts = skChunks.map(c => c.text || c.chunk || '').filter(Boolean);
+      if (skTexts.length === 0) {
+        const rawSkChunk = evidenceList.find(c => {
+          const t = (c.text || c.chunk || '');
+          return t.includes('Kurikulum 2025 (Program Studi Sistem Komputer)') || (t.includes('Sistem Komputer') && t.includes('No Nama Mata Kuliah SKS'));
+        });
+        if (rawSkChunk) skTexts.push(rawSkChunk.text || rawSkChunk.chunk || '');
+      }
+
+      const semMatch = rawQuery.match(/semester\s*([IVX]+|\d+)/i);
+      const targetSem = semMatch ? semMatch[0] : null;
+
+      const formattedSkTable = formatCurriculumTable(skTexts, targetSem);
+
+      if (formattedSkTable) {
+        let header;
+        let footer;
+
+        if (targetSem) {
+          const formattedSemName = targetSem.replace(/^semester\s*/i, 'Semester ').toUpperCase();
+          header = isEn
+            ? `Here is the official course list for **${formattedSemName}** in **S1 Computer Systems** at ITB STIKOM Bali:\n\n`
+            : `Berikut adalah daftar mata kuliah resmi untuk **${formattedSemName}** Program Studi **S1 Sistem Komputer** ITB STIKOM Bali:\n\n`;
+          footer = isEn
+            ? `\n\nFor details on other semesters or course syllabi, please refer to the SION academic portal or campus admissions.`
+            : `\n\nUntuk informasi silabus dan mata kuliah semester lainnya, Kakak dapat mengakses portal akademik SION atau menanyakan semester lainnya ya!`;
+        } else {
+          header = isEn
+            ? `Here is the official Curriculum 2025 course list for **S1 Computer Systems** at ITB STIKOM Bali:\n\n`
+            : `Berikut adalah kurikulum resmi untuk Program Studi **S1 Sistem Komputer** ITB STIKOM Bali:\n\n`;
+          footer = isEn
+            ? `\n\nTotal study load is **144 SKS** across **8 semesters**. For complete course syllabi or academic guidelines, please refer to the SION academic portal or campus admissions.`
+            : `\n\nTotal beban kurikulum resmi S1 Sistem Komputer adalah **144 SKS** yang mencakup **8 semester**. Untuk informasi silabus lengkap per mata kuliah atau ketentuan akademik lanjutan, Kakak dapat mengakses portal akademik SION atau menanyakan semester tertentu ya!`;
+        }
+
+        return {
+          success: true,
+          answer: header + formattedSkTable + footer,
+          source: 'grounded_curriculum_table',
+          isExtractive: true,
+          handledSafely: true
+        };
+      }
+    }
+
+    // If S1 Bisnis Digital: format official curriculum courses
+    if (targetEntity === 'S1 Bisnis Digital') {
+      const rawBdChunk = evidenceList.find(c => {
+        const t = (c.text || c.chunk || '');
+        return t.includes('Pemasaran Digital') && t.includes('Semester II');
+      });
+      if (rawBdChunk) {
+        const formattedBdTable = formatCurriculumTable(rawBdChunk.text || rawBdChunk.chunk || '');
+        if (formattedBdTable) {
+          const header = isEn
+            ? `Here are the official courses for **S1 Digital Business** at ITB STIKOM Bali:\n\n`
+            : `Berikut adalah sebaran mata kuliah resmi untuk Program Studi **S1 Bisnis Digital** ITB STIKOM Bali:\n\n`;
+          const footer = isEn
+            ? `\n\nFor details on further semesters, please consult campus admissions.`
+            : `\n\nUntuk rincian silabus atau semester lainnya, Kakak dapat bertanya lebih lanjut ya!`;
+          return {
+            success: true,
+            answer: header + formattedBdTable + footer,
+            source: 'grounded_curriculum_table',
+            isExtractive: true,
+            handledSafely: true
+          };
+        }
+      }
+    }
+  }
+
+  return null;
 }
 
 function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitratedEvidence = {}) {
@@ -4002,6 +4359,20 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     };
   }
 
+  // Dedicated grounded response for academic curriculum, course list & prerequisite inquiries
+  const isCurriculumInquiry = (
+    semanticFrame?.domain === 'ACADEMIC_CURRICULUM' ||
+    semanticFrame?.intent === 'CURRICULUM_INQUIRY' ||
+    (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.some(a => ['curriculum', 'courses', 'competencies'].includes(a)))
+  ) && !semanticFrame?.isComparison && semanticFrame?.intent !== 'PROGRAM_COMPARISON';
+
+  if (isCurriculumInquiry) {
+    const curriculumRes = buildGroundedCurriculumAnswer(semanticFrame, evidenceList, arbitratedEvidence);
+    if (curriculumRes && curriculumRes.success && curriculumRes.answer) {
+      return curriculumRes;
+    }
+  }
+
   // Structured grounded response for campus location & branch contact inquiries
   if (semanticFrame?.intent === 'CAMPUS_LOCATION' || (semanticFrame?.intent === 'CONTACT_INQUIRY' && (semanticFrame?.targetBranch || /\b(?:jimbaran|renon|abiansemal)\b/i.test(rawQuery)))) {
     const targetBranch = semanticFrame?.targetBranch ||
@@ -4071,9 +4442,9 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
       if (covered.length === 0) {
         const noAddrText = isEn
           ? `According to official ITB STIKOM Bali documents, there is no official nearest-campus prescription based on residence areas, and this assistant does not have an integrated live routing or navigation service.\n\n` +
-            `Currently, official campus address data is not confirmed in the available documents to compare location distances for **${originLabel}**. Please consult campus admissions directly.`
+          `Currently, official campus address data is not confirmed in the available documents to compare location distances for **${originLabel}**. Please consult campus admissions directly.`
           : `Berdasarkan dokumen resmi kampus ITB STIKOM Bali, tidak terdapat ketentuan kampus terdekat khusus berdasarkan wilayah tempat tinggal calon mahasiswa, dan sistem layanan informasi ini tidak memiliki integrasi perhitungan rute/jarak langsung.\n\n` +
-            `Saat ini data alamat resmi kampus belum cukup terkonfirmasi dalam dokumen yang tersedia untuk membandingkan lokasi dari titik asal **${originLabel}**. Silakan hubungi bagian admisi kampus untuk konfirmasi langsung ya.`;
+          `Saat ini data alamat resmi kampus belum cukup terkonfirmasi dalam dokumen yang tersedia untuk membandingkan lokasi dari titik asal **${originLabel}**. Silakan hubungi bagian admisi kampus untuk konfirmasi langsung ya.`;
 
         return {
           success: true,
@@ -4090,11 +4461,11 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
         // All campus addresses available
         proximityText = isEn
           ? `According to official ITB STIKOM Bali documents, there is no official nearest-campus prescription based on residence areas, and this assistant does not have an integrated live routing or navigation service.\n\n` +
-            `For **${originLabel}**, you can check the exact route, distance, and real-time travel time directly via a navigation map application (such as Google Maps) to our official campus addresses:\n\n` +
-            covered.map((b, idx) => `${idx + 1}. *${b.nameEn}*:\n   - Address: ${b.addr}`).join('\n\n')
+          `For **${originLabel}**, you can check the exact route, distance, and real-time travel time directly via a navigation map application (such as Google Maps) to our official campus addresses:\n\n` +
+          covered.map((b, idx) => `${idx + 1}. *${b.nameEn}*:\n   - Address: ${b.addr}`).join('\n\n')
           : `Berdasarkan dokumen resmi kampus ITB STIKOM Bali, tidak terdapat ketentuan kampus terdekat khusus berdasarkan wilayah tempat tinggal calon mahasiswa, dan sistem layanan informasi ini tidak memiliki integrasi perhitungan rute/jarak langsung.\n\n` +
-            `Untuk titik asal **${originLabel}**, Kakak dapat memeriksa rute, jarak, dan estimasi waktu tempuh secara langsung melalui aplikasi peta/navigasi (seperti Google Maps) menuju alamat resmi kampus ITB STIKOM Bali berikut:\n\n` +
-            covered.map((b, idx) => `${idx + 1}. *${b.name}*:\n   - Alamat: ${b.addr}`).join('\n\n');
+          `Untuk titik asal **${originLabel}**, Kakak dapat memeriksa rute, jarak, dan estimasi waktu tempuh secara langsung melalui aplikasi peta/navigasi (seperti Google Maps) menuju alamat resmi kampus ITB STIKOM Bali berikut:\n\n` +
+          covered.map((b, idx) => `${idx + 1}. *${b.name}*:\n   - Alamat: ${b.addr}`).join('\n\n');
       } else {
         // Partial addresses available (1 or 2 available)
         const missingNamesId = missing.map(b => b.name).join(', ');
@@ -4102,13 +4473,13 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
 
         proximityText = isEn
           ? `According to official ITB STIKOM Bali documents, there is no official nearest-campus prescription based on residence areas, and this assistant does not have an integrated live routing or navigation service.\n\n` +
-            `For **${originLabel}**, you can check the exact route and travel time directly via a navigation map application to our verified official campus addresses:\n\n` +
-            covered.map((b, idx) => `${idx + 1}. *${b.nameEn}*:\n   - Address: ${b.addr}`).join('\n\n') +
-            `\n\n*(Note: Official address details for ${missingNamesEn} are not confirmed in the available documents.)*`
+          `For **${originLabel}**, you can check the exact route and travel time directly via a navigation map application to our verified official campus addresses:\n\n` +
+          covered.map((b, idx) => `${idx + 1}. *${b.nameEn}*:\n   - Address: ${b.addr}`).join('\n\n') +
+          `\n\n*(Note: Official address details for ${missingNamesEn} are not confirmed in the available documents.)*`
           : `Berdasarkan dokumen resmi kampus ITB STIKOM Bali, tidak terdapat ketentuan kampus terdekat khusus berdasarkan wilayah tempat tinggal calon mahasiswa, dan sistem layanan informasi ini tidak memiliki integrasi perhitungan rute/jarak langsung.\n\n` +
-            `Untuk titik asal **${originLabel}**, Kakak dapat memeriksa rute, jarak, dan estimasi waktu tempuh secara langsung melalui aplikasi peta/navigasi (seperti Google Maps) menuju alamat resmi kampus ITB STIKOM Bali yang terverifikasi berikut:\n\n` +
-            covered.map((b, idx) => `${idx + 1}. *${b.name}*:\n   - Alamat: ${b.addr}`).join('\n\n') +
-            `\n\n*(Catatan: Alamat resmi untuk ${missingNamesId} belum tercantum dalam dokumen yang tersedia saat ini.)*`;
+          `Untuk titik asal **${originLabel}**, Kakak dapat memeriksa rute, jarak, dan estimasi waktu tempuh secara langsung melalui aplikasi peta/navigasi (seperti Google Maps) menuju alamat resmi kampus ITB STIKOM Bali yang terverifikasi berikut:\n\n` +
+          covered.map((b, idx) => `${idx + 1}. *${b.name}*:\n   - Alamat: ${b.addr}`).join('\n\n') +
+          `\n\n*(Catatan: Alamat resmi untuk ${missingNamesId} belum tercantum dalam dokumen yang tersedia saat ini.)*`;
       }
 
       return {
@@ -4368,35 +4739,35 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
   if (
     semanticFrame?.domain === 'PMB' &&
     (semanticFrame?.intent === 'ADMISSION_SCHEDULE' ||
-     (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.includes('stages')) ||
-     /\b(?:tahap(?:an)?\s+pendaftaran|tahapan\s+seleksi|alur\s+tahapan)\b/i.test(semanticFrame?.rawQuery || ''))
+      (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.includes('stages')) ||
+      /\b(?:tahap(?:an)?\s+pendaftaran|tahapan\s+seleksi|alur\s+tahapan)\b/i.test(semanticFrame?.rawQuery || ''))
   ) {
     const yearLabel = semanticFrame?.academicYear || '2026/2027';
     const scheduleAnswer = isEn
       ? `Regarding the new student admissions (PMB) schedule for Academic Year ${yearLabel} at ITB STIKOM Bali:\n\n` +
-        `Based on the official Admissions Calendar (Kalender Pendaftaran), the selection stages across all intake waves (Gelombang Khusus, Gelombang I, Gelombang II, Gelombang III) are:\n` +
-        `1. **Masa Pendaftaran**\n` +
-        `2. **Testing**\n` +
-        `3. **Pengumuman**\n` +
-        `4. **Masa Registrasi Ulang**\n\n` +
-        `*(Workflow description: The admissions cycle starts with registration application, followed by entrance testing/selection, result announcement, and final re-registration for admitted candidates).\n\n` +
-        `Specific calendar opening and closing dates for each wave of Academic Year ${yearLabel} are updated periodically on the official admissions channels:\n` +
-        `🌐 **Official PMB Portal**: https://pmb.stikom-bali.ac.id\n` +
-        `📞 **Admissions Office**: (0361) 244445\n` +
-        `🏢 **PMB Service Room**: Main Campus (Jl. Raya Puputan No. 86, Renon, Denpasar)\n\n` +
-        `_Note: Specific wave deadline dates for Academic Year ${yearLabel} are updated periodically on the official PMB portal above._`
+      `Based on the official Admissions Calendar (Kalender Pendaftaran), the selection stages across all intake waves (Gelombang Khusus, Gelombang I, Gelombang II, Gelombang III) are:\n` +
+      `1. **Masa Pendaftaran**\n` +
+      `2. **Testing**\n` +
+      `3. **Pengumuman**\n` +
+      `4. **Masa Registrasi Ulang**\n\n` +
+      `*(Workflow description: The admissions cycle starts with registration application, followed by entrance testing/selection, result announcement, and final re-registration for admitted candidates).\n\n` +
+      `Specific calendar opening and closing dates for each wave of Academic Year ${yearLabel} are updated periodically on the official admissions channels:\n` +
+      `🌐 **Official PMB Portal**: https://pmb.stikom-bali.ac.id\n` +
+      `📞 **Admissions Office**: (0361) 244445\n` +
+      `🏢 **PMB Service Room**: Main Campus (Jl. Raya Puputan No. 86, Renon, Denpasar)\n\n` +
+      `_Note: Specific wave deadline dates for Academic Year ${yearLabel} are updated periodically on the official PMB portal above._`
       : `Mengenai informasi jadwal Penerimaan Mahasiswa Baru (PMB) Tahun Akademik ${yearLabel} di ITB STIKOM Bali:\n\n` +
-        `Berdasarkan dokumen resmi Kalender Pendaftaran PMB ITB STIKOM Bali, tahapan seleksi pada setiap gelombang pendaftaran (Gelombang Khusus, Gelombang I, Gelombang II, dan Gelombang III) terdiri dari:\n` +
-        `1. **Masa Pendaftaran**\n` +
-        `2. **Testing**\n` +
-        `3. **Pengumuman**\n` +
-        `4. **Masa Registrasi Ulang**\n\n` +
-        `*(Uraian alur: Masa pendaftaran mencakup pengisian formulir pendaftaran PMB, dilanjutkan dengan testing/seleksi masuk, pengumuman kelulusan, dan masa registrasi ulang bagi calon mahasiswa yang diterima).\n\n` +
-        `Untuk rincian tanggal kalender pasti pembukaan dan penutupan tiap gelombang TA ${yearLabel}, calon mahasiswa disarankan mengonfirmasi langsung ke kanal resmi PMB karena pembaruan tanggal berjalan dilakukan terpusat melalui:\n` +
-        `🌐 **Portal Resmi PMB**: https://pmb.stikom-bali.ac.id\n` +
-        `📞 **Layanan Telepon PMB**: (0361) 244445\n` +
-        `🏢 **Ruang Layanan PMB**: Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n\n` +
-        `_Catatan: Rincian tanggal pasti pembukaan dan penutupan tiap gelombang PMB TA ${yearLabel} diperbarui berkala pada portal resmi PMB di atas._`;
+      `Berdasarkan dokumen resmi Kalender Pendaftaran PMB ITB STIKOM Bali, tahapan seleksi pada setiap gelombang pendaftaran (Gelombang Khusus, Gelombang I, Gelombang II, dan Gelombang III) terdiri dari:\n` +
+      `1. **Masa Pendaftaran**\n` +
+      `2. **Testing**\n` +
+      `3. **Pengumuman**\n` +
+      `4. **Masa Registrasi Ulang**\n\n` +
+      `*(Uraian alur: Masa pendaftaran mencakup pengisian formulir pendaftaran PMB, dilanjutkan dengan testing/seleksi masuk, pengumuman kelulusan, dan masa registrasi ulang bagi calon mahasiswa yang diterima).\n\n` +
+      `Untuk rincian tanggal kalender pasti pembukaan dan penutupan tiap gelombang TA ${yearLabel}, calon mahasiswa disarankan mengonfirmasi langsung ke kanal resmi PMB karena pembaruan tanggal berjalan dilakukan terpusat melalui:\n` +
+      `🌐 **Portal Resmi PMB**: https://pmb.stikom-bali.ac.id\n` +
+      `📞 **Layanan Telepon PMB**: (0361) 244445\n` +
+      `🏢 **Ruang Layanan PMB**: Kampus Renon ITB STIKOM Bali (Jl. Raya Puputan No. 86, Renon, Denpasar)\n\n` +
+      `_Catatan: Rincian tanggal pasti pembukaan dan penutupan tiap gelombang PMB TA ${yearLabel} diperbarui berkala pada portal resmi PMB di atas._`;
 
     return {
       success: true,
@@ -4419,14 +4790,14 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     if (isLinkedInSpecific) {
       const linkedInAnswer = isEn
         ? `**LinkedIn Learning Program** at ITB STIKOM Bali is organized through the **Career Development Center (CDC)** to boost digital competence:\n\n` +
-          `• **Global Certifications**: Access to thousands of professional online courses across AI, software engineering, business, and design.\n` +
-          `• **Portfolio Development**: Professional profile enhancement, digital portfolio building, and personal branding for recruitment readiness.\n\n` +
-          `For LinkedIn Learning activation, please consult the Career Development Center (CDC) office.`
+        `• **Global Certifications**: Access to thousands of professional online courses across AI, software engineering, business, and design.\n` +
+        `• **Portfolio Development**: Professional profile enhancement, digital portfolio building, and personal branding for recruitment readiness.\n\n` +
+        `For LinkedIn Learning activation, please consult the Career Development Center (CDC) office.`
         : `**Program LinkedIn Learning** di ITB STIKOM Bali diselenggarakan melalui **Career Development Center (CDC)** sebagai fasilitas peningkatan kompetensi digital:\n\n` +
-          `• **Tujuan & Manfaat**: Memberikan akses ke ribuan modul pembelajaran daring profesional (teknologi, bisnis, AI, desain, dan manajemen) dengan sertifikasi bertaraf internasional.\n` +
-          `• **Pengembangan Portofolio**: Membantu mahasiswa dan alumni dalam optimalisasi profil profesional LinkedIn, penyusunan portofolio digital, dan penguatan personal branding untuk kesiapan rekrutmen kerja.\n` +
-          `• **Integrasi CDC**: Terhubung langsung dengan bimbingan karier, webinar industri, dan penyaluran lowongan kerja oleh mitra kampus.\n\n` +
-          `Untuk aktivasi akun pembelajaran LinkedIn Learning, silakan menghubungi kantor Career Development Center (CDC) ITB STIKOM Bali.`;
+        `• **Tujuan & Manfaat**: Memberikan akses ke ribuan modul pembelajaran daring profesional (teknologi, bisnis, AI, desain, dan manajemen) dengan sertifikasi bertaraf internasional.\n` +
+        `• **Pengembangan Portofolio**: Membantu mahasiswa dan alumni dalam optimalisasi profil profesional LinkedIn, penyusunan portofolio digital, dan penguatan personal branding untuk kesiapan rekrutmen kerja.\n` +
+        `• **Integrasi CDC**: Terhubung langsung dengan bimbingan karier, webinar industri, dan penyaluran lowongan kerja oleh mitra kampus.\n\n` +
+        `Untuk aktivasi akun pembelajaran LinkedIn Learning, silakan menghubungi kantor Career Development Center (CDC) ITB STIKOM Bali.`;
       return {
         success: true,
         answer: linkedInAnswer,
@@ -4438,17 +4809,17 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
 
     const cdcAnswer = isEn
       ? `To support career readiness and job placement for students and alumni, the **Career Development Center (CDC)** at ITB STIKOM Bali provides official services:\n\n` +
-        `• **Job Fairs & Campus Hiring**: Direct recruitment partnerships with hundreds of corporate and technology industry partners.\n` +
-        `• **Internship Placement**: Facilitating certified internship programs at technology companies and business institutions.\n` +
-        `• **Career Training & LinkedIn Learning**: Soft skills training, interview coaching, professional CV reviews, and global digital training modules.\n` +
-        `• **Tracer Study & Alumni Network**: Tracking and networking with alumni for career opportunities across cohorts.\n\n` +
-        `CDC services can be accessed at the Career Center office on campus or through the official student portal of ITB STIKOM Bali.`
+      `• **Job Fairs & Campus Hiring**: Direct recruitment partnerships with hundreds of corporate and technology industry partners.\n` +
+      `• **Internship Placement**: Facilitating certified internship programs at technology companies and business institutions.\n` +
+      `• **Career Training & LinkedIn Learning**: Soft skills training, interview coaching, professional CV reviews, and global digital training modules.\n` +
+      `• **Tracer Study & Alumni Network**: Tracking and networking with alumni for career opportunities across cohorts.\n\n` +
+      `CDC services can be accessed at the Career Center office on campus or through the official student portal of ITB STIKOM Bali.`
       : `Untuk mendukung kesiapan karier dan penyaluran kerja mahasiswa maupun alumni, **Career Development Center (CDC)** ITB STIKOM Bali menyediakan layanan dan fasilitas unggulan:\n\n` +
-        `• **Bursa Kerja & Campus Hiring**: Kerjasama rekrutmen langsung dengan ratusan mitra industri skala lokal, nasional, dan internasional.\n` +
-        `• **Penyaluran Magang Kerja & Pengalaman Industri**: Fasilitasi program magang kerja bersertifikat di perusahaan teknologi dan institusi bisnis.\n` +
-        `• **Pelatihan Karier & Program LinkedIn Learning**: Pembekalan soft skills, persiapan wawancara kerja, penyusunan CV profesional, serta akses program pelatihan digital berstandar global.\n` +
-        `• **Tracer Study & Jejaring Alumni**: Pendataan dan jejaring alumni untuk membangun koneksi profesional dan peluang karier lintas angkatan.\n\n` +
-        `Layanan CDC dapat diakses mahasiswa aktif maupun alumni melalui kantor Career Center di kampus atau portal resmi kemahasiswaan ITB STIKOM Bali.`;
+      `• **Bursa Kerja & Campus Hiring**: Kerjasama rekrutmen langsung dengan ratusan mitra industri skala lokal, nasional, dan internasional.\n` +
+      `• **Penyaluran Magang Kerja & Pengalaman Industri**: Fasilitasi program magang kerja bersertifikat di perusahaan teknologi dan institusi bisnis.\n` +
+      `• **Pelatihan Karier & Program LinkedIn Learning**: Pembekalan soft skills, persiapan wawancara kerja, penyusunan CV profesional, serta akses program pelatihan digital berstandar global.\n` +
+      `• **Tracer Study & Jejaring Alumni**: Pendataan dan jejaring alumni untuk membangun koneksi profesional dan peluang karier lintas angkatan.\n\n` +
+      `Layanan CDC dapat diakses mahasiswa aktif maupun alumni melalui kantor Career Center di kampus atau portal resmi kemahasiswaan ITB STIKOM Bali.`;
 
     return {
       success: true,
@@ -4487,13 +4858,13 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
   if (isHelpInquiry) {
     const helpAnswer = isEn
       ? `The International Double Degree program for **S1 Information Systems (Sistem Informasi)** is organized in collaboration with **HELP University, Malaysia**.\n\n` +
-        `• **Study Scheme (4-Year Duration)**: The entire learning process is conducted **fully offline on the ITB STIKOM Bali campus** in Indonesia without having to travel abroad, following an international curriculum aligned with HELP University standards.\n` +
-        `• **Dual Degrees Awarded**: Graduates receive two official bachelor degrees upon completion: **S.Kom.** (from ITB STIKOM Bali) and **BIT (Bachelor of Information Technology)** (from HELP University, Malaysia).\n\n` +
-        `For admission procedures and consultation regarding the HELP University double degree program, please contact ITB STIKOM Bali admissions via https://pmb.stikom-bali.ac.id.`
+      `• **Study Scheme (4-Year Duration)**: The entire learning process is conducted **fully offline on the ITB STIKOM Bali campus** in Indonesia without having to travel abroad, following an international curriculum aligned with HELP University standards.\n` +
+      `• **Dual Degrees Awarded**: Graduates receive two official bachelor degrees upon completion: **S.Kom.** (from ITB STIKOM Bali) and **BIT (Bachelor of Information Technology)** (from HELP University, Malaysia).\n\n` +
+      `For admission procedures and consultation regarding the HELP University double degree program, please contact ITB STIKOM Bali admissions via https://pmb.stikom-bali.ac.id.`
       : `Program Double Degree untuk **S1 Sistem Informasi** diselenggarakan bekerjasama dengan **HELP University, Malaysia**.\n\n` +
-        `• **Skema Perkuliahan (Durasi 4 Tahun)**: Seluruh proses perkuliahan dilaksanakan secara **full offline di kampus ITB STIKOM Bali** tanpa harus meninggalkan Indonesia, dengan kurikulum yang telah diselaraskan dengan standar internasional HELP University.\n` +
-        `• **Gelar Akademik**: Lulusan memperoleh dua gelar kesarjanaan resmi sekaligus: **S.Kom.** (dari ITB STIKOM Bali) dan **BIT (Bachelor of Information Technology)** (dari HELP University, Malaysia).\n\n` +
-        `Untuk informasi pendaftaran dan konsultasi program Double Degree HELP University, silakan hubungi layanan PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id.`;
+      `• **Skema Perkuliahan (Durasi 4 Tahun)**: Seluruh proses perkuliahan dilaksanakan secara **full offline di kampus ITB STIKOM Bali** tanpa harus meninggalkan Indonesia, dengan kurikulum yang telah diselaraskan dengan standar internasional HELP University.\n` +
+      `• **Gelar Akademik**: Lulusan memperoleh dua gelar kesarjanaan resmi sekaligus: **S.Kom.** (dari ITB STIKOM Bali) dan **BIT (Bachelor of Information Technology)** (dari HELP University, Malaysia).\n\n` +
+      `Untuk informasi pendaftaran dan konsultasi program Double Degree HELP University, silakan hubungi layanan PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id.`;
 
     return {
       success: true,
@@ -4507,21 +4878,21 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
   if (isDnuiInquiry) {
     const dnuiAnswer = isEn
       ? `The International Double Degree program for **S1 Digital Business (Bisnis Digital)** is organized in partnership with **Dalian Neusoft University of Information (DNUI), China**.\n\n` +
-        `• **Study Scheme (4-Year Duration)**: The curriculum is structured in progressive stages:\n` +
-        `  - **Years 1 & 2**: Studies conducted at ITB STIKOM Bali campus in Indonesia.\n` +
-        `  - **Year 3**: Online courses taught with DNUI curriculum.\n` +
-        `  - **Year 4**: Onsite learning directly at the DNUI campus in Dalian, China (students receive free shared dormitory accommodation provided by DNUI).\n` +
-        `• **Partner Programs**: Collaboration between **S1 Bisnis Digital** (ITB STIKOM Bali) and **E-Commerce** (DNUI).\n` +
-        `• **Dual Degrees Awarded**: Graduates receive **S.Bns.** (from ITB STIKOM Bali) and a recognized bachelor degree from DNUI (**Bachelor of Management / BM**).\n\n` +
-        `For registration details and admissions guidelines for the DNUI program, please visit https://pmb.stikom-bali.ac.id.`
+      `• **Study Scheme (4-Year Duration)**: The curriculum is structured in progressive stages:\n` +
+      `  - **Years 1 & 2**: Studies conducted at ITB STIKOM Bali campus in Indonesia.\n` +
+      `  - **Year 3**: Online courses taught with DNUI curriculum.\n` +
+      `  - **Year 4**: Onsite learning directly at the DNUI campus in Dalian, China (students receive free shared dormitory accommodation provided by DNUI).\n` +
+      `• **Partner Programs**: Collaboration between **S1 Bisnis Digital** (ITB STIKOM Bali) and **E-Commerce** (DNUI).\n` +
+      `• **Dual Degrees Awarded**: Graduates receive **S.Bns.** (from ITB STIKOM Bali) and a recognized bachelor degree from DNUI (**Bachelor of Management / BM**).\n\n` +
+      `For registration details and admissions guidelines for the DNUI program, please visit https://pmb.stikom-bali.ac.id.`
       : `Program Double Degree International Class untuk **S1 Bisnis Digital** diselenggarakan bekerjasama dengan **Dalian Neusoft University of Information (DNUI), China**.\n\n` +
-        `• **Skema Perkuliahan (Masa Studi 4 Tahun)**: Perkuliahan **tidak seluruhnya di STIKOM Bali**, melainkan dirancang secara bertahap:\n` +
-        `  - **Tahun 1 & 2**: Mahasiswa mengikuti perkuliahan dengan kurikulum ITB STIKOM Bali di Indonesia.\n` +
-        `  - **Tahun 3**: Mahasiswa mengikuti perkuliahan secara online dengan kurikulum dari DNUI.\n` +
-        `  - **Tahun 4**: Mahasiswa melanjutkan perkuliahan secara langsung (onsite) di kampus DNUI di Dalian, China (mahasiswa mendapatkan fasilitas asrama/dormitory shared room gratis dari DNUI).\n` +
-        `• **Program Studi Mitra**: Kolaborasi program studi **S1 Bisnis Digital** (ITB STIKOM Bali) dan **E-Commerce** (DNUI).\n` +
-        `• **Gelar Akademik**: Lulusan memperoleh dua gelar kesarjanaan resmi: **S.Bns.** (dari ITB STIKOM Bali) dan gelar kesarjanaan dari DNUI (**Bachelor of Management / BM**).\n\n` +
-        `Untuk informasi pendaftaran dan rincian program DNUI, silakan hubungi bagian admisi internasional ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id.`;
+      `• **Skema Perkuliahan (Masa Studi 4 Tahun)**: Perkuliahan **tidak seluruhnya di STIKOM Bali**, melainkan dirancang secara bertahap:\n` +
+      `  - **Tahun 1 & 2**: Mahasiswa mengikuti perkuliahan dengan kurikulum ITB STIKOM Bali di Indonesia.\n` +
+      `  - **Tahun 3**: Mahasiswa mengikuti perkuliahan secara online dengan kurikulum dari DNUI.\n` +
+      `  - **Tahun 4**: Mahasiswa melanjutkan perkuliahan secara langsung (onsite) di kampus DNUI di Dalian, China (mahasiswa mendapatkan fasilitas asrama/dormitory shared room gratis dari DNUI).\n` +
+      `• **Program Studi Mitra**: Kolaborasi program studi **S1 Bisnis Digital** (ITB STIKOM Bali) dan **E-Commerce** (DNUI).\n` +
+      `• **Gelar Akademik**: Lulusan memperoleh dua gelar kesarjanaan resmi: **S.Bns.** (dari ITB STIKOM Bali) dan gelar kesarjanaan dari DNUI (**Bachelor of Management / BM**).\n\n` +
+      `Untuk informasi pendaftaran dan rincian program DNUI, silakan hubungi bagian admisi internasional ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id.`;
 
     return {
       success: true,
@@ -4574,45 +4945,45 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     // General campus facilities inquiry (Campus Renon / ITB STIKOM Bali overall)
     const facilityFullAnswer = isEn
       ? `Official campus facilities and student development units at ITB STIKOM Bali include:\n\n` +
-        `1. **Laboratories & Practical Learning Facilities**:\n` +
-        `   • Hardware & IoT Laboratory (Embedded Systems, Robotics, Smart Systems)\n` +
-        `   • Networking & Computer Systems Laboratory\n` +
-        `   • Database Systems Laboratory\n` +
-        `   • Business Intelligence Laboratory\n` +
-        `   • Mobile Technology Laboratory\n` +
-        `   • Multimedia & Editing Studio, Representative Classrooms, and Digital Library\n\n` +
-        `2. **Student Service Centers & Incubation**:\n` +
-        `   • **Inkubator Bisnis (INBIS)**: Startup mentoring, business ideation, prototyping, and coworking space\n` +
-        `   • **Career Development Center (CDC)**: Career guidance, internships, soft skills development, and job placement\n` +
-        `   • **Language Learning Center (LLC)**: Foreign language laboratory and training\n` +
-        `   • **Soft Skills Development Program**\n` +
-        `   • Over **30 Student Activity Units (UKM)** for student interests and personal growth\n\n` +
-        `3. **International & Career Advancement Programs**:\n` +
-        `   • Study & Work Abroad Programs\n` +
-        `   • National & International Double Degree Programs\n` +
-        `   • Hi-Think Program (IT Career Preparation in Japan) and GCCP Short Course Abroad\n` +
-        `   • Paid Overseas Internships and 2-Year Post-Graduation Career Consultation`
+      `1. **Laboratories & Practical Learning Facilities**:\n` +
+      `   • Hardware & IoT Laboratory (Embedded Systems, Robotics, Smart Systems)\n` +
+      `   • Networking & Computer Systems Laboratory\n` +
+      `   • Database Systems Laboratory\n` +
+      `   • Business Intelligence Laboratory\n` +
+      `   • Mobile Technology Laboratory\n` +
+      `   • Multimedia & Editing Studio, Representative Classrooms, and Digital Library\n\n` +
+      `2. **Student Service Centers & Incubation**:\n` +
+      `   • **Inkubator Bisnis (INBIS)**: Startup mentoring, business ideation, prototyping, and coworking space\n` +
+      `   • **Career Development Center (CDC)**: Career guidance, internships, soft skills development, and job placement\n` +
+      `   • **Language Learning Center (LLC)**: Foreign language laboratory and training\n` +
+      `   • **Soft Skills Development Program**\n` +
+      `   • Over **30 Student Activity Units (UKM)** for student interests and personal growth\n\n` +
+      `3. **International & Career Advancement Programs**:\n` +
+      `   • Study & Work Abroad Programs\n` +
+      `   • National & International Double Degree Programs\n` +
+      `   • Hi-Think Program (IT Career Preparation in Japan) and GCCP Short Course Abroad\n` +
+      `   • Paid Overseas Internships and 2-Year Post-Graduation Career Consultation`
       : `Fasilitas resmi penunjang perkuliahan dan pengembangan mahasiswa di ITB STIKOM Bali meliputi:\n\n` +
-        `1. **Laboratorium & Sarana Praktikum**:\n` +
-        `   • Laboratorium Hardware (fokus pada Embedded System, Robotika, dan Internet of Things/IoT)\n` +
-        `   • Laboratorium Networking & Jaringan Komputer\n` +
-        `   • Laboratorium Database & Sistem Basis Data\n` +
-        `   • Laboratorium Business Intelligence\n` +
-        `   • Laboratorium Mobile Technology\n` +
-        `   • Studio Multimedia & Editing, Ruang Kelas representatif, dan Perpustakaan Digital\n\n` +
-        `2. **Pusat Layanan Mahasiswa & Inkubasi**:\n` +
-        `   • **Inkubator Bisnis (INBIS)**: Pembinaan, pendampingan, dan fasilitas ruang kerja (*coworking space*) untuk pengembangan startup/wirausaha mahasiswa\n` +
-        `   • **Career Development Center (CDC)**: Pusat layanan bimbingan karir, magang kerja, dan bursa kerja mahasiswa/alumni\n` +
-        `   • **Language Learning Center (LLC)**: Laboratorium dan pusat pelatihan kemahiran bahasa asing mahasiswa\n` +
-        `   • **Program Pengembangan Softskill & Karakter**\n` +
-        `   • Lebih dari **30 Unit Kegiatan Mahasiswa (UKM)** untuk minat, bakat, dan penalaran\n\n` +
-        `3. **Program Keunggulan Penunjang Akademik & Karir**:\n` +
-        `   • Program Kuliah Sambil Kerja di Luar Negeri\n` +
-        `   • Program Double Degree Nasional & Internasional (Malaysia, China, dll.)\n` +
-        `   • Program Hi-Think (Persiapan Kerja Bidang TI di Jepang)\n` +
-        `   • Program GCCP (Short Course di Luar Negeri)\n` +
-        `   • Program Magang Berbayar di Luar Negeri\n` +
-        `   • Layanan Konsultasi selama 2 tahun setelah kelulusan`;
+      `1. **Laboratorium & Sarana Praktikum**:\n` +
+      `   • Laboratorium Hardware (fokus pada Embedded System, Robotika, dan Internet of Things/IoT)\n` +
+      `   • Laboratorium Networking & Jaringan Komputer\n` +
+      `   • Laboratorium Database & Sistem Basis Data\n` +
+      `   • Laboratorium Business Intelligence\n` +
+      `   • Laboratorium Mobile Technology\n` +
+      `   • Studio Multimedia & Editing, Ruang Kelas representatif, dan Perpustakaan Digital\n\n` +
+      `2. **Pusat Layanan Mahasiswa & Inkubasi**:\n` +
+      `   • **Inkubator Bisnis (INBIS)**: Pembinaan, pendampingan, dan fasilitas ruang kerja (*coworking space*) untuk pengembangan startup/wirausaha mahasiswa\n` +
+      `   • **Career Development Center (CDC)**: Pusat layanan bimbingan karir, magang kerja, dan bursa kerja mahasiswa/alumni\n` +
+      `   • **Language Learning Center (LLC)**: Laboratorium dan pusat pelatihan kemahiran bahasa asing mahasiswa\n` +
+      `   • **Program Pengembangan Softskill & Karakter**\n` +
+      `   • Lebih dari **30 Unit Kegiatan Mahasiswa (UKM)** untuk minat, bakat, dan penalaran\n\n` +
+      `3. **Program Keunggulan Penunjang Akademik & Karir**:\n` +
+      `   • Program Kuliah Sambil Kerja di Luar Negeri\n` +
+      `   • Program Double Degree Nasional & Internasional (Malaysia, China, dll.)\n` +
+      `   • Program Hi-Think (Persiapan Kerja Bidang TI di Jepang)\n` +
+      `   • Program GCCP (Short Course di Luar Negeri)\n` +
+      `   • Program Magang Berbayar di Luar Negeri\n` +
+      `   • Layanan Konsultasi selama 2 tahun setelah kelulusan`;
 
     return {
       success: true,
@@ -4723,30 +5094,30 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
         const clean = cleanDocumentArtifacts(p);
         if (!clean || clean.length < 15) continue;
 
-      const rawSegments = clean.split(/\n+/).flatMap(line => {
-        line = line.trim();
-        if (!line) return [];
-        // Clean orphan FAQ answer prefixes so they don't split into isolated affirmative sentences
-        line = line.replace(/^jawaban:\s*(?:ya|tidak|tentu)\.\s*/i, '');
-        if (!line) return [];
-        const sents = line.split(/(?<!\b(?:jl|no|dr|ir|prof|st|s|d|kec))\.\s+/i);
-        return sents.map(s => s.trim()).filter(s => s.length >= 10);
-      });
+        const rawSegments = clean.split(/\n+/).flatMap(line => {
+          line = line.trim();
+          if (!line) return [];
+          // Clean orphan FAQ answer prefixes so they don't split into isolated affirmative sentences
+          line = line.replace(/^jawaban:\s*(?:ya|tidak|tentu)\.\s*/i, '');
+          if (!line) return [];
+          const sents = line.split(/(?<!\b(?:jl|no|dr|ir|prof|st|s|d|kec))\.\s+/i);
+          return sents.map(s => s.trim()).filter(s => s.length >= 10);
+        });
 
-      for (let sent of rawSegments) {
-        if (!isTargetSpecific(sent)) continue;
-        if (/^(?:kontak\s*&\s*lokasi|abiansemal[,.]*|jawaban:\s*(?:ya|tidak|tentu)[,.]*)$/i.test(sent.trim())) continue;
-        if (!/[.!?]$/.test(sent)) sent += '.';
-        const norm = sent.toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (norm.length < 8 || seenFingerprints.has(norm)) continue;
-        seenFingerprints.add(norm);
-        cleanPassages.push(sent);
+        for (let sent of rawSegments) {
+          if (!isTargetSpecific(sent)) continue;
+          if (/^(?:kontak\s*&\s*lokasi|abiansemal[,.]*|jawaban:\s*(?:ya|tidak|tentu)[,.]*)$/i.test(sent.trim())) continue;
+          if (!/[.!?]$/.test(sent)) sent += '.';
+          const norm = sent.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (norm.length < 8 || seenFingerprints.has(norm)) continue;
+          seenFingerprints.add(norm);
+          cleanPassages.push(sent);
+          if (cleanPassages.length >= 16) break;
+        }
         if (cleanPassages.length >= 16) break;
       }
       if (cleanPassages.length >= 16) break;
     }
-    if (cleanPassages.length >= 16) break;
-  }
   }
 
   if (cleanPassages.length === 0) {
@@ -4840,5 +5211,7 @@ module.exports = {
   buildINBISAnswer,
   isProgramComparisonInquiry,
   buildProgramComparisonAnswer,
-  isolateTargetPassages
+  isolateTargetPassages,
+  formatCurriculumTable,
+  buildGroundedCurriculumAnswer
 };

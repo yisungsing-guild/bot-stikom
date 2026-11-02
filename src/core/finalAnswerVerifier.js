@@ -388,8 +388,8 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   const hasFullCurriculumDump = /\bSemester\s+I\s*\([^)]*\):.*Semester\s+VIII\s*\([^)]*\):/is.test(text) ||
     (/\bSemester\s+I\b/i.test(text) && /\bSemester\s+VIII\b/i.test(text) && /\b144\s*SKS\b/i.test(text));
   if (hasFullCurriculumDump) {
-    const isExplicitCurriculumQuery = /\b(?:kurikulum|mata\s*kuliah|matkul|sebaran\s*matkul|silabus|daftar\s*matkul|ambil\s*apa\s*saja)\b/i.test(rawQuery);
-    const isSpecificPrerequisiteOrThesis = /\b(?:coding|komputer|jago|halaman|lembar|tebal|tugas\s+akhir|skripsi|sion)\b/i.test(rawQuery);
+    const isExplicitCurriculumQuery = /\b(?:kurikulum|mata\s*kuliah(?:nya)?|matkul(?:nya)?|sebaran\s*matkul|silabus|daftar\s*matkul|ambil\s*apa\s*saja)\b/i.test(rawQuery);
+    const isSpecificPrerequisiteOrThesis = /\b(?:coding|jago|halaman|lembar|tebal|tugas\s+akhir|skripsi|sion|spesifikasi\s+komputer|butuh\s+komputer)\b/i.test(rawQuery);
     if (!isExplicitCurriculumQuery || isSpecificPrerequisiteOrThesis) {
       return failVerification('aspect_mismatch_curriculum_dump_for_non_curriculum_query');
     }

@@ -118,7 +118,11 @@ function isCandidateMatchingTargetEntity(candidateTextOrObj, targetEntityStr) {
     if (isCandidateS2 && (candProg === 'SI' || !candProg)) {
       candProg = 'S2';
     }
-    if (targetCode && candProg && candProg !== targetCode && (candidateTextOrObj.scope === 'PROGRAM_SINGLE' || (candidateTextOrObj.program && candProg !== 'MULTI'))) {
+    // Context entities match for valid multi-program documents (e.g. multi-program PDF documents)
+    const hasMatchingContextEntity = Array.isArray(candidateTextOrObj.contextEntities) && candidateTextOrObj.contextEntities.length > 0 &&
+      candidateTextOrObj.contextEntities.some(ce => (targetCode && getProgramCodeFromEntity(ce) === targetCode) || normalizePunctuation(ce) === targetNorm);
+
+    if (!hasMatchingContextEntity && targetCode && candProg && candProg !== targetCode && (candidateTextOrObj.scope === 'PROGRAM_SINGLE' || (candidateTextOrObj.program && candProg !== 'MULTI'))) {
       return false;
     }
 
@@ -532,7 +536,11 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
 
   if (Array.isArray(targetEntities) && targetEntities.length > 0 && candProgCode) {
     const targetCodes = targetEntities.map(te => getProgramCodeFromEntity(te)).filter(Boolean);
-    if (targetCodes.length > 0 && !targetCodes.includes(candProgCode)) {
+    const contextCodes = Array.isArray(candidate?.contextEntities)
+      ? candidate.contextEntities.map(ce => getProgramCodeFromEntity(ce)).filter(Boolean)
+      : [];
+    const matchesContext = targetCodes.some(tc => contextCodes.includes(tc));
+    if (!matchesContext && targetCodes.length > 0 && !targetCodes.includes(candProgCode)) {
       return {
         accepted: false,
         disposition: 'REJECT_SCOPE_COLLISION',
@@ -694,10 +702,10 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     (candidateFile && /rincian biaya/i.test(candidateFile)) ||
     /\b(biaya|tarif|sewa|pendidikan per semester|dpp|spp|uang pangkal|waktu pembayaran|pendaftaran \d|dicicil|potongan biaya|angsuran)\b/i.test(text);
 
-  const isCurriculumChunk = /\b(kurikulum|mata\s*kuliah|matkul|sks|semester\s+[ivx\d]+\s+no\s+nama\s+mata\s+kuliah|praktikum)\b/i.test(text) &&
+  const isCurriculumChunk = /\b(kurikulum|mata\s*kuliah|matkul|sks|semester\s+[ivx\d]+|praktikum)\b/i.test(text) &&
     !(candidateFile && /kalender\s+akademik/i.test(candidateFile));
-  const isOverviewChunk = /\b(deskripsi singkat|profil|fokus pada|fokus pendidikan|keahlian dalam bidang|visi|misi|program studi terlihat|penjelasan prodi|peluang kerja|yang dipelajari|perbedaan)\b/i.test(text);
-  const isCareerChunk = /\b(peluang kerja|prospek karir|prospek karier|profesi lulusan|career center|magang|internship|cdc)\b/i.test(text) ||
+  const isOverviewChunk = /\b(deskripsi singkat|profil|fokus pada|fokus pendidikan|keahlian dalam bidang|visi|misi|program studi terlihat|penjelasan prodi|yang dipelajari|perbedaan)\b/i.test(text);
+  const isCareerChunk = /\b(peluang kerja|prospek karir|prospek karier|profesi lulusan|career center|magang|internship|cdc|berkarier sebagai)\b/i.test(text) ||
     (candidateFile && /(?:company-profile-cdc|penjelasan prodi dan karier|faq cc)/i.test(candidateFile));
   const isInbisChunk = /\b(inkubator\s+bisnis|inbis|p2mw|tenant|startup|kewirausahaan|pra-?inkubasi|pasca-?inkubasi)\b/i.test(text) ||
     (candidateFile && /(?:Profil INBIS|INBIS PROFILE|inbis|inkubator)/i.test(candidateFile));
@@ -723,9 +731,11 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   const isPaymentProcedureChunk = /\b(konfirmasi\s+pembayaran|bukti\s+bayar|transfer|tata\s+cara\s+pembayaran|rekening|waktu\s+pembayaran)\b/i.test(text);
   const isAccreditationChunk = /\b(akreditasi|terakreditasi|ban-?pt|lam-?infokom|peringkat\s+akreditasi|sk\s+akreditasi|\/sk\/ban-pt\/|\/sk\/lam-infokom\/|terakreditasi\s+(?:baik|unggul|a|b))\b/i.test(text);
 
+  const isPureCareerChunk = isCareerChunk && !isCurriculumChunk;
   if (isFeeChunk) providedAspects.push('fee', 'tuition', 'dpp', 'components');
   if (isCurriculumChunk) providedAspects.push('curriculum', 'courses', 'competencies');
-  if (isOverviewChunk) providedAspects.push('overview', 'definition', 'curriculum_difference', 'curriculum', 'courses', 'career', 'competencies');
+  if (isOverviewChunk) providedAspects.push('overview', 'definition', 'curriculum_difference', 'curriculum', 'competencies');
+  if (isOverviewChunk && !isPureCareerChunk) providedAspects.push('courses');
   if (isCareerChunk) providedAspects.push('career_prospects', 'career');
   if (isCurriculumChunk || isOverviewChunk || isHobbyChunk || isCareerChunk) {
     providedAspects.push('recommendation', 'program_fit');
@@ -1331,6 +1341,55 @@ function arbitrateEvidence(candidates = [], retrievalPlan = {}) {
       const bIsAuthoritative = /\b(Penjelasan Prodi|Fokus Pendidikan|Yang Dipelajari|Peluang Kerja|Visi|Profil Program Studi|Deskripsi Singkat)\b/i.test(b.text || b.chunk || '');
       if (aIsAuthoritative && !bIsAuthoritative) return -1;
       if (!aIsAuthoritative && bIsAuthoritative) return 1;
+      return 0;
+    });
+  }
+
+  if (retrievalPlan.domain === 'ACADEMIC_CURRICULUM' || retrievalPlan.intent === 'CURRICULUM_INQUIRY') {
+    const queryText = (retrievalPlan.query || retrievalPlan.rawQuery || (retrievalPlan.queryVariants && retrievalPlan.queryVariants.join(' ')) || '').toLowerCase();
+    const isCodingQuery = /\b(?:coding|pemrograman|ngoding|koding|jago\s+coding)\b/i.test(queryText);
+    const isDigitalMarketingQuery = /\b(?:digital\s+marketing|pemasaran\s+digital|seo|mesin\s+pencari|sosial\s+media|media\s+sosial)\b/i.test(queryText);
+    const isAiQuery = /\b(?:artificial\s+intelligence|\bai\b|kecerdasan\s+artifisial|kecerdasan\s+buatan|prompt)\b/i.test(queryText);
+
+    accepted.sort((a, b) => {
+      const aText = (a.text || a.chunk || '').toLowerCase();
+      const bText = (b.text || b.chunk || '').toLowerCase();
+      const aIsPureCareer = /\b(?:lulusan.*berkarier sebagai|profesi lulusan|peluang karir|peluang kerja)\b/i.test(aText) &&
+        !/\b(?:semester\s+[ivx\d]+|sks|mata\s*kuliah)\b/i.test(aText);
+      const bIsPureCareer = /\b(?:lulusan.*berkarier sebagai|profesi lulusan|peluang karir|peluang kerja)\b/i.test(bText) &&
+        !/\b(?:semester\s+[ivx\d]+|sks|mata\s*kuliah)\b/i.test(bText);
+
+      // Deprioritize pure career chunks when inquiring about curriculum / courses
+      if (aIsPureCareer && !bIsPureCareer) return 1;
+      if (!aIsPureCareer && bIsPureCareer) return -1;
+
+      // Prioritize specific topic evidence
+      if (isDigitalMarketingQuery) {
+        const aHasDm = /\b(?:pemasaran\s+digital|optimasi\s+mesin\s+pencari|pemasaran\s+media\s+sosial|kampanye\s+pemasaran)\b/i.test(aText);
+        const bHasDm = /\b(?:pemasaran\s+digital|optimasi\s+mesin\s+pencari|pemasaran\s+media\s+sosial|kampanye\s+pemasaran)\b/i.test(bText);
+        if (aHasDm && !bHasDm) return -1;
+        if (!aHasDm && bHasDm) return 1;
+      }
+
+      if (isAiQuery) {
+        const aHasAi = /\b(?:teknik\s+pembuatan\s+prompt|model\s+ai|kecerdasan\s+artifisial)\b/i.test(aText);
+        const bHasAi = /\b(?:teknik\s+pembuatan\s+prompt|model\s+ai|kecerdasan\s+artifisial)\b/i.test(bText);
+        if (aHasAi && !bHasAi) return -1;
+        if (!aHasAi && bHasAi) return 1;
+      }
+
+      if (isCodingQuery) {
+        const aHasPrereqOrTech = /\b(?:rekayasa\s+perangkat\s+lunak|algoritma|pemrograman|obe|dasar|fondasi)\b/i.test(aText);
+        const bHasPrereqOrTech = /\b(?:rekayasa\s+perangkat\s+lunak|algoritma|pemrograman|obe|dasar|fondasi)\b/i.test(bText);
+        if (aHasPrereqOrTech && !bHasPrereqOrTech) return -1;
+        if (!aHasPrereqOrTech && bHasPrereqOrTech) return 1;
+      }
+
+      const aHasSem = /\b(?:semester\s+[ivx\d]+|kurikulum\s+2025)\b/i.test(aText);
+      const bHasSem = /\b(?:semester\s+[ivx\d]+|kurikulum\s+2025)\b/i.test(bText);
+      if (aHasSem && !bHasSem) return -1;
+      if (!aHasSem && bHasSem) return 1;
+
       return 0;
     });
   }

@@ -550,7 +550,20 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 5. Program Curriculum Inquiry (Priority over general program info)
-  if (/\b(kurikulum(?:nya)?|mata\s*kuliah|matkul|sebaran\s*mata\s*kuliah|silabus|daftar\s*matkul|belajar\s+mata\s*kuliah|semester\s*(?:[1-8]|[ivx]+)|(?:apa\s+yang\s+)?dipelajari|pembelajaran|materi\s+kuliah|pelajaran)\b/i.test(normalized)) {
+  const hasSpecificProgramEntity = entities.some(e => (e.family === 'academic_program' || e.type === 'program') && !e.type?.includes('scope'));
+  const hasAcademicProgramInContext = hasSpecificProgramEntity || (sessionData && sessionData.activeEntity && (
+    (typeof sessionData.activeEntity === 'object' && (sessionData.activeEntity.family === 'academic_program' || sessionData.activeEntity.type === 'program')) ||
+    (typeof sessionData.activeEntity === 'string' && !['Wisuda', 'Yudisium', 'Kampus ITB STIKOM Bali'].includes(sessionData.activeEntity))
+  ));
+
+  const isCurriculumQuery = /\b(kurikulum(?:nya)?|mata\s*kuliah(?:nya)?|matkul(?:nya)?|sebaran\s*mata\s*kuliah|silabus|daftar\s*matkul|belajar\s+mata\s*kuliah|semester\s*(?:[1-8]|[ivx]+)|(?:apa\s+yang\s+)?dipelajari|pembelajaran|materi\s+kuliah|pelajaran)\b/i.test(normalized) ||
+    (hasAcademicProgramInContext && !/\b(?:biaya|uang|bayar|daftar|pendaftaran|jadwal|gelombang|lokasi|alamat|ukm)\b/i.test(normalized) && (
+      /\b(?:belajar|mempelajari|diajarkan|diajarin|materi)\s+(?:tentang\s+)?(?:coding|koding|ngoding|pemrograman|programming|digital\s+marketing|marketing|pemasaran|ai\b|artificial\s+intelligence|kecerdasan\s+buatan|machine\s+learning|data\s+science|cyber|jaringan|web|mobile|android|game|multimedia|desain|iot|robotik|cloud|blockchain|akuntansi|bisnis|manajemen|komputer|software|hardware)\b/i.test(normalized) ||
+      /\b(?:harus|perlu|wajib|kudu|bisa|jago|mahir|pintar|paham|menguasai)\s+(?:bisa\s+)?(?:coding|koding|ngoding|pemrograman|programming|it\b|komputer|hitung-?hitungan|matematika|desain|design|marketing)\b/i.test(normalized) ||
+      /\b(?:ada\s+coding(?:nya)?|coding(?:an)?\s+nggak|banyak\s+koding(?:nya)?|harus\s+bisa\s+coding)\b/i.test(normalized)
+    ));
+
+  if (isCurriculumQuery) {
     return {
       domain: 'ACADEMIC_CURRICULUM',
       intent: 'CURRICULUM_INQUIRY',
@@ -563,7 +576,6 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 6. Available Programs Listing (Generic Scope vs Specific Entity)
-  const hasSpecificProgramEntity = entities.some(e => e.family === 'academic_program' && e.type === 'program');
   const hasStudentOrgEntity = entities.some(e => e.family === 'student_organization');
   // 6b. Program Recommendation Inquiry (e.g. "cocoknya masuk prodi apa", "rekomendasi jurusan", "suka coding software dan bikin aplikasi", "jurusan apa yang pas")
   const isNonAcademicInquiry = entities.some(e => ['scholarship', 'campus_service', 'student_organization', 'facility', 'campus_facility'].includes(e.family)) ||
@@ -1292,6 +1304,11 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     } else if (contextDep.inheritedDomain === 'SCHOLARSHIP') {
       domain = 'SCHOLARSHIP';
       intent = 'SCHOLARSHIP_INQUIRY';
+    } else if (contextDep.inheritedDomain === 'ACADEMIC_CURRICULUM') {
+      domain = 'ACADEMIC_CURRICULUM';
+      intent = contextDep.inheritedIntent || 'CURRICULUM_INQUIRY';
+      inferred.desiredAction = 'PROVIDE_CURRICULUM_INFO';
+      inferred.relation = 'PROGRAM_CURRICULUM';
     } else if (domain === 'GENERAL' || domain === 'OUT_OF_DOMAIN') {
       domain = contextDep.inheritedDomain;
       if (contextDep.inheritedIntent || sessionData.activeIntent) {
@@ -1401,9 +1418,11 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     /\b(prospek|peluang\s+kerja|karir|karier|profesi\s+lulusan)\b/i.test(unstemmedQuery)) {
     combinedAspects.add('career_prospects');
   }
-  if (/\b(kurikulum(?:nya)?|mata\s*kuliah|matkul|sks|(?:apa\s+yang\s+)?dipelajari|pembelajaran|materi\s+kuliah|pelajaran)\b/i.test(normalized) ||
+  if (domain === 'ACADEMIC_CURRICULUM' || intent === 'CURRICULUM_INQUIRY' ||
+    /\b(kurikulum(?:nya)?|mata\s*kuliah|matkul|sks|(?:apa\s+yang\s+)?dipelajari|pembelajaran|materi\s+kuliah|pelajaran)\b/i.test(normalized) ||
     /\b(kurikulum|mata\s*kuliah|matkul|sks|(?:apa\s+yang\s+)?dipelajari|pembelajaran|materi\s+kuliah|pelajaran)\b/i.test(unstemmedQuery)) {
     combinedAspects.add('curriculum');
+    combinedAspects.add('courses');
   }
   if (/\b(biaya(?:nya)?|spp|dpp|uang\s+pangkal|bayar)\b/i.test(normalized) ||
     /\b(biaya|spp|dpp|uang\s+pangkal|bayar)\b/i.test(unstemmedQuery)) {
@@ -1716,6 +1735,12 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       syncFrame.aspects.forEach(a => { if (!aspects.includes(a)) aspects.push(a); });
     }
 
+    const curriculumDep = Array.isArray(syncFrame.contextDependencies) &&
+      syncFrame.contextDependencies.find(d => d && d.shouldInherit && (d.reason === 'curriculum_continuation' || d.inheritedDomain === 'ACADEMIC_CURRICULUM'));
+    const isCurriculumAspect = aspects.includes('curriculum') || aspects.includes('courses') || aspects.includes('learning') || aspects.includes('competency');
+    const isLearningSpeechAct = speechAct === 'INQUIRE_PROPERTY' || speechAct === 'EXPLAIN_PROCEDURE' || speechAct === 'VERIFY_STATUS' || speechAct === 'DISCOVER_LIST';
+    const isCurriculumInquiry = Boolean(curriculumDep) || (syncBoundPriorEntity && (isCurriculumAspect || (isLearningSpeechAct && (syncFrame.domain === 'ACADEMIC_CURRICULUM' || syncFrame.intent === 'CURRICULUM_INQUIRY'))));
+
     const INSTITUTIONAL_CAMPUS_WIDE_INTENTS = new Set([
       'CAMPUS_LOCATION',
       'ADMISSION_SCHEDULE',
@@ -1728,9 +1753,11 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       'PMB_CONTACT_INQUIRY',
       'CONTACT_INQUIRY'
     ]);
-    const isInstitutionalTopicSwitch = INSTITUTIONAL_CAMPUS_WIDE_INTENTS.has(modelPrimaryIntent) ||
+    const isInstitutionalTopicSwitch = !isCurriculumInquiry && (
+      INSTITUTIONAL_CAMPUS_WIDE_INTENTS.has(modelPrimaryIntent) ||
       INSTITUTIONAL_CAMPUS_WIDE_INTENTS.has(syncFrame.intent) ||
-      (aspects.includes('contact') && !aspects.includes('fee'));
+      (aspects.includes('contact') && !aspects.includes('fee'))
+    );
 
     // Resolve entities to canonical registry objects
     const resolvedEntities = [];
@@ -1758,13 +1785,28 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       for (const e of syncFrame.entities) {
         if (!e.inherited) {
           resolvedEntities.push(e);
-        } else if (!isTopicSwitch) {
+        } else if (!isTopicSwitch || isCurriculumInquiry) {
           const isAcademicEntity = e.family === 'academic_program' || e.type === 'program';
           if (isAcademicEntity && isInstitutionalTopicSwitch) {
             continue;
           }
           resolvedEntities.push(e);
         }
+      }
+    }
+
+    if (isCurriculumInquiry && resolvedEntities.length === 0) {
+      const inheritedTarget = (curriculumDep && curriculumDep.inheritedEntity) ||
+        syncFrame.contextDependencies?.find(d => d && d.inheritedEntity)?.inheritedEntity ||
+        sessionData.activeEntity;
+      const inheritedCanon = findCanonicalEntity(inheritedTarget);
+      if (inheritedCanon) {
+        resolvedEntities.push({
+          canonical: inheritedCanon.canonical,
+          type: inheritedCanon.type,
+          family: inheritedCanon.family,
+          inherited: true
+        });
       }
     }
 
@@ -2085,6 +2127,13 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       }
     }
 
+    if (isCurriculumInquiry && resolvedEntities.some(e => e.family === 'academic_program' || e.type === 'program')) {
+      domain = 'ACADEMIC_CURRICULUM';
+      intent = 'CURRICULUM_INQUIRY';
+      if (!aspects.includes('curriculum')) aspects.push('curriculum');
+      if (!aspects.includes('courses')) aspects.push('courses');
+    }
+
     // Detect foreign participant scope
     const isForeign = /\b(mahasiswa\s+asing|visa|itas|kitas|izin\s+belajar|e-visa)\b/i.test(rawQuery);
     const participantScope = isForeign ? 'foreign' : 'domestic';
@@ -2185,10 +2234,12 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       aspects: aspects.length > 0 ? aspects : syncFrame.aspects,
       temporal: syncFrame.temporal,
       userState: syncFrame.userState,
-      desiredAction: isUnsupported ? 'REFUSE_UNSUPPORTED_PROGRAM' : (isOOD ? 'REFUSE_OUT_OF_DOMAIN' : syncFrame.desiredAction),
+      desiredAction: isUnsupported ? 'REFUSE_UNSUPPORTED_PROGRAM' : (isOOD ? 'REFUSE_OUT_OF_DOMAIN' : (intent === 'CURRICULUM_INQUIRY' ? 'PROVIDE_CURRICULUM_INFO' : syncFrame.desiredAction)),
       language: detectQueryLanguage(rawQuery),
       subQueries: [],
-      contextDependencies: validated.contextDependency?.isFollowUp ? [validated.contextDependency] : [],
+      contextDependencies: validated.contextDependency?.isFollowUp
+        ? [validated.contextDependency]
+        : (Array.isArray(syncFrame.contextDependencies) ? syncFrame.contextDependencies : []),
       unsupportedEntity: isUnsupported,
       unsupportedEntityName: unsupportedName,
       entityResolutionStatus: isUnsupported ? 'UNSUPPORTED' : (resolvedEntities.length > 0 ? 'RESOLVED' : 'UNRESOLVED'),

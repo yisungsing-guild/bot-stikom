@@ -21,6 +21,8 @@
  *   These MUST NEVER trigger context inheritance on their own.
  */
 
+const { matchCanonicalEntities, findCanonicalEntity } = require('../engine/canonicalEntityRegistry');
+
 // Non-referential discourse adverbs and modals ending in -nya that do NOT reference a prior entity
 const NON_REFERENTIAL_NYA_WORDS = new Set([
   'sebenarnya', 'sebenar',
@@ -314,6 +316,57 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
       inheritedDomain: 'FACILITIES',
       inheritedIntent: 'CAMPUS_LOCATION',
       inheritedEntity: sessionData.activeEntity || 'Kampus ITB STIKOM Bali'
+    };
+  }
+
+  // Guard 1: Mentions a different academic program explicitly -> current turn switches to new program
+  const explicitProgramMatches = (matchCanonicalEntities(query) || []).filter(m =>
+    m.family === 'academic_program' || m.family === 'international_program'
+  );
+  const activeCanon = findCanonicalEntity(sessionData.activeEntity)?.canonical?.toLowerCase();
+  const mentionsDifferentProgram = explicitProgramMatches.some(m =>
+    m.canonical?.toLowerCase() !== activeCanon
+  );
+  if (mentionsDifferentProgram) {
+    return {
+      shouldInherit: false,
+      reason: 'explicit_different_program'
+    };
+  }
+
+  // Guard 2: Explicit institutional catalog inquiry (asking for list of all offered programs)
+  const isExplicitCatalogInquiry = /\b(?:apa\s+(?:saja\s+)?(?:jurusan|prodi|program\s+studi)|ada\s+(?:jurusan|prodi|program\s+studi)\s+apa(?:\s+saja)?|daftar\s+(?:jurusan|prodi|program\s+studi)|pilihan\s+(?:jurusan|prodi)|list\s+(?:jurusan|prodi)|jurusan(?:\s+apa)?\s+di\s+stikom\s+ada\s+apa\s+saja)\b/i.test(query);
+  if (isExplicitCatalogInquiry) {
+    return {
+      shouldInherit: false,
+      reason: 'explicit_catalog_inquiry'
+    };
+  }
+
+  // Check 0: Curriculum, learning, competency, or program prerequisites follow-up
+  const hasAdmissionScheduleFocus = /\b(?:kapan|tanggal|jadwal\s+(?:pmb|pendaftaran|gelombang)|periode\s+(?:pmb|pendaftaran)|buka|dibuka|ditutup|tutup|batas\s+pendaftaran|gelombang\s+(?:berapa|apa\s+saja))\b/i.test(query);
+  const isCurriculumOrCompetencyInquiry = isAcademicActiveEntity && !hasAdmissionScheduleFocus && !hasFeeFocus && (
+    // Direct curriculum terms
+    /\b(?:kurikulum(?:nya)?|mata\s*kuliah(?:nya)?|matkul(?:nya)?|silabus(?:nya)?|sebaran\s*mata\s*kuliah|daftar\s*matkul|materi\s+(?:kuliah|pembelajaran)(?:nya)?|modul(?:nya)?)\b/i.test(query) ||
+    // Learning inquiry phrases
+    /\b(?:apa\s+saja\s+yang\s+dipelajari|apa\s+yang\s+dipelajari|yang\s+dipelajari\s+apa|belajar\s+apa(?:\s+saja|\s+aja)?|mempelajari\s+apa|diajarkan\s+apa|diajarin\s+apa)\b/i.test(query) ||
+    // Study/learning verbs combined with topic, competency, or skill
+    (/\b(?:belajar|mempelajari|diajarkan|diajarin|ada\s+materi|ada\s+pelajaran)\b/i.test(query) &&
+     /\b(?:coding|koding|ngoding|pemrograman|programming|digital\s+marketing|marketing|pemasaran|ai\b|artificial\s+intelligence|kecerdasan\s+buatan|machine\s+learning|data\s+science|data\s+analyst|cyber|keamanan\s+siber|jaringan|networking|web|mobile|android|game|multimedia|desain|iot|robotik|robotika|cloud|blockchain|akuntansi|bisnis|manajemen|komputer|software|hardware|algoritma|basis\s+data|database)\b/i.test(query)) ||
+    // Competency, prerequisite, or skill requirements (e.g. "Apakah harus jago coding?", "Harus bisa matematika?")
+    (/\b(?:apakah\s+)?(?:harus|perlu|wajib|kudu|bisa|jago|mahir|pintar|paham|menguasai|punya\s+skill|punya\s+keahlian|syarat\s+kemampuan)\b/i.test(query) &&
+     /\b(?:coding|koding|ngoding|pemrograman|programming|it\b|komputer|hitung-?hitungan|matematika|desain|design|marketing|bahasa\s+inggris|inggris|gambar|menggambar|logic|logika)\b/i.test(query)) ||
+    // Standalone coding / programming inquiry in academic context
+    /\b(?:ada\s+coding(?:nya)?|coding(?:an)?\s+nggak|banyak\s+koding(?:nya)?|harus\s+bisa\s+coding)\b/i.test(query)
+  );
+
+  if (isCurriculumOrCompetencyInquiry) {
+    return {
+      shouldInherit: true,
+      reason: 'curriculum_continuation',
+      inheritedDomain: 'ACADEMIC_CURRICULUM',
+      inheritedIntent: 'CURRICULUM_INQUIRY',
+      inheritedEntity: sessionData.activeEntity
     };
   }
 

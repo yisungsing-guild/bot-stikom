@@ -383,7 +383,20 @@ function buildRetrievalPlan(semanticFrame) {
   // Academic Curriculum query variants (guarded: do not inject curriculum keywords into accreditation or thesis guidance queries)
   if (((domain === 'ACADEMIC_CURRICULUM' && (!aspects || !aspects.includes('accreditation')) && intent !== 'THESIS_GUIDANCE_PROCEDURE') || intent === 'CURRICULUM_INQUIRY' || (aspects && (aspects.includes('curriculum') || aspects.includes('courses')))) && (!aspects || !aspects.includes('accreditation') || aspects.includes('curriculum')) && intent !== 'THESIS_GUIDANCE_PROCEDURE') {
     if (targetEntities.length > 0) {
+      const normQ = (semanticFrame.rawQuery || '').toLowerCase();
       for (const ent of targetEntities) {
+        if (/\b(?:digital\s+marketing|pemasaran\s+digital)\b/i.test(normQ)) {
+          queryVariants.push(`${ent} pemasaran digital kurikulum mata kuliah`);
+          queryVariants.push(`${ent} analisis pemasaran optimasi mesin pencari media sosial`);
+        }
+        if (/\b(?:coding|koding|ngoding|pemrograman)\b/i.test(normQ)) {
+          queryVariants.push(`${ent} pemrograman coding kurikulum dasar syarat`);
+          queryVariants.push(`${ent} rekayasa perangkat lunak dasar algoritma`);
+        }
+        if (/\b(?:artificial\s+intelligence|\bai\b|kecerdasan|prompt)\b/i.test(normQ)) {
+          queryVariants.push(`${ent} teknik pembuatan prompt model AI kurikulum`);
+          queryVariants.push(`${ent} artificial intelligence kecerdasan buatan mata kuliah`);
+        }
         queryVariants.push(`kurikulum 2025 program studi ${ent} mata kuliah sks semester`);
         queryVariants.push(`sebaran mata kuliah kurikulum ${ent}`);
         queryVariants.push(`${ent} Semester I II III IV V VI VII VIII SKS`);

@@ -1896,4 +1896,311 @@ describe('31 October Root Cause Regression Suite', () => {
 
   });
 
+  describe('Case 15: Conversational Ellipsis & Academic Curriculum Context Continuity', () => {
+
+    const bdSessionData = {
+      activeDomain: 'ACADEMIC_PROGRAM',
+      activeIntent: 'PROGRAM_OVERVIEW',
+      activeEntity: 'S1 Bisnis Digital',
+      lastQuery: 'Apa itu Bisnis Digital?',
+      lastAnswer: 'Program Studi S1 Bisnis Digital ITB STIKOM Bali...',
+      conversationHistory: [
+        { role: 'user', content: 'Apa itu Bisnis Digital?' },
+        { role: 'assistant', content: 'Program Studi S1 Bisnis Digital ITB STIKOM Bali...' }
+      ]
+    };
+
+    test('15a. Positive Case 1: "Apakah harus jago coding?" inherits S1 Bisnis Digital and resolves to CURRICULUM_INQUIRY', () => {
+      const dep = evaluateContextDependency('Apakah harus jago coding?', bdSessionData);
+      expect(dep.shouldInherit).toBe(true);
+      expect(dep.inheritedDomain).toBe('ACADEMIC_CURRICULUM');
+      expect(dep.inheritedIntent).toBe('CURRICULUM_INQUIRY');
+      expect(dep.inheritedEntity).toBe('S1 Bisnis Digital');
+
+      const frame = resolveSemanticFrame('Apakah harus jago coding?', bdSessionData);
+      expect(frame.domain).toBe('ACADEMIC_CURRICULUM');
+      expect(frame.intent).toBe('CURRICULUM_INQUIRY');
+      expect(frame.desiredAction).toBe('PROVIDE_CURRICULUM_INFO');
+      expect(frame.entities.some(e => e.canonical === 'S1 Bisnis Digital')).toBe(true);
+      expect(frame.intent).not.toBe('AVAILABLE_PROGRAMS_LIST');
+    });
+
+    test('15b. Positive Case 2: "Apakah belajar digital marketing?" inherits S1 Bisnis Digital and resolves to CURRICULUM_INQUIRY', () => {
+      const dep = evaluateContextDependency('Apakah belajar digital marketing?', bdSessionData);
+      expect(dep.shouldInherit).toBe(true);
+      expect(dep.inheritedDomain).toBe('ACADEMIC_CURRICULUM');
+      expect(dep.inheritedIntent).toBe('CURRICULUM_INQUIRY');
+
+      const frame = resolveSemanticFrame('Apakah belajar digital marketing?', bdSessionData);
+      expect(frame.domain).toBe('ACADEMIC_CURRICULUM');
+      expect(frame.intent).toBe('CURRICULUM_INQUIRY');
+      expect(frame.entities.some(e => e.canonical === 'S1 Bisnis Digital')).toBe(true);
+    });
+
+    test('15c. Positive Case 3: "Apakah belajar Artificial Intelligence?" inherits S1 Bisnis Digital and resolves to CURRICULUM_INQUIRY', () => {
+      const dep = evaluateContextDependency('Apakah belajar Artificial Intelligence?', bdSessionData);
+      expect(dep.shouldInherit).toBe(true);
+      expect(dep.inheritedDomain).toBe('ACADEMIC_CURRICULUM');
+      expect(dep.inheritedIntent).toBe('CURRICULUM_INQUIRY');
+
+      const frame = resolveSemanticFrame('Apakah belajar Artificial Intelligence?', bdSessionData);
+      expect(frame.domain).toBe('ACADEMIC_CURRICULUM');
+      expect(frame.intent).toBe('CURRICULUM_INQUIRY');
+      expect(frame.entities.some(e => e.canonical === 'S1 Bisnis Digital')).toBe(true);
+    });
+
+    test('15d. Positive Case 4: "Mata kuliahnya apa saja?" inherits S1 Bisnis Digital and resolves to CURRICULUM_INQUIRY', () => {
+      const dep = evaluateContextDependency('Mata kuliahnya apa saja?', bdSessionData);
+      expect(dep.shouldInherit).toBe(true);
+      expect(dep.inheritedDomain).toBe('ACADEMIC_CURRICULUM');
+      expect(dep.inheritedIntent).toBe('CURRICULUM_INQUIRY');
+
+      const frame = resolveSemanticFrame('Mata kuliahnya apa saja?', bdSessionData);
+      expect(frame.domain).toBe('ACADEMIC_CURRICULUM');
+      expect(frame.intent).toBe('CURRICULUM_INQUIRY');
+      expect(frame.entities.some(e => e.canonical === 'S1 Bisnis Digital')).toBe(true);
+    });
+
+    test('15e. Positive Case 5: S1 Sistem Komputer -> "Apakah harus jago coding?" inherits S1 Sistem Komputer', () => {
+      const skSessionData = {
+        activeDomain: 'ACADEMIC_PROGRAM',
+        activeIntent: 'PROGRAM_OVERVIEW',
+        activeEntity: 'S1 Sistem Komputer',
+        lastQuery: 'Apa itu Sistem Komputer?'
+      };
+
+      const dep = evaluateContextDependency('Apakah harus jago coding?', skSessionData);
+      expect(dep.shouldInherit).toBe(true);
+      expect(dep.inheritedEntity).toBe('S1 Sistem Komputer');
+
+      const frame = resolveSemanticFrame('Apakah harus jago coding?', skSessionData);
+      expect(frame.domain).toBe('ACADEMIC_CURRICULUM');
+      expect(frame.intent).toBe('CURRICULUM_INQUIRY');
+      expect(frame.entities.some(e => e.canonical === 'S1 Sistem Komputer')).toBe(true);
+      expect(frame.entities.some(e => e.canonical === 'S1 Bisnis Digital')).toBe(false);
+    });
+
+    test('15f. Negative Case 1: Switching to new prodi ("Kalau Sistem Informasi belajar apa?") overrides prior context', () => {
+      const dep = evaluateContextDependency('Kalau Sistem Informasi belajar apa?', bdSessionData);
+      expect(dep.shouldInherit).toBe(false);
+
+      const frame = resolveSemanticFrame('Kalau Sistem Informasi belajar apa?', bdSessionData);
+      expect(frame.entities.some(e => e.canonical === 'S1 Sistem Informasi')).toBe(true);
+      expect(frame.entities.some(e => e.canonical === 'S1 Bisnis Digital')).toBe(false);
+    });
+
+    test('15g. Negative Case 2: PMB schedule inquiry ("Kapan pendaftaran gelombang I ditutup?") isolates PMB and does NOT leak Bisnis Digital', () => {
+      const dep = evaluateContextDependency('Kapan pendaftaran gelombang I ditutup?', bdSessionData);
+      expect(dep.shouldInherit).toBe(false);
+
+      const frame = resolveSemanticFrame('Kapan pendaftaran gelombang I ditutup?', bdSessionData);
+      expect(frame.domain).toBe('PMB');
+      expect(frame.intent).toBe('ADMISSION_SCHEDULE');
+      expect(frame.entities.some(e => e.canonical === 'S1 Bisnis Digital')).toBe(false);
+    });
+
+    test('15h. Negative Case 3: Campus-wide UKM inquiry ("Ada UKM olahraga apa saja?") does NOT inherit Bisnis Digital', () => {
+      const dep = evaluateContextDependency('Ada UKM olahraga apa saja?', bdSessionData);
+      expect(dep.shouldInherit).toBe(false);
+
+      const frame = resolveSemanticFrame('Ada UKM olahraga apa saja?', bdSessionData);
+      expect(frame.domain).toBe('ORGANIZATION_UKM');
+      expect(frame.entities.some(e => e.canonical === 'S1 Bisnis Digital')).toBe(false);
+    });
+
+    test('15i. Negative Case 4: Fresh session with null activeEntity does NOT assume or guess Bisnis Digital', () => {
+      const cleanSession = { activeEntity: null, activeDomain: null };
+      const dep = evaluateContextDependency('Apakah mahasiswa belajar digital marketing?', cleanSession);
+      expect(dep.shouldInherit).toBe(false);
+
+      const frame = resolveSemanticFrame('Apakah mahasiswa belajar digital marketing?', cleanSession);
+      expect(frame.entities.some(e => e.canonical === 'S1 Bisnis Digital')).toBe(false);
+    });
+
+    test('15j. Negative Case 5: Explicit institutional catalog inquiry ("Jurusan di STIKOM ada apa saja?") resolves to AVAILABLE_PROGRAMS_LIST without entity restriction', () => {
+      const dep = evaluateContextDependency('Jurusan di STIKOM ada apa saja?', bdSessionData);
+      expect(dep.shouldInherit).toBe(false);
+
+      const frame = resolveSemanticFrame('Jurusan di STIKOM ada apa saja?', bdSessionData);
+      expect(frame.intent).toBe('AVAILABLE_PROGRAMS_LIST');
+      expect(frame.entities.some(e => e.canonical === 'S1 Bisnis Digital')).toBe(false);
+    });
+
+    test('15k. End-to-End Deterministic Pipeline: Follow-up "Apakah harus jago coding?" answers Bisnis Digital without rendering all program catalog', async () => {
+      const res = await runPhase1DeterministicPipeline('test_ellipsis_bd_coding', 'Apakah harus jago coding?', {
+        fastFallback: true,
+        disableExternalLlm: true,
+        sessionSnapshot: { data: bdSessionData }
+      });
+
+      expect(res.semanticFrame.domain).toBe('ACADEMIC_CURRICULUM');
+      expect(res.semanticFrame.intent).toBe('CURRICULUM_INQUIRY');
+      expect(res.semanticFrame.entities.some(e => e.canonical === 'S1 Bisnis Digital')).toBe(true);
+      // Invariant: Must NOT return the institutional catalog of all programs
+      expect(res.finalAnswer).not.toMatch(/Program Studi Sarjana \(S1\):[\s\S]*Teknologi Informasi[\s\S]*Sistem Informasi[\s\S]*Sistem Komputer/i);
+    });
+
+    describe('Case 16: Targeted Answer Quality Invariants (Curriculum, Prerequisites, & Table Formatting)', () => {
+      const bdSessionData = {
+        activeDomain: 'ACADEMIC_PROGRAM',
+        activeIntent: 'PROGRAM_OVERVIEW',
+        activeEntity: 'S1 Bisnis Digital',
+        lastQuery: 'Apa itu Bisnis Digital?'
+      };
+
+      const skSessionData = {
+        activeDomain: 'ACADEMIC_PROGRAM',
+        activeIntent: 'PROGRAM_OVERVIEW',
+        activeEntity: 'S1 Sistem Komputer',
+        lastQuery: 'Apa itu Sistem Komputer?'
+      };
+
+      test('16a. Coding inquiry for S1 Bisnis Digital does NOT use career roles as entrance requirement and states no mandatory coding prerequisite', async () => {
+        const res = await runPhase1DeterministicPipeline('test_q_bd_coding', 'Apakah harus jago coding?', {
+          fastFallback: true,
+          disableExternalLlm: true,
+          sessionSnapshot: { data: bdSessionData }
+        });
+
+        expect(res.finalAnswer).toMatch(/tidak tercantum sebagai syarat wajib/i);
+        expect(res.finalAnswer).toMatch(/bertahap mulai dari tingkat dasar/i);
+        expect(res.finalAnswer).toMatch(/Outcome-Based Education|OBE/i);
+        // Invariant: Must NOT use career prospects as proof of entrance requirement
+        expect(res.finalAnswer).not.toMatch(/Lulusan program studi ini dipersiapkan untuk berkarier sebagai:\s*•\s*Digital Marketing Specialist/i);
+        // Invariant: Must NOT make absolute guarantee that coding is easy or requires no effort
+        expect(res.finalAnswer).not.toMatch(/pasti mudah|tidak butuh kemampuan sama sekali/i);
+      });
+
+      test('16b. Digital marketing inquiry for S1 Bisnis Digital prioritizes official courses over career prospects', async () => {
+        const res = await runPhase1DeterministicPipeline('test_q_bd_dm', 'Apakah belajar digital marketing?', {
+          fastFallback: true,
+          disableExternalLlm: true,
+          sessionSnapshot: { data: bdSessionData }
+        });
+
+        // Invariant: Paragraf pertama harus menjawab secara afirmatif
+        expect(res.finalAnswer).toMatch(/^\*\*Ya\*\*, mahasiswa Program Studi \*\*S1 Bisnis Digital\*\*/i);
+        // Invariant: Menyebutkan mata kuliah resmi
+        expect(res.finalAnswer).toMatch(/Pemasaran Digital/i);
+        expect(res.finalAnswer).toMatch(/Optimasi Mesin Pencari|SEO/i);
+        expect(res.finalAnswer).toMatch(/Kampanye Pemasaran Omni/i);
+        expect(res.finalAnswer).toMatch(/Pemasaran Media Sosial/i);
+        // Invariant: Tidak menggantikan mata kuliah dengan peran karier saja
+        expect(res.finalAnswer).not.toMatch(/^Lulusan program studi ini dipersiapkan untuk berkarier sebagai/i);
+      });
+
+      test('16c. AI inquiry for S1 Bisnis Digital cites prompt engineering course and bounds claims against algorithmic ML/DL engineering', async () => {
+        const res = await runPhase1DeterministicPipeline('test_q_bd_ai', 'Apakah belajar Artificial Intelligence?', {
+          fastFallback: true,
+          disableExternalLlm: true,
+          sessionSnapshot: { data: bdSessionData }
+        });
+
+        // Invariant: Paragraf pertama afirmatif terikat konteks Bisnis Digital
+        expect(res.finalAnswer).toMatch(/^\*\*Ya\*\*, di Program Studi \*\*S1 Bisnis Digital\*\*/i);
+        // Invariant: Menyebutkan mata kuliah resmi Semester III Teknik Pembuatan Prompt untuk Model AI
+        expect(res.finalAnswer).toMatch(/Teknik Pembuatan Prompt untuk Model AI/i);
+        expect(res.finalAnswer).toMatch(/Semester III/i);
+        // Invariant: Menolak klaim rekayasa algoritma mendalam / Machine Learning murni
+        expect(res.finalAnswer).toMatch(/Hal ini berbeda dengan Program Studi S1 Sistem Komputer/i);
+        expect(res.finalAnswer).toMatch(/Machine Learning|Deep Learning/i);
+      });
+
+      test('16d. Course list inquiry for S1 Sistem Komputer renders complete 8 semesters, clean bullet points with accurate SKS, and zero duplicate overlap', async () => {
+        const res = await runPhase1DeterministicPipeline('test_q_sk_courses', 'Mata kuliahnya apa saja?', {
+          fastFallback: true,
+          disableExternalLlm: true,
+          sessionSnapshot: { data: skSessionData }
+        });
+
+        // Invariant: Seluruh 8 semester ditampilkan berurutan
+        expect(res.finalAnswer).toMatch(/\*\*Semester I\*\*:/);
+        expect(res.finalAnswer).toMatch(/\*\*Semester II\*\*:/);
+        expect(res.finalAnswer).toMatch(/\*\*Semester III\*\*:/);
+        expect(res.finalAnswer).toMatch(/\*\*Semester IV\*\*:/);
+        expect(res.finalAnswer).toMatch(/\*\*Semester V\*\*:/);
+        expect(res.finalAnswer).toMatch(/\*\*Semester VI\*\*:/);
+        expect(res.finalAnswer).toMatch(/\*\*Semester VII\*\*:/);
+        expect(res.finalAnswer).toMatch(/\*\*Semester VIII\*\*:/);
+
+        // Invariant: Semester berurutan posisinya
+        const posI = res.finalAnswer.indexOf('**Semester I**:');
+        const posIV = res.finalAnswer.indexOf('**Semester IV**:');
+        const posVIII = res.finalAnswer.indexOf('**Semester VIII**:');
+        expect(posI).toBeLessThan(posIV);
+        expect(posIV).toBeLessThan(posVIII);
+
+        // Invariant: Format poin rapi dengan SKS persis dokumen sumber
+        expect(res.finalAnswer).toMatch(/• Agama \(2 SKS\)/);
+        expect(res.finalAnswer).toMatch(/• Pancasila \(2 SKS\)/);
+        expect(res.finalAnswer).toMatch(/• Matematika Diskrit \(4 SKS\)/);
+        expect(res.finalAnswer).toMatch(/• Algoritma dan Pemrograman \(2 SKS\)/);
+        expect(res.finalAnswer).toMatch(/• Pemrograman Komputer \(4 SKS\)/);
+        expect(res.finalAnswer).toMatch(/• Rangkaian Elektronika \(4 SKS\)/);
+        expect(res.finalAnswer).toMatch(/• Sistem dan Jaringan Komputer \(4 SKS\)/);
+        expect(res.finalAnswer).toMatch(/• Mikrokontroler dan Antarmuka \(4 SKS\)/);
+        expect(res.finalAnswer).toMatch(/• Kecerdasan Artifisial \(4 SKS\)/);
+        expect(res.finalAnswer).toMatch(/• Internet of Things \(4 SKS\)/);
+        expect(res.finalAnswer).toMatch(/• Pembelajaran Mesin Sistem Tertanam \(4 SKS\)/);
+        expect(res.finalAnswer).toMatch(/• Robotika \(4 SKS\)/);
+        expect(res.finalAnswer).toMatch(/• Tugas Akhir \(6 SKS\)/);
+
+        // Invariant: Total SKS 144 sesuai dokumen
+        expect(res.finalAnswer).toMatch(/144\s*SKS/i);
+        expect(res.finalAnswer).toMatch(/8\s*semester/i);
+
+        // Invariant: Zero duplication at chunk boundaries
+        const sensorMatches = (res.finalAnswer.match(/Sensor dan Aktuator/g) || []).length;
+        expect(sensorMatches).toBe(1);
+        const rplMatches = (res.finalAnswer.match(/Rekayasa Perangkat Lunak/g) || []).length;
+        expect(rplMatches).toBe(1);
+        const praktikumDigMatches = (res.finalAnswer.match(/Praktikum Sistem Digital/g) || []).length;
+        expect(praktikumDigMatches).toBe(1);
+
+        // Invariant: Bersihkan nomor urut format tabel mentah dan header tabel
+        expect(res.finalAnswer).not.toMatch(/No Nama Mata Kuliah SKS/i);
+        expect(res.finalAnswer).not.toMatch(/\bTotal\s+19\b/i);
+        expect(res.finalAnswer).not.toMatch(/\b1 Agama 2\b/);
+        expect(res.finalAnswer).not.toMatch(/\b2 Pancasila 2\b/);
+      });
+
+      test('16e. Strict program isolation: S1 Sistem Komputer course list does not leak S1 Bisnis Digital courses and vice versa', async () => {
+        const skRes = await runPhase1DeterministicPipeline('test_iso_sk', 'Mata kuliahnya apa saja?', {
+          fastFallback: true,
+          disableExternalLlm: true,
+          sessionSnapshot: { data: skSessionData }
+        });
+
+        expect(skRes.finalAnswer).not.toMatch(/Model Bisnis Digital|Pemasaran Media Sosial/i);
+
+        const bdRes = await runPhase1DeterministicPipeline('test_iso_bd', 'Mata kuliahnya apa saja?', {
+          fastFallback: true,
+          disableExternalLlm: true,
+          sessionSnapshot: { data: bdSessionData }
+        });
+
+        expect(bdRes.finalAnswer).not.toMatch(/Rangkaian Elektronika|Sensor dan Aktuator/i);
+      });
+
+      test('16f. Targeted semester inquiry: "Mata kuliah semester 5 Sistem Komputer apa saja?" returns targeted semester without 8-semester dump', async () => {
+        const semRes = await runPhase1DeterministicPipeline('test_q_sk_sem5', 'Mata kuliah semester 5 Sistem Komputer apa saja?', {
+          fastFallback: true,
+          disableExternalLlm: true,
+          sessionSnapshot: { data: skSessionData }
+        });
+
+        expect(semRes.verification.outcome).toBe('VERIFIED_FACTUAL');
+        expect(semRes.finalAnswer).toMatch(/\*\*Semester V\*\*:/);
+        expect(semRes.finalAnswer).toMatch(/Kecerdasan Artifisial \(4 SKS\)/);
+        expect(semRes.finalAnswer).toMatch(/Keamanan Jaringan Komputer \(4 SKS\)/);
+        expect(semRes.finalAnswer).toMatch(/Pendidikan Etika dan Anti Korupsi \(2 SKS\)/);
+
+        // Invariant: Does not dump other semesters
+        expect(semRes.finalAnswer).not.toMatch(/\*\*Semester I\*\*:/);
+        expect(semRes.finalAnswer).not.toMatch(/\*\*Semester VIII\*\*:/);
+      });
+    });
+
+  });
+
 });
