@@ -23,6 +23,7 @@ const { generateFeeAnswer } = require('../src/core/feeCalculationEngine');
 const { evaluateRecommendation } = require('../src/reasoning/recommendationEngine');
 const { generateGroundedCatalogSummary } = require('../src/core/academicCatalog');
 const { decomposeQuery, decomposeQueryAsync, hasMultipleIntents } = require('../src/core/multiIntentResolver');
+const { verifyFinalAnswer } = require('../src/core/finalAnswerVerifier');
 
 describe('31 October Root Cause Regression Suite', () => {
 
@@ -2198,6 +2199,69 @@ describe('31 October Root Cause Regression Suite', () => {
         // Invariant: Does not dump other semesters
         expect(semRes.finalAnswer).not.toMatch(/\*\*Semester I\*\*:/);
         expect(semRes.finalAnswer).not.toMatch(/\*\*Semester VIII\*\*:/);
+      });
+
+      test('16g. Multi-semester range inquiry: "Mata kuliah S1 Sistem Komputer dari semester 1 sampai 8 beserta SKSnya" renders all 8 semesters, 144 SKS, and passes verification', async () => {
+        const res = await runPhase1DeterministicPipeline('test_q_sk_sem1_to_8', 'Minta daftar mata kuliah S1 Sistem Komputer dari semester 1 sampai 8 beserta SKSnya', {
+          fastFallback: true,
+          disableExternalLlm: true
+        });
+
+        expect(res.verification.outcome).toBe('VERIFIED_FACTUAL');
+        expect(res.finalAnswer).toMatch(/\*\*Semester I\*\*:/);
+        expect(res.finalAnswer).toMatch(/\*\*Semester II\*\*:/);
+        expect(res.finalAnswer).toMatch(/\*\*Semester III\*\*:/);
+        expect(res.finalAnswer).toMatch(/\*\*Semester IV\*\*:/);
+        expect(res.finalAnswer).toMatch(/\*\*Semester V\*\*:/);
+        expect(res.finalAnswer).toMatch(/\*\*Semester VI\*\*:/);
+        expect(res.finalAnswer).toMatch(/\*\*Semester VII\*\*:/);
+        expect(res.finalAnswer).toMatch(/\*\*Semester VIII\*\*:/);
+        expect(res.finalAnswer).toMatch(/144\s*SKS/i);
+        expect(res.finalAnswer).not.toMatch(/daftar mata kuliah resmi untuk \*\*SEMESTER 1\*\*/i);
+      });
+
+      test('16h. Range variations ("semester 1 - 8", "semester 1 s/d 8", "semua semester") return complete 8 semesters', async () => {
+        const resDash = await runPhase1DeterministicPipeline('test_q_sk_dash', 'daftar matkul S1 Sistem Komputer semester 1 - 8', {
+          fastFallback: true,
+          disableExternalLlm: true
+        });
+        expect(resDash.verification.outcome).toBe('VERIFIED_FACTUAL');
+        expect(resDash.finalAnswer).toMatch(/\*\*Semester I\*\*:/);
+        expect(resDash.finalAnswer).toMatch(/\*\*Semester VIII\*\*:/);
+
+        const resSd = await runPhase1DeterministicPipeline('test_q_sk_sd', 'mata kuliah SK semester 1 s/d 8', {
+          fastFallback: true,
+          disableExternalLlm: true
+        });
+        expect(resSd.verification.outcome).toBe('VERIFIED_FACTUAL');
+        expect(resSd.finalAnswer).toMatch(/\*\*Semester I\*\*:/);
+        expect(resSd.finalAnswer).toMatch(/\*\*Semester VIII\*\*:/);
+
+        const resAll = await runPhase1DeterministicPipeline('test_q_sk_all', 'semua semester sistem komputer matkulnya apa saja?', {
+          fastFallback: true,
+          disableExternalLlm: true
+        });
+        expect(resAll.verification.outcome).toBe('VERIFIED_FACTUAL');
+        expect(resAll.finalAnswer).toMatch(/\*\*Semester I\*\*:/);
+        expect(resAll.finalAnswer).toMatch(/\*\*Semester VIII\*\*:/);
+      });
+
+      test('16i. Answer completeness verifier rejects partial single-semester answer when full Semester 1-8 is requested', () => {
+        const partialAnswer = 'Berikut adalah daftar mata kuliah resmi untuk **SEMESTER 1** Program Studi **S1 Sistem Komputer** ITB STIKOM Bali:\n\n**Semester I**:\n• Agama (2 SKS)\n• Pancasila (2 SKS)\n\nTotal beban kurikulum resmi adalah 144 SKS.';
+        const frameRange = resolveSemanticFrame('Minta daftar mata kuliah S1 Sistem Komputer dari semester 1 sampai 8 beserta SKSnya');
+        const verifRes = verifyFinalAnswer(partialAnswer, frameRange, { accepted: [] });
+
+        expect(verifRes.outcome).toBe('VERIFICATION_FAILED');
+        expect(verifRes.reason).toMatch(/curriculum_range_incomplete/);
+        expect(verifRes.reason).toMatch(/Semester VIII/);
+      });
+
+      test('16j. Semantic frame resolver does not capture academic semester range or prodi as userOrigin location', () => {
+        const frameCurriculum = resolveSemanticFrame('Minta daftar mata kuliah S1 Sistem Komputer dari semester 1 sampai 8 beserta SKSnya');
+        expect(frameCurriculum.userOrigin).toBeNull();
+
+        const frameGenuineLocation = resolveSemanticFrame('Saya dari Gianyar enaknya pilih kampus mana?');
+        expect(frameGenuineLocation.userOrigin).toBe('Gianyar');
       });
     });
 

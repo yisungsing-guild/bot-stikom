@@ -83,8 +83,9 @@ function extractUserOriginLocation(text, sessionData = {}) {
 
     // Generic spatial or relative terms that do NOT represent a geographical city/district
     const isNonGeographic = /^(?:rumah(?:\s+saya)?|tempat(?:\s+tinggal)?(?:\s+saya)?|posisi(?:\s+saya)?|lokasi(?:\s+saya)?|ko?st?(?:\s+saya)?|kantor(?:\s+saya)?|sekolah(?:\s+saya)?|kampus|sini|sana|situ|mana|luar|dalam|daerah(?:\s+saya)?|wilayah(?:\s+saya)?)$/i.test(rawOrigin);
+    const isAcademicOrTemporalTerm = /^(?:semester|prodi|jurusan|fakultas|jenjang|angkatan|gelombang|tahap|jalur|sks|biaya|mata\s*kuliah|matkul)\b/i.test(rawOrigin);
 
-    if (rawOrigin.length >= 2 && rawOrigin.length <= 40 && !isNonGeographic) {
+    if (rawOrigin.length >= 2 && rawOrigin.length <= 40 && !isNonGeographic && !isAcademicOrTemporalTerm) {
       // Explicit new origin location: strictly use the newly specified location without merging
       return rawOrigin;
     }

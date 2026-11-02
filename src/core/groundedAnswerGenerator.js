@@ -1657,21 +1657,27 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
     const isTi = /\b(teknologi informasi|ti)\b/i.test(entityLabel) || /\b(teknologi informasi|ti)\b/i.test(rawQuery);
     const isBd = /\b(bisnis digital|bd)\b/i.test(entityLabel) || /\b(bisnis digital|bd)\b/i.test(rawQuery);
 
-    const semMatch = rawQuery.match(/\bsemester\s*([1-8]|i{1,3}|iv|v|vi|vii|viii)\b/i);
+    const isRangeOrAllSemesters = /\b(?:semua|seluruh|tiap|setiap)\s+semester\b/i.test(rawQuery) ||
+      /\b(?:dari\s+)?semester\s*(?:[1-8]|i{1,3}|iv|v|vi|vii|viii)\s*(?:sampai|hingga|s\/?d|-)\s*(?:semester\s*)?(?:[1-8]|i{1,3}|iv|v|vi|vii|viii)\b/i.test(rawQuery) ||
+      (/\b(?:1|i)\s*(?:sampai|hingga|s\/?d|-)\s*(?:8|viii)\b/i.test(rawQuery) && /semester|matkul|mata\s*kuliah/i.test(rawQuery));
+
     let requestedSemester = null;
-    if (semMatch) {
-      const rawSem = semMatch[1].toLowerCase();
-      const romanMap = {
-        '1': 'I', 'i': 'I',
-        '2': 'II', 'ii': 'II',
-        '3': 'III', 'iii': 'III',
-        '4': 'IV', 'iv': 'IV',
-        '5': 'V', 'v': 'V',
-        '6': 'VI', 'vi': 'VI',
-        '7': 'VII', 'vii': 'VII',
-        '8': 'VIII', 'viii': 'VIII'
-      };
-      requestedSemester = romanMap[rawSem] || null;
+    if (!isRangeOrAllSemesters) {
+      const semMatch = rawQuery.match(/\bsemester\s*([1-8]|i{1,3}|iv|v|vi|vii|viii)\b/i);
+      if (semMatch) {
+        const rawSem = semMatch[1].toLowerCase();
+        const romanMap = {
+          '1': 'I', 'i': 'I',
+          '2': 'II', 'ii': 'II',
+          '3': 'III', 'iii': 'III',
+          '4': 'IV', 'iv': 'IV',
+          '5': 'V', 'v': 'V',
+          '6': 'VI', 'vi': 'VI',
+          '7': 'VII', 'vii': 'VII',
+          '8': 'VIII', 'viii': 'VIII'
+        };
+        requestedSemester = romanMap[rawSem] || null;
+      }
     }
 
     function composeCurriculum(prodiName, lines) {
@@ -4198,8 +4204,15 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
         if (rawSkChunk) skTexts.push(rawSkChunk.text || rawSkChunk.chunk || '');
       }
 
-      const semMatch = rawQuery.match(/semester\s*([IVX]+|\d+)/i);
-      const targetSem = semMatch ? semMatch[0] : null;
+      const isRangeOrAllSemesters = /\b(?:semua|seluruh|tiap|setiap)\s+semester\b/i.test(rawQuery) ||
+        /\b(?:dari\s+)?semester\s*(?:[1-8]|i{1,3}|iv|v|vi|vii|viii)\s*(?:sampai|hingga|s\/?d|-)\s*(?:semester\s*)?(?:[1-8]|i{1,3}|iv|v|vi|vii|viii)\b/i.test(rawQuery) ||
+        (/\b(?:1|i)\s*(?:sampai|hingga|s\/?d|-)\s*(?:8|viii)\b/i.test(rawQuery) && /semester|matkul|mata\s*kuliah/i.test(rawQuery));
+
+      let targetSem = null;
+      if (!isRangeOrAllSemesters) {
+        const semMatch = rawQuery.match(/semester\s*([IVX]+|\d+)/i);
+        targetSem = semMatch ? semMatch[0] : null;
+      }
 
       const formattedSkTable = formatCurriculumTable(skTexts, targetSem);
 

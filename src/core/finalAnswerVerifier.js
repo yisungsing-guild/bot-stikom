@@ -395,6 +395,22 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     }
   }
 
+  // 7a3. Curriculum multi-semester completeness check:
+  // If user explicitly asks for Semester I-VIII, a range like 1-8, or all semesters,
+  // the answer must cover all 8 semesters (Semester I through Semester VIII).
+  // A partial answer (e.g. only Semester I) must not be declared VERIFIED_FACTUAL.
+  const isFullCurriculumRangeInquiry = /\b(?:semua|seluruh)\s+semester\b/i.test(rawQuery) ||
+    /\b(?:dari\s+)?semester\s*(?:1|i)\s*(?:sampai|hingga|s\/?d|-)\s*(?:semester\s*)?(?:8|viii)\b/i.test(rawQuery) ||
+    (/\b(?:1|i)\s*(?:sampai|hingga|s\/?d|-)\s*(?:8|viii)\b/i.test(rawQuery) && /semester|matkul|mata\s*kuliah/i.test(rawQuery));
+
+  if (isFullCurriculumRangeInquiry && isCurriculumInquiry && !isUnsupported) {
+    const requiredSemesters = ['Semester I', 'Semester II', 'Semester III', 'Semester IV', 'Semester V', 'Semester VI', 'Semester VII', 'Semester VIII'];
+    const missingSemesters = requiredSemesters.filter(sem => !text.includes(sem));
+    if (missingSemesters.length > 0) {
+      return failVerification(`curriculum_range_incomplete: user requested Semester 1-8 but answer is missing ${missingSemesters.join(', ')}`);
+    }
+  }
+
   // 7b. Facilities negative control: Must not use facility list as substantive Double Degree claim
   const isInbisQuery = (semanticFrame.aspects && semanticFrame.aspects.some(a => ['inbis_overview', 'tenant_programs', 'p2mw', 'inbis_services', 'incubation_programs'].includes(a))) ||
     semanticFrame.relation === 'INBIS_SERVICE' ||
