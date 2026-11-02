@@ -1757,17 +1757,9 @@ describe('31 October Root Cause Regression Suite', () => {
       // Invariant: Must NOT contain contradictory out-of-domain scope refusal
       expect(res.finalAnswer).not.toMatch(/di luar cakupan layanan informasi kampus kami/i);
 
-      // Verifies that genuinely out-of-domain queries still receive safe refusal
-      const qOod = 'Berapa biaya kuliah TI dan bagaimana resep nasi goreng?';
-      const resOod = await runPhase1DeterministicPipeline('test_14c_ood', qOod, {
-        fastFallback: true,
-        disableExternalLlm: true
-      });
-      expect(resOod.finalAnswer).toMatch(/Teknologi Informasi/i);
-      expect(resOod.finalAnswer).toMatch(/di luar cakupan layanan informasi kampus kami/i);
     });
 
-    test('14d. Program Comparison: Sistem Informasi vs Teknologi Informasi renders balanced key differences', async () => {
+    test('14d. Program Comparison: Sistem Informasi vs Teknologi Informasi renders balanced key differences and symmetric profiles', async () => {
       const q = 'Apa perbedaan Sistem Informasi dan Teknologi Informasi?';
       const res = await runPhase1DeterministicPipeline('test_14d_comp', q, {
         fastFallback: true,
@@ -1778,15 +1770,128 @@ describe('31 October Root Cause Regression Suite', () => {
       expect(res.finalAnswer).toMatch(/S1 Sistem Informasi/i);
       expect(res.finalAnswer).toMatch(/Perbedaan Utama/i);
 
-      // Both programs must appear under Perbedaan Utama
+      // S1 TI profile symmetry: core focus, competencies, labs, and graduate professions
+      expect(res.finalAnswer).toMatch(/pengelolaan infrastruktur TI|software & hardware/i);
+      expect(res.finalAnswer).toMatch(/IT Security|Integrator Sistem|Technopreneurship/i);
+      expect(res.finalAnswer).toMatch(/Laboratorium Penunjang/i);
+      expect(res.finalAnswer).toMatch(/Laboratorium Hardware.*Laboratorium Database/i);
+      expect(res.finalAnswer).toMatch(/Analisis & Pengembangan ICT/i);
+      expect(res.finalAnswer).toMatch(/Praktisi ICT/i);
+      expect(res.finalAnswer).toMatch(/Technopreneur di bidang teknologi informasi/i);
+      // Negative assertion: no ungrounded / hallucinated profession
+      expect(res.finalAnswer).not.toMatch(/Cyber Security Specialist/i);
+
+      // S1 SI profile: competencies, subjects, and careers
+      expect(res.finalAnswer).toMatch(/merancang.*mengembangkan.*sistem informasi/i);
+      expect(res.finalAnswer).toMatch(/Analisis sistem.*database.*business intelligence/i);
+      expect(res.finalAnswer).toMatch(/Business Analyst|System Analyst/i);
+
+      // Both programs must appear under Perbedaan Utama as concise synthesis
       const parts = res.finalAnswer.split(/Perbedaan Utama:?/i);
       expect(parts.length).toBeGreaterThan(1);
       const diffSection = parts[1];
       expect(diffSection).toMatch(/S1 Teknologi Informasi/i);
       expect(diffSection).toMatch(/S1 Sistem Informasi/i);
-      // Grounded competencies from canonical documents without hallucination
-      expect(diffSection).toMatch(/IT Security|Integrator Sistem|Technopreneurship/i);
-      expect(diffSection).toMatch(/sistem informasi|merancang|mengembangkan|enterprise/i);
+      expect(diffSection).toMatch(/IT Security|Integrator Sistem/i);
+      expect(diffSection).toMatch(/enterprise systems|tata kelola informasi/i);
+    });
+
+    test('14e. Mixed Campus + Non-Campus Isolation: Targeted refusal footnote without contradictory campus rejection', async () => {
+      const qMixed = 'Berapa biaya kuliah TI dan bagaimana resep nasi goreng?';
+      const resMixed = await runPhase1DeterministicPipeline('test_14e_mixed', qMixed, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      // Grounded campus tuition answer is preserved completely
+      expect(resMixed.finalAnswer).toMatch(/Rincian Biaya Kuliah S1 Teknologi Informasi/i);
+      expect(resMixed.finalAnswer).toMatch(/Dana Pendidikan Pokok \(DPP\): Rp 14\.000\.000/i);
+      expect(resMixed.finalAnswer).toMatch(/Biaya Pendidikan Per Semester: Rp 6\.500\.000/i);
+
+      // Targeted footnote specifically cites the non-campus clause
+      expect(resMixed.finalAnswer).toMatch(/Catatan: Mengenai pertanyaan di luar informasi kampus \("bagaimana resep nasi goreng"\)/i);
+      expect(resMixed.finalAnswer).toMatch(/layanan ini khusus menyediakan informasi resmi seputar ITB STIKOM Bali/i);
+
+      // Invariant: Must NOT contain blanket refusal that rejects the entire user inquiry
+      expect(resMixed.finalAnswer).not.toMatch(/Pertanyaan Anda berada di luar cakupan layanan informasi kampus kami/i);
+    });
+
+    test('14f. Pure Out-Of-Domain Inquiry: Pure non-campus inquiry receives full institutional refusal disclaimer', async () => {
+      const qPure = 'Bagaimana resep nasi goreng?';
+      const resPure = await runPhase1DeterministicPipeline('test_14f_pure_ood', qPure, {
+        fastFallback: true,
+        disableExternalLlm: true
+      });
+
+      // Pure OOD inquiry retains the full institutional refusal disclaimer
+      expect(resPure.finalAnswer).toMatch(/Mohon maaf, layanan ini khusus melayani informasi seputar akademik, PMB, program studi, biaya kuliah, dan fasilitas ITB STIKOM Bali/i);
+      expect(resPure.finalAnswer).toMatch(/Pertanyaan Anda berada di luar cakupan layanan informasi kampus kami/i);
+      // Zero campus fee or program content leaked into pure OOD
+      expect(resPure.finalAnswer).not.toMatch(/Biaya Pendidikan/i);
+    });
+
+    test('14g. Evidence Arbiter Intent Isolation: PROGRAM_COMPARISON deprioritizes ORMAWA while PROGRAM_OVERVIEW and DEFINITION preserve exact legacy ranking', () => {
+      const candOrmawa = {
+        id: 'chunk-ormawa',
+        text: 'PROFILE HIMPUNAN MAHASISWA PROGRAM STUDI TEKNOLOGI INFORMASI ITB STIKOM Bali',
+        sourceFile: 'BUKU ORMAWA HIMAPRODI TI.docx',
+        supportedEntities: ['S1 Teknologi Informasi'],
+        docCategory: 'ormawa'
+      };
+
+      const candAuth = {
+        id: 'chunk-auth',
+        text: 'Deskripsi Singkat Program Studi Teknologi Informasi Fokus pada pengelolaan infrastruktur TI software & hardware',
+        sourceFile: 'ISIAN WEBSITE (1).pdf',
+        supportedEntities: ['S1 Teknologi Informasi'],
+        docCategory: 'academic_program'
+      };
+
+      // 1. PROGRAM_COMPARISON sorts authoritative profile ahead of ORMAWA
+      const planComp = {
+        intent: 'PROGRAM_COMPARISON',
+        domain: 'ACADEMIC_PROGRAM',
+        targetEntities: ['S1 Teknologi Informasi'],
+        requiredAspects: ['overview']
+      };
+      const arbComp = arbitrateEvidence([candOrmawa, candAuth], planComp);
+      expect(arbComp.accepted.length).toBe(2);
+      expect(arbComp.accepted[0].id).toBe('chunk-auth');
+      expect(arbComp.accepted[1].id).toBe('chunk-ormawa');
+
+      // 2. PROGRAM_OVERVIEW preserves legacy sorting behavior without ORMAWA deprioritization
+      const candA = {
+        id: 'chunk-a',
+        text: 'Fokus Pendidikan Program Studi Teknologi Informasi',
+        sourceFile: 'file_a.pdf',
+        supportedEntities: ['S1 Teknologi Informasi']
+      };
+      const candB = {
+        id: 'chunk-b',
+        text: 'Penjelasan Prodi Teknologi Informasi dan kurikulum',
+        sourceFile: 'file_b.pdf',
+        supportedEntities: ['S1 Teknologi Informasi']
+      };
+      const planOverview = {
+        intent: 'PROGRAM_OVERVIEW',
+        domain: 'ACADEMIC_PROGRAM',
+        targetEntities: ['S1 Teknologi Informasi'],
+        requiredAspects: ['overview']
+      };
+      const arbOverview = arbitrateEvidence([candA, candB], planOverview);
+      expect(arbOverview.accepted[0].id).toBe('chunk-a');
+      expect(arbOverview.accepted[1].id).toBe('chunk-b');
+
+      // 3. DEFINITION preserves legacy sorting behavior
+      const planDef = {
+        intent: 'DEFINITION',
+        domain: 'ACADEMIC_PROGRAM',
+        targetEntities: ['S1 Teknologi Informasi'],
+        requiredAspects: ['overview']
+      };
+      const arbDef = arbitrateEvidence([candA, candB], planDef);
+      expect(arbDef.accepted[0].id).toBe('chunk-a');
+      expect(arbDef.accepted[1].id).toBe('chunk-b');
     });
 
   });

@@ -845,6 +845,14 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       if (isAnaphoricServiceOrDetail) {
         continue;
       }
+      // If there is a successful campus answer and this is a distinct non-campus clause (e.g. "bagaimana resep nasi goreng"),
+      // output a targeted note explicitly citing the non-campus clause instead of a generic blanket refusal.
+      const isEn = r.frame.language === 'en';
+      const targetedOodNote = isEn
+        ? `_Note: Regarding your non-campus inquiry ("${q}"), I apologize that I cannot answer as this service specifically provides official information about ITB STIKOM Bali._`
+        : `_Catatan: Mengenai pertanyaan di luar informasi kampus ("${q}"), mohon maaf kami tidak dapat menjawab karena layanan ini khusus menyediakan informasi resmi seputar ITB STIKOM Bali._`;
+      uniqueAnswers.push(targetedOodNote);
+      continue;
     }
 
     const norm = ans.toLowerCase().replace(/\s+/g, ' ');

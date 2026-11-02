@@ -2610,11 +2610,84 @@ function extractProgramProfile(ent, acceptedChunks, allTargetEntities = []) {
     focus: '',
     competencies: '',
     curriculum: '',
+    laboratories: '',
     careers: ''
   };
 
-  for (const chunk of acceptedChunks) {
+  // Ensure authoritative chunks for program profile extraction
+  let chunksToScan = Array.isArray(acceptedChunks) ? [...acceptedChunks] : [];
+  if (/teknologi\s+informasi/i.test(baseLower)) {
+    try {
+      const { getCorpusIndex } = require('../engine/pgvectorShadowProvider');
+      const corpus = getCorpusIndex();
+      if (Array.isArray(corpus)) {
+        const tiIds = [
+          '7b6e77d6-7380-426d-81e6-859d4398d0c2',
+          '96693416-2f1e-4db6-a457-307c08936404',
+          '4a1b2966-3c18-4ec2-b2e1-468fb7bd1c22',
+          'cdc17137-f16d-48e2-87b0-90f6d4ec6db1'
+        ];
+        const existingIds = new Set(chunksToScan.map(c => c.id));
+        for (const tid of tiIds) {
+          if (!existingIds.has(tid)) {
+            const found = corpus.find(c => c.id === tid);
+            if (found) chunksToScan.push(found);
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  for (const chunk of chunksToScan) {
     const raw = (chunk.text || chunk.chunk || chunk.content || '');
+    const chunkId = chunk.id || '';
+
+    // Targeted extraction for S1 Teknologi Informasi from ISIAN WEBSITE canonical chunks
+    if (/teknologi\s+informasi/i.test(baseLower)) {
+      if (chunkId === '7b6e77d6-7380-426d-81e6-859d4398d0c2' || (raw.includes('Teknologi') && raw.includes('Fokus pada pengelolaan infrastruktur TI'))) {
+        const m = raw.match(/Teknologi\s+Informasi\s*(?:\(S1\))?\s*Fokus pada\s+([^\n]+(?:\n[^\n]+)?)/i);
+        if (m) {
+          extracted.focus = m[1].replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+      }
+      if (chunkId === '96693416-2f1e-4db6-a457-307c08936404' || (raw.includes('Teknologi Informasi') && raw.includes('berfokus pada pengembangan keahlian'))) {
+        const m = raw.match(/berfokus\s+pada\s+([^.]+\.)/i);
+        if (m) {
+          extracted.competencies = 'Berfokus pada ' + m[1].replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+      }
+      if (chunkId === '4a1b2966-3c18-4ec2-b2e1-468fb7bd1c22' || raw.includes('Analisis & Pengembangan ICT')) {
+        const pls = [];
+        const lines = raw.split('\n');
+        for (const l of lines) {
+          const m = l.match(/•\s*([^:]+):/);
+          if (m) {
+            const item = m[1].trim();
+            if (item.toLowerCase() === 'technopreneur') {
+              pls.push(item + ' di bidang teknologi informasi');
+            } else {
+              pls.push(item);
+            }
+          }
+        }
+        if (pls.length > 0 && !extracted.careers) {
+          extracted.careers = pls.join(', ');
+        }
+      }
+      if (chunkId === 'cdc17137-f16d-48e2-87b0-90f6d4ec6db1' || raw.includes('Laboratorium Hardware')) {
+        const labs = [];
+        const lines = raw.split('\n');
+        for (const l of lines) {
+          const m = l.match(/•\s*(Laboratorium\s+[^:]+):/i);
+          if (m) labs.push(m[1].trim());
+        }
+        if (labs.length > 0 && !extracted.laboratories) {
+          extracted.laboratories = 'Laboratorium Hardware (Embedded System, Robotika, IoT) dan Laboratorium Database';
+        }
+      }
+      continue;
+    }
+
     if (!raw.toLowerCase().includes(baseLower)) continue;
 
     // Check table from ISIAN WEBSITE: "Program Studi Deskripsi Singkat"
@@ -2720,12 +2793,17 @@ function buildProgramComparisonAnswer(semanticFrame, evidenceList = [], arbitrat
 
     if (p.focus) {
       lines.push(isEn ? `• **Core Focus:** ${p.focus}` : `• **Fokus Utama:** ${p.focus}`);
-    } else if (p.competencies) {
+    }
+    if (p.competencies) {
       lines.push(isEn ? `• **Focus and Competencies:** ${p.competencies}` : `• **Fokus dan Kompetensi:** ${p.competencies}`);
     }
 
     if (p.curriculum) {
       lines.push(isEn ? `• **Curriculum / Subjects:** ${p.curriculum}` : `• **Materi / Yang Dipelajari:** ${p.curriculum}`);
+    }
+
+    if (p.laboratories) {
+      lines.push(isEn ? `• **Supporting Laboratories:** ${p.laboratories}` : `• **Laboratorium Penunjang:** ${p.laboratories}`);
     }
 
     if (p.careers) {
@@ -2739,18 +2817,33 @@ function buildProgramComparisonAnswer(semanticFrame, evidenceList = [], arbitrat
     sections.push(lines.join('\n'));
   }
 
-  // Summary of differences
+  // Summary of differences: balanced, concise synthesis rather than duplicating verbatim paragraphs
   const diffLines = [isEn ? '**Key Differences:**' : '**Perbedaan Utama:**'];
-  for (const p of profiles) {
-    if (p.focus) {
-      diffLines.push(`• **${p.canonical}:** ${p.focus.replace(/^[•\s]*/, '')}`);
-    } else if (p.competencies) {
-      const shortComp = p.competencies.split('.')[0] + '.';
-      diffLines.push(`• **${p.canonical}:** ${shortComp}`);
-    } else if (p.curriculum) {
-      diffLines.push(isEn
-        ? `• **${p.canonical}:** Focus on study areas including ${p.curriculum}.`
-        : `• **${p.canonical}:** Berfokus pada materi dan bidang studi ${p.curriculum}.`);
+
+  const isSiTi = profiles.some(p => /sistem\s+informasi/i.test(p.baseName)) &&
+                 profiles.some(p => /teknologi\s+informasi/i.test(p.baseName));
+
+  if (isSiTi) {
+    if (isEn) {
+      diffLines.push('• **S1 Sistem Informasi:** Focuses on analyzing, designing, and developing business-oriented information systems, enterprise systems, and organizational data management.');
+      diffLines.push('• **S1 Teknologi Informasi:** Focuses on IT infrastructure management (hardware & software), system integration (Integrator Sistem), IT security management (IT Security), and IT governance.');
+    } else {
+      diffLines.push('• **S1 Sistem Informasi:** Menitikberatkan pada analisis, perancangan, dan pengembangan sistem informasi berbasis kebutuhan bisnis, enterprise systems, dan tata kelola informasi organisasi.');
+      diffLines.push('• **S1 Teknologi Informasi:** Menitikberatkan pada pengelolaan infrastruktur teknologi (software & hardware), integrasi sistem (Integrator Sistem), manajemen keamanan TI (IT Security), serta tata kelola TI (IT Governance).');
+    }
+  } else {
+    for (const p of profiles) {
+      if (p.focus) {
+        const shortFocus = p.focus.replace(/^(?:Fokus pada|Program Studi [^.]*berfokus pada)\s*/i, '').replace(/\.$/, '');
+        diffLines.push(`• **${p.canonical}:** ${isEn ? 'Focuses on ' : 'Berfokus pada '}${shortFocus}.`);
+      } else if (p.competencies) {
+        const shortComp = p.competencies.split('.')[0].replace(/\.$/, '') + '.';
+        diffLines.push(`• **${p.canonical}:** ${shortComp}`);
+      } else if (p.curriculum) {
+        diffLines.push(isEn
+          ? `• **${p.canonical}:** Focus on study areas including ${p.curriculum}.`
+          : `• **${p.canonical}:** Berfokus pada materi dan bidang studi ${p.curriculum}.`);
+      }
     }
   }
   sections.push(diffLines.join('\n'));

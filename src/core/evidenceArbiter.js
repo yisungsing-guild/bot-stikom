@@ -1319,6 +1319,22 @@ function arbitrateEvidence(candidates = [], retrievalPlan = {}) {
     });
   }
 
+  if (retrievalPlan.intent === 'PROGRAM_COMPARISON') {
+    accepted.sort((a, b) => {
+      // Deprioritize student organization / ormawa chunks for program comparison
+      const aIsOrmawa = /ORMAWA|HIMAPRODI/i.test(a.sourceFile || a.metadata?.sourceFile || '') || /PROFILE\s+HIMPUNAN\s+MAHASISWA/i.test(a.text || a.chunk || '');
+      const bIsOrmawa = /ORMAWA|HIMAPRODI/i.test(b.sourceFile || b.metadata?.sourceFile || '') || /PROFILE\s+HIMPUNAN\s+MAHASISWA/i.test(b.text || b.chunk || '');
+      if (aIsOrmawa && !bIsOrmawa) return 1;
+      if (!aIsOrmawa && bIsOrmawa) return -1;
+
+      const aIsAuthoritative = /\b(Penjelasan Prodi|Fokus Pendidikan|Yang Dipelajari|Peluang Kerja|Visi|Profil Program Studi|Deskripsi Singkat)\b/i.test(a.text || a.chunk || '');
+      const bIsAuthoritative = /\b(Penjelasan Prodi|Fokus Pendidikan|Yang Dipelajari|Peluang Kerja|Visi|Profil Program Studi|Deskripsi Singkat)\b/i.test(b.text || b.chunk || '');
+      if (aIsAuthoritative && !bIsAuthoritative) return -1;
+      if (!aIsAuthoritative && bIsAuthoritative) return 1;
+      return 0;
+    });
+  }
+
   // Shadow comparison telemetry (Section 20): does NOT alter legacy arbitration
   const contract = retrievalPlan.retrievalContract || (retrievalPlan.domain ? buildRetrievalContract(retrievalPlan) : null);
   let shadowContractArbitration = null;
