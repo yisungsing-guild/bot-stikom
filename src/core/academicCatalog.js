@@ -80,7 +80,20 @@ function resolveAcademicScope(input) {
   }
 
   // 1. Check for explicit unsupported/unoffered degree mention
-  const unsuppMatch = trimmed.match(UNSUPPORTED_DEGREE_PATTERN);
+  // Note: High school/vocational applicant background ("lulusan smk", "alumni sma", etc.)
+  // is an applicant prerequisite inquiry, NOT an offering of high school programs.
+  const textWithoutApplicantBackground = trimmed.replace(
+    /\b(?:lulusan|tamatan|alumni|dari|asal(?:\s+sekolah)?|ijazah)\s+(?:smk|sma|ma)\b/gi,
+    ''
+  ).replace(
+    /\b(?:smk|sma|ma)\s+(?:bisa|dapat|boleh)\s+(?:daftar|masuk|kuliah)\b/gi,
+    ''
+  ).replace(
+    /\b(?:untuk|bagi)\s+(?:lulusan\s+)?(?:smk|sma|ma)\b/gi,
+    ''
+  );
+
+  const unsuppMatch = textWithoutApplicantBackground.match(UNSUPPORTED_DEGREE_PATTERN);
   if (unsuppMatch) {
     return {
       status: ACADEMIC_SCOPE_STATUS.UNSUPPORTED,

@@ -28,6 +28,7 @@ const CANONICAL_ENTITIES = [
     degree: 'S1',
     aliases: [
       'teknologi informasi', 'ti', 's1 ti', 's1 teknologi informasi', 'prodi ti', 'jurusan ti', 'sarjana teknologi informasi',
+      'tekno info', 'teknologi info',
       'information technology', 'bachelor of information technology', 'bachelor in information technology', 'undergraduate information technology'
     ]
   },
@@ -58,7 +59,7 @@ const CANONICAL_ENTITIES = [
     degree: 'D3',
     aliases: [
       'manajemen informatika', 'mi', 'd3 mi', 'd3 manajemen informatika', 'diploma manajemen informatika', 'prodi mi',
-      'informatics management', 'd3 informatics management', 'diploma of informatics management', 'diploma in informatics management'
+      'd3 vokasi', 'prodi d3 vokasi', 'vokasi mi', 'd3 manajemen informatika vokasi', 'informatics management', 'd3 informatics management', 'diploma of informatics management', 'diploma in informatics management'
     ]
   },
   {
@@ -108,7 +109,7 @@ const CANONICAL_ENTITIES = [
     family: 'academic_scope',
     degree: 'D3',
     aliases: [
-      'program diploma (d3)', 'program diploma', 'jurusan diploma', 'prodi diploma', 'program d3', 'jurusan d3', 'prodi d3', 'diploma', 'diploma 3',
+      'program diploma (d3)', 'program diploma', 'jurusan diploma', 'prodi diploma', 'program d3', 'jurusan d3', 'prodi d3', 'diploma', 'diploma 3', 'program vokasi', 'pendidikan vokasi', 'vokasi', 'prodi vokasi', 'jurusan vokasi', 'program studi vokasi', 'diploma vokasi', 'vocational', 'vocational program',
       'diploma program', 'associate degree', 'diploma programs', 'diploma study programs', 'diploma study program', 'associate degree program'
     ]
   },
@@ -611,7 +612,7 @@ const CANONICAL_ENTITIES = [
     type: 'academic_level',
     family: 'academic_scope',
     degree: 'D3',
-    aliases: ['d3', 'jenjang d3', 'program d3', 'diploma', 'diploma 3', 'ahli madya']
+    aliases: ['d3', 'jenjang d3', 'program d3', 'diploma', 'diploma 3', 'ahli madya', 'vokasi', 'pendidikan vokasi', 'jenjang vokasi']
   },
   {
     canonical: 'RPL (Rekognisi Pembelajaran Lampau)',
@@ -649,7 +650,7 @@ const CANONICAL_ENTITIES = [
     type: 'participant_scope',
     family: 'participant_scope',
     scope: 'alumni',
-    aliases: ['alumni', 'lulusan stikom', 'alumni stikom']
+    aliases: ['alumni stikom', 'lulusan stikom', 'alumni itb stikom', 'alumni itb stikom bali']
   },
   {
     canonical: 'Mitra Industri',
@@ -680,7 +681,7 @@ const CANONICAL_ENTITIES = [
     canonical: 'Kebijakan Akademik (Academic Policy)',
     type: 'academic_scope',
     family: 'academic_scope',
-    aliases: ['akademik', 'kebijakan akademik', 'academic policy', 'aturan akademik', 'pedoman akademik']
+    aliases: ['kebijakan akademik', 'academic policy', 'aturan akademik', 'pedoman akademik']
   },
   {
     canonical: 'Wisuda',
@@ -810,6 +811,102 @@ function hasExplicitCampusLocationSemantics(text) {
   return /\b(?:kampus|stikom|itb\s+stikom|kuliah|universitas|institut|gedung|lokasi|alamat|prodi|jurusan|biaya|asrama|parkir|fasilitas|laboratorium|lab|pmb|daftar|pendaftaran|cabang)\b/i.test(s);
 }
 
+function editDistance(a, b) {
+  const left = String(a || '');
+  const right = String(b || '');
+  if (left === right) return 0;
+  if (!left.length) return right.length;
+  if (!right.length) return left.length;
+  let previous = Array.from({ length: right.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= left.length; i += 1) {
+    const current = [i];
+    for (let j = 1; j <= right.length; j += 1) {
+      const cost = left[i - 1] === right[j - 1] ? 0 : 1;
+      current[j] = Math.min(
+        current[j - 1] + 1,
+        previous[j] + 1,
+        previous[j - 1] + cost
+      );
+    }
+    previous = current;
+  }
+  return previous[right.length];
+}
+
+function areConservativelyEquivalentTokens(queryToken, aliasToken) {
+  if (queryToken === aliasToken) return true;
+  if (queryToken.length < 5 || aliasToken.length < 5) return false;
+  const distance = editDistance(queryToken, aliasToken);
+  const allowedDistance = Math.max(1, Math.floor(Math.max(queryToken.length, aliasToken.length) * 0.18));
+  return distance <= allowedDistance;
+}
+
+function isCompactMultiwordAbbreviation(queryToken, aliasTokens) {
+  if (queryToken.length < 5 || aliasTokens.length < 2) return false;
+  // Infer abbreviations from the first three characters of each canonical word;
+  // no institution-specific abbreviation list is needed.
+  const compact = aliasTokens.map(token => token.slice(0, 3)).join('');
+  return queryToken === compact;
+}
+
+function resolveFuzzyAcademicProgramCandidates(text, options = {}) {
+  const normalizedQuery = normalizeText(text);
+  if (!normalizedQuery) return [];
+  const semanticContext = `${normalizedQuery} ${normalizeText(options.contextQuery || '')}`.trim();
+  if (!hasExplicitProgramSemantics(semanticContext)) return [];
+
+  const queryTokens = normalizedQuery.split(/\s+/).filter(token => token.length >= 2);
+  const candidates = [];
+
+  for (const entry of CANONICAL_ENTITIES) {
+    if (entry.family !== 'academic_program') continue;
+    let best = null;
+
+    for (const alias of entry.aliases || []) {
+      const aliasTokens = normalizeText(alias).split(/\s+/).filter(Boolean);
+      if (aliasTokens.length < 2) continue;
+
+      const matchedTokens = aliasTokens.filter(aliasToken =>
+        queryTokens.some(queryToken => areConservativelyEquivalentTokens(queryToken, aliasToken))
+      );
+      if (matchedTokens.length === aliasTokens.length && matchedTokens.length >= 2) {
+        const quality = 0.82 + (matchedTokens.length / aliasTokens.length) * 0.08;
+        if (!best || quality > best.matchQuality) {
+          best = { matchedAlias: alias, matchQuality: quality, matchMethod: 'fuzzy_multi_token' };
+        }
+      }
+
+      if (isCompactMultiwordAbbreviation(queryTokens.find(token => isCompactMultiwordAbbreviation(token, aliasTokens)) || '', aliasTokens)) {
+        const quality = 0.83;
+        if (!best || quality > best.matchQuality) {
+          best = { matchedAlias: alias, matchQuality: quality, matchMethod: 'fuzzy_compact_abbreviation' };
+        }
+      }
+    }
+
+    if (best) candidates.push({ entry, ...best });
+  }
+
+  // Fuzzy matching is deliberately conservative: ambiguity must be resolved by
+  // context, not by whichever canonical entity happens to sort first.
+  const uniqueCandidates = new Map(candidates.map(candidate => [candidate.entry.canonical, candidate]));
+  if (uniqueCandidates.size !== 1) return [];
+
+  const [{ entry, ...match }] = [...uniqueCandidates.values()];
+  return [{
+    canonical: entry.canonical,
+    type: entry.type,
+    family: entry.family,
+    degree: entry.degree || null,
+    scope: entry.scope || null,
+    country: entry.country || null,
+    matchedAlias: match.matchedAlias,
+    matchQuality: match.matchQuality,
+    matchMethod: match.matchMethod,
+    isSpecific: true
+  }];
+}
+
 function hasPriorProgramContext(priorState, canonicalName, code) {
   if (!priorState || typeof priorState !== 'object') return false;
   const unwrap = priorState.sessionState || priorState.conversationState || priorState.priorSessionOrState || priorState.sessionData || priorState.data || priorState.session || priorState;
@@ -917,6 +1014,15 @@ function matchCanonicalEntities(text, options = {}) {
   const finalMatches = hasSpecificDoubleDegree
     ? filtered.filter(e => e.canonical !== 'International Dual Degree')
     : filtered;
+
+  // Exact registry aliases always win. Only when no exact academic program matched
+  // do we try phrase-level typo/compact-abbreviation recovery, and only with
+  // surrounding academic context plus a unique candidate.
+  const hasExactAcademicProgram = finalMatches.some(entity => entity.family === 'academic_program');
+  if (!hasExactAcademicProgram) {
+    const fuzzyProgramMatches = resolveFuzzyAcademicProgramCandidates(text, options);
+    finalMatches.push(...fuzzyProgramMatches);
+  }
 
   // Deduplicate by canonical identity: each canonical entity appears at most once
   const deduplicated = [];

@@ -31,6 +31,11 @@ function buildRetrievalPlan(semanticFrame) {
   }
 
   const { normalizedQuery, domain, intent, entities, aspects, temporal } = semanticFrame;
+  const rawIntent = typeof intent === 'object' && intent ? (intent.primary || intent.intent || '') : String(intent || '');
+  const rawDomain = typeof domain === 'object' && domain ? (domain.primary || domain.domain || '') : String(domain || '');
+  const effectiveAspects = Array.isArray(aspects) && aspects.length > 0
+    ? [...aspects]
+    : (Array.isArray(semanticFrame.requestedFields) ? [...semanticFrame.requestedFields] : []);
   const retrievalContract = buildRetrievalContract(semanticFrame);
   const contractTargets = retrievalContract.scopeConstraints?.targetEntities || [];
   let targetEntities = contractTargets.length > 0
@@ -88,8 +93,8 @@ function buildRetrievalPlan(semanticFrame) {
             const aliasLower = alias.toLowerCase().trim();
             if (targetEntitySet.has(aliasLower) || GENERIC_COMMON_WORDS.has(aliasLower)) continue;
             // Avoid adding plain multi-word noun phrases that are valid descriptive terms in other programs
-            const isPlainNoun = canonicalObj.family === 'academic_program' && 
-              !/^(s1|s2|d3|d4|prodi|jurusan|sarjana|diploma|magister)\b/i.test(alias) && 
+            const isPlainNoun = canonicalObj.family === 'academic_program' &&
+              !/^(s1|s2|d3|d4|prodi|jurusan|sarjana|diploma|magister)\b/i.test(alias) &&
               !/\b(s1|s2|d3|d4)\b/i.test(alias);
             if (alias.length >= 3 && !isPlainNoun && !excludedConflictingEntities.includes(alias)) {
               excludedConflictingEntities.push(alias);
@@ -125,12 +130,12 @@ function buildRetrievalPlan(semanticFrame) {
   if (domain === 'ACCREDITATION' || intent === 'INSTITUTIONAL_ACCREDITATION' || intent === 'PROGRAM_ACCREDITATION' || (aspects && (aspects.includes('accreditation') || aspects.includes('akreditasi')))) {
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
-        queryVariants.push(`sertifikat akreditasi ban-pt lam infokom ${ent} baik sekali peringkat resmi`);
+        queryVariants.push(`sertifikat akreditasi ${ent} peringkat resmi`);
         queryVariants.push(`akreditasi program studi ${ent} peringkat sertifikat status`);
         queryVariants.push(`status akreditasi ${ent}`);
       }
     } else {
-      queryVariants.push('status akreditasi institusi program studi ITB STIKOM Bali BAN PT LAM INFOKOM');
+      queryVariants.push('status akreditasi institusi program studi');
     }
   }
 
@@ -253,18 +258,69 @@ function buildRetrievalPlan(semanticFrame) {
     queryVariants.push('persyaratan pendaftaran wisuda yudisium beban studi tugas akhir skripsi');
   }
 
-  // Admission Schedule & Waves query variants (guarded: never pollute wisuda with PMB waves)
-  if (!isWisudaQuery && (intent === 'ADMISSION_SCHEDULE' || (aspects && aspects.includes('schedule')))) {
-    queryVariants.push('jadwal gelombang pendaftaran PMB periode pendaftaran kalender pendaftaran tanggal penting');
-    queryVariants.push('jadwal pendaftaran mahasiswa baru gelombang PMB ITB STIKOM Bali');
-    queryVariants.push('batas waktu penutupan pendaftaran gelombang reguler PMB');
-    queryVariants.push('waktu pendaftaran dibuka ditutup gelombang');
+  // Academic Calendar & Event Schedule query variants
+  const isAcademicCalendarQuery = domain === 'ACADEMIC_SCHEDULE' || intent === 'ACADEMIC_EVENT_SCHEDULE' ||
+    /\bkalender\s+akademik\b/i.test(normalizedText);
+  if (isAcademicCalendarQuery) {
+    queryVariants.push('Kalender Akademik ITB STIKOM Bali Semester Ganjil Genap Antara Tahun Akademik');
+    queryVariants.push('Kalender Akademik perkuliahan jadwal akademik Direktorat Administrasi Akademik BAAK');
   }
 
+  // Admission Schedule & Waves query variants (guarded: never pollute wisuda or academic calendar with PMB waves)
+  const isPmbAdmissionScheduleQuery = !isWisudaQuery && !isAcademicCalendarQuery && (
+    intent === 'ADMISSION_SCHEDULE' ||
+    rawIntent === 'ADMISSION_SCHEDULE' ||
+    rawIntent === 'ask_schedule' ||
+    rawDomain === 'pmb_schedule' ||
+    effectiveAspects.includes('schedule') ||
+    (/\b(?:pendaftaran|daftar|mahasiswa\s+baru|pmb)\b/i.test(normalizedText) &&
+     /\b(?:buka|dibuka|masih\s+buka|masih\s+bisa|buka\s+gelombang|gelombang\s+berapa|jadwal|kapan|tutup|ditutup|batas\s+akhir|hari\s+ini|minggu\s+depan|sempat|tahun\s+ini|menerima\s+mahasiswa\s+baru|testing|tes\s+seleksi|pengumuman|registrasi\s+ulang)\b/i.test(normalizedText))
+  );
+
+  if (isPmbAdmissionScheduleQuery) {
+    if (!effectiveAspects.includes('schedule')) effectiveAspects.push('schedule');
+    if (!effectiveAspects.includes('waves')) effectiveAspects.push('waves');
+    const yr = semanticFrame.academicYear || temporal?.academicYear || null;
+    queryVariants.push(`jadwal gelombang pendaftaran PMB ${yr} periode pendaftaran kalender pendaftaran tanggal penting`);
+    queryVariants.push('jadwal pendaftaran mahasiswa baru gelombang PMB ITB STIKOM Bali');
+    queryVariants.push('Kalender Pendaftaran.xlsx');
+    queryVariants.push(`kalender pendaftaran mahasiswa baru ${yr} ITB STIKOM Bali`);
+    queryVariants.push('kalender pendaftaran mahasiswa baru masa pendaftaran testing pengumuman registrasi ulang');
+    queryVariants.push('batas waktu penutupan pendaftaran gelombang reguler PMB');
+    queryVariants.push(yr ? `jadwal tes seleksi testing dan pengumuman kelulusan mahasiswa baru ${yr}` : 'jadwal tes seleksi testing dan pengumuman kelulusan mahasiswa baru');
+  }
+
+  // RPL (Rekognisi Pembelajaran Lampau) query variants
+  const isRplQuery = rawIntent === 'ask_rpl' || /\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(normalizedText);
+  if (isRplQuery) {
+    if (!effectiveAspects.includes('rpl')) effectiveAspects.push('rpl');
+    queryVariants.push('PEDOMAN-RPL-SK Sistem Komputer-1779258342105.pdf');
+    queryVariants.push('pedoman penyelenggaraan rekognisi pembelajaran lampau RPL sarjana sistem komputer formulir evaluasi diri');
+    queryVariants.push('persyaratan pendaftaran kuliah jalur RPL portofolio kriteria VATC valid asli terkini cukup transfer sks perolehan sks');
+    queryVariants.push('alur prosedur pengajuan rekognisi pembelajaran lampau RPL pengalaman kerja ijazah transkrip nilai');
+  }
+
+  // Multi-intent PMB inquiry (requirements + schedule + documents) e.g. No. 402
+  if (/\b(?:daftar|pendaftaran)\b/i.test(normalizedText) && /\b(?:syarat(?:nya)?|persyaratan)\b/i.test(normalizedText) && /\b(?:jadwal(?:nya)?|kapan|waktu(?:nya)?)\b/i.test(normalizedText)) {
+    if (!effectiveAspects.includes('requirements')) effectiveAspects.push('requirements');
+    if (!effectiveAspects.includes('schedule')) effectiveAspects.push('schedule');
+    if (!effectiveAspects.includes('documents')) effectiveAspects.push('documents');
+    for (const ent of (targetEntities.length ? targetEntities : ['S1 Bisnis Digital'])) {
+      queryVariants.push(`syarat pendaftaran dan dokumen yang dibutuhkan ${ent} PMB ITB STIKOM Bali`);
+      queryVariants.push(`persyaratan pendaftaran masuk berkas dokumen ${ent}`);
+    }
+    queryVariants.push('Kalender Pendaftaran.xlsx');
+    queryVariants.push(yr ? `kalender pendaftaran mahasiswa baru ${yr} gelombang masa pendaftaran testing pengumuman registrasi ulang` : 'kalender pendaftaran mahasiswa baru gelombang masa pendaftaran testing pengumuman registrasi ulang');
+  }
   // PMB Contact query variants
   if (intent === 'PMB_CONTACT_INQUIRY' || (aspects && aspects.includes('contact'))) {
-    queryVariants.push('kontak PMB whatsapp call center telepon email pendaftaran customer service ITB STIKOM Bali');
-    queryVariants.push('nomor kontak informasi pendaftaran mahasiswa baru PMB');
+    if (aspects && aspects.includes('student_affairs')) {
+      queryVariants.push('Direktorat Kemahasiswaan Karir dan Alumni Direktorat KKA Career Center ts_dirkka@stikom-bali.ac.id SK PEMBINA ORMAWA');
+      queryVariants.push('kontak layanan kemahasiswaan karir dan alumni ts_dirkka@stikom-bali.ac.id Wakil Rektor III ITB STIKOM Bali');
+    } else {
+      queryVariants.push('kontak PMB whatsapp call center telepon email pendaftaran customer service ITB STIKOM Bali');
+      queryVariants.push('nomor kontak informasi pendaftaran mahasiswa baru PMB');
+    }
   }
 
   // Payment confirmation procedure query variants
@@ -281,7 +337,7 @@ function buildRetrievalPlan(semanticFrame) {
 
   // Foreign Student / Visa / International query variants
   const isForeignQuery = (semanticFrame.participantScope === 'foreign') ||
-    (/\b(mahasiswa\s+asing|visa|itas|kitas|izin\s+belajar|study\s+permit|e30b)\b/i.test(normalizedText));
+    (/\b(mahasiswa\s+asing|warga\s+negara\s+asing|wna|orang\s+asing|foreign\s+students?|international\s+students?|mahasiswa\s+internasional|kui|kantor\s+urusan\s+internasional|visa|itas|kitas|izin\s+belajar|study\s+permit|e-?visa|e30b)\b/i.test(normalizedText));
   if (isForeignQuery) {
     if (/\b(izin\s+belajar|study\s+permit)\b/i.test(normalizedText)) {
       queryVariants.push('prosedur pengurusan izin belajar study permit mahasiswa asing ITB STIKOM Bali');
@@ -295,6 +351,19 @@ function buildRetrievalPlan(semanticFrame) {
     if (/\b(itas|kitas|sktt)\b/i.test(normalizedText)) {
       queryVariants.push('visa mahasiswa asing izin belajar penjamin sponsor penjaminan ITAS SKTT');
     }
+    if (/\b(?:kontak|siapa|bagian|layanan|narahubung|hubungi|office|kui)\b/i.test(normalizedText)) {
+      queryVariants.push('kontak layanan urusan mahasiswa internasional KUI ITB STIKOM Bali');
+      queryVariants.push('kantor urusan internasional KUI layanan mahasiswa asing');
+    }
+    if (/\b(?:daftar|mendaftar|pendaftaran|boleh\s+mendaftar|admission|enroll)\b/i.test(normalizedText)) {
+      queryVariants.push('pendaftaran mahasiswa asing WNA kuliah program S1 diploma ITB STIKOM Bali');
+      queryVariants.push('syarat prosedur mahasiswa asing kuliah di ITB STIKOM Bali');
+    }
+  }
+
+  if (/\b(?:perpustakaan|library|digital\s+library)\b/i.test(normalizedText)) {
+    queryVariants.push('fasilitas perpustakaan digital library ITB STIKOM Bali');
+    queryVariants.push('perpustakaan digital layanan mahasiswa STIKOM Bali');
   }
 
   // DKV / Dual Degree UTB query variants prioritized
@@ -373,7 +442,7 @@ function buildRetrievalPlan(semanticFrame) {
 
   // PMB Schedule & Wave Calendar query variants
   if (intent === 'ADMISSION_SCHEDULE' || (domain === 'PMB' && aspects && aspects.includes('schedule'))) {
-    const yr = semanticFrame.academicYear || temporal?.academicYear || '2026/2027';
+    const yr = semanticFrame.academicYear || temporal?.academicYear || null;
     queryVariants.push(`jadwal pendaftaran penerimaan mahasiswa baru PMB ${yr} gelombang`);
     queryVariants.push(`kalender pendaftaran mahasiswa baru ${yr} ITB STIKOM Bali`);
     queryVariants.push('Kalender Pendaftaran.xlsx');
@@ -548,11 +617,11 @@ function buildRetrievalPlan(semanticFrame) {
     academicScope: resolvedScope,
     scopeLevel: semanticFrame.scopeLevel || resolvedScope.level || (resolvedScope.status === ACADEMIC_SCOPE_STATUS.UNSUPPORTED ? 'UNSUPPORTED' : null),
     retrievalRequired: semanticFrame.retrievalRequired !== false,
-    participantScope: semanticFrame.participantScope || (/\b(mahasiswa\s+asing|visa|itas|kitas|izin\s+belajar)\b/i.test(normalizedText) ? 'foreign' : 'domestic'),
+    participantScope: semanticFrame.participantScope || (/\b(mahasiswa\s+asing|warga\s+negara\s+asing|wna|orang\s+asing|foreign\s+students?|international\s+students?|mahasiswa\s+internasional|kui|kantor\s+urusan\s+internasional|visa|itas|kitas|izin\s+belajar|study\s+permit|e-?visa|e30b)\b/i.test(normalizedText) ? 'foreign' : 'domestic'),
     targetEntities,
     excludedConflictingEntities,
-    requiredAspects: aspects || [],
-    academicYear: semanticFrame.academicYear || temporal?.academicYear || '2026/2027',
+    requiredAspects: effectiveAspects,
+    academicYear: semanticFrame.academicYear || temporal?.academicYear || null,
     temporalConstraint: temporal ? temporal.constraint : 'GENERAL',
     rawQuery: semanticFrame.rawQuery || normalizedQuery || '',
     query: normalizedQuery || semanticFrame.rawQuery || '',

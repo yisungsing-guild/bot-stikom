@@ -1141,7 +1141,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal, opt
     hasExplicitOrgToken
     || (/\borganisasi(?:nya)?\b/i.test(q) && /\b(?:ikut|ikutan|mengikuti|gabung|bergabung|join|masuk|daftar|mendaftar|tersedia|ada\s+apa|ada\s+ngga(?:k)?|ada\s+tidak|ada|apa\s+saja|apa\s+aja)\b/i.test(q))
     || (organizationCategory && /\b(?:organisasi(?:nya)?|komunitas|unit\s+kegiatan|kegiatan|kelompok|ekskul|klub|wadah|tempat|sarana)\b/i.test(q) && /\b(?:minat|suka|hobi|hobby|tertarik|ikut|mengikuti|buat|untuk|ada|tersedia|latihan)\b/i.test(q))
-    || (interestProfiles.length > 0 && /\b(?:ikut|ikutan|mengikuti|gabung|bergabung|daftar|mendaftar|klub|ekskul|komunitas|organisasi(?:nya)?|ukm(?:nya)?|wadah)\b/i.test(q))
+    || ((!entities.programs.length || hasExplicitOrgToken) && interestProfiles.length > 0 && /\b(?:ikut|ikutan|mengikuti|gabung|bergabung|daftar|mendaftar|klub|ekskul|komunitas|organisasi(?:nya)?|ukm(?:nya)?|wadah)\b/i.test(q))
     || (/\b(?:unit|siapa)\s+(?:apa\s+)?(?:yang\s+)?(?:bertugas|menangani|mengurus|menjaga|bertanggung\s*jawab)\b/i.test(q) && !/\b(?:baak|biro|rektorat|pmb)\b/i.test(q))
   );
   const hasStudentSupport = !/\bbeasiswa\b/i.test(q)

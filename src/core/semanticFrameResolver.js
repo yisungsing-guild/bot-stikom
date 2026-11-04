@@ -26,10 +26,12 @@
 const { matchCanonicalEntities, findCanonicalEntity } = require('../engine/canonicalEntityRegistry');
 const { evaluateContextDependency } = require('./contextResolver');
 const { detectQueryLanguage } = require('../utils/languageDetector');
+const { normalizeUserQuery } = require('../utils/queryNormalizer');
 const { ACADEMIC_SCOPE_STATUS, resolveAcademicScope } = require('./academicCatalog');
 const modelSemanticParser = require('./modelSemanticParser');
 const { validateSemanticInterpretation, compareFrames } = require('./semanticInterpretationValidator');
 const logger = require('../logger');
+const { filterNegatedSemanticAspects, filterNegatedCanonicalEntities, getNegatedAspectSet, stripNegatedAspectPhrases } = require('../utils/semanticNegation');
 
 // Temporal markers for NOW / current status
 const TEMPORAL_NOW_REGEX = /\b(masih|sekarang|hari ini|saat ini|tahun ini|terbaru|gelombang ini|saat sekarang)\b/i;
@@ -65,7 +67,7 @@ const CANONICAL_DOMAIN_LEXICON = [
   'kontak', 'telepon', 'whatsapp', 'alamat', 'narahubung', 'softskill', 'soft'
 ];
 
-const INSTITUTIONAL_ANCHOR_REGEX = /\b(?:stikom|kampus|kuliah|perkuliahan|akademik|pmb|mahasiswa|dosen|prodi|jurusan|fakultas|sarjana|diploma|magister|pascasarjana|s1|s2|d3|biaya|spp|dpp|uang\s+kuliah|uang\s+gedung|beasiswa|pendaftaran|daftar|syarat|persyaratan|berkas|dokumen|gelombang|jadwal|kurikulum|matkul|mata\s+kuliah|sks|akreditasi|ban-?pt|lam-?infokom|fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|wisuda|yudisium|rpl|magang|lulus|lulusan|kelulusan|karir|karier|alumni|universitas|institut|sekolah\s+tinggi|dual\s+degree|double\s+degree|degree|gelar|ijazah|sebutan|durasi|program\s+studi|studi|masa\s+studi|lama\s+studi|waktu\s+studi|university|college|campus|student|students|lecturer|professor|tuition|fee|fees|scholarship|admission|admissions|register|registration|curriculum|course|courses|credit|credits|accreditation|facility|facilities|laboratory|laboratories|library|dormitory|dorm|graduation|graduate|graduating|thesis|final\s+project|defense|internship|career|careers|degree|duration|study\s+duration|student\s+exchange|parking|undergraduate|bachelor|master|postgraduate|study\s+programs?|academic\s+programs?|degree\s+programs?|majors?|soft\s*skills?|pengembangan\s+(?:soft\s*skills?|karakter|mahasiswa)|pelatihan\s+soft\s*skills?|career\s+center|pusat\s+karier|cdc|kontak|telepon|whatsapp|narahubung)\b/i;
+const INSTITUTIONAL_ANCHOR_REGEX = /\b(?:stikom|kampus|kuliah|perkuliahan|akademik|pmb|mahasiswa|dosen|prodi|jurusan|fakultas|sarjana|diploma|magister|pascasarjana|s1|s2|d3|biaya|spp|dpp|uang\s+kuliah|uang\s+gedung|beasiswa|pendaftaran|daftar|syarat|persyaratan|berkas|dokumen|gelombang|jadwal|kurikulum|matkul|mata\s+kuliah|sks|akreditasi|ban-?pt|lam-?infokom|fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|wisuda|yudisium|rpl|magang|lulus|lulusan|kelulusan|karir|karier|alumni|universitas|institut|sekolah\s+tinggi|dual\s+degree|double\s+degree|degree|gelar|ijazah|sebutan|durasi|program\s+studi|studi|masa\s+studi|lama\s+studi|waktu\s+studi|university|college|campus|student|students|lecturer|professor|tuition|fee|fees|scholarship|admission|admissions|register|registration|curriculum|course|courses|credit|credits|accreditation|facility|facilities|laboratory|laboratories|library|dormitory|dorm|graduation|graduate|graduating|thesis|final\s+project|defense|internship|career|careers|degree|duration|study\s+duration|student\s+exchange|parking|undergraduate|bachelor|master|postgraduate|study\s+programs?|academic\s+programs?|degree\s+programs?|majors?|soft\s*skills?|pengembangan\s+(?:soft\s*skills?|karakter|mahasiswa)|pelatihan\s+soft\s*skills?|career\s+center|pusat\s+karier|cdc|kontak|telepon|whatsapp|narahubung|ktp|kk|kartu\s+keluarga|akta|formulir|registrasi|konfirmasi|verifikasi|kode\s+verifikasi|otp|tes\s+masuk|seleksi|ujian\s+seleksi|kartu\s+peserta|bukti\s+bayar|bukti\s+transfer|bukti\s+pembayaran|panitia|panitia\s+pmb|sion|portal\s+akademik|kemahasiswaan|bagian\s+kemahasiswaan|layanan\s+kemahasiswaan|coding|pemrograman|programming|bahasa\s+inggris|english|vokasi|pendidikan\s+vokasi|program\s+vokasi|fokus\s+riset|topik\s+riset|data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics|pengalaman\s+industri|sertifikasi(?:\s+industri)?|digital\s+marketing|seo|baak|ipk|dosen\s+wali|perwalian|cuti(?:\s+kuliah)?|online|daring|aplikasi\s+(?:kuliah|perkuliahan|belajar)|murah|mahal|tarif|harga|terjangkau|teknologi|komputer|hardware|software)\b/i;
 
 const PROTECTED_CANONICAL_WORDS = new Set([
   'dan', 'atau', 'ke', 'di', 'dari', 'pada', 'untuk', 'dengan', 'ada', 'bisa', 'boleh', 'mau', 'ingin', 'saya', 'kami', 'kita', 'dia', 'ini', 'itu', 'apa', 'siapa', 'mana', 'kapan', 'sudah', 'belum', 'tidak', 'bukan'
@@ -74,7 +76,7 @@ const PROTECTED_CANONICAL_WORDS = new Set([
 function extractUserOriginLocation(text, sessionData = {}) {
   if (!text || typeof text !== 'string') return sessionData?.userOrigin || null;
   const cleaned = text.trim();
-  const m = cleaned.match(/\b(?:tinggal\s+di|dari|rumah\s+(?:saya\s+)?di|domisili(?:\s+di)?|posisi(?:\s+di)?|lokasi\s+(?:saya\s+)?di)\s+([a-zA-Z0-9\s,]+?)(?:\s+(?:jadi|maka|saya|lebih|kampus|enaknya|bagusnya|bagaimana|gimana|gmn|apa|apakah|kira-kira|kira2)|[?,.]|$)/i);
+  const m = cleaned.match(/\b(?:tinggal\s+di|(?<!lebih\s+|kurang\s+)dari|asal\s+dari|berasal\s+dari|rumah\s+(?:saya\s+)?di|domisili(?:\s+di)?|posisi(?:\s+di)?|lokasi\s+(?:saya\s+)?di)\s+([a-zA-Z0-9\s,]+?)(?:\s+(?:jadi|maka|saya|lebih|kampus|enaknya|bagusnya|bagaimana|gimana|gmn|apa|apakah|kira-kira|kira2)|[?,.]|$)/i);
   if (m && m[1]) {
     const rawOrigin = m[1]
       .replace(/\b(?:saya|kalau|kalo|aku|kami|ya|nih|sih)\b/gi, '')
@@ -83,7 +85,7 @@ function extractUserOriginLocation(text, sessionData = {}) {
 
     // Generic spatial or relative terms that do NOT represent a geographical city/district
     const isNonGeographic = /^(?:rumah(?:\s+saya)?|tempat(?:\s+tinggal)?(?:\s+saya)?|posisi(?:\s+saya)?|lokasi(?:\s+saya)?|ko?st?(?:\s+saya)?|kantor(?:\s+saya)?|sekolah(?:\s+saya)?|kampus|sini|sana|situ|mana|luar|dalam|daerah(?:\s+saya)?|wilayah(?:\s+saya)?)$/i.test(rawOrigin);
-    const isAcademicOrTemporalTerm = /^(?:semester|prodi|jurusan|fakultas|jenjang|angkatan|gelombang|tahap|jalur|sks|biaya|mata\s*kuliah|matkul)\b/i.test(rawOrigin);
+    const isAcademicOrTemporalTerm = /\b(?:semester|prodi|program\s+studi|jurusan|fakultas|jenjang|angkatan|gelombang|tahap|jalur|sks|biaya|mata\s*kuliah|matkul|satu|dua|tiga)\b/i.test(rawOrigin);
 
     if (rawOrigin.length >= 2 && rawOrigin.length <= 40 && !isNonGeographic && !isAcademicOrTemporalTerm) {
       // Explicit new origin location: strictly use the newly specified location without merging
@@ -94,6 +96,14 @@ function extractUserOriginLocation(text, sessionData = {}) {
   }
   // Follow-up message without a new location: retain active session origin if relevant
   return sessionData?.userOrigin || null;
+}
+
+function stripProximityModifiers(text) {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .replace(/\b(?:di\s+)?(?:dekat|sekitar|seputaran|area|sebelah|depan|belakang|sekeliling)\s+(?:kampus(?:\s+stikom)?|stikom(?:\s+bali)?|itb\s+stikom)\b/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function approximateDomainToken(token) {
@@ -135,6 +145,29 @@ function detectUnsupportedProgram(rawQuery, entities = []) {
   if (hasKnownEntity) return null;
 
   const q = String(rawQuery || '').toLowerCase().trim();
+
+  // Whitelist vocational programs (D3 is official vocational education)
+  if (/\b(?:vokasi|pendidikan\s+vokasi|program\s+vokasi|d3|diploma)\b/i.test(q)) {
+    return null;
+  }
+
+  // Graduate research concentrations (S2 Sistem Informasi) are NOT unsupported programs
+  const isGraduateResearchQuery = /\b(?:s2|magister|pascasarjana|fokus\s+riset|topik\s+riset|riset|konsentrasi|peminatan)\b/i.test(q);
+  if (isGraduateResearchQuery && /\b(?:data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics|business\s+intelligence)\b/i.test(q)) {
+    return null;
+  }
+
+  // Explicit check for well-known non-offered academic disciplines (e.g. "kedokteran", "farmasi", "kebidanan", "keperawatan", "hukum", "psikologi", "akuntansi", "arsitektur", "teknik nuklir")
+  // Run before non-academic domain filters so queries like "Berapa biaya jurusan teknik nuklir" are recognized as unsupported programs
+  const commonDisciplines = /\b(kedokteran(?:\s+gigi|\s+hewan)?|farmasi|kebidanan|keperawatan|hukum|psikologi|akuntansi|arsitektur|pertanian|peternakan|teknik\s+nuklir)\b/i;
+  const directMatch = q.match(commonDisciplines);
+  if (directMatch && directMatch[1]) {
+    const candidate = directMatch[1].trim();
+    const known = findCanonicalEntity(candidate);
+    if (!known) {
+      return candidate;
+    }
+  }
 
   // If query belongs to non-academic domains (student organizations, facilities, tuition, scholarship, career, etc.)
   const NON_ACADEMIC_DOMAIN_INDICATORS = /\b(?:ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi|ormawa|hima\b|himaprodi|senat|balma|ekskul|ekstrakurikuler|fasilitas|laboratorium|lab\b|perpustakaan|asrama|dormitory|ruang\s+kelas|gedung\s+kampus|aula|parkir|biaya|spp|dpp|tarif|bayar|cicilan|angsuran|beasiswa|kip\s*kuliah|kip-?k|keringanan\s+biaya|karir|karier|loker|lowongan|magang|internship|cdc)\b/i;
@@ -219,32 +252,25 @@ function detectUnsupportedProgram(rawQuery, entities = []) {
     }
   }
 
-  // Pattern 4: Direct inquiry of well-known non-offered academic disciplines (e.g. "kedokteran", "farmasi", "kebidanan", "keperawatan", "hukum", "psikologi", "akuntansi", "arsitektur")
-  const commonDisciplines = /\b(kedokteran(?:\s+gigi|\s+hewan)?|farmasi|kebidanan|keperawatan|hukum|psikologi|akuntansi|arsitektur|pertanian|peternakan|teknik\s+nuklir)\b/i;
-  const directMatch = q.match(commonDisciplines);
-  if (directMatch && directMatch[1]) {
-    const candidate = directMatch[1].trim();
-    const known = findCanonicalEntity(candidate);
-    if (!known) {
-      return candidate;
-    }
-  }
-
   return null;
 }
 
 function normalizeQueryText(text) {
   if (!text || typeof text !== 'string') return '';
-  let norm = text
+
+  // If query is English, preserve English phrasing without Indonesian enclitic or lexicon mutation
+  if (detectQueryLanguage(text) === 'en') {
+    return text.toLowerCase().replace(/[?!,.]+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  // Apply comprehensive slang & conversational abbreviation normalization
+  const expandedRes = typeof normalizeUserQuery === 'function' ? normalizeUserQuery(text) : null;
+  const expanded = (expandedRes && typeof expandedRes === 'object' && expandedRes.normalizedText) ? expandedRes.normalizedText : (typeof expandedRes === 'string' ? expandedRes : text);
+  let norm = expanded
     .toLowerCase()
     .replace(/[?!,.]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-
-  // If query is English, preserve English phrasing without Indonesian enclitic or lexicon mutation
-  if (detectQueryLanguage(text) === 'en') {
-    return norm;
-  }
 
   // Morphological & conversational normalization
   norm = norm
@@ -283,6 +309,141 @@ function normalizeQueryText(text) {
  * Extracts domain and primary intent based on semantic patterns
  */
 function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unstemmed = '', raw = '') {
+  // 0.001 Punctuation / Symbol Only Check
+  if (/^[\s?.!,;:~`"'-]+$/.test(raw)) {
+    return {
+      domain: 'CONVERSATIONAL',
+      intent: 'CONVERSATIONAL_GREETING',
+      retrievalRequired: false,
+      userState: 'GREETING',
+      desiredAction: 'GREET_USER',
+      aspects: ['greeting', 'punctuation_only'],
+      relation: 'GREETING'
+    };
+  }
+
+  // 0.002 WhatsApp Ping / Connection Check (e.g. "P", "Tes, satu dua", "Tes 1 2", "Ping")
+  if (/^(?:p|ping|tes|test|halo\s*tes|tes(?:ting)?(?:\s+(?:1|satu)(?:\s*(?:2|dua))?)?)[.!?]*$/i.test(normalized)) {
+    return {
+      domain: 'CONVERSATIONAL',
+      intent: 'CONVERSATIONAL_GREETING',
+      retrievalRequired: false,
+      userState: 'GREETING',
+      desiredAction: 'GREET_USER',
+      aspects: ['greeting', 'ping'],
+      relation: 'GREETING'
+    };
+  }
+
+  // 0.02 Bot Identity / Creator Inquiry (active & passive voice)
+  if (/\b(?:siapa\s+(?:yang\s+)?(?:membuat|menciptakan|mengembangkan|merancang|bikin)\s+(?:kamu|anda|bot|tiko)|(?:kamu|anda|bot|tiko)\s+(?:di|yang\s+)?(?:buat|ciptakan|kembangkan|rancang|bikin)\s+(?:oleh\s+)?siapa|siapa\s+pembuat(?:mu)?|siapa\s+pengembang(?:mu)?)\b/i.test(normalized)) {
+    return {
+      domain: 'CONVERSATIONAL',
+      intent: 'BOT_IDENTITY',
+      retrievalRequired: false,
+      userState: 'SMALL_TALK',
+      desiredAction: 'STATE_BOT_CREATOR',
+      aspects: ['bot_identity', 'bot_creator'],
+      relation: 'BOT_CREATOR'
+    };
+  }
+
+  // 0.021 Bot Capabilities Inquiry
+  if (/\b(?:(?:kamu|anda|bot|tiko)\s+(?:bisa|dapat)\s+(?:bantu|melayani|jawab|memberikan|lakukan)\s+(?:apa(?:\s+saja)?|informasi\s+apa)|bisa\s+bantu\s+apa(?:\s+saja)?|apa\s+(?:fungsi|tugas|kegunaan|kemampuan)(?:mu)?)\b/i.test(normalized)) {
+    return {
+      domain: 'CONVERSATIONAL',
+      intent: 'BOT_IDENTITY',
+      retrievalRequired: false,
+      userState: 'SMALL_TALK',
+      desiredAction: 'STATE_BOT_CAPABILITIES',
+      aspects: ['bot_identity', 'bot_capabilities'],
+      relation: 'BOT_CAPABILITIES'
+    };
+  }
+
+  // 0.0215 Academic Recommendation Inquiries
+  if (
+    /\b(?:bingung|bimbang|ragu|belum tahu|galau)\s+(?:pilih|memilih|menentukan)?\s*(?:kampus|kuliah|jurusan|prodi|bidang)\b/i.test(normalized) ||
+    (/\b(?:suka|minat|tertarik|hobi|bakat|passion)\b/i.test(normalized) && /\b(?:teknologi|komputer|coding|pemrograman|it|bisnis|desain)\b/i.test(normalized)) ||
+    /\b(?:kurang|tidak|belum|bukan)\s+(?:bisa|cakap|mahir|mengerti|paham|mampu|ahli|bakat)?\s*(?:di\s+bidang\s+)?(?:ti|teknologi\s+informasi|it|coding|pemrograman)\b/i.test(normalized)
+  ) {
+    return {
+      domain: 'ACADEMIC_RECOMMENDATION',
+      intent: 'PROGRAM_RECOMMENDATION',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'RECOMMEND_PROGRAM',
+      aspects: ['recommendation', 'overview'],
+      relation: 'RECOMMENDATION'
+    };
+  }
+
+  // 0.0216 Course Topic / Curriculum Inquiry (SEO, etc.)
+  if (/\b(?:seo|search\s+engine\s+optimization|sem|search\s+engine\s+marketing)\b/i.test(normalized)) {
+    return {
+      domain: 'ACADEMIC_CURRICULUM',
+      intent: 'CURRICULUM_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_CURRICULUM_INFO',
+      aspects: ['curriculum', 'course_topic', 'digital_marketing', 'seo'],
+      relation: 'CURRICULUM'
+    };
+  }
+
+  // 0.022 Fallback Policy Inquiry
+  if (/\b(?:kalau|jika)\s+(?:kamu|tiko|bot)?\s*(?:tidak|belum)\s+tahu\s+jawaban(?:nya)?\b/i.test(normalized)) {
+    return {
+      domain: 'CONVERSATIONAL',
+      intent: 'BOT_IDENTITY',
+      retrievalRequired: false,
+      userState: 'SMALL_TALK',
+      desiredAction: 'STATE_BOT_FALLBACK_POLICY',
+      aspects: ['bot_identity', 'bot_fallback_policy'],
+      relation: 'BOT_FALLBACK_POLICY'
+    };
+  }
+
+  // 0.023 Official Authenticity Assurance Inquiry
+  if (/\bjawaban(?:mu)?\s+(?:selalu\s+)?(?:resmi|terbaru|akurat|valid|benar)\b/i.test(normalized)) {
+    return {
+      domain: 'CONVERSATIONAL',
+      intent: 'BOT_IDENTITY',
+      retrievalRequired: false,
+      userState: 'SMALL_TALK',
+      desiredAction: 'STATE_BOT_AUTHENTICITY',
+      aspects: ['bot_identity', 'bot_authenticity'],
+      relation: 'BOT_AUTHENTICITY'
+    };
+  }
+
+  // 0.024 Human Admin vs Bot Inquiry
+  if (/\b(?:apakah\s+)?(?:saya|aku)\s+(?:sedang\s+)?(?:bicara|ngobrol|berbicara|chatting|chat)\s+(?:dengan|sama)\s+(?:admin|manusia|orang|bot|ai|robot|asisten)\b/i.test(normalized)) {
+    return {
+      domain: 'CONVERSATIONAL',
+      intent: 'BOT_IDENTITY',
+      retrievalRequired: false,
+      userState: 'SMALL_TALK',
+      desiredAction: 'STATE_BOT_IDENTITY',
+      aspects: ['bot_identity'],
+      relation: 'BOT_IDENTITY'
+    };
+  }
+
+  // 0.025 Broad Campus Overview
+  if (/\btolong\s+jelaskan\s+semua\s+informasi\s+kampus\s+secara\s+lengkap\b/i.test(normalized) ||
+    (/\b(?:semua|seluruh)\s+informasi\s+kampus\b/i.test(normalized) && /\b(?:pendaftaran|biaya|jurusan|prospek)\b/i.test(normalized))) {
+    return {
+      domain: 'GENERAL',
+      intent: 'BROAD_CAMPUS_OVERVIEW',
+      retrievalRequired: false,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_CAMPUS_OVERVIEW',
+      aspects: ['general_overview', 'programs', 'admission', 'tuition'],
+      relation: 'BROAD_OVERVIEW'
+    };
+  }
+
   // 0.02 Bot Identity / Creator Inquiry (Evaluated BEFORE general greeting to capture queries like "Halo, kamu siapa?")
   if (/\b(?:siapa\s+(?:yang\s+)?(?:membuat|menciptakan|mengembangkan|merancang|bikin)\s+(?:kamu|anda|bot|tiko)|siapa\s+pembuat(?:mu)?|siapa\s+pengembang(?:mu)?)\b/i.test(normalized)) {
     return {
@@ -323,7 +484,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 0.03 How are you / Small Talk
-  if (/\b(apa\s+kh?abar|bagaimana\s+kh?abar(?:mu)?|gimana\s+kh?abar(?:mu)?|kh?abar(?:nya)?\s+gimana|sehat|bagaimana\s+keadaanmu)\b/i.test(normalized)) {
+  if (/\b(apa\s+kh?abar|bagaimana\s+kh?abar(?:mu)?|gimana\s+kh?abar(?:mu)?|kh?abar(?:nya)?\s+gimana|sehat|bagaimana\s+keadaanmu|lagi\s+sibuk|kamu\s+sedang\s+apa|lagi\s+ngapain|hari\s+ini\s+ramai|temani\s+ngobrol|teman\s+ngobrol)\b/i.test(normalized)) {
     return {
       domain: 'CONVERSATIONAL',
       intent: 'CONVERSATIONAL_SMALL_TALK',
@@ -335,8 +496,21 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     };
   }
 
+  // 0.035 Emotional Venting / Personal Distress
+  if (/\b(?:sedih|kecewa|galau|stres|stress|depresi|terpuruk|patah\s*hati|putus\s*asa|capek\s*banget|lelah\s*mental|butuh\s*teman|boleh\s*cerita|curhat|curahan\s*hati|curcol|bercerita|lagi\s*down)\b/i.test(normalized)) {
+    return {
+      domain: 'CONVERSATIONAL',
+      intent: 'CONVERSATIONAL_SMALL_TALK',
+      retrievalRequired: false,
+      userState: 'VENTING',
+      desiredAction: 'RESPOND_EMPATHY',
+      aspects: ['emotional_support', 'counseling_referral'],
+      relation: 'EMPATHY'
+    };
+  }
+
   // 0.04 Farewell / Closing
-  if (/\b(sampai\s+jumpa|dadah|selamat\s+tinggal|bye|goodbye|see\s+you|pamit|sampai\s+ketemu)\b/i.test(normalized) &&
+  if (/\b(sampai\s+(?:nanti|jumpa|ketemu|besok)|dadah|selamat\s+tinggal|bye|goodbye|see\s+you|pamit)\b/i.test(normalized) &&
     !/\b(biaya|daftar|jurusan|prodi|beasiswa|kuliah)\b/i.test(normalized)) {
     return {
       domain: 'CONVERSATIONAL',
@@ -350,7 +524,8 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 0.05 Conversational Closing / Acknowledgement
-  if (/^(oke+|ok+|baik+|terima\s*kasih|makasih|thanks|thank\s*you|siap|sip|noted|mantap)\b/i.test(normalized) &&
+  const isQuestionOrInquiry = /\b(?:apa|rekomendasi|rekomendasikan|gimana|bagaimana|mana|apakah|bisa|tolong|mohon)\b/i.test(normalized);
+  if (!isQuestionOrInquiry && /\b(?:wah\s+)?(?:sangat\s+|banget\s+)?(?:membantu|keren|bagus|mantap|terima\s*kasih|makasih|thanks|thank\s*you|siap|sip|noted|oke+|ok+|baik+)\b/i.test(normalized) &&
     !/\b(biaya|daftar|jurusan|prodi|beasiswa|kuliah|akreditasi|perwalian|krs|mata\s*kuliah|sks|semester)\b/i.test(normalized)) {
     return {
       domain: 'CONVERSATIONAL',
@@ -394,6 +569,25 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     };
   }
 
+  // 0.18 Explicit Non-Campus / Out-of-Domain Guard
+  // Blocks general non-campus questions (automotive, agriculture, home repair, personal accounts/ISP, general coding/algorithms, etc.)
+  // from falsely triggering campus admission, tuition fee, or PMB handlers.
+  const NON_CAMPUS_DOMAIN_INDICATORS = /\b(?:ganti\s+oli|oli(?:\s+motor|\s+mobil|\s+matic)?|servis\s+motor|servis\s+mobil|bengkel(?:\s+motor|\s+mobil)?|tambal\s+ban|cuci\s+motor|cuci\s+mobil|renovasi\s+atap|atap\s+bocor|semen|genteng|bibit\s+lele|ternak\s+lele|pakan\s+lele|pertanian|bumn|bumn\s+batch|bumn\s+2025|google\s+forms|paspor|bikin\s+paspor|kantor\s+imigrasi|indihome|paket\s+indihome|wifi\s+indihome|kuota\s+telkomsel|kuota\s+xl|kuota\s+tri|kuota\s+axis|kuota\s+hp|kuota\s+internet\s+(?:hp|android|kartu)|akun\s+instagram|akun\s+ig|mobile\s+legends|diamond\s+ml|game\s+ml|reset\s+wifi\s+router|router\s+wifi|email\s+yahoo|yahoo\s+mail|pembuatan\s+sim|perpanjang\s+sim|sim\s+[abc]|binary\s+search|bubble\s+sort|left\s+join\s+sql|blue\s*screen|error\s+(?:coding|python|laptop)|laptop\s+error|coding\s+python|belajar\s+python|tutorial\s+python|cara\s+install\s+windows|resep\s+masak|chord\s+gitar|prediksi\s+cuaca|harga\s+emas|kurs\s+dollar|warung\s+(?:makan|babi|nasi|kopi)|rumah\s+makan|babi\s+guling|kuliner|tempat\s+makan|restoran|resto|cafe|kafe|warkop|menu\s+makan|toko\s+(?:baju|helm|kelontong|sembako|elektronik)|supermarket|minimarket|laundry|salon|barbershop|potong\s+rambut|atm\s+(?:bca|bni|bri|mandiri)|hotel|penginapan|villa|homestay)\b/i;
+
+  const strippedNormalized = stripProximityModifiers(normalized);
+  if (NON_CAMPUS_DOMAIN_INDICATORS.test(strippedNormalized) &&
+    !/\b(?:stikom|bali|kampus|kuliah|dosen|mahasiswa|krs|sion|pmb|prodi|jurusan|rektor|dekan)\b/i.test(strippedNormalized)) {
+    return {
+      domain: 'OUT_OF_DOMAIN',
+      intent: 'OUT_OF_DOMAIN_INQUIRY',
+      retrievalRequired: false,
+      userState: 'INQUIRING',
+      desiredAction: 'REFUSE_OUT_OF_DOMAIN',
+      aspects: ['out_of_domain'],
+      relation: 'OUT_OF_DOMAIN_QUERY'
+    };
+  }
+
   // 0.2 Answer Refinement / Revision
   if (/\b(?:bisa\s+(?:dibuat\s+)?(?:lebih\s+)?(?:singkat|ringkas|pendek)|ringkas(?:kan)?(?:\s+lagi)?|terlalu\s+panjang|perlu\s+koreksi\s+.*(?:singkat|ringkas)|persingkat(?:kan)?)\b/i.test(normalized)) {
     return {
@@ -404,6 +598,138 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       desiredAction: 'REFINE_PREVIOUS_ANSWER',
       aspects: ['refinement', 'conciseness'],
       relation: 'ANSWER_REVISION'
+    };
+  }
+
+  // 0.8 Specialized Handlers: SION Portal, Kemahasiswaan, PMB Registration, Vokasi, S2 Research Focus
+  if (/\b(?:sion|portal\s+akademik|portal\s+sion)\b/i.test(normalized)) {
+    const isSionIssueOrContact = /\b(?:kendala|masalah|error|gagal|lupa|tidak\s+bisa|bentrok|login|masuk|urus|mengurus|hubungi|menghubungi|siapa|kontak|bagian)\b/i.test(normalized);
+    return {
+      domain: 'CAMPUS_SERVICE',
+      intent: 'CAMPUS_SERVICE_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_SERVICE_INFO',
+      aspects: isSionIssueOrContact
+        ? ['services', 'academic_system', 'sion_troubleshooting']
+        : ['services', 'academic_system'],
+      relation: 'CAMPUS_SERVICE'
+    };
+  }
+
+  if (/\b(?:kemahasiswaan|layanan\s+kemahasiswaan|bagian\s+kemahasiswaan)\b/i.test(normalized)) {
+    return {
+      domain: 'CAMPUS_SERVICE',
+      intent: 'CONTACT_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_CONTACT_INFO',
+      aspects: ['contact', 'student_affairs'],
+      relation: 'CAMPUS_SERVICE'
+    };
+  }
+
+  if (/\b(?:fokus\s+riset|topik\s+riset|riset|konsentrasi|pilar\s+riset|bidang\s+kajian)\b/i.test(normalized) &&
+    /\b(?:data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics?|s2|magister|pascasarjana)\b/i.test(normalized)) {
+    const s2Entity = findCanonicalEntity('S2 Sistem Informasi');
+    return {
+      domain: 'ACADEMIC_CURRICULUM',
+      intent: 'CURRICULUM_INQUIRY',
+      entities: s2Entity ? [s2Entity] : [],
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_CURRICULUM_INFO',
+      aspects: ['curriculum', 'research_focus'],
+      academicLevel: 'S2',
+      scopeLevel: 'S2',
+      relation: 'CURRICULUM_SPECIFICATION'
+    };
+  }
+
+  if (/\b(?:vokasi|pendidikan\s+vokasi|program\s+vokasi|prodi\s+vokasi)\b/i.test(normalized)) {
+    const d3Entity = findCanonicalEntity('D3 Manajemen Informatika');
+    return {
+      domain: 'ACADEMIC_PROGRAM',
+      intent: 'AVAILABLE_PROGRAMS_LIST',
+      entities: d3Entity ? [d3Entity] : [],
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_PROGRAMS_LIST',
+      aspects: ['program_list', 'degrees', 'vocational'],
+      academicLevel: 'D3',
+      scopeLevel: 'D3',
+      relation: 'ACADEMIC_CATALOG'
+    };
+  }
+
+  if (/\b(?:komunitas\s+(?:teknologi|programming|koding|coding)|ukm\s+teknologi|programming|coding|robotik|linux)\b/i.test(normalized) &&
+    /\b(?:ukm|komunitas|organisasi|klub|gabung|pilihan|ada)\b/i.test(normalized)) {
+    return {
+      domain: 'ORGANIZATION_UKM',
+      intent: 'ORGANIZATION_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_ORGANIZATION_INFO',
+      aspects: ['organization', 'activities', 'ukm', 'reasoning_tech'],
+      relation: 'STUDENT_ORGANIZATION'
+    };
+  }
+
+  const isScheduleOrDateInquiry = /\b(?:jadwal|kapan|tanggal|waktu)\b/i.test(normalized);
+  if (!isScheduleOrDateInquiry && (/\b(?:ktp|kk|kartu\s+keluarga|formulir|kode\s+verifikasi|otp|tes\s+masuk|seleksi|ujian\s+seleksi|bukti\s+bayar|bukti\s+transfer|bukti\s+pembayaran|kartu\s+peserta)\b/i.test(normalized) ||
+    /\b(?:setelah\s+isi\s+formulir|salah\s+mengisi\s+data|ubah\s+pilihan|lupa\s+nomor\s+handphone|verifikasi\s+dokumen|belum\s+mendapat\s+konfirmasi|error\s+saat\s+dikirim)\b/i.test(normalized))) {
+    const isSpecificPmbTechOrReq = /\b(?:ktp|kk|kartu\s+keluarga|kode\s+verifikasi|otp|tes\s+masuk|seleksi\s+tambahan|ujian\s+seleksi|setelah\s+isi\s+formulir|salah\s+mengisi\s+data|ubah\s+pilihan|lupa\s+nomor\s+handphone|belum\s+mendapat\s+konfirmasi|error\s+saat\s+dikirim|formulir.*error|kartu\s+peserta)\b/i.test(normalized);
+    return {
+      domain: 'PMB',
+      intent: 'ADMISSION_PROCEDURE',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_ADMISSION_PROCEDURE',
+      aspects: isSpecificPmbTechOrReq
+        ? ['procedure', 'requirements', 'pmb_technical_or_specific_req']
+        : ['procedure', 'requirements', 'admission_overview'],
+      relation: 'ADMISSION_ONBOARDING'
+    };
+  }
+
+  if (/\b(?:harus\s+bisa\s+(?:coding|bahasa\s+inggris)|belum\s+pernah\s+belajar\s+coding|bisa\s+coding\s+sebelum\s+masuk|bisa\s+bahasa\s+inggris)\b/i.test(normalized)) {
+    return {
+      domain: 'PMB',
+      intent: 'ADMISSION_REQUIREMENTS',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_ADMISSION_REQUIREMENTS',
+      aspects: ['requirements', 'curriculum', 'overview'],
+      relation: 'ADMISSION_ONBOARDING'
+    };
+  }
+
+  // Applicant School Background / Eligibility Follow-up (e.g., "Kalau untuk lulusan SMK bagaimana?")
+  if (/\b(?:lulusan|alumni|tamatan|asal(?:\s+sekolah)?|dari)\s+(?:sma|smk|ma|paket\s+c|sekolah\s+menengah)\b/i.test(normalized) &&
+    !/\b(?:diskon|potongan|beasiswa|keringanan|biaya)\b/i.test(normalized) &&
+    !/\b(?:bingung\s+pilih\s+jurusan|rekomendasi\s+jurusan|cocok\s+ambil\s+jurusan\s+apa|jurusan\s+apa\s+yang\s+cocok)\b/i.test(normalized)) {
+    return {
+      domain: 'PMB',
+      intent: 'ADMISSION_REQUIREMENTS',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_ADMISSION_REQUIREMENTS',
+      aspects: ['requirements', 'admission_requirements', 'eligibility'],
+      relation: 'ADMISSION_ELIGIBILITY'
+    };
+  }
+
+  // Multi-program selection policy in PMB (e.g. "Apakah satu orang boleh memilih lebih dari satu prodi?")
+  if (/\b(?:pilih|memilih|ambil|daftar)\s+(?:lebih\s+dari\s+satu|dua|banyak|beberapa)\s+(?:prodi|program\s+studi|jurusan)\b/i.test(normalized) ||
+      /\b(?:satu\s+orang\s+boleh\s+(?:memilih|pilih)|boleh(?:kah)?\s+(?:memilih|pilih)\s+(?:lebih\s+dari\s+satu|dua|beberapa)\s+(?:prodi|jurusan))\b/i.test(normalized)) {
+    return {
+      domain: 'PMB',
+      intent: 'ADMISSION_REQUIREMENTS',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_ADMISSION_REQUIREMENTS',
+      aspects: ['program_selection_policy', 'requirements', 'admission_requirements'],
+      relation: 'ADMISSION_POLICY'
     };
   }
 
@@ -458,7 +784,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 2. Admission Tracks / Transfer / RPL (Rekognisi Pembelajaran Lampau)
-  const isFeeQuery = /\b(biaya(?:nya)?|biaya kuliah|spp(?:nya)?|dpp(?:nya)?|uang\s+kuliah(?:nya)?|uang\s+pangkal|bayar\s+kuliah|bayar\s+berapa|angsuran|potongan\s+biaya|cicilan)\b/i.test(normalized);
+  const isFeeQuery = /\b(biaya(?:nya)?|biaya kuliah|spp(?:nya)?|dpp(?:nya)?|uang\s+kuliah(?:nya)?|uang\s+pangkal|bayar\s+kuliah|bayar\s+berapa|angsuran|potongan\s+biaya|cicilan|(?:di)?cicil(?:an)?|angsur(?:an)?)\b/i.test(normalized);
   const admissionTrackEntity = entities.find(e => e.family === 'admission_track');
   if (!isFeeQuery && (admissionTrackEntity || /\b(?:rpl|rekognisi\s+pembelajaran\s+lampau|transfer\s+sks|alih\s+jenjang|lanjut\s+s1|pindahan)\b/i.test(normalized))) {
     const isRPL = (admissionTrackEntity && admissionTrackEntity.canonical.includes('RPL')) ||
@@ -481,12 +807,20 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     const aspects = [];
     let relation = 'PROGRAM_DETAILS';
 
-    const hasLocationSignal = /\b(?:full\s+di\s+stikom|di\s*mana|dimana|lokasi|tempat\s+kuliah|tempat\s+studi|kuliah\s+di\s+luar|ke\s+luar\s+negeri|onsite|offline|where(?:\s+is)?|study\s+location)\b/i.test(normalized) ||
+    const isGeneralAvailabilityInquiry = /\b(?:apakah\s+(?:ada|tersedia)|ada\s+(?:program|jurusan|pilihan|kelas)?|bisa\s+ambil|daftar\s+program)\b/i.test(normalized);
+    const hasLocationSignal = !isGeneralAvailabilityInquiry && (/\b(?:full\s+di\s+stikom|di\s*mana|dimana|lokasi|tempat\s+kuliah|tempat\s+studi|kuliah\s+di\s+luar|onsite|offline|where(?:\s+is)?|study\s+location)\b/i.test(normalized) ||
       /\b(?:full\s+di\s+stikom|di\s*mana|dimana|lokasi|tempat\s+kuliah|tempat\s+studi|kuliah\s+di\s+luar|ke\s+luar\s+negeri|onsite|offline|where(?:\s+is)?|study\s+location)\b/i.test(unstemmed) ||
       /\b(?:kuliah|studi|perkuliahan|pergi|berangkat|harus|wajib)\s+(?:ke|di)\s+(?:china|cina|malaysia|dalian)\b/i.test(normalized) ||
-      /\b(?:kuliah|studi|perkuliahan|pergi|berangkat|harus|wajib)\s+(?:ke|di)\s+(?:china|cina|malaysia|dalian)\b/i.test(unstemmed);
+      /\b(?:kuliah|studi|perkuliahan|pergi|berangkat|harus|wajib)\s+(?:ke|di)\s+(?:china|cina|malaysia|dalian)\b/i.test(unstemmed));
 
-    if (hasLocationSignal) {
+    const hasFeeSignal = /\b(?:biaya(?:nya)?|uang|tarif|spp|dpp|bayar|cost|fee|fees)\b/i.test(normalized) ||
+      /\b(?:biaya|uang|tarif|spp|dpp|bayar|cost|fee|fees)\b/i.test(unstemmed);
+
+    if (hasFeeSignal) {
+      intent = 'TUITION_FEE_INQUIRY';
+      aspects.push('fee', 'tuition', 'dpp');
+      relation = 'TUITION_FEE';
+    } else if (hasLocationSignal) {
       intent = 'STUDY_LOCATION';
       aspects.push('study_location', 'location');
       relation = 'LOCATION_MODE';
@@ -557,12 +891,15 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     (typeof sessionData.activeEntity === 'string' && !['Wisuda', 'Yudisium', 'Kampus ITB STIKOM Bali'].includes(sessionData.activeEntity))
   ));
 
-  const isCurriculumQuery = /\b(kurikulum(?:nya)?|mata\s*kuliah(?:nya)?|matkul(?:nya)?|sebaran\s*mata\s*kuliah|silabus|daftar\s*matkul|belajar\s+mata\s*kuliah|semester\s*(?:[1-8]|[ivx]+)|(?:apa\s+yang\s+)?dipelajari|pembelajaran|materi\s+kuliah|pelajaran)\b/i.test(normalized) ||
+  const hasExplicitFeeWord = /\b(?:biaya|spp|dpp|uang|bayar|tarif|cicil(?:an)?|angsur(?:an)?)\b/i.test(normalized);
+  const isCurriculumQuery = !hasExplicitFeeWord && (
+    /\b(kurikulum(?:nya)?|mata\s*kuliah(?:nya)?|matkul(?:nya)?|sebaran\s*mata\s*kuliah|silabus|daftar\s*matkul|belajar\s+mata\s*kuliah|semester\s*(?:[1-8]|[ivx]+)|(?:apa\s+yang\s+)?dipelajari|pembelajaran|materi\s+kuliah|pelajaran)\b/i.test(normalized) ||
     (hasAcademicProgramInContext && !/\b(?:biaya|uang|bayar|daftar|pendaftaran|jadwal|gelombang|lokasi|alamat|ukm)\b/i.test(normalized) && (
       /\b(?:belajar|mempelajari|diajarkan|diajarin|materi)\s+(?:tentang\s+)?(?:coding|koding|ngoding|pemrograman|programming|digital\s+marketing|marketing|pemasaran|ai\b|artificial\s+intelligence|kecerdasan\s+buatan|machine\s+learning|data\s+science|cyber|jaringan|web|mobile|android|game|multimedia|desain|iot|robotik|cloud|blockchain|akuntansi|bisnis|manajemen|komputer|software|hardware)\b/i.test(normalized) ||
       /\b(?:harus|perlu|wajib|kudu|bisa|jago|mahir|pintar|paham|menguasai)\s+(?:bisa\s+)?(?:coding|koding|ngoding|pemrograman|programming|it\b|komputer|hitung-?hitungan|matematika|desain|design|marketing)\b/i.test(normalized) ||
       /\b(?:ada\s+coding(?:nya)?|coding(?:an)?\s+nggak|banyak\s+koding(?:nya)?|harus\s+bisa\s+coding)\b/i.test(normalized)
-    ));
+    ))
+  );
 
   if (isCurriculumQuery) {
     return {
@@ -659,9 +996,24 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
 
   // 7. Program Overview / Definition / Profile / Career / Degree (Generic across academic programs)
   const hasAcademicProgram = entities.some(e => e.family === 'academic_program' || e.type === 'program');
+  // Program leadership is a property of the already-resolved academic entity,
+  // not a second entity and not a generic helpdesk contact request.
+  const asksProgramLeadership = /\b(?:siapa\s+(?:yang\s+)?(?:menjadi\s+)?(?:ketua|kepala|koordinator|pimpinan)|(?:ketua|kepala|koordinator|pimpinan)\s+(?:prodi|program\s+studi|jurusan)|diampu\s+(?:oleh\s+)?siapa|who\s+(?:is|leads?)\s+(?:the\s+)?(?:head|chair|leader)|who\s+heads?)\b/i.test(normalized);
+  if (hasAcademicProgram && asksProgramLeadership) {
+    return {
+      domain: 'ACADEMIC_PROGRAM',
+      intent: 'PROGRAM_OVERVIEW',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_PROGRAM_OVERVIEW',
+      aspects: ['overview', 'leadership', 'contact'],
+      relation: 'PROGRAM_LEADERSHIP'
+    };
+  }
   const hasStudentOrg = entities.some(e => e.family === 'student_organization') || /\b(himpunan\s+mahasiswa|himaprodi|hima\b|ukm\b|ormawa)\b/i.test(normalized);
   const isFeeInquiry = /\b(?:biaya|bayar|uang|spp|dpp|tarif|cicilan|harga|cost|fee)\b/i.test(normalized);
-  if (!isFeeInquiry && !hasStudentOrg && ((/\b(apa\s+itu|pengertian|definisi|profil|tentang|penjelasan|jelas(?:kan)?|deskripsi|gambaran|belajar\s+apa|mempelajari\s+apa|fokus(?:nya)?(?:\s+apa|\s+jurusan)?|kuliah\s+tentang\s+apa|prospek(?:nya)?|peluang\s+kerja|lulusan(?:nya)?\s+(?:bisa\s+)?jadi\s+apa|lulusan|kerja\s+(?:sebagai\s+|menjadi\s+)?apa|bekerja\s+(?:sebagai\s+|menjadi\s+)?apa|jadi\s+apa|profesi|karir|karier|gelar(?:nya)?|(?:ingin|mau)\s+tahu\s+(?:tentang\s+)?(?:prodi|program\s*studi|jurusan)?|(?:info|informasi)\s+(?:tentang|lengkap|seputar)\s+(?:prodi|program\s*studi|jurusan)?)\b/i.test(normalized) && hasAcademicProgram) ||
+  const isScheduleOrAdmissionInquiry = /\b(?:jadwal|gelombang|syarat|persyaratan|cara\s+daftar|pendaftaran|kurikulum|mata\s+kuliah|matkul|semester|beasiswa|akreditasi)\b/i.test(normalized);
+  if (!isFeeInquiry && !isScheduleOrAdmissionInquiry && !hasStudentOrg && ((/\b(apa\s+itu|pengertian|definisi|profil|tentang|penjelasan|jelas(?:kan)?|deskripsi|gambaran|belajar\s+apa|mempelajari\s+apa|fokus(?:nya)?(?:\s+apa|\s+jurusan)?|kuliah\s+tentang\s+apa|prospek(?:nya)?|peluang\s+kerja|lulusan(?:nya)?\s+(?:bisa\s+)?jadi\s+apa|lulusan|kerja\s+(?:sebagai\s+|menjadi\s+)?apa|bekerja\s+(?:sebagai\s+|menjadi\s+)?apa|jadi\s+apa|profesi|karir|karier|gelar(?:nya)?|(?:ingin|mau)\s+tahu\s+(?:tentang\s+)?(?:prodi|program\s*studi|jurusan)?|(?:info|informasi)\s+(?:tentang|lengkap|seputar)\s+(?:prodi|program\s*studi|jurusan)?|(?:apakah\s+)?(?:ada|tersedia)\s+(?:program|prodi|jurusan)?|kalau|kalo|bagaimana|gimana)\b/i.test(normalized) && hasAcademicProgram) ||
     (/\b(apa\s+itu\s+program\s+studi|profil\s+prodi|profil\s+program\s+studi|gambaran\s+program\s+studi|gambaran\s+prodi)\b/i.test(normalized)))) {
     const isDegreeInquiry = /\b(gelar(?:nya)?)\b/i.test(normalized);
     return {
@@ -717,8 +1069,9 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 10. Scholarship Inquiry
-  const isScholarshipKeyword = entities.some(e => e.family === 'scholarship') ||
-    /\b(beasiswa(?:nya)?|kip\s*kuliah|kip-?k|potongan\s+dpp|keringanan\s+biaya|bantuan\s+dana\s+pendidikan)\b/i.test(normalized) ||
+  const isNegatedScholarshipOrDpp = /\b(?:tidak\s+(?:perlu|usah)|bukan|tanpa|jangan)\b.*?\b(?:potongan\s+dpp|dpp|beasiswa)\b/i.test(normalized);
+  const isScholarshipKeyword = !isNegatedScholarshipOrDpp && (entities.some(e => e.family === 'scholarship') ||
+    /\b(beasiswa(?:nya)?|kip\s*kuliah|kip-?k|potongan\s+dpp|keringanan\s+biaya|bantuan\s+dana\s+pendidikan)\b/i.test(normalized)) ||
     (/\b(?:potongan|diskon|tambahan)\b/i.test(normalized) && /\b(?:tambahan\s+\d+%|\d+%\s*dpp|digabung|akumulasi|kombinasi|tumpuk)\b/i.test(normalized)) ||
     (/\b(?:digabung|akumulasi|kombinasi)\b/i.test(normalized) && /\b(?:potongan|gelombang|tambahan|60%)\b/i.test(normalized));
 
@@ -844,7 +1197,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
 
   // 13. Tuition Fee / Biaya Kuliah (Prioritized before PMB schedule when cost/fee is asked)
   const hasScheduleOrCalendarFocus = /\b(?:kapan|tanggal|jadwal|periode|kalender|buka|dibuka|ditutup|tutup|batas\s+(?:waktu|pendaftaran)|apa\s+saja|daftar\s+gelombang|pembagian\s+gelombang)\b/i.test(normalized);
-  const hasFeeFocus = /\b(?:biaya|potongan|diskon|total|dpp|spp|bayar|uang\s+kuliah|uang\s+gedung|angsuran|cicilan)\b/i.test(normalized);
+  const hasFeeFocus = /\b(?:biaya|potongan|diskon|total|dpp|spp|bayar|uang\s+kuliah|uang\s+gedung|angsuran|cicilan|pengeluaran)\b/i.test(normalized);
   const isAdmissionScheduleOrStatus = !hasFeeFocus && (
     /\b(?:sekarang\s+buka|buka\s+gelombang|buka\s+pendaftaran|kapan\s+(?:buka|dibuka|ditutup|tutup)|jadwal\s+(?:gelombang|pendaftaran|pmb)|periode\s+(?:gelombang|pendaftaran)|kalender\s+pmb|gelombang\s+berapa)\b/i.test(normalized) ||
     (/\bgelombang\b/i.test(normalized) && (hasScheduleOrCalendarFocus || /\bpmb\b/i.test(normalized)))
@@ -857,7 +1210,8 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       /\b(?:kalau\s+|kalo\s+)gelombang\s*(?:[1-4]|i{1,4}|[0-9]+[a-z]?|khusus|awal|sisipan)\s*(?:berapa|gimana|bagaimana)?$/i.test(normalized))
   );
 
-  if (isWaveFeeFollowup || /\b(biaya(?:nya)?|biaya\s+kuliah|spp(?:nya)?|dpp(?:nya)?|uang\s+kuliah(?:nya)?|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|bayar\s+kuliah|bayar\s+berapa|angsuran|potongan\s+biaya|cicilan|tuition(?:\s+fee)?|tuition\s+cost|cost\s+of\s+study|fees?|fee\s+per\s+semester|semester\s+fee|pay\s+each\s+semester|installment)\b/i.test(normalized)) {
+  const isProgramComparison = /\b(bandingkan|perbandingan|komparasi|versus|vs)\b/i.test(normalized);
+  if (!isProgramComparison && (isWaveFeeFollowup || /\b(biaya(?:nya)?|biaya\s+kuliah|spp(?:nya)?|dpp(?:nya)?|uang\s+kuliah(?:nya)?|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|bayar\s+kuliah|bayar\s+berapa|angsuran|potongan\s+biaya|diskon(?:nya)?|potongan(?:nya)?|keringanan(?:nya)?|cicilan|(?:di)?cicil(?:an)?|angsur(?:an)?|pengeluaran(?:nya)?|tarif|harga|murah(?:an)?|mahal(?:an)?|terjangkau|tuition(?:\s+fee)?|tuition\s+cost|cost\s+of\s+study|fees?|fee\s+per\s+semester|semester\s+fee|pay\s+each\s+semester|installment)\b/i.test(normalized))) {
     const isInstallmentProcedure =
       /\b(?:syarat|persyaratan|prosedur|tata\s*cara|cara(?:\s+mengajukan)?|bagaimana\s+mengajukan|pengajuan|dokumen|berkas|formulir)\b/i.test(normalized) &&
       /\b(?:di)?(?:cicil(?:an)?|angsur(?:an)?|mengangsur)\b/i.test(normalized);
@@ -881,6 +1235,9 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     if (/\b(komponen|rincian|unsur|apa\s+saja|components?|details?|breakdown)\b/i.test(normalized)) {
       feeAspects.push('components');
     }
+    if (/\b(?:di)?(?:cicil(?:an)?|angsur(?:an)?|installment)\b/i.test(normalized)) {
+      feeAspects.push('installment');
+    }
     return {
       domain: 'TUITION_FEE',
       intent: 'TUITION_FEE_INQUIRY',
@@ -892,8 +1249,8 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     };
   }
 
-  // 14. Academic Graduation Requirement (SKS lulus / Tugas Akhir / Kelulusan) vs Thesis Guidance Procedure
-  if (/\b(?:sks|jumlah\s+sks|sks\s+lulus|beban\s+sks|beban\s+studi|kelulusan|tugas\s+akhir|skripsi|credits?|total\s+credits?|graduation|graduating|graduate|final\s+project|thesis|defense|final\s+project\s+defense|thesis\s+defense|academic\s+requirements?|graduation\s+requirements?)\b/i.test(normalized) &&
+  const isPmbSelectionContext = /\b(?:pmb|pendaftaran|seleksi)\b/i.test(normalized);
+  if (!isPmbSelectionContext && /\b(?:sks|jumlah\s+sks|sks\s+lulus|beban\s+sks|beban\s+studi|kelulusan|tugas\s+akhir|skripsi|credits?|total\s+credits?|graduation|graduating|graduate|final\s+project|thesis|defense|final\s+project\s+defense|thesis\s+defense|academic\s+requirements?|graduation\s+requirements?)\b/i.test(normalized) &&
     !/\b(?:biaya|bayar|daftar\s+ulang|tuition|fees?)\b/i.test(normalized)) {
     const isGuidanceProcedure = /\b(?:tahapan|tahap|pelaksanaan|bimbingan|pembimbing|dosen\s+pembimbing|pedoman|buku\s+pedoman|alur|prosedur|proposal|sidang|procedure|stages?|guidance|advisor|advisors?|supervision|supervisor|defen[sd]e?|prerequisites?|complete|finish)\b/i.test(normalized) &&
       !/\b(?:berapa|jumlah\s+sks|total\s+sks|minimal\s+sks|sks\s+minimal|batas\s+sks|how\s+many\s+credits)\b/i.test(normalized);
@@ -938,7 +1295,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   const hasAcademicEvent = !isDegreeInquiry && (entities.some(e => e.type === 'academic_event') ||
-    /\b(?:uas|uts|ujian\s+akhir\s+semester|ujian\s+tengah\s+semester|kalender\s+akademik)\b/i.test(normalized));
+    /\b(?:uas|uts|ujian\s+akhir\s+semester|ujian\s+tengah\s+semester|kalender\s+akademik|jadwal\s+(?:pengisian\s+)?krs|kapan\s+(?:pengisian\s+)?krs|pengisian\s+krs)\b/i.test(normalized));
   if (hasAcademicEvent) {
     return {
       domain: 'ACADEMIC_SCHEDULE',
@@ -966,12 +1323,12 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
 
   // 15. Admission / PMB Schedule & General Topic Opener
   const isScholarshipOrFeeDiscounts = /\b(?:potongan\s+gelombang|tambahan\s+\d+%|digabung|kombinasi|akumulasi|beasiswa|potongan\s+dpp)\b/i.test(normalized);
-  if (!isScholarshipOrFeeDiscounts && (/\b(?:pmb|pendaftaran|mendaftar|daftar\s+(?:kuliah|online|ulang|pmb|mahasiswa|stikom)|syarat|persyaratan|dokumen|berkas|gelombang|masih dibuka|kapan buka|jalur pendaftaran|mulai dari mana|proses masuk|cara masuk)\b/i.test(normalized) ||
+  if (!isScholarshipOrFeeDiscounts && (/\b(?:pmb|pendaftaran|mendaftar|tes\s+seleksi|ujian\s+seleksi|testing\s+seleksi|pengumuman\s+(?:hasil\s+)?seleksi|daftar\s+(?:kuliah|online|ulang|pmb|mahasiswa|stikom)|syarat|persyaratan|dokumen|berkas|gelombang|masih dibuka|kapan buka|jalur pendaftaran|mulai dari mana|proses masuk|cara masuk)\b/i.test(normalized) ||
     (/\b(?:daftar|mendaftar)\b/i.test(normalized) && !/\b(?:daftar\s+harga|daftar\s+menu|daftar\s+matkul|daftar\s+mata\s+kuliah|daftar\s+prodi|daftar\s+jurusan|daftar\s+program)\b/i.test(normalized)) ||
     isPmbContext)) {
     const isWhenQuestion = /\b(?:kapan|sampai\s+kapan)\b/i.test(normalized);
-    const isNow = TEMPORAL_NOW_REGEX.test(normalized) || /\b(?:status\s+pendaftaran|status\s+pmb)\b/i.test(normalized);
-    if (isNow && !isWhenQuestion && /\b(?:gelombang|buka|dibuka|ditutup|tutup|jadwal|periode|status)\b/i.test(normalized)) {
+    const isNow = TEMPORAL_NOW_REGEX.test(normalized) || /\b(?:status\s+pendaftaran|status\s+pmb|sudah\s+dibuka|masih\s+dibuka|masih\s+bisa\s+daftar|daftar\s+hari\s+ini)\b/i.test(normalized);
+    if (isNow && !isWhenQuestion && /\b(?:gelombang|buka|dibuka|ditutup|tutup|jadwal|periode|status|daftar)\b/i.test(normalized)) {
       return {
         domain: 'PMB',
         intent: 'CURRENT_ENROLLMENT_STATUS',
@@ -983,20 +1340,25 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       };
     }
 
-    const isProcedureOrRequirements = /\b(?:cara\s+(?:daftar|mendaftar)|bagaimana\s+(?:cara\s+)?(?:daftar|mendaftar)|syarat|persyaratan|dokumen|berkas|alur|prosedur|mulai\s+dari\s+mana|proses\s+masuk|cara\s+masuk)\b/i.test(normalized);
+    const isTestingOrAnnouncementOrDeadline = /\b(?:tes|testing|ujian|pengumuman|batas\s+akhir|penutupan)\b/i.test(normalized);
+    const isProcedureOrRequirements = !isTestingOrAnnouncementOrDeadline && !isWhenQuestion && /\b(?:cara\s+(?:daftar|mendaftar)|bagaimana\s+(?:cara\s+)?(?:daftar|mendaftar)|boleh\s+(?:daftar|mendaftar)|bisa\s+(?:daftar|mendaftar|masuk|kuliah)|apakah\s+(?:boleh|bisa)\s+mendaftar|syarat|persyaratan|dokumen|berkas|alur|prosedur|mulai\s+dari\s+mana|proses\s+masuk|cara\s+masuk)\b/i.test(normalized);
     const isAdmissionStages = /\b(?:tahap(?:an)?|jadwal|kalender|gelombang|periode|kapan)\b/i.test(normalized);
     const isTopicOpener = isProcedureOrRequirements ||
       /\b(saya\s+ingin\s+bertanya\s+tentang\s+pmb|mau\s+tanya\s+pmb|info\s+pmb|tentang\s+pmb|informasi\s+pmb|bagaimana\s+pmb|pendaftaran\s+stikom|daftar\s+stikom)\b/i.test(normalized) ||
       (!isAdmissionStages && /\b(pmb|pendaftaran)\b/i.test(normalized) && !/\b(biaya|bayar|kurikulum|beasiswa)\b/i.test(normalized));
 
     if (isTopicOpener) {
+      const baseAspects = isProcedureOrRequirements ? ['procedure', 'requirements', 'documents'] : ['admission_overview', 'procedure', 'admission_pathways'];
+      if (isAdmissionStages && !baseAspects.includes('schedule')) {
+        baseAspects.push('schedule', 'wave_info');
+      }
       return {
         domain: 'PMB',
         intent: isProcedureOrRequirements ? 'ADMISSION_PROCEDURE' : 'GENERAL_PMB_INQUIRY',
         retrievalRequired: true,
         userState: 'INQUIRING',
         desiredAction: isProcedureOrRequirements ? 'PROVIDE_ADMISSION_PROCEDURE' : 'PROVIDE_GENERAL_PMB_OVERVIEW',
-        aspects: isProcedureOrRequirements ? ['procedure', 'requirements', 'documents'] : ['admission_overview', 'procedure', 'admission_pathways'],
+        aspects: baseAspects,
         relation: 'PMB_OVERVIEW'
       };
     }
@@ -1014,15 +1376,19 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
 
   // 14. Program Comparison (Perbedaan Prodi)
   const hasProgramEntity = entities.some(e => e.family === 'academic_program' || e.type === 'program');
-  if (/\b(perbedaan|beda|bedanya|banding(?:kan)?|dibandingkan|komparasi|difference|differ|compare|comparison|versus|vs)\b/i.test(normalized) &&
+  if (/\b(perbedaan|beda|bedanya|banding(?:kan)?|dibandingkan|komparasi|difference|differ|compare|comparison|versus|vs|mana\s+yang\s+lebih|lebih\s+[\w\s]{1,30}?\s*(?:yang\s+)?mana|pilih\s+mana)\b/i.test(normalized) &&
     (/\b(prodi|jurusan|program\s+studi|program|programs|majors?|courses?)\b/i.test(normalized) || hasProgramEntity || entities.length >= 2)) {
+    const compAspects = ['curriculum_difference', 'career_prospects'];
+    if (/\b(?:biaya|tarif|spp|dpp|harga|murah|mahal)\b/i.test(normalized)) {
+      compAspects.push('fee');
+    }
     return {
       domain: 'ACADEMIC_PROGRAM',
       intent: 'PROGRAM_COMPARISON',
       retrievalRequired: true,
       userState: 'INQUIRING',
       desiredAction: 'PROVIDE_PROGRAM_DIFFERENTIATION',
-      aspects: ['curriculum_difference', 'career_prospects'],
+      aspects: compAspects,
       relation: 'PROGRAM_COMPARISON'
     };
   }
@@ -1113,12 +1479,17 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   );
 
   // 19. Campus Location / Address / Count Inquiry
+  const queryWithoutProximity = stripProximityModifiers(normalized);
+  const rawWithoutProximity = stripProximityModifiers(raw);
+
   const isAskingCampusLocation = isAskingProximity ||
     /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus(?:nya)?\s+di\s*mana|dimana\s+kampus|letak\s+kampus|gedung\s+kampus\s+di\s*mana|kampus\s+renon|kampus\s+jimbaran|kampus\s+abiansemal)\b/i.test(normalized) ||
-    (/\b(?:lokasi|alamat|di\s*mana|dimana)\b/i.test(normalized) && /\b(?:kampus|stikom|itb\s+stikom)\b/i.test(normalized)) ||
+    ((/\b(?:lokasi|alamat|di\s*mana|dimana)\b/i.test(normalized)) &&
+     (/\b(?:kampus|stikom|itb\s+stikom)\b/i.test(queryWithoutProximity) || /\b(?:kampus|stikom|itb\s+stikom)\b/i.test(rawWithoutProximity))) ||
     (/\b(?:berapa\s+(?:ada\s+)?kampus|ada\s+berapa\s+kampus|berapa\s+jumlah\s+kampus|jumlah\s+kampus|berapa\s+banyak\s+kampus|berapa\s+(?:ada\s+)?cabang|ada\s+berapa\s+cabang)\b/i.test(normalized)) ||
     (/\b(?:berapa\s+ada|ada\s+berapa|berapa\s+jumlah|berapa\s+banyak)\b/i.test(normalized) && /\b(?:kampus|cabang)\b/i.test(normalized)) ||
-    (/\b(?:lokasi(?:nya)?\s+di\s*mana(?:\s+saja)?|di\s*mana(?:\s+saja)?\s+lokasi(?:nya)?|dimana(?:\s+saja)?\s+lokasi(?:nya)?|lokasi(?:nya)?\s+mana\s+saja)\b/i.test(raw + ' ' + normalized)) ||
+    (/\b(?:lokasi(?:nya)?\s+di\s*mana(?:\s+saja)?|di\s*mana(?:\s+saja)?\s+lokasi(?:nya)?|dimana(?:\s+saja)?\s+lokasi(?:nya)?|lokasi(?:nya)?\s+mana\s+saja)\b/i.test(raw + ' ' + normalized) &&
+     (/\b(?:kampus|stikom|itb\s+stikom)\b/i.test(queryWithoutProximity) || /\b(?:kampus|stikom|itb\s+stikom)\b/i.test(rawWithoutProximity))) ||
     ((sessionData.activeDomain === 'FACILITIES' || sessionData.activeIntent === 'CAMPUS_LOCATION' || (sessionData.activeEntity && (sessionData.activeEntity.family === 'campus_location' || sessionData.activeEntity.type === 'campus' || String(sessionData.activeEntity).toLowerCase().includes('kampus')))) &&
       /\b(?:lokasi|alamat|di\s*mana|dimana|cabang|ada\s+berapa|berapa\s+ada)\b/i.test(normalized));
 
@@ -1144,11 +1515,26 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // Check institutional grounding for general inquiries
+  const strippedForGrounding = stripProximityModifiers(normalized);
   const hasInstitutionalGrounding = entities.length > 0 ||
-    INSTITUTIONAL_ANCHOR_REGEX.test(normalized) ||
-    INSTITUTIONAL_ANCHOR_REGEX.test(raw);
+    INSTITUTIONAL_ANCHOR_REGEX.test(strippedForGrounding) ||
+    INSTITUTIONAL_ANCHOR_REGEX.test(stripProximityModifiers(raw));
 
   if (!hasInstitutionalGrounding) {
+    // Check if query is an ambiguous standalone query / anaphora needing clarification rather than hard OOD refusal
+    if (/^(?:itu\s+berapa|kapan\s+mulainya|kalau\s+begitu\s+bagaimana|ai|apa\s+maksudnya)\??$/i.test(normalized) ||
+      (normalized.split(' ').length <= 3 && /\b(?:itu|begitu|kapan|berapa|ai)\b/i.test(normalized))) {
+      return {
+        domain: 'GENERAL',
+        intent: 'AMBIGUOUS_CLARIFICATION',
+        retrievalRequired: false,
+        userState: 'INQUIRING',
+        desiredAction: 'ASK_CLARIFICATION',
+        aspects: ['ambiguous_clarification'],
+        relation: 'AMBIGUOUS'
+      };
+    }
+
     return {
       domain: 'OUT_OF_DOMAIN',
       intent: 'OUT_OF_DOMAIN_INQUIRY',
@@ -1178,6 +1564,13 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
 function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   const raw = String(rawQuery || '').trim();
   const normalized = normalizeQueryText(raw);
+  const positiveRawQuery = stripNegatedAspectPhrases(raw);
+  const positiveNormalizedQuery = normalizeQueryText(positiveRawQuery);
+  const positiveUnstemmedQuery = positiveRawQuery
+    .toLowerCase()
+    .replace(/[?!,.]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   const unstemmedQuery = raw
     .toLowerCase()
@@ -1189,7 +1582,7 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   const contextDep = evaluateContextDependency(raw, sessionData);
 
   // 2. Extract Canonical Entities & Deduplicate by Canonical
-  const canonicalMatches = matchCanonicalEntities(normalized);
+  const canonicalMatches = filterNegatedCanonicalEntities(raw, matchCanonicalEntities(normalized));
   const seenEntities = new Map();
   for (const m of canonicalMatches || []) {
     const key = m.canonical.toLowerCase().trim();
@@ -1235,7 +1628,7 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
 
   // 2c. Context Inheritance before Domain Inference & OOD check
   // Invariant: Campus-wide facilities/UKM or Conversational MUST NOT inherit academic program entities
-  const isCampusWideQuery = /\b(?:fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|inbis|career\s+center|cdc)\b/i.test(normalized);
+  const isCampusWideQuery = /\b(?:fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|inbis|career\s+center|cdc)\b/i.test(positiveNormalizedQuery);
   const isConversationalQuery = /^(?:halo|hai|pagi|siang|sore|malam|terima\s+kasih|makasih|oke|siap)\b/i.test(normalized);
 
   if (effectiveTargetEntities.length === 0 && contextDep.shouldInherit && contextDep.inheritedEntity && !isCampusWideQuery && !isConversationalQuery) {
@@ -1264,9 +1657,9 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   }
 
   // 3. Temporal Resolution
-  const isCurrent = TEMPORAL_NOW_REGEX.test(normalized);
-  const academicYearMatch = raw.match(/\b(?:tahun\s+(?:akademik|ajaran)|t\.?a\.?)\s*:?\s*(\d{4}\s*\/\s*\d{4})\b/i) ||
-    raw.match(/\b(20\d{2}\s*\/\s*20\d{2})\b/);
+  const isCurrent = TEMPORAL_NOW_REGEX.test(positiveNormalizedQuery);
+  const academicYearMatch = positiveRawQuery.match(/\b(?:tahun\s+(?:akademik|ajaran)|t\.?a\.?)\s*:?\s*(\d{4}\s*\/\s*\d{4})\b/i) ||
+    positiveRawQuery.match(/\b(20\d{2}\s*\/\s*20\d{2})\b/);
   const detectedAcademicYear = academicYearMatch ? academicYearMatch[1].replace(/\s+/g, '') : null;
 
   // Separate historical academicYear from effective turn academicYear:
@@ -1283,7 +1676,7 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   };
 
   // 4. Infer Domain & Intent
-  const inferred = inferDomainAndIntent(normalized, effectiveTargetEntities, sessionData, unstemmedQuery, raw);
+  const inferred = inferDomainAndIntent(positiveNormalizedQuery, effectiveTargetEntities, sessionData, positiveUnstemmedQuery, positiveRawQuery);
 
   let domain = inferred.domain;
   let intent = inferred.intent;
@@ -1329,9 +1722,9 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     });
   }
 
-  // If PMB domain and academicYear still null, default to current intake 2026/2027
+  // If PMB domain and academicYear still null, keep null unless stated in evidence
   if (domain === 'PMB' && !temporal.academicYear) {
-    temporal.academicYear = '2026/2027';
+    temporal.academicYear = null;
   }
 
   // Ensure campus entity is present for genuine CAMPUS_LOCATION inquiries without overriding academic entities
@@ -1355,16 +1748,22 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     }
   }
 
-  // Extract Academic Level
-  let academicLevel = null;
-  if (/\b(?:s2|magister|pascasarjana|master|postgraduate)\b/i.test(normalized) || /\b(?:s2|magister|pascasarjana|master|postgraduate)\b/i.test(raw) || effectiveTargetEntities.some(e => /s2|magister/i.test(e.canonical || ''))) {
-    academicLevel = 'S2';
-  } else if (/\b(?:s1|sarjana|bachelor|undergraduate)\b/i.test(normalized) || /\b(?:s1|sarjana|bachelor|undergraduate)\b/i.test(raw) || effectiveTargetEntities.some(e => /^S1\b/i.test(e.canonical || ''))) {
-    academicLevel = 'S1';
-  } else if (/\b(?:d3|diploma|ahli madya|associate)\b/i.test(normalized) || /\b(?:d3|diploma|ahli madya|associate)\b/i.test(raw) || effectiveTargetEntities.some(e => /^D3\b/i.test(e.canonical || ''))) {
-    academicLevel = 'D3';
-  } else if (/\b(?:s[- ]?3|doktor(?:al)?|doctor(?:ate)?|ph\.?d|d[- ]?4|diploma\s*[- ]?4|diploma\s*[- ]?iv|sarjana\s+terapan)\b/i.test(normalized) || /\b(?:s[- ]?3|doktor(?:al)?|doctor(?:ate)?|ph\.?d|d[- ]?4|diploma\s*[- ]?4|diploma\s*[- ]?iv|sarjana\s+terapan)\b/i.test(raw)) {
-    academicLevel = 'UNSUPPORTED';
+  // Extract Academic Level through the shared academic-scope normalizer so natural
+  // Indonesian forms (e.g. 'strata dua') and English/number aliases use one contract.
+  const explicitAcademicScope = resolveAcademicScope(positiveNormalizedQuery);
+  let academicLevel = explicitAcademicScope.status === ACADEMIC_SCOPE_STATUS.SUPPORTED
+    ? explicitAcademicScope.level
+    : null;
+  if (!academicLevel) {
+    if (effectiveTargetEntities.some(e => /^(?:S2)\b|magister/i.test(e.canonical || ''))) {
+      academicLevel = 'S2';
+    } else if (effectiveTargetEntities.some(e => /^S1\b/i.test(e.canonical || ''))) {
+      academicLevel = 'S1';
+    } else if (effectiveTargetEntities.some(e => /^D3\b/i.test(e.canonical || ''))) {
+      academicLevel = 'D3';
+    } else if (/\b(?:s[- ]?3|strata\s*(?:[- ]?3|tiga)|doktor(?:al)?|doctor(?:ate)?|ph\.?d|d[- ]?4|diploma\s*[- ]?4|diploma\s*[- ]?iv|sarjana\s+terapan)\b/i.test(positiveNormalizedQuery)) {
+      academicLevel = 'UNSUPPORTED';
+    }
   }
 
   // Re-align S1 Sistem Informasi to S2 Sistem Informasi if academic level is S2
@@ -1393,7 +1792,7 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   if (inferred.intent === 'FACULTY_INQUIRY') {
     effectiveTargetEntities = effectiveTargetEntities.filter(e => e.type !== 'academic_scope' && e.family !== 'academic_scope');
     const { resolveFaculty } = require('./academicCatalog');
-    const fac = resolveFaculty(raw);
+    const fac = resolveFaculty(positiveRawQuery);
     if (fac && !effectiveTargetEntities.some(e => e.canonical === fac.canonical)) {
       effectiveTargetEntities.push({
         canonical: fac.canonical,
@@ -1406,8 +1805,11 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
 
   // Detect additional requested aspects
   const combinedAspects = new Set(inferred.aspects || []);
-  if (/\b(di\s*mana|dimana|lokasi(?:nya)?|tempat\s+kuliah|tempat\s+studi|alamat(?:nya)?|berada\s+di\s*mana)\b/i.test(normalized) ||
-    /\b(di\s*mana|dimana|lokasi|tempat\s+kuliah|tempat\s+studi|alamat|berada\s+di\s*mana)\b/i.test(unstemmedQuery)) {
+  const isDocumentOrCalendarAccess = /\b(?:kalender\s+akademik|jadwal\s+kuliah|krs|silabus|kurikulum)\b/i.test(normalized);
+  if (!isDocumentOrCalendarAccess && (
+    /\b(di\s*mana|dimana|lokasi(?:nya)?|tempat\s+kuliah|tempat\s+studi|alamat(?:nya)?|berada\s+di\s*mana)\b/i.test(normalized) ||
+    /\b(di\s*mana|dimana|lokasi|tempat\s+kuliah|tempat\s+studi|alamat|berada\s+di\s*mana)\b/i.test(unstemmedQuery)
+  )) {
     combinedAspects.add('location');
     combinedAspects.add('campus_location');
   }
@@ -1429,8 +1831,9 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     /\b(biaya|spp|dpp|uang\s+pangkal|bayar)\b/i.test(unstemmedQuery)) {
     combinedAspects.add('fee');
   }
-  if (/\b(beasiswa(?:nya)?|potongan\s+dpp|keringanan)\b/i.test(normalized) ||
-    /\b(beasiswa|potongan\s+dpp|keringanan)\b/i.test(unstemmedQuery)) {
+  const isNegatingScholarshipOrDpp = /\b(?:tidak\s+(?:perlu|usah)|bukan|tanpa|jangan)\b.*?\b(?:potongan\s+dpp|dpp|beasiswa)\b/i.test(normalized);
+  if (!isNegatingScholarshipOrDpp && (/\b(beasiswa(?:nya)?|potongan\s+dpp|keringanan)\b/i.test(normalized) ||
+    /\b(beasiswa|potongan\s+dpp|keringanan)\b/i.test(unstemmedQuery))) {
     combinedAspects.add('scholarship');
   }
   if (/\b(fasilitas(?:nya)?|lab\b|laboratorium)\b/i.test(normalized) ||
@@ -1442,10 +1845,10 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     combinedAspects.add('akreditasi');
     combinedAspects.add('accreditation');
   }
-  const finalAspects = Array.from(combinedAspects);
+  const finalAspects = filterNegatedSemanticAspects(raw, Array.from(combinedAspects));
 
   const isAcademicDomain = ['ACADEMIC_PROGRAM', 'ACADEMIC_CURRICULUM', 'UNSUPPORTED_PROGRAM', 'GENERAL'].includes(domain);
-  const unsupp = isAcademicDomain ? (inferred.unsupportedEntityName || inferred.unsupportedProgramName || detectUnsupportedProgram(normalized, effectiveTargetEntities)) : null;
+  const unsupp = isAcademicDomain ? (inferred.unsupportedEntityName || inferred.unsupportedProgramName || detectUnsupportedProgram(positiveNormalizedQuery, effectiveTargetEntities)) : null;
   const isUnsupported = Boolean((inferred.unsupportedEntity || inferred.isUnsupportedEntity || unsupp || domain === 'UNSUPPORTED_PROGRAM') && isAcademicDomain);
   const unsupportedName = isUnsupported ? (unsupp || inferred.unsupportedProgramName || 'tersebut') : null;
 
@@ -1492,6 +1895,8 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     language: detectQueryLanguage(raw),
     subQueries: [],
     contextDependencies: contextDep.shouldInherit ? [contextDep] : [],
+    explicitReset: Boolean(contextDep.explicitReset),
+    topicContinuity: contextDep.explicitReset ? 'NEW_TOPIC' : (contextDep.shouldInherit ? 'CONTINUATION' : 'INDEPENDENT'),
     unsupportedEntity: isUnsupported,
     unsupportedEntityName: unsupportedName,
     entityResolutionStatus: isUnsupported ? 'UNSUPPORTED' : (effectiveTargetEntities.length > 0 ? 'RESOLVED' : 'UNRESOLVED'),
@@ -1728,15 +2133,16 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
 
     const speechAct = validated.speechAct;
     const primaryConcept = interpretation.semanticConcepts?.[0] || null;
-    const aspects = Array.isArray(validated.requestedAspects) ? [...validated.requestedAspects] : [];
+    const aspects = filterNegatedSemanticAspects(
+      rawQuery,
+      Array.isArray(validated.requestedAspects) ? validated.requestedAspects : []
+    );
     if (aspects.includes('career') && !aspects.includes('career_prospects')) {
       aspects.push('career_prospects');
     }
-    if (syncFrame.aspects) {
-      syncFrame.aspects.forEach(a => { if (!aspects.includes(a)) aspects.push(a); });
-    }
 
-    const curriculumDep = Array.isArray(syncFrame.contextDependencies) &&
+    const curriculumIsExcluded = getNegatedAspectSet(rawQuery).has('curriculum');
+    const curriculumDep = !curriculumIsExcluded && Array.isArray(syncFrame.contextDependencies) &&
       syncFrame.contextDependencies.find(d => d && d.shouldInherit && (d.reason === 'curriculum_continuation' || d.inheritedDomain === 'ACADEMIC_CURRICULUM'));
     const isCurriculumAspect = aspects.includes('curriculum') || aspects.includes('courses') || aspects.includes('learning') || aspects.includes('competency');
     const isLearningSpeechAct = speechAct === 'INQUIRE_PROPERTY' || speechAct === 'EXPLAIN_PROCEDURE' || speechAct === 'VERIFY_STATUS' || speechAct === 'DISCOVER_LIST';
@@ -1763,7 +2169,19 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     // Resolve entities to canonical registry objects
     const resolvedEntities = [];
     let detectedUnsupportedMention = null;
-    const candidateMentions = Array.isArray(validated.candidateEntities) ? validated.candidateEntities : [];
+    const rawCandidateMentions = Array.isArray(validated.candidateEntities) ? validated.candidateEntities : [];
+    const candidateMentions = filterNegatedCanonicalEntities(
+      rawQuery,
+      rawCandidateMentions.map(candidate => {
+        const mention = typeof candidate === 'string'
+          ? candidate
+          : (candidate?.canonical || candidate?.rawMention || candidate?.mention || '');
+        return { canonical: mention, matchedAlias: mention, candidate };
+      })
+    ).map(candidate => candidate.candidate);
+    // Resolve level before mapping candidate mentions; unrecognized S2 research terms
+    // need this context to be classified as S2 concentrations rather than unsupported programs.
+    const effectiveLevel = validated.scopeConstraints?.academicLevel || syncFrame.academicLevel || null;
     for (const cand of candidateMentions) {
       const mentionStr = typeof cand === 'string' ? cand : (cand.canonical || cand.rawMention || cand.mention || '');
       const category = typeof cand === 'object' ? cand.inferredCategory : null;
@@ -1776,7 +2194,25 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
         if (matches && matches.length > 0) {
           resolvedEntities.push(matches[0]);
         } else if (category === 'academic_program' && mentionStr.length >= 4 && !/^(double\s+degree|dual\s+degree|program|jurusan|studi)$/i.test(mentionStr)) {
-          detectedUnsupportedMention = mentionStr;
+          const isS2Context = effectiveLevel === 'S2' || /\b(?:s2|magister|pascasarjana|riset|fokus\s+riset|konsentrasi|peminatan)\b/i.test(stripNegatedAspectPhrases(rawQuery));
+          const isS2Concentration = isS2Context && /\b(?:data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics|business\s+intelligence)\b/i.test(mentionStr);
+          const isVokasi = /\b(?:vokasi|pendidikan\s+vokasi|program\s+vokasi)\b/i.test(mentionStr);
+
+          if (isS2Concentration) {
+            const s2Entity = findCanonicalEntity('S2 Sistem Informasi');
+            if (s2Entity && !resolvedEntities.some(e => e.canonical === s2Entity.canonical)) {
+              resolvedEntities.push(s2Entity);
+            }
+            if (!aspects.includes('curriculum')) aspects.push('curriculum');
+            if (!aspects.includes('research_focus')) aspects.push('research_focus');
+          } else if (isVokasi) {
+            const d3Entity = findCanonicalEntity('D3 Manajemen Informatika');
+            if (d3Entity && !resolvedEntities.some(e => e.canonical === d3Entity.canonical)) {
+              resolvedEntities.push(d3Entity);
+            }
+          } else {
+            detectedUnsupportedMention = mentionStr;
+          }
         }
       }
     }
@@ -1811,6 +2247,11 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       }
     }
 
+    // Model output may still echo a named entity inside an explicitly rejected clause.
+    // Apply the same current-turn exclusion policy after canonical resolution.
+    const filteredResolvedEntities = filterNegatedCanonicalEntities(rawQuery, resolvedEntities);
+    resolvedEntities.splice(0, resolvedEntities.length, ...filteredResolvedEntities);
+
     // If we have resolved any genuine program or international program, suppress spurious unoffered program mention
     const hasResolvedValidProgram = resolvedEntities.some(
       e => e.family === 'academic_program' || e.family === 'international_program' || e.type === 'program'
@@ -1830,7 +2271,6 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     }
 
     // Re-align S1 Sistem Informasi to S2 Sistem Informasi if effective academic level is S2
-    const effectiveLevel = validated.scopeConstraints?.academicLevel || syncFrame.academicLevel || null;
     if (effectiveLevel === 'S2') {
       for (let i = 0; i < resolvedEntities.length; i++) {
         if (resolvedEntities[i].canonical === 'S1 Sistem Informasi') {
@@ -1857,16 +2297,25 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     } else if (syncFrame.intent === 'BOT_IDENTITY' || modelPrimaryIntent === 'BOT_IDENTITY') {
       domain = 'CONVERSATIONAL';
       intent = 'BOT_IDENTITY';
-    } else if (modelPrimaryIntent === 'CONVERSATIONAL_GREETING' || (!modelPrimaryIntent && speechAct === 'GENERAL_GREETING')) {
+    } else if (modelPrimaryIntent === 'CONVERSATIONAL_GREETING' || (!modelPrimaryIntent && (speechAct === 'GENERAL_GREETING' || syncFrame.intent === 'CONVERSATIONAL_GREETING'))) {
       domain = 'CONVERSATIONAL';
       intent = 'CONVERSATIONAL_GREETING';
-    } else if (modelPrimaryIntent === 'CONVERSATIONAL_SMALL_TALK' || (!modelPrimaryIntent && speechAct === 'SOCIAL_INQUIRY')) {
+    } else if (modelPrimaryIntent === 'CONVERSATIONAL_SMALL_TALK' || (!modelPrimaryIntent && (speechAct === 'SOCIAL_INQUIRY' || syncFrame.intent === 'CONVERSATIONAL_SMALL_TALK'))) {
       domain = 'CONVERSATIONAL';
       intent = 'CONVERSATIONAL_SMALL_TALK';
-    } else if (modelPrimaryIntent === 'CONVERSATIONAL_ACKNOWLEDGEMENT') {
+    } else if (modelPrimaryIntent === 'CONVERSATIONAL_ACKNOWLEDGEMENT' || (!modelPrimaryIntent && syncFrame.intent === 'CONVERSATIONAL_ACKNOWLEDGEMENT')) {
       domain = 'CONVERSATIONAL';
       intent = 'CONVERSATIONAL_ACKNOWLEDGEMENT';
-    } else if (modelPrimaryIntent === 'PROGRAM_RECOMMENDATION' || (!modelPrimaryIntent && speechAct === 'SEEK_ADVICE')) {
+    } else if (syncFrame.intent === 'CONVERSATIONAL_FAREWELL' || modelPrimaryIntent === 'CONVERSATIONAL_FAREWELL') {
+      domain = 'CONVERSATIONAL';
+      intent = 'CONVERSATIONAL_FAREWELL';
+    } else if (syncFrame.intent === 'BROAD_CAMPUS_OVERVIEW') {
+      domain = 'GENERAL';
+      intent = 'BROAD_CAMPUS_OVERVIEW';
+    } else if (syncFrame.intent === 'AMBIGUOUS_CLARIFICATION') {
+      domain = 'GENERAL';
+      intent = 'AMBIGUOUS_CLARIFICATION';
+    } else if (modelPrimaryIntent === 'PROGRAM_RECOMMENDATION' || syncFrame.intent === 'PROGRAM_RECOMMENDATION' || (!modelPrimaryIntent && speechAct === 'SEEK_ADVICE')) {
       domain = 'ACADEMIC_RECOMMENDATION';
       intent = 'PROGRAM_RECOMMENDATION';
     } else if (modelPrimaryIntent === 'CURRENT_ENROLLMENT_STATUS') {
@@ -2203,6 +2652,8 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       }
     }
 
+    const finalAspects = filterNegatedSemanticAspects(rawQuery, aspects);
+
     return {
       rawQuery,
       speechAct,
@@ -2232,7 +2683,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       targetBranch: resolvedTargetBranch,
       isProximityComparison: syncFrame.isProximityComparison || aspects.includes('proximity_comparison') || false,
       userOrigin: syncFrame.userOrigin || extractUserOriginLocation(rawQuery, sessionData) || null,
-      aspects: aspects.length > 0 ? aspects : syncFrame.aspects,
+      aspects: finalAspects,
       temporal: syncFrame.temporal,
       userState: syncFrame.userState,
       desiredAction: isUnsupported ? 'REFUSE_UNSUPPORTED_PROGRAM' : (isOOD ? 'REFUSE_OUT_OF_DOMAIN' : (intent === 'CURRICULUM_INQUIRY' ? 'PROVIDE_CURRICULUM_INFO' : syncFrame.desiredAction)),
@@ -2277,5 +2728,6 @@ module.exports = {
   getShadowAuditHistory,
   clearShadowAuditHistory,
   detectQueryLanguage,
-  extractUserOriginLocation
+  extractUserOriginLocation,
+  detectUnsupportedProgram
 };

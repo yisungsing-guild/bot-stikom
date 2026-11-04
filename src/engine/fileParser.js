@@ -1344,27 +1344,53 @@ class FileParser {
         // Convert sheet to JSON rows preserving empty cells (defval: '')
         const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
         if (rows && rows.length) {
-          // If first row looks like headers, use them; otherwise produce positional columns
-          const headerRow = rows[0].map(h => String(h || '').trim());
-          const hasHeaders = headerRow.some(h => /prodi|program|penjelasan|yang dipelajari|cocok untuk|peluang kerja|hobi/i.test(h));
+          // Robust header detection: scan up to the first 10 rows for a valid table header
+          let headerIdx = -1;
+          let headerRow = [];
 
-          for (let r = 1; r < rows.length; r += 1) {
+          for (let i = 0; i < Math.min(rows.length, 10); i++) {
+            const r = (rows[i] || []).map(h => String(h || '').trim());
+            const nonEmpty = r.filter(Boolean);
+            if (nonEmpty.length >= 2 && r.some(h => /prodi|program|penjelasan|yang dipelajari|cocok untuk|peluang kerja|hobi|gelombang|pendaftaran|testing|pengumuman|registrasi|biaya|jadwal|tanggal|periode/i.test(h))) {
+              headerIdx = i;
+              headerRow = r;
+              break;
+            }
+          }
+
+          // Capture context banners / title rows prior to header row
+          if (headerIdx > 0) {
+            const banners = [];
+            for (let i = 0; i < headerIdx; i++) {
+              const b = (rows[i] || []).map(c => String(c || '').trim()).filter(Boolean).join(' - ');
+              if (b) banners.push(b);
+            }
+            if (banners.length) {
+              content += `[Konteks: ${banners.join(' | ')}]\n`;
+            }
+          }
+
+          const hasHeaders = headerIdx >= 0;
+          const startRow = hasHeaders ? headerIdx + 1 : 0;
+
+          for (let r = startRow; r < rows.length; r += 1) {
             const row = rows[r] || [];
             if (row.every(cell => String(cell || '').trim() === '')) continue;
 
+            const cellRef = `[${sheetName}!A${r + 1}]`;
             if (hasHeaders) {
-              // Map header -> value for clearer chunks
+              // Map header -> value for clearer chunks with exact cell provenance
               const pairs = [];
               for (let c = 0; c < headerRow.length; c += 1) {
                 const key = headerRow[c] || `col${c + 1}`;
-                const val = typeof row[c] !== 'undefined' ? String(row[c]).trim() : '';
-                if (val) pairs.push(`${key} : ${val}`);
+                const val = typeof row[c] !== 'undefined' ? String(row[c]).trim().replace(/\s+/g, ' ') : '';
+                if (val) pairs.push(`${key}: ${val}`);
               }
-              if (pairs.length) content += pairs.join(' | ') + '\n';
+              if (pairs.length) content += `${cellRef} ${pairs.join('. ')}.\n`;
             } else {
-              // Fallback: join all non-empty cells with pipe
-              const parts = row.map(cell => String(cell || '').trim()).filter(p => p);
-              if (parts.length) content += parts.join(' | ') + '\n';
+              // Fallback: join all non-empty cells with pipe and full stop
+              const parts = row.map(cell => String(cell || '').trim().replace(/\s+/g, ' ')).filter(Boolean);
+              if (parts.length) content += `${cellRef} ${parts.join(' | ')}.\n`;
             }
             if (content.length > maxOutputChars) {
               content = content.slice(0, maxOutputChars) + '... [truncated]';

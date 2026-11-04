@@ -102,6 +102,11 @@ function isGenuineEllipsis(query) {
     if (/\b(?:saya|aku|kami|kita|suka|minat|cocok(?:nya)?|masuk|daftar)\b/i.test(remnant)) {
       return false;
     }
+    // If the remnant is asking whether a new program/major exists (e.g. "teknik nuklir ada gak", "hukum ada tidak"),
+    // it is a topic switch / new inquiry, not an ellipsis continuing the prior entity.
+    if (/\b(?:ada|tersedia|buka)\s*(?:gak|ga|nggak|tidak|kah)?\b/i.test(remnant) || /\b(?:ada\s+nggak|ada\s+tidak)\b/i.test(remnant)) {
+      return false;
+    }
     return true;
   }
   return false;
@@ -118,9 +123,48 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
 
   const query = currentQuery.trim().toLowerCase();
 
+  // 0. Explicit Topic / Context Reset Marker (e.g., "Lupakan pertanyaan tadi", "Abaikan pertanyaan sebelumnya", "Ganti topik")
+  const hasExplicitContextReset = /\b(?:lupakan(?:\s+pertanyaan)?(?:\s+yang)?\s+(?:tadi|sebelumnya)|abaikan(?:\s+pertanyaan)?(?:\s+yang)?\s+(?:tadi|sebelumnya)|ganti\s+topik|mulai\s+dari\s+awal|pertanyaan\s+baru)\b/i.test(query);
+  if (hasExplicitContextReset) {
+    return {
+      shouldInherit: false,
+      explicitReset: true,
+      reason: 'explicit_context_reset'
+    };
+  }
+
   // If session has no prior state, cannot inherit
-  if (!sessionData || (!sessionData.activeDomain && !sessionData.activeEntity && !sessionData.lastQuery)) {
+  if (!sessionData || (!sessionData.activeDomain && !sessionData.activeEntity && !sessionData.preservedBackgroundEntity && !sessionData.lastAcademicProgramEntity && !sessionData.lastQuery)) {
     return { shouldInherit: false, reason: 'no_session_history' };
+  }
+
+  // Topic switch guard: If current query asks about an unsupported program or explicitly introduces a different subject, do not inherit prior entity
+  try {
+    const { detectUnsupportedProgram } = require('./semanticFrameResolver');
+    const unsupportedProg = detectUnsupportedProgram(query, matchCanonicalEntities(query));
+    if (unsupportedProg) {
+      return {
+        shouldInherit: false,
+        reason: 'unsupported_program_topic_switch',
+        unsupportedProgram: unsupportedProg
+      };
+    }
+  } catch (_) {}
+
+  // Explicit anaphoric program reference (e.g., "untuk prodi itu", "jurusan tersebut", "prodi tadi", "di prodi itu")
+  const hasExplicitProgramPronoun = /\b(?:untuk|di|pada|tentang|mengenai)?\s*(?:prodi|program\s+studi|jurusan)\s+(?:itu|tersebut|tadi|ini)\b/i.test(query);
+  const candidateRestoredProgram = sessionData.activeEntity || sessionData.preservedBackgroundEntity || sessionData.lastAcademicProgramEntity || null;
+  if (hasExplicitProgramPronoun && candidateRestoredProgram) {
+    const isScholarship = /\b(?:beasiswa|kip\s*kuliah|potongan\s+dpp|keringanan\s+biaya)\b/i.test(query);
+    const isFee = /\b(?:biaya|spp|dpp|uang\s+kuliah|tarif)\b/i.test(query);
+    return {
+      shouldInherit: true,
+      explicitProgramAnaphora: true,
+      reason: 'explicit_program_anaphora_reference',
+      inheritedDomain: isScholarship ? 'SCHOLARSHIP' : (isFee ? 'TUITION_FEE' : (sessionData.activeDomain || 'ACADEMIC_PROGRAM')),
+      inheritedIntent: isScholarship ? 'SCHOLARSHIP_INQUIRY' : (isFee ? 'TUITION_FEE_INQUIRY' : null),
+      inheritedEntity: candidateRestoredProgram
+    };
   }
 
   const activeEntityStr = (sessionData.activeEntity && typeof sessionData.activeEntity === 'object')
@@ -204,7 +248,7 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
         inheritedDomain: 'PMB',
         inheritedIntent: 'ADMISSION_SCHEDULE',
         inheritedEntity: null,
-        inheritedAcademicYear: sessionData.academicYear || '2026/2027'
+        inheritedAcademicYear: sessionData.academicYear || null
       };
     }
     return {
@@ -228,7 +272,7 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
       inheritedDomain: 'PMB',
       inheritedIntent: 'GENERAL_PMB_INQUIRY',
       inheritedEntity: null,
-      inheritedAcademicYear: sessionData.academicYear || '2026/2027'
+      inheritedAcademicYear: sessionData.academicYear || null
     };
   }
 
@@ -371,6 +415,17 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   }
 
   // Check 1: Genuine Ellipsis
+  const isApplicantSchoolBackgroundEllipsis = /\b(?:lulusan|alumni|tamatan|asal(?:\s+sekolah)?|dari)\s+(?:sma|smk|ma|paket\s+c|sekolah\s+menengah)\b/i.test(query);
+  if (isApplicantSchoolBackgroundEllipsis && isAcademicActiveEntity) {
+    return {
+      shouldInherit: true,
+      reason: 'applicant_school_background_followup',
+      inheritedDomain: 'PMB',
+      inheritedIntent: 'ADMISSION_REQUIREMENTS',
+      inheritedEntity: sessionData.activeEntity
+    };
+  }
+
   if (isGenuineEllipsis(query)) {
     return {
       shouldInherit: true,
@@ -430,7 +485,7 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
         inheritedDomain: 'PMB',
         inheritedIntent: isScheduleFocus ? 'ADMISSION_SCHEDULE' : 'GENERAL_PMB_INQUIRY',
         inheritedEntity: null,
-        inheritedAcademicYear: sessionData.academicYear || '2026/2027'
+        inheritedAcademicYear: sessionData.academicYear || null
       };
     }
   }

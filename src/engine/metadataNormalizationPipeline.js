@@ -25,6 +25,9 @@ const DEDICATED_FILE_AUTHORITY = [
   { pattern: /rincian biaya HELP/i, entity: 'Dual Degree HELP', level: 'S1', category: 'BIAYA' },
   { pattern: /rincian biaya DNUI/i, entity: 'Dual Degree DNUI', level: 'S1', category: 'BIAYA' },
   { pattern: /rincian biaya UTB/i, entity: 'Dual Degree UTB', level: 'S1', category: 'BIAYA' },
+  { pattern: /CHATBOT\s*-\s*Double\s*Degree/i, entity: 'International Dual Degree', level: 'S1', category: 'INTERNATIONAL_PROGRAM' },
+  { pattern: /Student\s+Exchange/i, entity: 'Student Exchange', level: 'S1', category: 'INTERNATIONAL_PROGRAM' },
+  { pattern: /Hi-Think/i, entity: 'International Program Hi-Think', level: 'S1', category: 'INTERNATIONAL_PROGRAM' },
 
   // Accreditation Certificates
   { pattern: /AKREDITASI BD/i, entity: 'S1 Bisnis Digital', level: 'S1', category: 'AKREDITASI' },

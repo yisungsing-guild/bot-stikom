@@ -84,7 +84,7 @@ function resolveFeeProfile(nameOrEntity) {
   if (/help/i.test(lower)) return catalog['Double Degree HELP University'];
   if (/utb/i.test(lower)) return catalog['Dual Degree UTB'];
   if (/sistem\s+komputer|\bsk\b/i.test(lower)) return catalog['S1 Sistem Komputer'];
-  if (/teknologi\s+informasi|\bti\b/i.test(lower)) return catalog['S1 Teknologi Informasi'];
+  if (/teknologi\s+informasi|(?<!smk\s*)\bti\b/i.test(lower)) return catalog['S1 Teknologi Informasi'];
   if (/bisnis\s+digital|\bbd\b/i.test(lower)) return catalog['S1 Bisnis Digital'];
   if (/sistem\s+informasi|\bsi\b/i.test(lower)) {
     if (/s2|magister|pasca/i.test(lower)) return catalog['S2 Sistem Informasi'];
@@ -1175,6 +1175,29 @@ function generateFeeAnswer(frameOrQuery, secondArg = [], thirdArg = {}) {
 
   const combinedQ = (rawQuery + ' ' + normQuery).toLowerCase();
 
+  // 1.0 General Installment Scheme Inquiry (e.g. "Kalau saya pilih cicilan bagaimana?")
+  const isInstallmentSchemeInquiry =
+    /\b(?:kalau|jika|skema|opsi|pilihan|pilih)\s+cicil(?:an)?\b/i.test(combinedQ) ||
+    (/\b(?:bagaimana|gimana)\s+(?:skema\s+)?cicil(?:an)?\b/i.test(combinedQ) && !programEntity);
+
+  if (isInstallmentSchemeInquiry && !programEntity) {
+    const schemeText =
+      'Berdasarkan dokumen resmi Rincian Biaya Kuliah TA 2026/2027 dan SK Rektor ITB STIKOM Bali Nomor 629/ITBSTIKOM/WDS/X/25, ketentuan skema cicilan pembayaran biaya kuliah adalah sebagai berikut:\n\n' +
+      '• **Dana Pendidikan Pokok (DPP) S1 Reguler & Biaya Registrasi D3**: DAPAT dicicil atau diangsur bertahap setiap bulan sampai dengan menjelang Ujian Tengah Semester 1 (UTS-1) pada semester berjalan.\n' +
+      '• **Biaya Pendidikan Per Semester**: Khusus semester 1 kelas Reguler dapat dicicil 2 kali sampai dengan UTS.\n' +
+      '• **Biaya Pengalaman Industri (mulai semester 3)**: Dapat dicicil 5 kali per semester.\n' +
+      '• **Diskon Pembayaran Tunai**: Apabila DPP dibayarkan secara tunai langsung lunas, diberikan tambahan potongan sebesar 10%.\n\n' +
+      'Untuk simulasi rincian cicilan per program studi tertentu, silakan sebutkan nama program studi yang Kakak minati ya.';
+
+    return {
+      success: true,
+      answer: schemeText,
+      source: 'grounded_fee_engine',
+      intent: 'TUITION_FEE_INQUIRY',
+      isInstallmentScheme: true
+    };
+  }
+
   // 1. Syarat / Prosedur / Dokumen Pengajuan Cicilan
   const isInstallmentProcedure =
     /\b(?:syarat|persyaratan|prosedur|tata\s*cara|cara(?:\s+mengajukan)?|bagaimana\s+mengajukan|pengajuan|dokumen|berkas|formulir)\b/i.test(combinedQ) &&
@@ -1282,27 +1305,10 @@ function formatAmbiguousProgramFeeResponse(scopeParams, rawQuery = '') {
     return text;
   }
 
-  // Full breakdown or general fee inquiry without prodi
-  let waveHeader = scopeParams.isWaveExplicit && scopeParams.registrationWave ? ` (${scopeParams.registrationWave})` : '';
-  let text = `Rincian biaya pendidikan di ITB STIKOM Bali T.A 2026/2027${waveHeader} berbeda tergantung pada program studi dan jenjang yang dipilih:\n\n` +
-    `1. **S1 Sistem Informasi, Teknologi Informasi, & Bisnis Digital**:\n` +
-    `   - Biaya Pendaftaran: Rp 300.000 (S1 SI/TI/BD Gelombang II, tarif dasar Rp 500.000)\n` +
-    `   - Perlengkapan Awal: Rp 1.500.000 (Jas Almamater, Topi, Tas, GMTI)\n` +
-    `   - Dana Pendidikan Pokok (DPP): Rp 12.500.000 (setelah potongan biaya Gelombang II Rp 1.500.000, normal Rp 14.000.000; dapat dicicil per bulan s.d. UTS-1)\n` +
-    `   - Biaya Pendidikan Per Semester: Rp 6.500.000 (dibayar terpisah menjelang perwalian)\n\n` +
-    `2. **S1 Sistem Komputer**:\n` +
-    `   - Biaya Pendaftaran: Rp 300.000 (S1 Sistem Komputer Gelombang II, tarif dasar Rp 500.000)\n` +
-    `   - Perlengkapan Awal: Rp 1.500.000 (Jas almamater & perlengkapan awal)\n` +
-    `   - Dana Pendidikan Pokok (DPP): Rp 10.250.000 (setelah potongan biaya Gelombang II Rp 750.000, normal Rp 11.000.000; dapat dicicil per bulan s.d. UTS-1)\n` +
-    `   - Biaya Pendidikan Per Semester: Rp 6.000.000 (dibayar terpisah menjelang perwalian)\n\n` +
-    `3. **D3 Manajemen Informatika**:\n` +
-    `   - Biaya Pendaftaran: Rp 300.000 (D3 MI Gelombang II, tarif dasar Rp 500.000)\n` +
-    `   - Biaya Registrasi (Jas, Topi, GMTI): Rp 9.250.000 (setelah potongan biaya Gelombang II Rp 750.000, normal Rp 10.000.000; dapat dicicil per bulan s.d. UTS-1)\n` +
-    `   - Total Kewajiban Biaya Awal Masuk: Rp 9.550.000 (Pendaftaran Rp 300.000 + Biaya Registrasi Rp 9.250.000; dapat dicicil per bulan s.d. UTS-1)\n` +
-    `   - Biaya Pendidikan Per Semester: Rp 4.500.000 (dibayar terpisah menjelang perwalian)\n\n` +
-    `4. **Program Pascasarjana (S2) & International Double Degree (HELP / DNUI)**:\n` +
-    `   - Memiliki skema dan komponen pembiayaan tersendiri.\n\n` +
-    `Untuk rincian perhitungan biaya lengkap dan simulasi cicilan yang akurat, mohon informasikan program studi yang Kakak minati ya.`;
+  // Full breakdown or general fee inquiry without prodi:
+  // Prompt the user for program clarification rather than dumping the full table catalog
+  let text = `Besaran biaya kuliah di ITB STIKOM Bali T.A 2026/2027 berbeda-beda tergantung pada jenjang dan program studi yang dipilih (antara lain S1 Sistem Informasi, S1 Teknologi Informasi, S1 Bisnis Digital, S1 Sistem Komputer, D3 Manajemen Informatika, maupun International Dual Degree).\n\n` +
+    `Agar Tiko dapat memberikan rincian komponen biaya awal, SPP per semester, dan simulasi cicilan yang akurat, mohon informasikan program studi mana yang ingin Kakak tanyakan ya.`;
 
   return text;
 }
@@ -1324,7 +1330,7 @@ function formatAmbiguousProgramFeeResponse(scopeParams, rawQuery = '') {
     const qLower = (rawQuery + ' ' + normQuery).toLowerCase();
     if (/\b(?:s2|magister|pascasarjana|matrikulasi|martikulasi)\b/i.test(qLower)) programEntity = 'S2 Sistem Informasi';
     else if (/sistem\s+komputer|\bsk\b/i.test(qLower)) programEntity = 'S1 Sistem Komputer';
-    else if (/teknologi\s+informasi|\bti\b/i.test(qLower)) programEntity = 'S1 Teknologi Informasi';
+    else if (/teknologi\s+informasi|(?<!smk\s*)\bti\b/i.test(qLower)) programEntity = 'S1 Teknologi Informasi';
     else if (/bisnis\s+digital|\bbd\b/i.test(qLower)) programEntity = 'S1 Bisnis Digital';
     else if (/sistem\s+informasi|\bsi\b/i.test(qLower)) programEntity = 'S1 Sistem Informasi'; else if (/manajemen\s+informatika|d3/i.test(qLower)) programEntity = 'D3 Manajemen Informatika';
     else if (/utb/i.test(qLower)) programEntity = 'Dual Degree UTB';
@@ -1384,10 +1390,46 @@ function formatAmbiguousProgramFeeResponse(scopeParams, rawQuery = '') {
   }
 
   // If asking for comparison of all programs or multiple programs
-  const isExplicitCompare = /\b(?:semua|seluruh|tiap|masing-masing|semua prodi|semua jurusan|semua program studi|bandingkan|perbandingan)\b/i.test(rawQuery + ' ' + normQuery);
+  const isExplicitCompare = /\b(?:semua|seluruh|tiap|masing-masing|semua prodi|semua jurusan|semua program studi|bandingkan|perbandingan|lebih\s+(?:murah|mahal)|selisih|beda(?:nya)?|komparasi)\b/i.test(rawQuery + ' ' + normQuery);
   const isMultiCompare = isExplicitCompare || (!programEntity && entities.length > 1);
 
   if (isMultiCompare) {
+    // If entities contains specific entities (e.g. 2 programs), compare ONLY those programs!
+    let targetProgs = [];
+    if (Array.isArray(entities) && entities.length >= 2 && !/\b(?:semua|seluruh|tiap|masing-masing)\b/i.test(rawQuery + ' ' + normQuery)) {
+      targetProgs = entities.map(e => resolveFeeProfile(e.canonical || e.name || String(e))).filter(Boolean);
+    }
+    if (targetProgs.length >= 2) {
+      const progLines = targetProgs.map(p => {
+        const sem = p.components?.biayaSemester?.amount ? `Rp ${p.components.biayaSemester.amount.toLocaleString('id-ID')} per semester` : '';
+        const dpp = p.components?.dpp?.amount ? `DPP: Rp ${p.components.dpp.amount.toLocaleString('id-ID')}` : '';
+        const parts = [sem, dpp].filter(Boolean).join(', ');
+        return `• **${p.canonical}**: ${parts}`;
+      });
+
+      const sameFee = targetProgs.every(p =>
+        p.components?.biayaSemester?.amount === targetProgs[0].components?.biayaSemester?.amount &&
+        p.components?.dpp?.amount === targetProgs[0].components?.dpp?.amount
+      );
+
+      const summary = sameFee
+        ? 'Kedua program studi memiliki tarif biaya per semester dan DPP dasar yang sama.'
+        : 'Rincian perbedaan biaya resmi dapat dilihat pada perbandingan nominal di atas.';
+
+      const lines = [
+        '*Perbandingan Biaya Pendidikan ITB STIKOM Bali (T.A 2026/2027)*\n',
+        'Berikut perbandingan Biaya Pendidikan Per Semester dan Dana Pendidikan Pokok (DPP) resmi untuk program studi yang ditanyakan:\n',
+        ...progLines,
+        `\n${summary}`,
+        '\n*Ketentuan Tambahan:* Pembayaran DPP dapat diangsur setiap bulan hingga UTS-1, dan tersedia potongan beasiswa gelombang awal serta diskon pembayaran tunai 10%.'
+      ];
+
+      return {
+        success: true,
+        answer: lines.join('\n'),
+        source: 'grounded_fee_engine'
+      };
+    }
     const lines = [
       `*Perbandingan Biaya Pendidikan Program Studi ITB STIKOM Bali (T.A 2026/2027)*\n`,
       `Berikut perbandingan Biaya Pendidikan Per Semester dan Dana Pendidikan Pokok (DPP) resmi untuk program studi di ITB STIKOM Bali:\n`,

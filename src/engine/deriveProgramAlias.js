@@ -1,5 +1,5 @@
 const VALID_PROGRAMS = new Set([
-  'SI','TI','BD','SK','MI','DKV','TRPL','TK','MM','AN','DG','RPL'
+  'SI','TI','BD','SK','MI','DKV','TRPL','TK','MM','AN','DG','RPL','S2'
 ]);
 
 function deriveProgramAlias(raw) {
@@ -7,8 +7,39 @@ function deriveProgramAlias(raw) {
   const s = String(raw || '').toLowerCase();
   const normalizedInput = s.replace(/\s+/g, ' ').trim();
 
+  // Guard: Do not assign a single-program undergraduate alias ('SK', 'SI', 'TI', 'BD', 'MI')
+  // to long multi-program passages, degree titles ("Sarjana Komputer"), or graduate S2 / Double Degree documents.
+  const isLongPassage = normalizedInput.length > 80;
+  if (isLongPassage) {
+    if (/\b(?:program\s+double\s+degree|dual\s+degree|help\s+university|dalian\s+neusoft)\b/i.test(normalizedInput)) {
+      return null;
+    }
+    if (/\b(?:magister\s+sistem\s+informasi|s2\s+sistem\s+informasi|program\s+pascasarjana)\b/i.test(normalizedInput)) {
+      return 'S2';
+    }
+    const matchedProgs = new Set();
+    if (/\bsistem\s+informasi\b/i.test(normalizedInput)) matchedProgs.add('SI');
+    if (/\bsistem\s+komputer\b/i.test(normalizedInput)) matchedProgs.add('SK');
+    if (
+      /\bteknologi\s+informasi\b/i.test(normalizedInput) &&
+      !/\bbidang\s+(?:bisnis\s+dan\s+)?teknologi\s+informasi\b/i.test(normalizedInput) &&
+      !/\bpengantar\s+teknologi\s+informasi\b/i.test(normalizedInput) &&
+      !/\btata\s+kelola\s+teknologi\s+informasi\b/i.test(normalizedInput) &&
+      !/\bmanajemen\s+proyek\s+teknologi\s+informasi\b/i.test(normalizedInput) &&
+      !/\binfrastruktur\s+ti\b/i.test(normalizedInput) &&
+      !/\bberbasis\s+teknologi\s+informasi\b/i.test(normalizedInput)
+    ) {
+      matchedProgs.add('TI');
+    }
+    if (/\bbisnis\s+digital\b/i.test(normalizedInput)) matchedProgs.add('BD');
+    if (/\bmanajemen\s+informatika\b/i.test(normalizedInput)) matchedProgs.add('MI');
+    if (matchedProgs.size !== 1) return null;
+  }
+
   // explicit mapping for common program names
   const map = {
+    'magister sistem informasi': 'S2',
+    's2 sistem informasi': 'S2',
     'sistem informasi': 'SI',
     'teknologi informasi': 'TI',
     'bisnis digital': 'BD',

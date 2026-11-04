@@ -350,15 +350,38 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   // INVARIANT: Use the user's direct query intent, NEVER internal query expansion variants,
   // to avoid falsely interpreting scholarship queries as form fee queries.
   const userDirectQuery = (retrievalPlan.rawQuery || retrievalPlan.query || '').toLowerCase();
+
+  // 0.3 Academic Calendar / Event Schedule Gate
+  // When user is asking about academic calendar (e.g. Di mana melihat kalender akademik, jadwal perkuliahan, KRS):
+  // Reject irrelevant student organizations (UKM/Himpunan), INBIS, fee brochures, and unrelated memos/PMB wave tables.
+  const isCalendarQuery = /\bkalender\s+akademik\b/i.test(userDirectQuery) ||
+    retrievalPlan.domain === 'ACADEMIC_SCHEDULE' ||
+    retrievalPlan.intent === 'ACADEMIC_EVENT_SCHEDULE';
+  if (isCalendarQuery) {
+    const isPmbAdmissionCalendar = /\bkalender\s+pendaftaran\s+mahasiswa\s+baru\b/i.test(text) ||
+      /\bkalender\s+pendaftaran\b/i.test(candidate.filename || candidate.sourceFile || '');
+    const isIsolatedMemo = /\btempat\s*:\s*loket\s+akademik\b/i.test(text) && !/kalender\s+akademik/i.test(text);
+    const isUkmOrOrmawa = /\b(?:himpunan\s+mahasiswa|ormawa|ukm\b|organisasi\s+mahasiswa)\b/i.test(text) ||
+      /\b(?:himpunan|inbis|rincian\s+biaya)\b/i.test(candidate.filename || candidate.sourceFile || '');
+    if (isUkmOrOrmawa || isPmbAdmissionCalendar || isIsolatedMemo) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_ASPECT_MISMATCH',
+        reason: 'ukm_or_non_calendar_doc_rejected_for_academic_calendar'
+      };
+    }
+  }
   const isAskingFormFee = /\b(?:biaya\s+formulir|biaya\s+pendaftaran|uang\s+pendaftaran|biaya\s+daftar)\b/i.test(userDirectQuery) ||
     retrievalPlan.intent === 'ADMISSION_FORM_FEE' ||
     (Array.isArray(requiredAspects) && requiredAspects.includes('registration_form_fee'));
   if (isAskingFormFee) {
-    const isDppDiscountOnly = candidate.aspect === 'potongan_dpp' ||
-      candidate.aspect === 'potongan_biaya_pendaftaran' ||
-      (/\b(?:potongan\s+dpp|dana\s+pendidikan\s+pokok|beasiswa\s+dpp|registrasi\s+pada\s+gelombang\s+khusus)\b/i.test(text) &&
-        !/\b(?:biaya\s+formulir|biaya\s+pendaftaran\s+sebesar|membayar\s+formulir)\b/i.test(text));
-    if (isDppDiscountOnly) {
+    const isExplicitlyNegatingDpp = /\b(?:tidak\s+(?:perlu|usah)|bukan|tanpa)\b.*?\b(?:dpp|potongan\s+dpp)\b/i.test(userDirectQuery);
+    const hasRegistrationFeeContent = /\b(?:potongan\s+biaya\s+pendaftaran|biaya\s+pendaftaran|biaya\s+formulir|membayar\s+formulir|uang\s+pendaftaran)\b/i.test(text);
+    const isDppDiscountOnly = !hasRegistrationFeeContent && (
+      candidate.aspect === 'potongan_dpp' ||
+      /\b(?:potongan\s+dpp|dana\s+pendidikan\s+pokok|beasiswa\s+dpp|registrasi\s+pada\s+gelombang\s+khusus)\b/i.test(text)
+    );
+    if (isDppDiscountOnly || (isExplicitlyNegatingDpp && !hasRegistrationFeeContent)) {
       return {
         accepted: false,
         disposition: 'REJECT_ASPECT_MISMATCH',
@@ -413,6 +436,112 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
 
   const candidateFile = (candidate && (candidate.sourceFile || candidate.source_file || candidate.sourceDocument || candidate.filename || candidate.source)) || '';
   const candSourceFile = candidateFile.toLowerCase();
+  const candTextLower = text.toLowerCase();
+  const isForeignStudentChunk = candSourceFile.includes('mahasiswa asing') ||
+    /\b(faq pengurusan mahasiswa asing|izin belajar baru|perpanjangan itas|pengurusan visa e30b|sktt orang asing)\b/i.test(candTextLower);
+
+  // 0.6 P0 Retrieval Safety Gates: SION Troubleshooting, Student Affairs Contact, Tech UKM, and PMB Wave Calendar Header
+  const isSionTroubleshootingQuery = (Array.isArray(requiredAspects) && requiredAspects.includes('sion_troubleshooting')) ||
+    (/\b(?:sion|portal\s+akademik|portal\s+sion)\b/i.test(userQueryLower) &&
+      /\b(?:kendala|masalah|error|gagal|lupa|tidak\s+bisa|bentrok|login|masuk|urus|mengurus|hubungi|menghubungi|siapa|kontak|bagian)\b/i.test(userQueryLower));
+
+  if (isSionTroubleshootingQuery) {
+    const isStudentExchangeOrGraduationOrTa =
+      /\b(?:student\s+exchange|pertukaran\s+(?:mahasiswa|pelajar)|yudisium|wisuda|tugas\s+akhir|skripsi|kepanitiaan\s+tugas\s+akhir)\b/i.test(candTextLower) ||
+      /(?:student\s+exchange|yudisium|wisuda|tugas\s+akhir|pedoman\s+ta)/i.test(candSourceFile);
+    const hasExplicitSionTroubleshooting = /\bsion\b/i.test(candTextLower) &&
+      /\b(?:kendala\s+sion|lupa\s+password\s+sion|reset\s+password\s+sion|helpdesk\s+sion|mengurus\s+kendala\s+sion|bentrok\s+jadwal\s+di\s+sion)\b/i.test(candTextLower);
+    if (isStudentExchangeOrGraduationOrTa || !hasExplicitSionTroubleshooting) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_ASPECT_MISMATCH',
+        reason: isStudentExchangeOrGraduationOrTa
+          ? 'evidence_is_student_exchange_or_graduation_not_sion_troubleshooting'
+          : 'evidence_lacks_sion_troubleshooting_or_contact_procedure'
+      };
+    }
+  }
+
+  const isStudentAffairsContactQuery = (Array.isArray(requiredAspects) && requiredAspects.includes('student_affairs')) ||
+    /\b(?:bagian\s+kemahasiswaan|layanan\s+kemahasiswaan|direktorat\s+kemahasiswaan)\b/i.test(userQueryLower);
+  if (isStudentAffairsContactQuery && !/\b(?:inbis|inkubator|industri)\b/i.test(userQueryLower)) {
+    const isInbisOrIndustryDoc = /(?:inbis|layanan\s+industri|kl-inbis)/i.test(candSourceFile) ||
+      /\b(?:klinbis@stikom-bali\.ac\.id|direktorat\s+kerja\s+sama,\s*layanan\s+industri|profil\s+layanan\s+industri|inkubator\s+bisnis)\b/i.test(candTextLower);
+    const hasDirKkaSignal = /\b(?:ts_dirkka@stikom-bali\.ac\.id|direktur\s+kemahasiswaan,\s*karir\s+dan\s+alumni|direktorat\s+kemahasiswaan|wakil\s+rektor\s+iii)\b/i.test(candTextLower);
+    if (isInbisOrIndustryDoc || !hasDirKkaSignal) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_SCOPE_MISMATCH',
+        reason: isInbisOrIndustryDoc
+          ? 'inbis_or_industry_contact_not_student_affairs_kka'
+          : 'evidence_lacks_student_affairs_kka_contact'
+      };
+    }
+  }
+
+  const isTechUkmQuery = (retrievalPlan.domain === 'ORGANIZATION_UKM' || (Array.isArray(requiredAspects) && requiredAspects.includes('ukm'))) &&
+    /\b(?:teknologi|programming|coding|koding|robotik|robot|linux|penalaran)\b/i.test(userQueryLower) &&
+    !/\b(?:olahraga|fitness|gym|ghost|seni|tari|musik|futsal|basket)\b/i.test(userQueryLower);
+  if (isTechUkmQuery) {
+    const isNonTechUkmDoc = /(?:ukm_ghost|ghost|pragina|teater\s+biner|ukm\s+dos|ukm\s+vos|ukm\s+bos|ukm\s+tabuh|futsal|basket|mapala|ksr|kmhd|mcos|jcos|paskamras)/i.test(candSourceFile) ||
+      (/\b(?:gymnastic\s+and\s+health|ukm\s+ghost|kebugaran|tari\s+tradisional|paduan\s+suara|pecinta\s+alam)\b/i.test(candTextLower) &&
+        !/\b(?:rade|syntax|ksl|teknologi\s+dan\s+penalaran)\b/i.test(candTextLower));
+    if (isNonTechUkmDoc) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_ASPECT_MISMATCH',
+        reason: 'non_tech_ukm_profile_rejected_for_tech_programming_query'
+      };
+    }
+  }
+
+  // P0 Safety Gate: Kalender Pendaftaran.xlsx table header chunk (b22fd7bc) must ONLY be accepted when asking about schedule/waves,
+  // NEVER for technical PMB form issues, KTP/KK requirements, entrance tests, or post-form procedures.
+  const isWaveCalendarHeaderOnly = /kalender\s+pendaftaran\.xlsx/i.test(candSourceFile) &&
+    /gelombang\s*\|\s*masa\s+pendaftaran\s*\|\s*testing\s*\|\s*pengumuman/i.test(candTextLower);
+  if (isWaveCalendarHeaderOnly) {
+    const queryAsksScheduleOrWave = retrievalPlan.intent === 'ADMISSION_SCHEDULE' ||
+      retrievalPlan.intent === 'CURRENT_ENROLLMENT_STATUS' ||
+      (Array.isArray(requiredAspects) && requiredAspects.some(a => ['schedule', 'waves', 'wave_info'].includes(a))) ||
+      /\b(?:jadwal|gelombang|kapan\s+(?:buka|tutup|pendaftaran)|periode\s+pendaftaran|batas\s+waktu)\b/i.test(userQueryLower);
+    if (!queryAsksScheduleOrWave) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_ASPECT_MISMATCH',
+        reason: 'wave_calendar_table_header_not_applicable_to_non_schedule_pmb_query'
+      };
+    }
+  }
+
+  // P0 Safety Gate: Specific PMB Technical / Document / Exam queries must have matching aspect evidence in the chunk,
+  // not generic campus profile or unrelated fee tables.
+  if (Array.isArray(requiredAspects) && requiredAspects.includes('pmb_technical_or_specific_req')) {
+    const asksKtpKk = /\b(?:ktp|kk|kartu\s+keluarga)\b/i.test(userQueryLower);
+    const asksEntranceTest = /\b(?:tes\s+masuk|ujian\s+seleksi|seleksi\s+tambahan|tes\s+tulis)\b/i.test(userQueryLower);
+    const asksOtpOrFormTech = /\b(?:kode\s+verifikasi|otp|salah\s+mengisi\s+data|ubah\s+pilihan|lupa\s+nomor\s+handphone|belum\s+mendapat\s+konfirmasi|error\s+saat\s+dikirim|formulir.*error|setelah\s+isi\s+formulir|kartu\s+peserta)\b/i.test(userQueryLower);
+
+    if (asksKtpKk && !/\b(?:ktp|kartu\s+tanda\s+penduduk|kk|kartu\s+keluarga)\b/i.test(candTextLower)) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_ASPECT_MISMATCH',
+        reason: 'evidence_lacks_ktp_kk_requirement_details'
+      };
+    }
+    if (asksEntranceTest && !/\b(?:tes\s+masuk|ujian\s+masuk|ujian\s+seleksi|seleksi\s+masuk|tanpa\s+tes)\b/i.test(candTextLower)) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_ASPECT_MISMATCH',
+        reason: 'evidence_lacks_entrance_test_or_selection_details'
+      };
+    }
+    if (asksOtpOrFormTech && !/\b(?:otp|kode\s+verifikasi|salah\s+mengisi|error|konfirmasi\s+pendaftaran|setelah\s+mengisi\s+formulir|kartu\s+peserta)\b/i.test(candTextLower)) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_ASPECT_MISMATCH',
+        reason: 'evidence_lacks_online_form_technical_troubleshooting_details'
+      };
+    }
+  }
 
   const isRecommendationInquiry = retrievalPlan.domain === 'ACADEMIC_RECOMMENDATION' || retrievalPlan.intent === 'PROGRAM_RECOMMENDATION';
 
@@ -475,9 +604,16 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     const isMultiLevel = candidate.scope === 'PROGRAM_MULTI' &&
       (candidate.correctedLevel === 'S1_D3' ||
         (Array.isArray(candidate.supportedPrograms) && candidate.supportedPrograms.includes('MI') && ['S1', 'D3'].includes(targetLvl)));
-    // Institutional / Student Org documents (e.g. HIMAPRODI profile with level Umum) should not be rejected for S1 queries
+    // Institutional / Student Org / Multi-program Overview documents (e.g. ISIAN WEBSITE, HIMAPRODI profile with level Umum)
     const isInstOrOrgGeneral = candLvl === 'UMUM' &&
-      (candidate.scope === 'INSTITUTIONAL_OR_ORG' || /buku ormawa himaprodi|profile hima/i.test(candidateFile));
+      (candidate.scope === 'INSTITUTIONAL_OR_ORG' || candidate.scope === 'PROGRAM_MULTI' || /buku ormawa himaprodi|profile hima|isian website/i.test(candidateFile)) &&
+      (
+        targetLvl === 'UMUM' ||
+        targetLvl === 'S1' ||
+        (targetLvl === 'D3' && /manajemen\s+informatika|men[\s\n]+informatika|\(d3\)/i.test(text)) ||
+        (targetLvl === 'S2' && /magister|pascasarjana|s2/i.test(text)) ||
+        (retrievalPlan?.domain === 'PMB' && /tahun\s+akademik|penerimaan\s+mahasiswa\s+baru/i.test(text))
+      );
     if (candLvl !== targetLvl && !isMultiLevel && !isInstOrOrgGeneral) {
       return {
         accepted: false,
@@ -639,6 +775,10 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
 
     // 2a. Any modifier family (e.g., admission_track, participant_scope, academic_scope) must be satisfied
     for (const [modFam, modEnts] of modifierFamilyMap.entries()) {
+      if (modFam === 'academic_scope' && (retrievalPlan.participantScope === 'foreign' || isForeignStudentChunk)) {
+        // Foreign student immigration & admission guidelines apply campus-wide unless conflicting with specific degree levels
+        continue;
+      }
       const hasModifierMatch = modEnts.some(ent => supportedEntities.includes(ent));
       if (!hasModifierMatch) {
         return {
@@ -660,18 +800,25 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
           ['international_program', 'double_degree'].includes(pt.fam) ||
           /\b(?:dual\s+degree|double\s+degree|utb|help|dnui|student\s+exchange)\b/i.test(pt.ent)
         );
+        const isAcademicProgramTarget = primaryTargets.some(pt =>
+          ['academic_program'].includes(pt.fam) ||
+          /\b(?:bisnis\s+digital|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|manajemen\s+informatika)\b/i.test(pt.ent)
+        );
         const wantsProcedureOrReq = retrievalPlan.intent === 'PROGRAM_PROCEDURE' ||
           retrievalPlan.intent === 'ADMISSION_PROCEDURE' ||
           retrievalPlan.intent === 'ADMISSION_REQUIREMENTS' ||
           (Array.isArray(requiredAspects) && requiredAspects.some(a => ['procedure', 'requirements', 'admission_overview', 'admission_pathways'].includes(a)));
-        const isGeneralPmbProcedureCompanion = isSpecialOrIntlProgramTarget &&
-          wantsProcedureOrReq &&
+        const wantsScheduleOrMulti = (Array.isArray(requiredAspects) && requiredAspects.some(a => ['schedule', 'waves', 'jadwal', 'documents'].includes(a))) ||
+          retrievalPlan.intent === 'ADMISSION_SCHEDULE';
+        const isCalendarDoc = candidate.category === 'JADWAL' || (candidateFile && /kalender\s+pendaftaran/i.test(candidateFile));
+        const isGeneralPmbCalendarCompanion = isAcademicProgramTarget && wantsScheduleOrMulti && isCalendarDoc;
+        const isGeneralPmbProcedureCompanion = (isSpecialOrIntlProgramTarget || (isAcademicProgramTarget && (wantsProcedureOrReq || wantsScheduleOrMulti))) &&
           candidate.docCategory !== 'BIAYA' &&
           !(candidateFile && /rincian biaya/i.test(candidateFile)) &&
           !/\b(pendidikan per semester|uang pangkal|potongan dpp|rincian biaya)\b/i.test(text) &&
-          /\b(pmb|pendaftaran\s+mahasiswa\s+baru|alur\s+pendaftaran|prosedur\s+pendaftaran|cara\s+(?:daftar|mendaftar)|syarat\s+pendaftaran|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
+          (/\b(pmb|pendaftaran\s+mahasiswa\s+baru|alur\s+pendaftaran|prosedur\s+pendaftaran|cara\s+(?:daftar|mendaftar)|syarat\s+pendaftaran|pmb\.stikom-bali\.ac\.id)\b/i.test(text) || isGeneralPmbCalendarCompanion);
 
-        if (!isGeneralPmbProcedureCompanion) {
+        if (!isGeneralPmbProcedureCompanion && !isGeneralPmbCalendarCompanion) {
           const missingFam = primaryTargets[0].fam;
           return {
             accepted: false,
@@ -696,8 +843,9 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   }
 
   // 3. Aspect Compatibility & Ownership Check
-  const candTextLower = text.toLowerCase();
+  // candTextLower defined above
   const providedAspects = [];
+  const isCalendarCandidate = candidate.category === 'JADWAL' || (candidateFile && /kalender\s+pendaftaran/i.test(candidateFile));
   const isFeeChunk = candidate.docCategory === 'BIAYA' ||
     (candidateFile && /rincian biaya/i.test(candidateFile)) ||
     /\b(biaya|tarif|sewa|pendidikan per semester|dpp|spp|uang pangkal|waktu pembayaran|pendaftaran \d|dicicil|potongan biaya|angsuran)\b/i.test(text);
@@ -713,7 +861,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   const isFacilityChunk = /\b(laboratorium|lab\b|perpustakaan|asrama|dormitory|sarana\s+dan\s+prasarana|ruang\s+kelas|gedung\s+kampus)\b/i.test(text) ||
     (/\bfasilitas\b/i.test(text) && !/kurikulum|keunggulan\s+program|visi|misi/i.test(text));
   const isOrganizationChunk = /\b(ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|ormawa|hima\b|himaprodi|senat|balma|ekstrakurikuler)\b/i.test(text);
-  const isPmbGeneralChunk = /\b(pmb|pendaftaran\s+mahasiswa\s+baru|jalur\s+pendaftaran|syarat\s+pendaftaran|persyaratan(?:\s+pendaftaran)?|syarat\s+masuk|persyaratan\s+masuk|dokumen\s+pendaftaran|berkas\s+pendaftaran|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
+  const isPmbGeneralChunk = !isCalendarCandidate && /\b(pmb|pendaftaran\s+mahasiswa\s+baru|jalur\s+pendaftaran|syarat\s+pendaftaran|persyaratan(?:\s+pendaftaran)?|syarat\s+masuk|persyaratan\s+masuk|dokumen\s+pendaftaran|berkas\s+pendaftaran|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
   const isHobbyChunk = /\b(hobi\s*\/\s*aktivitas|aktivitas\s*:\s*bermain game|hobi\s*:)\b/i.test(text);
   const isProgramListChunk = /\b(program\s+studi|program\s+sarjana|jenjang|s1|d3|s2|pilihan\s+program)\b/i.test(text);
   const isStudyModeChunk = /\b(kelas\s+karyawan|kelas\s+sore|kelas\s+reguler|pilihan\s+kelas|kuliah\s+sambil\s+kerja|sambil\s+bekerja|jadwal\s+kuliah|fleksibel|bekerja)\b/i.test(text);
@@ -748,7 +896,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     if (/\b(?:abiansemal|janger|dauh\s+yeh\s+cani)\b/i.test(candTextLower)) providedAspects.push('branch_abiansemal');
   }
   if (isStudyLocationChunk) providedAspects.push('study_location', 'location');
-  if (isScheduleChunk) providedAspects.push('schedule', 'waves', 'wave_info');
+  if (isScheduleChunk) providedAspects.push('schedule', 'waves', 'wave_info', 'stages');
   if (isPaymentProcedureChunk) providedAspects.push('procedure', 'payment_procedure');
   if (isScholarshipChunk) providedAspects.push('scholarship', 'discount', 'requirements');
   if (isFacilityChunk) providedAspects.push('facilities', 'lab', 'campus_infrastructure', 'campus_service', 'service_info', 'support');
@@ -762,7 +910,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     providedAspects.push('procedure', 'requirements', 'event_info', 'graduation', 'schedule');
   }
   if (isOrganizationChunk) providedAspects.push('student_organization', 'organization', 'general_organization', 'activities', 'ukm');
-  if (isPmbGeneralChunk) providedAspects.push('admission_overview', 'procedure', 'admission_pathways', 'requirements', 'documents');
+  if (isPmbGeneralChunk) providedAspects.push('admission_overview', 'procedure', 'admission_pathways', 'requirements', 'documents', 'status', 'admission_status', 'academic_year');
   if (isProgramListChunk) providedAspects.push('program_list', 'degrees');
   if (isStudyModeChunk) providedAspects.push('class_schedule', 'working_students', 'evening_class');
   if (isDegreeChunk) providedAspects.push('degree_award');
@@ -805,10 +953,19 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
 
   // Foreign Student FAQ Scope Guard:
   // Chunks from "FAQ PENGURUSAN MAHASISWA ASING" (visa, ITAS, izin belajar WNA) must NOT be accepted for general domestic inquiries
-  const isForeignStudentChunk = candSourceFile.includes('mahasiswa asing') ||
-    /\b(faq pengurusan mahasiswa asing|izin belajar baru|perpanjangan itas|pengurusan visa e30b|sktt orang asing)\b/i.test(candTextLower);
+  // isForeignStudentChunk already declared above
   const querySpecificallyAsksForeign = retrievalPlan.participantScope === 'foreign' ||
-    Boolean(retrievalPlan.queryVariants && retrievalPlan.queryVariants.some(q => /\b(mahasiswa\s+asing|visa|itas|kitas|izin\s+belajar|e-visa)\b/i.test(q)));
+    Boolean(retrievalPlan.queryVariants && retrievalPlan.queryVariants.some(q => /\b(mahasiswa\s+asing|warga\s+negara\s+asing|wna|orang\s+asing|foreign\s+students?|international\s+students?|mahasiswa\s+internasional|kui|kantor\s+urusan\s+internasional|visa|itas|kitas|izin\s+belajar|e-?visa)\b/i.test(q)));
+
+  const isPersonalTravelInquiry = Boolean(retrievalPlan.queryVariants && retrievalPlan.queryVariants.some(q => /\b(?:liburan|wisata|jalan-?jalan|pribadi|turis|holiday|vacation)\b/i.test(q)));
+
+  if (isForeignStudentChunk && isPersonalTravelInquiry) {
+    return {
+      accepted: false,
+      disposition: 'REJECT_SCOPE_MISMATCH',
+      reason: 'foreign_student_immigration_faq_not_applicable_to_personal_travel'
+    };
+  }
 
   if (isForeignStudentChunk && !querySpecificallyAsksForeign) {
     return {
@@ -854,7 +1011,10 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   }
 
   // Strict aspect matching against retrievalPlan.requiredAspects
-  if (Array.isArray(requiredAspects) && requiredAspects.length > 0 && !requiredAspects.includes('general')) {
+  const isComparisonPlan = retrievalPlan.intent === 'PROGRAM_COMPARISON' ||
+    (Array.isArray(requiredAspects) && requiredAspects.includes('curriculum_difference'));
+
+  if (!isComparisonPlan && Array.isArray(requiredAspects) && requiredAspects.length > 0 && !requiredAspects.includes('general')) {
     const wantsLocation = requiredAspects.some(a => ['location', 'campus_location', 'address'].includes(a)) || retrievalPlan.intent === 'CAMPUS_LOCATION';
     const wantsContact = !wantsLocation && (requiredAspects.some(a => ['contact', 'helpdesk'].includes(a)) || retrievalPlan.intent === 'PMB_CONTACT_INQUIRY');
     const wantsSchedule = requiredAspects.some(a => ['schedule', 'wave_info'].includes(a)) || retrievalPlan.intent === 'ADMISSION_SCHEDULE';
@@ -897,13 +1057,22 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
         };
       }
     } else if (wantsSchedule) {
-      const hasScheduleSignal = /\b(gelombang|jadwal|periode|pendaftaran|buka|tutup|kalender|oktober|desember|januari|februari|maret|april|mei|juni|juli|agustus|september)\b/i.test(text);
-      if (!hasScheduleSignal || isHobbyChunk || isCurriculumChunk) {
-        return {
-          accepted: false,
-          disposition: 'REJECT_ASPECT_MISMATCH',
-          reason: 'evidence_does_not_contain_admission_schedule'
-        };
+      const isMultiAspectAdmission = Array.isArray(requiredAspects) &&
+        (requiredAspects.includes('requirements') || requiredAspects.includes('documents') || requiredAspects.includes('procedureSteps') || requiredAspects.includes('overview'));
+      const hasReqDocSignal = isPmbGeneralChunk || isOverviewChunk ||
+        /\b(?:syarat|persyaratan|dokumen|berkas|ijazah|ktp|kk|foto|formulir|alur|langkah|cara|prosedur|lulusan|karier|prospek)\b/i.test(text);
+
+      if (isMultiAspectAdmission && hasReqDocSignal) {
+        // In multi-aspect PMB queries, accept requirements, documents, and program profile evidence
+      } else {
+        const hasScheduleSignal = /\b(gelombang|jadwal|periode|pendaftaran|buka|tutup|kalender|oktober|desember|januari|februari|maret|april|mei|juni|juli|agustus|september)\b/i.test(text);
+        if (!hasScheduleSignal || isHobbyChunk || isCurriculumChunk) {
+          return {
+            accepted: false,
+            disposition: 'REJECT_ASPECT_MISMATCH',
+            reason: 'evidence_does_not_contain_admission_schedule'
+          };
+        }
       }
     } else if (wantsFee) {
       const queryStr = (retrievalPlan.query || retrievalPlan.rawQuery || (retrievalPlan.queryVariants && retrievalPlan.queryVariants.join(' ')) || '').toLowerCase();
@@ -1038,14 +1207,18 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
       const satisfiesForeign = querySpecificallyAsksForeign && isForeignStudentChunk;
       const isSpecificProcedureInquiry = retrievalPlan.intent === 'ADMISSION_PROCEDURE' ||
         retrievalPlan.intent === 'PROGRAM_PROCEDURE' ||
+        retrievalPlan.intent === 'RPL_INQUIRY' ||
         (requiredAspects.includes('procedure') && !wantsFee && retrievalPlan.intent !== 'GENERAL_PMB_INQUIRY');
-      const hasRegistrationProcedureOrPathway = isPmbGeneralChunk ||
+      const isRplChunk = candidate.category === 'RPL' ||
+        (candidateFile && /rpl/i.test(candidateFile)) ||
+        /\b(?:rpl|rekognisi\s+pembelajaran\s+lampau|asesmen\s+portofolio|kriteria\s+portofolio|perolehan\s+kredit|transfer\s+kredit)\b/i.test(text);
+      const hasRegistrationProcedureOrPathway = isPmbGeneralChunk || isRplChunk ||
         /\b(?:alur\s+pendaftaran|prosedur\s+pendaftaran|cara\s+(?:daftar|mendaftar|pendaftaran)|tahapan\s+pendaftaran|syarat\s+(?:masuk|pendaftaran)|persyaratan\s+(?:masuk|pendaftaran)|jalur\s+pendaftaran|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
 
       if (isSpecificProcedureInquiry) {
-        const isPureFeeWithoutProcedure = isFeeChunk && !isPmbGeneralChunk &&
+        const isPureFeeWithoutProcedure = isFeeChunk && !isPmbGeneralChunk && !isRplChunk &&
           !/\b(?:alur\s+pendaftaran|prosedur\s+pendaftaran|cara\s+(?:daftar|mendaftar)|syarat\s+pendaftaran|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
-        if (isPureFeeWithoutProcedure || (!hasRegistrationProcedureOrPathway && !satisfiesForeign)) {
+        if (isPureFeeWithoutProcedure || (!hasRegistrationProcedureOrPathway && !satisfiesForeign && !isRplChunk)) {
           return {
             accepted: false,
             disposition: 'REJECT_ASPECT_MISMATCH',
@@ -1054,7 +1227,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
               : 'evidence_does_not_contain_registration_procedure_aspect'
           };
         }
-      } else if (!isPmbGeneralChunk && !isFeeChunk && !isScholarshipChunk && !satisfiesForeign) {
+      } else if (!isPmbGeneralChunk && !isFeeChunk && !isScholarshipChunk && !satisfiesForeign && !isRplChunk) {
         return {
           accepted: false,
           disposition: 'REJECT_ASPECT_MISMATCH',
@@ -1145,10 +1318,21 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
 
     // Case A: Dynamic PMB Enrollment / Live Quota Status
     if (retrievalPlan.intent === 'CURRENT_ENROLLMENT_STATUS' || retrievalPlan.intent === 'LIVE_QUOTA_INQUIRY') {
-      // Must contain explicit live schedule dates or live confirmation for current year
-      // Mere fee discount per wave (e.g. "Gelombang I : 50%") is not proof of live current status
-      const hasLiveWindow = text.includes(String(currentYear)) &&
-        /\b(jadwal pendaftaran|tanggal penting|periode pendaftaran|buka sampai|dibuka mulai)\b/i.test(text);
+      // Kalender historis diterima sebagai bukti arsip kalender, tetapi ditandai bahwa ia tidak membuktikan pendaftaran sedang aktif saat ini.
+      const isPastCalendar = /kalender\s+pendaftaran/i.test(candidateFile || '') || candidate.category === 'JADWAL';
+      if (isPastCalendar) {
+        return {
+          accepted: true,
+          disposition: 'SUPPORTS_HISTORICAL_RECORD',
+          isHistoricalOnly: true,
+          evidenceType: 'historical_calendar',
+          providedAspects: ['admission_calendar', 'schedule_history'],
+          supportedEntities,
+          reason: 'concluded_historical_calendar_record'
+        };
+      }
+
+      const hasLiveWindow = /\b(sedang\s+dibuka|buka\s+sampai|masih\s+dibuka\s+hingga)\b/i.test(text);
       if (!hasLiveWindow) {
         return {
           accepted: false,

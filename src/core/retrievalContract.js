@@ -109,32 +109,91 @@ function buildRetrievalContract(semanticFrame = {}, options = {}) {
   // 1. Resolve Entity State & Target Entities from validated frame
   const rawEntities = Array.isArray(semanticFrame.entities) ? semanticFrame.entities : [];
 
-  // Separate primary target entities from modifier families (admission_track, participant_scope, academic_scope)
-  const hasPrimaryEntity = rawEntities.some(e => {
-    const canon = typeof e === 'object' && e ? (e.canonical || e.name) : String(e);
-    const obj = findCanonicalEntity(canon);
-    return obj && (obj.family === 'academic_program' || obj.family === 'international_program' || obj.family === 'campus_service' || obj.family === 'student_organization' || obj.family === 'facility' || obj.family === 'campus_facility');
+  // Separate resolved entities from semantic attributes emitted by an upstream parser.
+  // An unresolved phrase that expresses a requested aspect is not a competing entity.
+  const requestedAspectSet = new Set(
+    (Array.isArray(semanticFrame.aspects) ? semanticFrame.aspects : [])
+      .map(normalizeAspect)
+      .filter(Boolean)
+  );
+  const entityDescriptors = rawEntities.map(entity => {
+    const rawName = typeof entity === 'object' && entity
+      ? (entity.canonical || entity.name || entity.rawMention || entity.mention || '')
+      : String(entity || '');
+    const canonicalEntity = rawName ? findCanonicalEntity(rawName) : null;
+    return {
+      input: entity,
+      rawName,
+      canonicalEntity,
+      family: canonicalEntity?.family || (typeof entity === 'object' && entity
+        ? (entity.family || entity.inferredCategory || entity.category || null)
+        : null)
+    };
+  });
+  const primaryFamilies = new Set([
+    'academic_program', 'international_program', 'campus_service',
+    'student_organization', 'facility', 'campus_facility'
+  ]);
+  const hasPrimaryEntity = entityDescriptors.some(d =>
+    d.canonicalEntity && primaryFamilies.has(d.canonicalEntity.family)
+  );
+
+  const aspectFragmentPatterns = [
+    ['curriculum', /\b(?:kurikulum|mata\s+kuliah|matkul|semester|silabus|courses?)\b/i],
+    ['fee', /\b(?:biaya|dpp|spp|tarif|uang\s+kuliah|cicilan|angsuran|diskon|potongan)\b/i],
+    ['accreditation', /\b(?:akreditasi|peringkat|predikat|sertifikat)\b/i],
+    ['requirements', /\b(?:syarat|persyaratan|ketentuan|kualifikasi|wajib|berkas)\b/i],
+    ['procedure', /\b(?:prosedur|alur|tahapan|langkah)\b/i],
+    ['schedule', /\b(?:jadwal|tanggal|waktu|pukul|gelombang)\b/i],
+    ['career', /\b(?:karier|karir|prospek|pekerjaan|peluang\s+kerja)\b/i],
+    ['organization', /\b(?:organisasi|ukm|himpunan|hima|himaprodi|ormawa|kegiatan)\b/i],
+    ['scholarship', /\b(?:beasiswa|bantuan\s+pendidikan)\b/i],
+    ['overview', /\b(?:profil|gambaran|visi|misi|tujuan|ketua|kaprodi|sekretaris|pimpinan|pengelola)\b/i],
+    ['contact', /\b(?:kontak|hubungi|telepon|nomor|email|ketua|kaprodi|sekretaris|pimpinan)\b/i],
+    ['facilities', /\b(?:fasilitas|laboratorium|lab|ruang|sarana|prasarana)\b/i]
+  ];
+  const isAspectFragment = descriptor => {
+    const entity = descriptor.input && typeof descriptor.input === 'object' ? descriptor.input : {};
+    const role = String(entity.semanticRole || entity.entityRole || entity.role || '').toLowerCase();
+    if (entity.isAttribute === true || /^(?:attribute|aspect|property|qualifier|slot)$/.test(role)) return true;
+
+    const declaredAspects = [
+      ...(Array.isArray(entity.aspects) ? entity.aspects : []),
+      ...(Array.isArray(entity.requestedAspects) ? entity.requestedAspects : [])
+    ].map(normalizeAspect).filter(Boolean);
+    if (declaredAspects.some(aspect => requestedAspectSet.has(aspect))) return true;
+
+    return aspectFragmentPatterns.some(([aspect, pattern]) =>
+      requestedAspectSet.has(aspect) && pattern.test(descriptor.rawName)
+    );
+  };
+
+  let effectiveDescriptors = entityDescriptors.filter(descriptor => {
+    const obj = descriptor.canonicalEntity;
+    if (obj && (obj.type === 'academic_scope' || obj.family === 'admission_track' || obj.family === 'participant_scope')) {
+      return false;
+    }
+    if (hasPrimaryEntity && !isCompare && !obj && isAspectFragment(descriptor)) return false;
+    return true;
   });
 
-  const effectiveEntities = (hasPrimaryEntity && !isCompare)
-    ? rawEntities.filter(e => {
-        const canon = typeof e === 'object' && e ? (e.canonical || e.name) : String(e);
-        const obj = findCanonicalEntity(canon);
-        if (!obj) return true;
-        return !(obj.type === 'academic_scope' || obj.family === 'admission_track' || obj.family === 'participant_scope');
-      })
-    : rawEntities.filter(e => {
-        const canon = typeof e === 'object' && e ? (e.canonical || e.name) : String(e);
-        const obj = findCanonicalEntity(canon);
-        if (!obj) return true;
-        return !(obj.family === 'admission_track' || obj.family === 'participant_scope');
-      });
+  // When an organization is the requested subject, its related academic program is
+  // contextual metadata, not a second competing retrieval target.
+  const frameIntent = String(semanticFrame.intent || '').toUpperCase();
+  const frameDomain = String(semanticFrame.domain || '').toUpperCase();
+  const organizationInquiry = frameIntent.includes('ORGANIZATION') ||
+    frameDomain === 'STUDENT_LIFE' || requestedAspectSet.has('organization');
+  if (organizationInquiry && !isCompare) {
+    const organizationTargets = effectiveDescriptors.filter(d => d.family === 'student_organization');
+    if (organizationTargets.length > 0) effectiveDescriptors = organizationTargets;
+  }
 
   // Deduplicate target entities after resolution to canonical identity
   const resolvedTargetEntities = [];
   const seenCanonicalKeys = new Set();
-  for (const e of effectiveEntities) {
-    const rawVal = typeof e === 'object' && e ? (e.canonical || e.name || String(e)) : String(e);
+  for (const descriptor of effectiveDescriptors) {
+    const e = descriptor.input;
+    const rawVal = typeof e === 'object' && e ? (e.canonical || e.name || e.rawMention || e.mention || '') : String(e);
     if (!rawVal) continue;
     const canonObj = findCanonicalEntity(rawVal);
     const canonicalName = canonObj ? canonObj.canonical : rawVal.trim();
@@ -173,11 +232,18 @@ function buildRetrievalContract(semanticFrame = {}, options = {}) {
   let entityState = 'SUPPORTED';
   let ambiguityLevel = semanticFrame.ambiguityLevel || 'NONE';
 
+  const hasResolvedCanonicalTarget = targetEntities.some(entity => Boolean(findCanonicalEntity(entity)));
+  const frameEntityResolutionStatus = String(semanticFrame.entityResolutionStatus || '').toUpperCase();
+  const unresolvedOnlyEntityTarget = targetEntities.length > 0 && !hasResolvedCanonicalTarget &&
+    ['UNRESOLVED', 'UNKNOWN', 'UNKNOWN_UNVERIFIED', 'NO_MATCH'].includes(frameEntityResolutionStatus);
+
   if (semanticFrame.unsupportedEntity || semanticFrame.isUnsupportedEntity) {
     entityState = 'UNSUPPORTED';
   } else if (semanticFrame.isAmbiguous || (targetEntities.length > 1 && !isCompare && !isMultiTarget)) {
     entityState = 'AMBIGUOUS';
     ambiguityLevel = 'HIGH';
+  } else if (unresolvedOnlyEntityTarget) {
+    entityState = 'UNKNOWN_UNVERIFIED';
   } else if (targetEntities.length === 0) {
     if (semanticFrame.domain === 'GENERAL_GREETING' || semanticFrame.intent === 'GREETING' || semanticFrame.domain === 'CONVERSATIONAL' || semanticFrame.retrievalRequired === false) {
       entityState = 'NOT_APPLICABLE';

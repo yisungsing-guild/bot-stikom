@@ -122,6 +122,22 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       };
     }
 
+    // SION Portal Troubleshooting / Contact Gap Guidance
+    if (
+      (semanticFrame.aspects && semanticFrame.aspects.includes('sion_troubleshooting')) ||
+      /\bsion\b/i.test(semanticFrame.rawQuery || '')
+    ) {
+      return {
+        status: ANSWERABILITY_STATUS.UNKNOWN,
+        reason: 'corpus_gap_sion_troubleshooting',
+        coveredAspects: [],
+        missingAspects: ['sion_troubleshooting'],
+        guidance: isEn
+          ? 'Official technical troubleshooting steps or dedicated helpdesk details for the SION academic portal (Sistem Informasi Online) are not listed in the available documents. For SION login issues, password resets, or class schedule conflicts, please contact the Academic Administration Department (Direktorat Administrasi Akademik / BAAK) or your Academic Advisor (Dosen Wali) directly at ITB STIKOM Bali.'
+          : 'Informasi teknis mengenai penanganan kendala portal akademik **SION (Sistem Informasi Online)** — seperti kendala login, lupa kata sandi, atau bentrok jadwal kuliah — belum tercantum secara rinci dalam dokumen resmi yang tersedia. Untuk pengurusan kendala SION, silakan menghubungi bagian **Direktorat Administrasi Akademik (BAAK)** atau **Dosen Wali** di kampus ITB STIKOM Bali.'
+      };
+    }
+
     // Default when no evidence proves the question
     if (
       semanticFrame.intent === 'CURRENT_ENROLLMENT_STATUS' ||
@@ -133,6 +149,199 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       const isUtb = /utb/i.test(entityLabel);
       const entityDesc = isUtb ? 'Program Dual Degree UTB (S1 Bisnis Digital)' : (entityLabel ? `program ${entityLabel}` : '');
       const entityPart = entityDesc ? ` untuk ${entityDesc}` : '';
+      const rawQ = String(semanticFrame.rawQuery || '').toLowerCase();
+
+      if (/\b(?:kode\s+verifikasi|otp|salah\s+mengisi\s+data|ubah\s+pilihan|lupa\s+nomor\s+handphone|belum\s+mendapat\s+konfirmasi|error\s+saat\s+dikirim|formulir.*error|setelah\s+isi\s+formulir|kartu\s+peserta)\b/i.test(rawQ)) {
+        return {
+          status: ANSWERABILITY_STATUS.UNKNOWN,
+          reason: 'corpus_gap_pmb_technical_procedure',
+          coveredAspects: [],
+          missingAspects: ['pmb_technical_or_specific_req'],
+          guidance: isEn
+            ? 'Detailed technical troubleshooting steps for online registration forms (such as OTP verification codes, form submission errors, data corrections, or post-submission confirmation) are not listed in the available guidelines. Please contact the ITB STIKOM Bali PMB Admissions Committee directly via https://pmb.stikom-bali.ac.id or official campus hotline (0361) 244445 / 082277389999 for immediate assistance.'
+            : 'Rincian teknis penanganan kendala formulir pendaftaran online (seperti kendala kode verifikasi/OTP, perbaikan salah isi data, konfirmasi pasca-pengisian formulir, atau kendala pengiriman formulir) belum tercantum secara rinci dalam dokumen panduan yang tersedia. Silakan menghubungi langsung layanan **Panitia PMB ITB STIKOM Bali** melalui portal resmi **https://pmb.stikom-bali.ac.id** atau telepon kampus **(0361) 244445** untuk bantuan verifikasi data pendaftaran Anda.'
+        };
+      }
+
+      if (/\b(?:ktp|kk|kartu\s+keluarga)\b/i.test(rawQ)) {
+        return {
+          status: ANSWERABILITY_STATUS.UNKNOWN,
+          reason: 'corpus_gap_pmb_document_requirements',
+          coveredAspects: [],
+          missingAspects: ['requirements'],
+          guidance: isEn
+            ? 'Specific requirements regarding attaching KTP and Family Card (KK) for domestic new student registration are not detailed in the available corpus documents. Please verify the required registration documents on the official admission portal https://pmb.stikom-bali.ac.id or contact PMB ITB STIKOM Bali.'
+            : 'Rincian ketentuan wajib melampirkan berkas KTP dan Kartu Keluarga (KK) pada pendaftaran mahasiswa baru reguler belum tercantum secara spesifik dalam dokumen yang tersedia saat ini. Untuk daftar lengkap berkas persyaratan pendaftaran, silakan memeriksa langsung pada portal resmi **https://pmb.stikom-bali.ac.id** atau menghubungi bagian **Admisi PMB ITB STIKOM Bali**.'
+        };
+      }
+
+      if (/\b(?:tes\s+masuk|ujian\s+seleksi|seleksi\s+tambahan|tes\s+tulis)\b/i.test(rawQ)) {
+        return {
+          status: ANSWERABILITY_STATUS.UNKNOWN,
+          reason: 'corpus_gap_pmb_entrance_test',
+          coveredAspects: [],
+          missingAspects: ['procedure'],
+          guidance: isEn
+            ? 'Detailed provisions regarding entrance tests or additional selection stages for new student admissions are not specified in the available documents. Please check the official admission portal https://pmb.stikom-bali.ac.id or contact the PMB Admissions Office at ITB STIKOM Bali.'
+            : 'Informasi rinci mengenai mekanisme tes masuk atau tahapan seleksi tambahan pada Penerimaan Mahasiswa Baru (PMB) belum tercantum secara lengkap dalam dokumen yang tersedia. Silakan memeriksa informasi seleksi pada portal resmi **https://pmb.stikom-bali.ac.id** atau berkonsultasi langsung dengan bagian **Admisi PMB ITB STIKOM Bali**.'
+        };
+      }
+
+      if (/\b(?:paket\s+c|kesetaraan)\b/i.test(rawQ)) {
+        return {
+          status: ANSWERABILITY_STATUS.UNKNOWN,
+          reason: 'corpus_gap_pmb_paket_c_eligibility',
+          coveredAspects: [],
+          missingAspects: ['admission_requirements', 'eligibility'],
+          guidance: isEn
+            ? 'Official admissions guidelines currently do not explicitly detail eligibility requirements for Paket C equivalency graduates. Please consult the ITB STIKOM Bali PMB Admissions Office directly via https://pmb.stikom-bali.ac.id or (0361) 244445 for certificate verification.'
+            : 'Informasi resmi mengenai ketentuan persyaratan pendaftaran bagi lulusan **Paket C** (kesetaraan) belum tercantum secara eksplisit dalam dokumen panduan PMB yang tersedia saat ini. Silakan berkonsultasi langsung dengan bagian **Admisi PMB ITB STIKOM Bali** melalui portal resmi **https://pmb.stikom-bali.ac.id** atau narahubung kampus untuk verifikasi kesetaraan dan persyaratan berkas ya.'
+        };
+      }
+
+      if (/\b(?:lebih\s+dari\s+satu|dua|beberapa)\s+(?:prodi|program\s+studi|jurusan)\b/i.test(rawQ) ||
+          /\b(?:satu\s+orang\s+boleh\s+(?:memilih|pilih)|boleh(?:kah)?\s+(?:memilih|pilih)\s+(?:lebih\s+dari\s+satu|dua|beberapa))\b/i.test(rawQ)) {
+        return {
+          status: ANSWERABILITY_STATUS.UNKNOWN,
+          reason: 'corpus_gap_pmb_multi_program_choice',
+          coveredAspects: [],
+          missingAspects: ['program_selection_policy'],
+          guidance: isEn
+            ? 'Official admissions guidelines currently do not explicitly specify whether an applicant can select more than one study program in a single registration. Please verify the study program selection policy directly with the ITB STIKOM Bali PMB Admissions Office via https://pmb.stikom-bali.ac.id.'
+            : 'Ketentuan resmi mengenai pemilihan lebih dari satu program studi dalam satu pendaftaran PMB belum tercantum secara eksplisit dalam dokumen resmi yang tersedia. Silakan konfirmasi langsung ke bagian **Admisi PMB ITB STIKOM Bali** melalui portal resmi **https://pmb.stikom-bali.ac.id** untuk mekanisme pilihan program studi ya.'
+        };
+      }
+
+      if (/\b(?:menerima|buka|terima)\s+(?:mahasiswa\s+baru|pendaftaran)\s+tahun\s+ini\b/i.test(rawQ) ||
+          /\bkampus\s+ini\s+menerima\s+mahasiswa\s+baru\s+tahun\s+ini\b/i.test(rawQ)) {
+        const { extractAcademicYearFromEvidence } = require('./groundedAnswerGenerator');
+        const detectedAy = extractAcademicYearFromEvidence(accepted, null);
+        if (detectedAy) {
+          return {
+            status: ANSWERABILITY_STATUS.UNKNOWN,
+            reason: 'admission_schedule_unconfirmed',
+            coveredAspects: ['academic_year'],
+            missingAspects: ['active_wave_schedule'],
+            guidance: isEn
+              ? `Based on official admission publications of ITB STIKOM Bali, admission is intended for Academic Year ${detectedAy}. However, the current active registration wave status and exact schedule cutoffs are not confirmed in available records. Please check https://pmb.stikom-bali.ac.id or contact the PMB committee.`
+              : `Berdasarkan dokumen resmi Penerimaan Mahasiswa Baru (PMB) ITB STIKOM Bali, materi publikasi admisi yang tercatat ditujukan untuk **Tahun Akademik ${detectedAy}**. Namun, kepastian status pendaftaran yang sedang aktif (apakah saat ini sedang dibuka gelombang tertentu beserta jadwal tanggal pendaftarannya) belum tercantum dalam dokumen indeks yang tersedia. Untuk memastikan status gelombang pendaftaran yang sedang berjalan saat ini, persyaratan berkas, serta pendaftaran online, calon mahasiswa disarankan langsung mengakses portal resmi PMB di https://pmb.stikom-bali.ac.id atau menghubungi Panitia PMB ITB STIKOM Bali.`
+          };
+        } else {
+          return {
+            status: ANSWERABILITY_STATUS.UNKNOWN,
+            reason: 'admission_schedule_unconfirmed',
+            coveredAspects: [],
+            missingAspects: ['academic_year', 'active_wave_schedule'],
+            guidance: isEn
+              ? 'Based on available official records, confirmation of active new student admission intake is not confirmed in the available documents. Please check https://pmb.stikom-bali.ac.id or contact the PMB committee.'
+              : 'Berdasarkan dokumen resmi yang tersedia, kepastian penerimaan mahasiswa baru beserta jadwal pendaftaran yang sedang aktif belum tercantum dalam dokumen indeks yang tersedia. Untuk memastikan status pendaftaran, persyaratan berkas, serta pendaftaran online, calon mahasiswa disarankan langsung mengakses portal resmi PMB di https://pmb.stikom-bali.ac.id atau menghubungi Panitia PMB ITB STIKOM Bali.'
+          };
+        }
+      }
+
+      const { getCalendarSummaryFromEvidence } = require('./groundedAnswerGenerator');
+      const calSummary = getCalendarSummaryFromEvidence(accepted);
+      const hasHistoricalCalendar = calSummary !== null && calSummary.finalRegDeadline !== null;
+
+      if (
+        semanticFrame.intent === 'CURRENT_ENROLLMENT_STATUS' ||
+        /\b(?:sekarang\s+buka\s+gelombang|gelombang\s+berapa\s+(?:sekarang|saat\s*ini)|apakah\s+(?:sekarang|saat\s*ini|masih)\s+buka\s+gelombang|apakah\s+(?:pendaftaran(?:\s+[a-z0-9]+)*\s+)?(?:masih|sudah)\s+dibuka|masih\s+bisa\s+daftar\s+hari\s+ini|daftar\s+hari\s+ini|status\s+pendaftaran|pendaftaran\s+itb\s+stikom\s+apakah\s+masih\s+dibuka)\b/i.test(rawQ)
+      ) {
+        if (hasHistoricalCalendar) {
+          const ay = calSummary.academicYear ? `Tahun Akademik ${calSummary.academicYear}` : 'arsip PMB';
+          const reRegStr = calSummary.finalReRegDeadline ? ` (dengan batas akhir registrasi ulang pada ${calSummary.finalReRegDeadline})` : '';
+          const partialNotice = !calSummary.isComplete15Waves
+            ? ` (Catatan: arsip dokumen yang ditemukan mencakup ${calSummary.totalWavesFound} gelombang dan tidak dapat digunakan untuk menyimpulkan status seluruh gelombang PMB)`
+            : '';
+          if (!calSummary.isComplete15Waves) {
+            return {
+              status: ANSWERABILITY_STATUS.UNKNOWN,
+              reason: 'admission_schedule_unconfirmed',
+              coveredAspects: ['admission_calendar'],
+              missingAspects: ['live_active_wave'],
+              guidance: isEn
+                ? `Based on the official Admissions Calendar (Kalender Pendaftaran) for ITB STIKOM Bali ${ay}, the available records only cover partial waves (${calSummary.totalWavesFound} waves, from Gelombang ${calSummary.firstWave.label} to Gelombang ${calSummary.lastWave.label}). Because the available documents do not contain the full calendar across all intake waves, whether all registration waves have closed cannot be concluded from the available evidence. Please visit the official PMB portal at https://pmb.stikom-bali.ac.id or contact admissions at (0361) 244445 to verify current enrollment status.`
+                : `Berdasarkan dokumen Kalender Pendaftaran PMB ITB STIKOM Bali ${ay} yang ditemukan, data yang tersedia hanya memuat sebagian gelombang (${calSummary.totalWavesFound} gelombang, yaitu Gelombang ${calSummary.firstWave.label} hingga Gelombang ${calSummary.lastWave.label}). Karena dokumen bukti tidak memuat seluruh gelombang pendaftaran PMB secara lengkap, status penutupan seluruh gelombang PMB tidak dapat disimpulkan dari bukti yang ada. Calon mahasiswa disarankan memantau langsung portal resmi PMB di **https://pmb.stikom-bali.ac.id** atau menghubungi Panitia PMB di (0361) 244445 untuk memastikan pembukaan gelombang pendaftaran saat ini.`
+            };
+          } else if (calSummary.isHistorical) {
+            return {
+              status: ANSWERABILITY_STATUS.UNKNOWN,
+              reason: 'admission_schedule_unconfirmed',
+              coveredAspects: ['admission_calendar'],
+              missingAspects: ['live_active_wave'],
+              guidance: isEn
+                ? `Based on the official Admissions Calendar (Kalender Pendaftaran) for ITB STIKOM Bali ${ay} (historical archive records — all dates have passed and do not represent upcoming intake dates), all 15 admission intake waves concluded registration on ${calSummary.finalRegDeadline}${reRegStr}. Currently, the official schedule and opening dates for the upcoming intake / academic year have not been confirmed in the available records. To verify whether registration has reopened or to check the upcoming schedule, please visit the official PMB portal at https://pmb.stikom-bali.ac.id or contact admissions at (0361) 244445.`
+                : `Berdasarkan arsip resmi Kalender Pendaftaran PMB ITB STIKOM Bali ${ay} (catatan arsip/historis — seluruh tanggal pendaftaran telah berlalu dan bukan jadwal seleksi yang akan datang), seluruh rangkaian 15 gelombang pendaftaran yang tercatat (mulai Gelombang ${calSummary.firstWave.label} hingga Gelombang ${calSummary.lastWave.label}) telah ditutup pada **${calSummary.finalRegDeadline}**${reRegStr}.\n\nSaat ini, kepastian jadwal pembukaan pendaftaran untuk periode/intake berikutnya belum tercantum dalam dokumen resmi yang tersedia. Untuk memastikan pembaruan jadwal atau pembukaan gelombang berikutnya, calon mahasiswa disarankan memantau langsung portal resmi PMB di **https://pmb.stikom-bali.ac.id** atau menghubungi Panitia PMB di (0361) 244445.`
+            };
+          } else if (calSummary.isUpcoming) {
+            return {
+              status: ANSWERABILITY_STATUS.UNKNOWN,
+              reason: 'admission_schedule_unconfirmed',
+              coveredAspects: ['admission_calendar'],
+              missingAspects: ['live_active_wave'],
+              guidance: isEn
+                ? `Based on the official Admissions Calendar for ITB STIKOM Bali ${ay} (upcoming admissions schedule), registration has not started yet and is scheduled to open starting with Gelombang ${calSummary.firstWave.label} on ${calSummary.initialRegStartDate || 'the scheduled date'}.${partialNotice} Registration is not open today.`
+                : `Berdasarkan Kalender Pendaftaran resmi PMB ITB STIKOM Bali ${ay} (jadwal pendaftaran mendatang), pendaftaran mahasiswa baru saat ini belum dimulai dan dijadwalkan akan dibuka mulai Gelombang ${calSummary.firstWave.label} pada **${calSummary.initialRegStartDate || 'tanggal yang ditetapkan'}**.${partialNotice}\n\nPendaftaran belum dibuka hari ini. Silakan memantau portal resmi di **https://pmb.stikom-bali.ac.id**.`
+            };
+          }
+        }
+        return {
+          status: ANSWERABILITY_STATUS.UNKNOWN,
+          reason: 'admission_schedule_unconfirmed',
+          coveredAspects: [],
+          missingAspects: ['live_active_wave', 'admission_calendar'],
+          guidance: isEn
+            ? 'Official information regarding current registration wave status is not confirmed in the available guidelines. Please visit the official PMB portal at https://pmb.stikom-bali.ac.id or contact admissions at (0361) 244445.'
+            : 'Informasi resmi mengenai status gelombang pendaftaran yang sedang berjalan saat ini belum dapat dipastikan dari dokumen yang tersedia. Silakan langsung memeriksa portal resmi PMB di **https://pmb.stikom-bali.ac.id** atau menghubungi Panitia PMB di (0361) 244445.'
+        };
+      }
+
+      if (/\b(?:minggu\s+depan|masih\s+sempat|masih\s+bisa\s+daftar\s+minggu\s+depan|apakah\s+masih\s+sempat)\b/i.test(rawQ)) {
+        if (hasHistoricalCalendar) {
+          const ay = calSummary.academicYear ? `Tahun Akademik ${calSummary.academicYear}` : 'arsip PMB';
+          if (!calSummary.isComplete15Waves) {
+            return {
+              status: ANSWERABILITY_STATUS.UNKNOWN,
+              reason: 'admission_schedule_unconfirmed',
+              coveredAspects: ['admission_calendar'],
+              missingAspects: ['registration_deadline'],
+              guidance: isEn
+                ? `Based on the admissions calendar documents found for ITB STIKOM Bali ${ay}, the available records only cover partial waves (${calSummary.totalWavesFound} waves). Because the records do not cover all intake waves, the final registration deadline across all waves cannot be confirmed. Please check https://pmb.stikom-bali.ac.id.`
+                : `Berdasarkan dokumen Kalender Pendaftaran PMB ITB STIKOM Bali ${ay} yang ditemukan, data yang tersedia hanya memuat sebagian gelombang (${calSummary.totalWavesFound} gelombang). Karena dokumen tidak memuat seluruh gelombang pendaftaran secara lengkap, batas akhir pendaftaran untuk seluruh gelombang belum dapat dipastikan dari bukti yang ada. Silakan langsung memeriksa portal https://pmb.stikom-bali.ac.id.`
+            };
+          }
+          return {
+            status: ANSWERABILITY_STATUS.UNKNOWN,
+            reason: 'admission_schedule_unconfirmed',
+            coveredAspects: ['admission_calendar'],
+            missingAspects: ['registration_deadline'],
+            guidance: isEn
+              ? `Based on the official Admissions Calendar (Kalender Pendaftaran) for ITB STIKOM Bali ${ay} (historical archive records), all recorded intake waves concluded registration on ${calSummary.finalRegDeadline} and opening dates for the upcoming intake are not confirmed in the records, so whether registration is still open next week cannot be confirmed. Please check https://pmb.stikom-bali.ac.id.`
+              : `Berdasarkan arsip resmi Kalender Pendaftaran PMB ITB STIKOM Bali ${ay} (catatan arsip/historis), seluruh gelombang pendaftaran yang tercatat telah berakhir pada **${calSummary.finalRegDeadline}** dan jadwal gelombang pendaftaran berikutnya belum tercantum dalam dokumen, sehingga kepastian apakah pendaftaran masih dibuka pada minggu depan belum dapat dipastikan. Silakan langsung memeriksa portal https://pmb.stikom-bali.ac.id.`
+          };
+        }
+        return {
+          status: ANSWERABILITY_STATUS.UNKNOWN,
+          reason: 'admission_schedule_unconfirmed',
+          coveredAspects: [],
+          missingAspects: ['registration_deadline'],
+          guidance: isEn
+            ? 'Based on available official documents, the exact deadline date for the current registration intake wave is not specified. To confirm whether registration is still open at that time, please consult the official admission portal at https://pmb.stikom-bali.ac.id.'
+            : 'Berdasarkan dokumen resmi yang tersedia, kepastian batas akhir tanggal pendaftaran gelombang saat ini belum tercantum. Untuk memastikan apakah pendaftaran masih dibuka pada waktu tersebut, silakan langsung memeriksa portal https://pmb.stikom-bali.ac.id.'
+        };
+      }
+
+      if (/\b(?:coding|koding|ngoding|pemrograman|programming)\b/i.test(rawQ)) {
+        return {
+          status: ANSWERABILITY_STATUS.UNKNOWN,
+          reason: 'corpus_gap_coding_requirement',
+          coveredAspects: [],
+          missingAspects: ['requirements', 'coding_prerequisite'],
+          guidance: isEn
+            ? 'The available official PMB guidelines of ITB STIKOM Bali do not currently contain sufficient information to confirm whether prior coding or programming skills are required before enrolling. To confirm selection details or technical study program prerequisites, please consult the admissions committee directly via https://pmb.stikom-bali.ac.id.'
+            : 'Dokumen resmi panduan PMB ITB STIKOM Bali yang tersedia saat ini belum memuat informasi yang cukup untuk memastikan apakah terdapat persyaratan kemampuan coding atau penguasaan pemrograman sebelum mendaftar. Untuk memastikan rincian materi seleksi atau prasyarat teknis program studi, silakan berkonsultasi langsung dengan Panitia PMB melalui portal https://pmb.stikom-bali.ac.id.'
+        };
+      }
 
       return {
         status: ANSWERABILITY_STATUS.UNKNOWN,
@@ -289,10 +498,28 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         allProvidedAspects.add('service_info');
         allProvidedAspects.add('program_info');
         allProvidedAspects.add('support');
+        allProvidedAspects.add('services');
+      }
+      if (/\b(?:sion|sistem\s+informasi\s+online|e-learning|sid\b|portal\s+akademik)\b/i.test(text)) {
+        allProvidedAspects.add('academic_system');
+        allProvidedAspects.add('services');
+      }
+      if (/\b(?:ts_dirkka@stikom-bali\.ac\.id|direktur\s+kemahasiswaan,\s*karir\s+dan\s+alumni|direktorat\s+kemahasiswaan|wakil\s+rektor\s+iii)\b/i.test(text)) {
+        allProvidedAspects.add('student_affairs');
+        allProvidedAspects.add('contact');
       }
       if (/\b(?:kurikulum|matkul|mata\s+kuliah|sks|semester|pembelajaran)\b/i.test(text)) {
         allProvidedAspects.add('curriculum');
         allProvidedAspects.add('course');
+      }
+      if (/\b(?:empat\s+pilar\s+riset|pilar\s+riset\s+utama|fokus\s+penelitian|fokus\s+keilmuan|data\s+science.*cyber\s+security|enterprise\s+system)\b/i.test(text)) {
+        allProvidedAspects.add('research_focus');
+        allProvidedAspects.add('curriculum');
+      }
+      if (/\b(?:d3|diploma|manajemen\s+informatika|vokasi|ahli\s+madya)\b/i.test(text)) {
+        allProvidedAspects.add('vocational');
+        allProvidedAspects.add('program_list');
+        allProvidedAspects.add('degrees');
       }
       if (/\b(?:fakultas|informatika\s+dan\s+komputer|bisnis\s+dan\s+vokasi|fik|fbv)\b/i.test(text)) {
         allProvidedAspects.add('faculty');
@@ -305,6 +532,22 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         allProvidedAspects.add('ukm_list');
         allProvidedAspects.add('student_organization');
         allProvidedAspects.add('ukm');
+        if (/\b(?:rade|syntax|ksl|teknologi\s+dan\s+penalaran|robotik|linux)\b/i.test(text)) {
+          allProvidedAspects.add('reasoning_tech');
+        }
+      }
+      if (/\b(?:penerimaan\s+mahasiswa\s+baru|pmb|tahun\s+akademik|menerima\s+mahasiswa|buka\s+pendaftaran)\b/i.test(text)) {
+        allProvidedAspects.add('academic_year');
+        allProvidedAspects.add('admission_overview');
+        const hasDateOrWave = /\b(?:gelombang\s+\d+|tahap\s+\d+|tanggal|\d{1,2}\s+(?:jan|feb|mar|apr|mei|jun|jul|ags|agu|sep|okt|nov|des))\b/i.test(text);
+        if (hasDateOrWave) {
+          allProvidedAspects.add('schedule');
+          allProvidedAspects.add('status');
+          allProvidedAspects.add('admission_status');
+          allProvidedAspects.add('admission_schedule');
+          allProvidedAspects.add('wave_info');
+          allProvidedAspects.add('stages');
+        }
       }
       if (/\b(?:gelombang|potongan|diskon|promo|cashback|periode)\b/i.test(text)) {
         allProvidedAspects.add('wave_discount');
@@ -336,13 +579,18 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         allProvidedAspects.add('admission_overview');
         allProvidedAspects.add('admission_pathways');
       }
+      if (/\b(?:syarat|persyaratan|berkas|ijazah|lulusan|kelayakan|eligibility|ketentuan)\b/i.test(text)) {
+        allProvidedAspects.add('requirements');
+        allProvidedAspects.add('admission_requirements');
+        allProvidedAspects.add('eligibility');
+      }
     }
 
     // Contact Aspect verification:
     // Only satisfy contact aspects if an accepted chunk contains contact/phone info
     const hasContactEvidence = accepted.some(chunk => {
       const text = (chunk.text || '').toLowerCase();
-      return /\b(?:telepon|telp|hotline|email|\(0361\)|08\d{8,}|info@stikom-bali\.ac\.id)\b/i.test(text);
+      return /\b(?:telepon|telp|hotline|email|\(0361\)|08\d{8,}|info@stikom-bali\.ac\.id|ts_dirkka@stikom-bali\.ac\.id|international_office@stikom-bali\.ac\.id)\b/i.test(text);
     });
     if (hasContactEvidence && !isPrivateContact) {
       allProvidedAspects.add('contact');
@@ -464,6 +712,125 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
           };
         }
       }
+      if (/\b(?:menerima|buka|terima)\s+(?:mahasiswa\s+baru|pendaftaran)\s+tahun\s+ini\b/i.test(rawQ) ||
+          /\bkampus\s+ini\s+menerima\s+mahasiswa\s+baru\s+tahun\s+ini\b/i.test(rawQ)) {
+        const { extractAcademicYearFromEvidence } = require('./groundedAnswerGenerator');
+        const detectedAy = extractAcademicYearFromEvidence(accepted, null);
+        if (detectedAy) {
+          return {
+            status: ANSWERABILITY_STATUS.UNKNOWN,
+            reason: 'admission_schedule_unconfirmed',
+            coveredAspects: ['academic_year'],
+            missingAspects: ['active_wave_schedule'],
+            guidance: isEn
+              ? `Based on official admission publications of ITB STIKOM Bali, admission is intended for Academic Year ${detectedAy}. However, the current active registration wave status and exact schedule cutoffs are not confirmed in available records. Please check https://pmb.stikom-bali.ac.id or contact the PMB committee.`
+              : `Berdasarkan dokumen resmi Penerimaan Mahasiswa Baru (PMB) ITB STIKOM Bali, materi publikasi admisi yang tercatat ditujukan untuk **Tahun Akademik ${detectedAy}**. Namun, kepastian status pendaftaran yang sedang aktif (apakah saat ini sedang dibuka gelombang tertentu beserta jadwal tanggal pendaftarannya) belum tercantum dalam dokumen indeks yang tersedia. Untuk memastikan status gelombang pendaftaran yang sedang berjalan saat ini, persyaratan berkas, serta pendaftaran online, calon mahasiswa disarankan langsung mengakses portal resmi PMB di https://pmb.stikom-bali.ac.id atau menghubungi Panitia PMB ITB STIKOM Bali.`
+          };
+        } else {
+          return {
+            status: ANSWERABILITY_STATUS.UNKNOWN,
+            reason: 'admission_schedule_unconfirmed',
+            coveredAspects: [],
+            missingAspects: ['academic_year', 'active_wave_schedule'],
+            guidance: isEn
+              ? 'Based on available official records, confirmation of active new student admission intake is not confirmed in the available documents. Please check https://pmb.stikom-bali.ac.id or contact the PMB committee.'
+              : 'Berdasarkan dokumen resmi yang tersedia, kepastian penerimaan mahasiswa baru beserta jadwal pendaftaran yang sedang aktif belum tercantum dalam dokumen indeks yang tersedia. Untuk memastikan status pendaftaran, persyaratan berkas, serta pendaftaran online, calon mahasiswa disarankan langsung mengakses portal resmi PMB di https://pmb.stikom-bali.ac.id atau menghubungi Panitia PMB ITB STIKOM Bali.'
+          };
+        }
+      }
+
+      const { getCalendarSummaryFromEvidence } = require('./groundedAnswerGenerator');
+      const calSummary = getCalendarSummaryFromEvidence(accepted);
+      const hasHistoricalCalendar = calSummary !== null && calSummary.finalRegDeadline !== null;
+
+      if (
+        semanticFrame.intent === 'CURRENT_ENROLLMENT_STATUS' ||
+        /\b(?:sekarang\s+buka\s+gelombang|gelombang\s+berapa\s+(?:sekarang|saat\s*ini)|apakah\s+(?:sekarang|saat\s*ini|masih)\s+buka\s+gelombang|apakah\s+(?:pendaftaran(?:\s+[a-z0-9]+)*\s+)?(?:masih|sudah)\s+dibuka|masih\s+bisa\s+daftar\s+hari\s+ini|daftar\s+hari\s+ini|status\s+pendaftaran|pendaftaran\s+itb\s+stikom\s+apakah\s+masih\s+dibuka)\b/i.test(rawQ)
+      ) {
+        if (hasHistoricalCalendar) {
+          const ay = calSummary.academicYear ? `Tahun Akademik ${calSummary.academicYear}` : 'arsip PMB';
+          const reRegStr = calSummary.finalReRegDeadline ? ` (dengan batas akhir registrasi ulang pada ${calSummary.finalReRegDeadline})` : '';
+          const partialNotice = !calSummary.isComplete15Waves
+            ? ` (Catatan: arsip dokumen yang ditemukan mencakup ${calSummary.totalWavesFound} gelombang dan tidak dapat digunakan untuk menyimpulkan status seluruh gelombang PMB)`
+            : '';
+          if (!calSummary.isComplete15Waves) {
+            return {
+              status: ANSWERABILITY_STATUS.UNKNOWN,
+              reason: 'admission_schedule_unconfirmed',
+              coveredAspects: ['admission_calendar'],
+              missingAspects: ['live_active_wave'],
+              guidance: isEn
+                ? `Based on the official Admissions Calendar (Kalender Pendaftaran) for ITB STIKOM Bali ${ay}, the available records only cover partial waves (${calSummary.totalWavesFound} waves, from Gelombang ${calSummary.firstWave.label} to Gelombang ${calSummary.lastWave.label}). Because the available documents do not contain the full calendar across all intake waves, whether all registration waves have closed cannot be concluded from the available evidence. Please visit the official PMB portal at https://pmb.stikom-bali.ac.id or contact admissions at (0361) 244445 to verify current enrollment status.`
+                : `Berdasarkan dokumen Kalender Pendaftaran PMB ITB STIKOM Bali ${ay} yang ditemukan, data yang tersedia hanya memuat sebagian gelombang (${calSummary.totalWavesFound} gelombang, yaitu Gelombang ${calSummary.firstWave.label} hingga Gelombang ${calSummary.lastWave.label}). Karena dokumen bukti tidak memuat seluruh gelombang pendaftaran PMB secara lengkap, status penutupan seluruh gelombang PMB tidak dapat disimpulkan dari bukti yang ada. Calon mahasiswa disarankan memantau langsung portal resmi PMB di **https://pmb.stikom-bali.ac.id** atau menghubungi Panitia PMB di (0361) 244445 untuk memastikan pembukaan gelombang pendaftaran saat ini.`
+            };
+          } else if (calSummary.isHistorical) {
+            return {
+              status: ANSWERABILITY_STATUS.UNKNOWN,
+              reason: 'admission_schedule_unconfirmed',
+              coveredAspects: ['admission_calendar'],
+              missingAspects: ['live_active_wave'],
+              guidance: isEn
+                ? `Based on the official Admissions Calendar (Kalender Pendaftaran) for ITB STIKOM Bali ${ay} (historical archive records — all dates have passed and do not represent upcoming intake dates), all 15 admission intake waves concluded registration on ${calSummary.finalRegDeadline}${reRegStr}. Currently, the official schedule and opening dates for the upcoming intake / academic year have not been confirmed in the available records. To verify whether registration has reopened or to check the upcoming schedule, please visit the official PMB portal at https://pmb.stikom-bali.ac.id or contact admissions at (0361) 244445.`
+                : `Berdasarkan arsip resmi Kalender Pendaftaran PMB ITB STIKOM Bali ${ay} (catatan arsip/historis — seluruh tanggal pendaftaran telah berlalu dan bukan jadwal seleksi yang akan datang), seluruh rangkaian 15 gelombang pendaftaran yang tercatat (mulai Gelombang ${calSummary.firstWave.label} hingga Gelombang ${calSummary.lastWave.label}) telah ditutup pada **${calSummary.finalRegDeadline}**${reRegStr}.\n\nSaat ini, kepastian jadwal pembukaan pendaftaran untuk periode/intake berikutnya belum tercantum dalam dokumen resmi yang tersedia. Untuk memastikan pembaruan jadwal atau pembukaan gelombang berikutnya, calon mahasiswa disarankan memantau langsung portal resmi PMB di **https://pmb.stikom-bali.ac.id** atau menghubungi Panitia PMB di (0361) 244445.`
+            };
+          } else if (calSummary.isUpcoming) {
+            return {
+              status: ANSWERABILITY_STATUS.UNKNOWN,
+              reason: 'admission_schedule_unconfirmed',
+              coveredAspects: ['admission_calendar'],
+              missingAspects: ['live_active_wave'],
+              guidance: isEn
+                ? `Based on the official Admissions Calendar for ITB STIKOM Bali ${ay} (upcoming admissions schedule), registration has not started yet and is scheduled to open starting with Gelombang ${calSummary.firstWave.label} on ${calSummary.initialRegStartDate || 'the scheduled date'}.${partialNotice} Registration is not open today.`
+                : `Berdasarkan Kalender Pendaftaran resmi PMB ITB STIKOM Bali ${ay} (jadwal pendaftaran mendatang), pendaftaran mahasiswa baru saat ini belum dimulai dan dijadwalkan akan dibuka mulai Gelombang ${calSummary.firstWave.label} pada **${calSummary.initialRegStartDate || 'tanggal yang ditetapkan'}**.${partialNotice}\n\nPendaftaran belum dibuka hari ini. Silakan memantau portal resmi di **https://pmb.stikom-bali.ac.id**.`
+            };
+          }
+        }
+        return {
+          status: ANSWERABILITY_STATUS.UNKNOWN,
+          reason: 'admission_schedule_unconfirmed',
+          coveredAspects: [],
+          missingAspects: ['live_active_wave', 'admission_calendar'],
+          guidance: isEn
+            ? 'Official information regarding current registration wave status is not confirmed in the available guidelines. Please visit the official PMB portal at https://pmb.stikom-bali.ac.id or contact admissions at (0361) 244445.'
+            : 'Informasi resmi mengenai status gelombang pendaftaran yang sedang berjalan saat ini belum dapat dipastikan dari dokumen yang tersedia. Silakan langsung memeriksa portal resmi PMB di **https://pmb.stikom-bali.ac.id** atau menghubungi Panitia PMB di (0361) 244445.'
+        };
+      }
+
+      if (/\b(?:minggu\s+depan|masih\s+sempat|masih\s+bisa\s+daftar\s+minggu\s+depan|apakah\s+masih\s+sempat)\b/i.test(rawQ)) {
+        if (hasHistoricalCalendar) {
+          const ay = calSummary.academicYear ? `Tahun Akademik ${calSummary.academicYear}` : 'arsip PMB';
+          if (!calSummary.isComplete15Waves) {
+            return {
+              status: ANSWERABILITY_STATUS.UNKNOWN,
+              reason: 'admission_schedule_unconfirmed',
+              coveredAspects: ['admission_calendar'],
+              missingAspects: ['registration_deadline'],
+              guidance: isEn
+                ? `Based on the admissions calendar documents found for ITB STIKOM Bali ${ay}, the available records only cover partial waves (${calSummary.totalWavesFound} waves). Because the records do not cover all intake waves, the final registration deadline across all waves cannot be confirmed. Please check https://pmb.stikom-bali.ac.id.`
+                : `Berdasarkan dokumen Kalender Pendaftaran PMB ITB STIKOM Bali ${ay} yang ditemukan, data yang tersedia hanya memuat sebagian gelombang (${calSummary.totalWavesFound} gelombang). Karena dokumen tidak memuat seluruh gelombang pendaftaran secara lengkap, batas akhir pendaftaran untuk seluruh gelombang belum dapat dipastikan dari bukti yang ada. Silakan langsung memeriksa portal https://pmb.stikom-bali.ac.id.`
+            };
+          }
+          return {
+            status: ANSWERABILITY_STATUS.UNKNOWN,
+            reason: 'admission_schedule_unconfirmed',
+            coveredAspects: ['admission_calendar'],
+            missingAspects: ['registration_deadline'],
+            guidance: isEn
+              ? `Based on the official Admissions Calendar (Kalender Pendaftaran) for ITB STIKOM Bali ${ay} (historical archive records), all recorded intake waves concluded registration on ${calSummary.finalRegDeadline} and opening dates for the upcoming intake are not confirmed in the records, so whether registration is still open next week cannot be confirmed. Please check https://pmb.stikom-bali.ac.id.`
+              : `Berdasarkan arsip resmi Kalender Pendaftaran PMB ITB STIKOM Bali ${ay} (catatan arsip/historis), seluruh gelombang pendaftaran yang tercatat telah berakhir pada **${calSummary.finalRegDeadline}** dan jadwal gelombang pendaftaran berikutnya belum tercantum dalam dokumen, sehingga kepastian apakah pendaftaran masih dibuka pada minggu depan belum dapat dipastikan. Silakan langsung memeriksa portal https://pmb.stikom-bali.ac.id.`
+          };
+        }
+        return {
+          status: ANSWERABILITY_STATUS.UNKNOWN,
+          reason: 'admission_schedule_unconfirmed',
+          coveredAspects: [],
+          missingAspects: ['registration_deadline'],
+          guidance: isEn
+            ? 'Based on available official documents, the exact deadline date for the current registration intake wave is not specified. To confirm whether registration is still open at that time, please consult the official admission portal at https://pmb.stikom-bali.ac.id.'
+            : 'Berdasarkan dokumen resmi yang tersedia, kepastian batas akhir tanggal pendaftaran gelombang saat ini belum tercantum. Untuk memastikan apakah pendaftaran masih dibuka pada waktu tersebut, silakan langsung memeriksa portal https://pmb.stikom-bali.ac.id.'
+        };
+      }
+
       if (semanticFrame.domain === 'TUITION_FEE' || requiredAspects.some(a => ['fee', 'tuition', 'dpp'].includes(a))) {
         return {
           status: ANSWERABILITY_STATUS.UNKNOWN,
@@ -487,6 +854,44 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
     }
 
     if (missingAspects.length > 0 && coveredAspects.length > 0) {
+      if (/\b(?:menerima|buka|terima)\s+(?:mahasiswa\s+baru|pendaftaran)\s+tahun\s+ini\b/i.test(rawQ) ||
+          /\bkampus\s+ini\s+menerima\s+mahasiswa\s+baru\s+tahun\s+ini\b/i.test(rawQ)) {
+        const { extractAcademicYearFromEvidence } = require('./groundedAnswerGenerator');
+        const detectedAy = extractAcademicYearFromEvidence(accepted, null);
+        if (detectedAy) {
+          return {
+            status: ANSWERABILITY_STATUS.UNKNOWN,
+            reason: 'admission_schedule_unconfirmed',
+            coveredAspects,
+            missingAspects,
+            guidance: isEn
+              ? `Based on official admission publications of ITB STIKOM Bali, admission is intended for Academic Year ${detectedAy}. However, the current active registration wave status and exact schedule cutoffs are not confirmed in available records. Please check https://pmb.stikom-bali.ac.id or contact the PMB committee.`
+              : `Berdasarkan dokumen resmi Penerimaan Mahasiswa Baru (PMB) ITB STIKOM Bali, materi publikasi admisi yang tercatat ditujukan untuk **Tahun Akademik ${detectedAy}**. Namun, kepastian status pendaftaran yang sedang aktif (apakah saat ini sedang dibuka gelombang tertentu beserta jadwal tanggal pendaftarannya) belum tercantum dalam dokumen indeks yang tersedia. Untuk memastikan status gelombang pendaftaran yang sedang berjalan saat ini, persyaratan berkas, serta pendaftaran online, calon mahasiswa disarankan langsung mengakses portal resmi PMB di https://pmb.stikom-bali.ac.id atau menghubungi Panitia PMB ITB STIKOM Bali.`
+          };
+        } else {
+          return {
+            status: ANSWERABILITY_STATUS.UNKNOWN,
+            reason: 'admission_schedule_unconfirmed',
+            coveredAspects: [],
+            missingAspects: ['academic_year', 'active_wave_schedule'],
+            guidance: isEn
+              ? 'Based on available official records, confirmation of active new student admission intake is not confirmed in the available documents. Please check https://pmb.stikom-bali.ac.id or contact the PMB committee.'
+              : 'Berdasarkan dokumen resmi yang tersedia, kepastian penerimaan mahasiswa baru beserta jadwal pendaftaran yang sedang aktif belum tercantum dalam dokumen indeks yang tersedia. Untuk memastikan status pendaftaran, persyaratan berkas, serta pendaftaran online, calon mahasiswa disarankan langsung mengakses portal resmi PMB di https://pmb.stikom-bali.ac.id atau menghubungi Panitia PMB ITB STIKOM Bali.'
+          };
+        }
+      }
+
+      if (/\b(?:minggu\s+depan|masih\s+sempat|masih\s+bisa\s+daftar\s+minggu\s+depan|apakah\s+masih\s+sempat|sampai\s+kapan\s+pendaftaran|batas\s+akhir\s+pendaftaran|kapan\s+terakhir)\b/i.test(rawQ)) {
+        return {
+          status: ANSWERABILITY_STATUS.UNKNOWN,
+          reason: 'admission_schedule_unconfirmed',
+          coveredAspects,
+          missingAspects,
+          guidance: isEn
+            ? 'Based on available official documents, the exact deadline date for the current registration intake wave is not specified. To confirm whether registration is still open at that time, please consult the official admission portal at https://pmb.stikom-bali.ac.id.'
+            : 'Berdasarkan dokumen resmi yang tersedia, kepastian batas akhir tanggal pendaftaran gelombang saat ini belum tercantum. Untuk memastikan apakah pendaftaran masih dibuka pada waktu tersebut, silakan langsung memeriksa portal https://pmb.stikom-bali.ac.id.'
+        };
+      }
       return {
         status: ANSWERABILITY_STATUS.PARTIAL,
         reason: 'partial_aspect_coverage',

@@ -207,13 +207,19 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     const hasContrast = /\b(berbeda\s+(?:dengan|halnya)|dibandingkan|perbedaan(?:nya)?|sedangkan|sementara|tidak\s+seperti|differs?\s+(?:from)?|compared\s+(?:to|with)|whereas|while|unlike|contrast|difference)\b/i.test(sentence);
     const isPrerequisite = /\b(?:lulusan|ijazah|latar\s+belakang|sarjana|prasyarat|syarat\s+masuk|persyaratan|pendaftar|calon\s+mahasiswa|matrikulasi|s1\s*\/\s*d4|d4|graduate|graduates|prior\s+degree|background|bachelor|prerequisite|requirements)\b/i.test(sentence) && !/\b(?:double|dual)\s+degree\b/i.test(sentence);
     const isInstitutionalListing = /\b(?:pilih\s+(?:program\s+studi|prodi)|pilihan\s+(?:prodi|program|jenjang)|jenjang\s+dan\s+program\s+studi|daftar\s+pilihan\s+prodi|ringkasan\s+dokumen)\b/i.test(sentence);
+    const isMultiProgramSharedDoc = /\[Program:\s*[^\]]+\]/i.test(sentence) ||
+      (Array.isArray(arbitratedEvidence?.accepted) && arbitratedEvidence.accepted.some(c =>
+        c.scope === 'PROGRAM_MULTI' ||
+        /rincian\s+biaya\s+si\s*,\s*ti\s*(?:,|\s+dan)\s*bd/i.test(c.sourceFile || c.filename || '') ||
+        (Array.isArray(c.supportedEntities) && c.supportedEntities.length > 1)
+      ));
     const isS1PrereqForS2 = isS2Target && /^(?:s1|sarjana)\b/i.test(excluded) && (
       isPrerequisite ||
       /\b(?:pendidikan\s+sebelumnya|studi\s+sebelumnya|jenjang\s+sarjana|strata\s+1|asal\s+jurusan|latar\s+belakang\s+pendidikan|linier|non-?linier)\b/i.test(sentence)
     );
     const escaped = excluded.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const isDirectSubject = new RegExp(`^(?:program\\s+studi|prodi|jurusan|study\\s+program|program|major)?\\s*${escaped}\\s+(?:adalah|merupakan|berfokus|memiliki|yaitu|is|focuses|offers)\\b`, 'i').test(sentence.trim());
-    return (hasContrast || isPrerequisite || isInstitutionalListing || isS1PrereqForS2) && !isDirectSubject;
+    return (hasContrast || isPrerequisite || isInstitutionalListing || isMultiProgramSharedDoc || isS1PrereqForS2) && !isDirectSubject;
   }
 
   for (const excluded of excludedEntities) {
@@ -651,7 +657,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
         }
         const followingClause = text.substring(afterIdx, clauseEnd).toLowerCase().replace(/^\*+|\*+$/g, '').trim();
         const immFollowing = text.substring(afterIdx, Math.min(text.length, afterIdx + 85)).toLowerCase();
-        feeClaims.push({ numVal, numClean, currentLine, currentClause, followingClause, precedingContext, immPreceding, immFollowing, matchText: rpMatch[0] });
+        feeClaims.push({ numVal, numClean, currentLine, currentClause, followingClause, precedingContext, immPreceding, immFollowing, matchText: rpMatch[0], charIndex: idx });
       }
     }
 
@@ -682,9 +688,9 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
         });
       };
 
-      let canonicalProfile = null;
+      let defaultCanonicalProfile = null;
       if (canonicalFeeRegistry && canonicalFeeRegistry.programs && entityName) {
-        canonicalProfile = canonicalFeeRegistry.programs[entityName] || null;
+        defaultCanonicalProfile = canonicalFeeRegistry.programs[entityName] || null;
       }
 
       const reqWave = semanticFrame.registrationWave ||
@@ -701,6 +707,25 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
 
       for (const claim of feeClaims) {
         const { numVal, numClean, currentLine, currentClause, followingClause, precedingContext, immPreceding, immFollowing } = claim;
+
+        let canonicalProfile = defaultCanonicalProfile;
+        if (Array.isArray(semanticFrame.entities) && semanticFrame.entities.length > 1) {
+          let lastPos = -1;
+          let matchedEntStr = null;
+          const searchCtx = text.substring(0, claim.charIndex).toLowerCase();
+          for (const ent of semanticFrame.entities) {
+            const entStr = (ent.canonical || ent.name || String(ent));
+            const progWords = entStr.replace(/\b(s1|d3|s2|program|studi|magister)\b/gi, '').trim().toLowerCase();
+            const pos = searchCtx.lastIndexOf(progWords);
+            if (pos > lastPos) {
+              lastPos = pos;
+              matchedEntStr = entStr;
+            }
+          }
+          if (matchedEntStr && canonicalFeeRegistry?.programs?.[matchedEntStr]) {
+            canonicalProfile = canonicalFeeRegistry.programs[matchedEntStr];
+          }
+        }
 
         let compType = 'unknown';
         // 1. Check immediate following clause if it specifies the component (e.g. "Rp 10.000.000 per semester")
@@ -1074,6 +1099,34 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     }
   }
 
+  // 4. Calendar Completeness Grounding Check:
+  // Prohibit concluding that all waves are closed when evidence is partial (< 15 waves)
+  const assertsAllWavesClosed = /\b(?:seluruh|semua)\s+(?:rangkaian\s+)?(?:gelombang|\d+\s+gelombang|proses|tahapan)?\s*pendaftaran\b.*?\b(?:telah|sudah)\s+(?:resmi\s+)?(?:ditutup|berakhir|selesai)\b/i.test(text) ||
+    /\ball\s+(?:\d+\s+)?(?:recorded\s+)?admission\s+(?:intake\s+)?waves\s+(?:have\s+)?(?:concluded|closed)\b/i.test(text);
+  if (assertsAllWavesClosed) {
+    const { getCalendarSummaryFromEvidence } = require('./groundedAnswerGenerator');
+    const calSummary = getCalendarSummaryFromEvidence(arbitratedEvidence?.accepted || []);
+    if (!calSummary || !calSummary.isComplete15Waves) {
+      return failVerification('unsupported_calendar_claim_concluded_all_waves_closed_without_complete_evidence');
+    }
+  }
+
+  // 5. Unbacked Specific Calendar Dates Check
+  // Prohibit unbacked specific calendar dates when zero calendar evidence is present
+  const isDateOrScheduleQuery = /\b(?:kapan|tanggal|jadwal|gelombang|registrasi\s+ulang|batas\s+akhir|deadline)\b/i.test(semanticFrame?.rawQuery || '');
+  if (isDateOrScheduleQuery && !isUnsupported) {
+    const specificDates = text.match(/\b\d{1,2}\s+(?:Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+\d{4}\b/gi) || [];
+    if (specificDates.length > 0) {
+      const hasCalendarChunk = (arbitratedEvidence?.accepted || []).some(c => {
+        const fn = (c.sourceDocument || c.sourceFile || c.filename || '').toLowerCase();
+        return fn.includes('kalender') || (c.text || '').includes('Kalender Pendaftaran');
+      });
+      if (!hasCalendarChunk && (!arbitratedEvidence?.accepted || arbitratedEvidence.accepted.length === 0)) {
+        return failVerification('unsupported_factual_claim_calendar_date: dates asserted without accepted evidence');
+      }
+    }
+  }
+
   // Outcome Classification (when all structural failure gates pass)
   if (isUnsupported) {
     return {
@@ -1086,24 +1139,41 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     };
   }
 
-  const isExplicitAbstain = /\b(belum\s+(?:tercantum|tersedia|ditemukan)|tidak\s+(?:ditemukan|tersedia|tercantum)|tidak\s+dapat\s+(?:diverifikasi|dipastikan)|belum\s+dapat\s+dipastikan|not\s+(?:listed|found|available|recorded)|unrecorded)\b/i.test(text);
+  const isExplicitAbstain = /\b(belum\s+(?:tercantum|tersedia|ditemukan|memuat|cukup)|tidak\s+(?:ditemukan|tersedia|tercantum|memuat)|tidak\s+dapat\s+(?:diverifikasi|dipastikan)|belum\s+dapat\s+dipastikan|not\s+(?:listed|found|available|recorded)|unrecorded)\b/i.test(text);
   const isAnswerable = arbitratedEvidence?.answerability === 'ANSWERABLE' ||
     arbitratedEvidence?.answerabilityStatus === 'ANSWERABLE';
 
-  const hasSubstantiveContent = text.length > 80 && (
-    /\b(antara\s+lain|meliputi|bekerja\s+sama|mitra|lulusan\s+memperoleh|potongan|persyaratan|berikut|kurikulum|fasilitas|layanan|program|tercantum|resmi|sarana|wadah|discounts?|requirements?|available|guidelines?|recorded|includes?|tuition|admissions?|scholarships?)\b/i.test(text)
+  const isCodingOrPrereqQuery = /\b(?:coding|koding|pemrograman|programming|syarat\s+coding)\b/i.test(semanticFrame?.rawQuery || '');
+  if (isCodingOrPrereqQuery && isExplicitAbstain) {
+    return {
+      pass: false,
+      outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+      status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+      reason: 'coding_prerequisite_unconfirmed_safe_unknown',
+      isGrounded: false,
+      handledSafely: true
+    };
+  }
+
+  const isPureRefusalTemplate = /^\s*mohon\s+maaf.*(?:belum\s+dapat|tidak\s+dapat|belum\s+tercantum|tidak\s+tercantum).*(?:silakan\s+hubungi|dapat\s+menghubungi)/is.test(text) ||
+    /^\s*informasi\s+resmi\s+terkait\s+aspek\s+tersebut\s+belum\s+tercantum/is.test(text) ||
+    /^\s*tahapan\s+prosedur\s+pendaftaran\s+rinci.*belum\s+tercantum/is.test(text);
+
+  const hasSubstantiveContent = text.length > 80 && !isPureRefusalTemplate && (
+    /\b(antara\s+lain|meliputi|bekerja\s+sama|mitra|lulusan\s+memperoleh|potongan|persyaratan|berikut|kurikulum|fasilitas|layanan|sarana|wadah|discounts?|requirements?|guidelines?|includes?|tuition)\b/i.test(text)
   );
 
   if (isExplicitAbstain) {
     const isDateOrScheduleQuery = (
-      /\b(?:kapan|tanggal|registrasi\s+ulang|kapan\s+dibuka|kapan\s+ditutup|kapan\s+buka|jadwal|periode|jadwal\s+registrasi)\b/i.test(semanticFrame?.rawQuery || '') ||
+      /\b(?:kapan|tanggal|registrasi\s+ulang|kapan\s+dibuka|kapan\s+ditutup|kapan\s+buka|jadwal|periode|jadwal\s+registrasi|menerima\s+mahasiswa\s+baru\s+tahun\s+ini|dibuka\s+sekarang|minggu\s+depan|masih\s+sempat|masih\s+bisa|batas\s+akhir)\b/i.test(semanticFrame?.rawQuery || '') ||
       semanticFrame?.intent === 'ADMISSION_SCHEDULE' ||
       (semanticFrame?.aspects && semanticFrame.aspects.includes('schedule'))
     ) && semanticFrame?.intent !== 'TUITION_FEE_INQUIRY';
-    const isDateUnavailableInText = /\b(?:tanggal|jadwal|waktu|registrasi\s+ulang)\s+.*(?:belum\s+(?:tercantum|tersedia|dapat\s+dipastikan)|tidak\s+(?:ditemukan|tercantum|tersedia))\b/i.test(text) ||
+    const isDateUnavailableInText = /\b(?:tanggal|jadwal|waktu|registrasi\s+ulang|status\s+pendaftaran|status\s+gelombang)\s+.*(?:belum\s+(?:tercantum|tersedia|dapat\s+dipastikan)|tidak\s+(?:ditemukan|tercantum|tersedia))\b/i.test(text) ||
       /\b(?:belum\s+(?:tercantum|tersedia|dapat\s+dipastikan)|tidak\s+(?:ditemukan|tercantum|tersedia))\b/i.test(text);
 
-    if (isDateOrScheduleQuery && isDateUnavailableInText) {
+    const isMultiAspectGrounded = hasSubstantiveContent && /\bpersyaratan\b/i.test(text) && /\bdokumen\b/i.test(text);
+    if (isDateOrScheduleQuery && isDateUnavailableInText && (!hasSubstantiveContent || isPureRefusalTemplate) && !isMultiAspectGrounded) {
       return {
         pass: false,
         outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
@@ -1114,11 +1184,13 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
       };
     }
 
-    if (!hasSubstantiveContent) {
-      // Total refusal: If answerability is ANSWERABLE and evidence exists, this refusal is unjustified!
-      if (isAnswerable && arbitratedEvidence?.accepted?.length > 0) {
-        return failVerification('unjustified_refusal_evidence_available');
+    if (!hasSubstantiveContent || isPureRefusalTemplate) {
+      // Guard: If evidence is present and answerability is affirmatively ANSWERABLE,
+      // an unjustified refusal template must NOT be marked as a safe unknown.
+      if (isAnswerable && Array.isArray(arbitratedEvidence?.accepted) && arbitratedEvidence.accepted.length > 0 && !isDateOrScheduleQuery) {
+        return failVerification('unjustified_refusal_when_answerable_evidence_available');
       }
+
       return {
         pass: false,
         outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
@@ -1131,19 +1203,54 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     // Substantive content accompanied by missing aspect disclosure (grounded partial answer)
 
     if (arbitratedEvidence?.accepted && arbitratedEvidence.accepted.length > 0) {
-      const isBranchFacility = (semanticFrame?.domain === 'FACILITIES' || semanticFrame?.intent === 'FACILITY_INQUIRY') &&
-        semanticFrame?.targetBranch &&
-        ['jimbaran', 'abiansemal'].includes(semanticFrame.targetBranch);
+      // Topic relevance check: Kalender Akademik must mention Kalender Akademik / SION / BAAK / Perkuliahan
+    const isCalQuery = /\bkalender\s+akademik\b/i.test(semanticFrame?.rawQuery || '');
+    if (isCalQuery && !/\b(?:kalender\s+akademik|sion|portal|baak|perkuliahan|semester)\b/i.test(text)) {
+      return failVerification('topic_mismatch_kalender_akademik_answered_with_unrelated_content');
+    }
 
-      if (isBranchFacility) {
+    const isExplicitFacilityQuery = semanticFrame?.intent === 'FACILITY_INQUIRY' ||
+      (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.includes('facilities') &&
+       /\b(?:fasilitas|lab|laboratorium|gedung|perpustakaan|sarana|prasarana)\b/i.test(semanticFrame?.rawQuery || '')) ||
+      (/\b(?:fasilitas|lab|laboratorium|gedung|perpustakaan|sarana|prasarana)\b/i.test(semanticFrame?.rawQuery || '') &&
+       !/\b(?:lokasi|alamat|di\s*mana|dimana)\b/i.test(semanticFrame?.rawQuery || ''));
+
+    const isBranchFacility = isExplicitFacilityQuery &&
+      semanticFrame?.targetBranch &&
+      ['jimbaran', 'abiansemal'].includes(semanticFrame.targetBranch);
+
+    if (isBranchFacility) {
+      return {
+        pass: true,
+        outcome: 'PARTIAL',
+        status: 'PARTIAL',
+        reason: 'verified_branch_contact_with_facility_source_gap',
+        isGrounded: true,
+        handledSafely: true,
+        sourceGap: true
+      };
+    }
+
+      const isMultiAspectQuery = (
+        /\b(?:syarat(?:nya)?|persyaratan(?:nya)?)\b/i.test(semanticFrame?.rawQuery || '') &&
+        /\b(?:jadwal(?:nya)?|gelombang(?:nya)?|kapan)\b/i.test(semanticFrame?.rawQuery || '') &&
+        /\b(?:dokumen(?:nya)?|berkas(?:nya)?)\b/i.test(semanticFrame?.rawQuery || '')
+      ) || (
+        Array.isArray(semanticFrame?.aspects) &&
+        semanticFrame.aspects.includes('requirements') &&
+        (semanticFrame.aspects.includes('schedule') || /\bjadwal/i.test(semanticFrame?.rawQuery || '')) &&
+        semanticFrame.aspects.includes('documents')
+      );
+      const hasUnprovenAspectClaims = isMultiAspectQuery && /\b(?:belum\s+(?:tercantum|tersedia|dapat\s+dipastikan)|source\s+gap)\b/i.test(text);
+
+      if (hasUnprovenAspectClaims) {
         return {
-          pass: true,
-          outcome: 'PARTIAL',
-          status: 'PARTIAL',
-          reason: 'verified_branch_contact_with_facility_source_gap',
-          isGrounded: true,
-          handledSafely: true,
-          sourceGap: true
+          pass: false,
+          outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+          status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+          reason: 'multi_aspect_claims_unproven_safe_unknown',
+          isGrounded: false,
+          handledSafely: true
         };
       }
 
@@ -1167,6 +1274,19 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
       status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
       reason: 'escalation_guidance',
       isGrounded: false,
+      handledSafely: true
+    };
+  }
+
+  const isPreferenceClarification = /\b(?:masih\s+)?(?:bingung|bimbang|ragu|galau)\s+(?:memilih|pilih|milih|menentukan)\s+(?:kampus|kuliah|universitas|jurusan)\b/i.test(semanticFrame?.rawQuery || '') &&
+    /\b(boleh\s+kami\s+tahu|minat\s+apa|latar\s+belakang\s+pendidikan)\b/i.test(text);
+  if (isPreferenceClarification) {
+    return {
+      pass: true,
+      outcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+      status: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+      reason: 'verified_recommendation_preference_inquiry',
+      isGrounded: true,
       handledSafely: true
     };
   }
@@ -1204,10 +1324,11 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   }
 
   if (arbitratedEvidence?.accepted && arbitratedEvidence.accepted.length > 0) {
-    const isDateOrScheduleQuery = /\b(?:kapan|tanggal|registrasi\s+ulang|kapan\s+dibuka|kapan\s+ditutup|kapan\s+buka|jadwal\s+registrasi|kapan\s+pembayaran)\b/i.test(semanticFrame?.rawQuery || '');
-    const isDateUnavailableInText = /\b(?:tanggal|jadwal|waktu|registrasi\s+ulang)\s+.*(?:belum\s+(?:tercantum|tersedia|dapat\s+dipastikan)|tidak\s+(?:ditemukan|tercantum|tersedia))\b/i.test(text) ||
+    const isDateOrScheduleQuery = /\b(?:kapan|tanggal|registrasi\s+ulang|kapan\s+dibuka|kapan\s+ditutup|kapan\s+buka|jadwal|periode|jadwal\s+registrasi|menerima\s+mahasiswa\s+baru\s+tahun\s+ini|dibuka\s+sekarang|kapan\s+pembayaran)\b/i.test(semanticFrame?.rawQuery || '');
+    const isDateUnavailableInText = /\b(?:tanggal|jadwal|waktu|registrasi\s+ulang|status\s+pendaftaran|status\s+gelombang)\s+.*(?:belum\s+(?:tercantum|tersedia|dapat\s+dipastikan)|tidak\s+(?:ditemukan|tercantum|tersedia))\b/i.test(text) ||
       /\b(?:belum\s+(?:tercantum|tersedia|dapat\s+dipastikan)|tidak\s+(?:ditemukan|tercantum|tersedia))\b/i.test(text);
-    if (isDateOrScheduleQuery && isDateUnavailableInText) {
+    const isMultiAspectGrounded = hasSubstantiveContent && /\bpersyaratan\b/i.test(text) && /\bdokumen\b/i.test(text);
+    if (isDateOrScheduleQuery && isDateUnavailableInText && (!hasSubstantiveContent || isPureRefusalTemplate) && !isMultiAspectGrounded) {
       return {
         pass: false,
         outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
@@ -1266,7 +1387,13 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
       }
     }
 
-    const isBranchFacility = (semanticFrame?.domain === 'FACILITIES' || semanticFrame?.intent === 'FACILITY_INQUIRY') &&
+    const isExplicitFacilityQuery = semanticFrame?.intent === 'FACILITY_INQUIRY' ||
+      (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.includes('facilities') &&
+       /\b(?:fasilitas|lab|laboratorium|gedung|perpustakaan|sarana|prasarana)\b/i.test(semanticFrame?.rawQuery || '')) ||
+      (/\b(?:fasilitas|lab|laboratorium|gedung|perpustakaan|sarana|prasarana)\b/i.test(semanticFrame?.rawQuery || '') &&
+       !/\b(?:lokasi|alamat|di\s*mana|dimana)\b/i.test(semanticFrame?.rawQuery || ''));
+
+    const isBranchFacility = isExplicitFacilityQuery &&
       semanticFrame?.targetBranch &&
       ['jimbaran', 'abiansemal'].includes(semanticFrame.targetBranch);
 

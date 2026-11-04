@@ -191,7 +191,15 @@
       "specialPolicies": {
         "alumniSmkTiSemesterDiscountPercent": 20,
         "alumniSmkTiDurationYears": 4,
-        "cutiPerSemester": 1000000
+        "cutiPerSemester": 1000000,
+        "provenance": {
+          "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+          "skNumber": "629/ITBSTIKOM/WDS/X/25",
+          "lampiran": "Lampiran - 1",
+          "itemNumber": "Butir 4",
+          "exactQuote": "4. Khusus Alumni SMK TI mendapatkan potongan 20% Biaya Pendidikan Per Semester selama 4 tahun.",
+          "verificationStatus": "VERIFIED_SOURCE"
+        }
       },
       "lampiran": "Lampiran -1"
     },
@@ -371,7 +379,15 @@
       "specialPolicies": {
         "alumniSmkTiSemesterDiscountPercent": 20,
         "alumniSmkTiDurationYears": 4,
-        "cutiPerSemester": 1000000
+        "cutiPerSemester": 1000000,
+        "provenance": {
+          "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+          "skNumber": "629/ITBSTIKOM/WDS/X/25",
+          "lampiran": "Lampiran - 1",
+          "itemNumber": "Butir 4",
+          "exactQuote": "4. Khusus Alumni SMK TI mendapatkan potongan 20% Biaya Pendidikan Per Semester selama 4 tahun.",
+          "verificationStatus": "VERIFIED_SOURCE"
+        }
       },
       "lampiran": "Lampiran -1"
     },
@@ -551,7 +567,15 @@
       "specialPolicies": {
         "alumniSmkTiSemesterDiscountPercent": 20,
         "alumniSmkTiDurationYears": 4,
-        "cutiPerSemester": 1000000
+        "cutiPerSemester": 1000000,
+        "provenance": {
+          "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+          "skNumber": "629/ITBSTIKOM/WDS/X/25",
+          "lampiran": "Lampiran - 1",
+          "itemNumber": "Butir 4",
+          "exactQuote": "4. Khusus Alumni SMK TI mendapatkan potongan 20% Biaya Pendidikan Per Semester selama 4 tahun.",
+          "verificationStatus": "VERIFIED_SOURCE"
+        }
       },
       "lampiran": "Lampiran -1"
     },
@@ -715,7 +739,15 @@
       "specialPolicies": {
         "alumniSmkTiSemesterDiscountPercent": 20,
         "alumniSmkTiDurationYears": 4,
-        "cutiPerSemester": 1000000
+        "cutiPerSemester": 1000000,
+        "provenance": {
+          "document": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+          "skNumber": "629/ITBSTIKOM/WDS/X/25",
+          "lampiran": "Lampiran - 2",
+          "itemNumber": "Butir 4",
+          "exactQuote": "4. Khusus Alumni SMK TI mendapatkan potongan 20% Biaya Pendidikan Per Semester selama 4 tahun.",
+          "verificationStatus": "VERIFIED_SOURCE"
+        }
       },
       "lampiran": "Lampiran -2"
     },
@@ -850,7 +882,15 @@
       "specialPolicies": {
         "alumniSmkTiSemesterDiscountPercent": 20,
         "alumniSmkTiDurationYears": 4,
-        "cutiPerSemester": 1000000
+        "cutiPerSemester": 1000000,
+        "provenance": {
+          "document": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+          "skNumber": "629/ITBSTIKOM/WDS/X/25",
+          "lampiran": "Lampiran - 3",
+          "itemNumber": "Butir 4",
+          "exactQuote": "4. Khusus Alumni SMK TI mendapatkan potongan 20% Biaya Pendidikan Per Semester selama 4 tahun.",
+          "verificationStatus": "VERIFIED_SOURCE"
+        }
       },
       "lampiran": "Lampiran -3"
     },
@@ -944,7 +984,15 @@
         "alumniSmkTiSemesterDiscountPercent": 10,
         "alumniSmkTiDurationYears": 4,
         "alumniSmkTiPendaftaranExtraDiscount": 50000,
-        "cutiPerSemester": 1000000
+        "cutiPerSemester": 1000000,
+        "provenance": {
+          "document": "rincian Biaya UTB Tahun Ajaran 2026-2027.pdf",
+          "skNumber": "629/ITBSTIKOM/WDS/X/25",
+          "lampiran": "Lampiran - 6",
+          "itemNumber": "Butir 5",
+          "exactQuote": "5. Khusus Alumni SMK TI mendapatkan potongan 10% Biaya Pendidikan Per Semester selama 4 tahun.",
+          "verificationStatus": "VERIFIED_SOURCE"
+        }
       }
     },
     "Double Degree HELP University": {
@@ -1065,7 +1113,15 @@
       },
       "specialPolicies": {
         "alumniSmkTiSemesterDiscountPercent": 10,
-        "alumniSmkTiDurationYears": 4
+        "alumniSmkTiDurationYears": 4,
+        "provenance": {
+          "document": "rincian Biaya HELP Tahun Ajaran 2026-2027.pdf",
+          "skNumber": "629/ITBSTIKOM/WDS/X/25",
+          "lampiran": "Lampiran - 4",
+          "itemNumber": "Butir 5",
+          "exactQuote": "5. Khusus Alumni SMK TI mendapatkan potongan 10% Biaya Pendidikan Per Semester selama 4 tahun.",
+          "verificationStatus": "VERIFIED_SOURCE"
+        }
       },
       "lampiran": "Lampiran -4"
     },
@@ -1187,7 +1243,15 @@
       "specialPolicies": {
         "alumniSmkTiSemesterDiscountPercent": 10,
         "alumniSmkTiDurationYears": 4,
-        "freeDormitoryInChina": true
+        "freeDormitoryInChina": true,
+        "provenance": {
+          "document": "rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf",
+          "skNumber": "629/ITBSTIKOM/WDS/X/25",
+          "lampiran": "Lampiran - 5",
+          "itemNumber": "Butir 5",
+          "exactQuote": "5. Khusus Alumni SMK TI mendapatkan potongan 10% Biaya Pendidikan Per Semester selama 4 tahun.",
+          "verificationStatus": "VERIFIED_SOURCE"
+        }
       },
       "lampiran": "Lampiran -5"
     },
@@ -1277,7 +1341,18 @@
         "alumniBeasiswaSemesterDimuka": 2000000,
         "alumniBeasiswaSemesterPerSemester": 500000,
         "semester5Tesis": 6000000,
-        "includeMatrikulasiUjianBimbingan": true
+        "includeMatrikulasiUjianBimbingan": true,
+        "alumniSmkTiSemesterDiscountPercent": null,
+        "alumniSmkTiDurationYears": null,
+        "alumniSmkTiNote": "Tidak ada potongan khusus alumni SMK TI untuk jenjang S2; hanya berlaku beasiswa/potongan alumni ITB STIKOM Bali.",
+        "provenance": {
+          "document": "CamScanner 12-02-2026 14.39 (1).pdf",
+          "skNumber": "629/ITBSTIKOM/WDS/X/25",
+          "lampiran": "Lampiran - 8",
+          "itemNumber": "Butir 1-2",
+          "exactQuote": "1. Potongan Biaya Pendaftaran: Ditambah Rp. 200.000,- Jika Alumni ITB STIKOM Bali. 2. Beasiswa Semester untuk Alumni: Rp. 2.000.000,- Potongan alumni untuk 4 semester (jika memilih pembayaran dimuka) / Rp. 500.000,- / semester Potongan alumni untuk tiap semester (jika memilih pembayaran cicil tiap semester).",
+          "verificationStatus": "NO_SMK_TI_DISCOUNT_SPECIFIED_IN_SOURCE"
+        }
       },
       "sourceGaps": {
         "dpp": "Pada program Pascasarjana (S2), tidak terdapat komponen Dana Pendidikan Pokok (DPP) terpisah; struktur biaya terdiri dari biaya pendaftaran dan biaya pendidikan per semester (atau paket lunas 2 tahun Rp 40.000.000) berdasarkan Lampiran -8 SK 629 (SOURCE_GAP).",

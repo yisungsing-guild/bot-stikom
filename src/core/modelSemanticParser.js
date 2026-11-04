@@ -233,12 +233,12 @@ Concepts:
 - FINANCIAL_COST: Tuition, registration fees, payment methods, installments, discounts.
 - ACADEMIC_OFFERING: Available programs, majors, disciplines, curriculum overview.
 - QUALITY_ACCREDITATION: Accreditation status, ratings, certified institutional/program quality.
-- ADMISSION_ONBOARDING: Registration steps, admission pathways, deadlines, requirements.
+- ADMISSION_ONBOARDING: Registration steps, admission pathways, deadlines, document requirements (KTP, KK, ijazah, rapor, pas foto), online PMB registration forms, OTP / WhatsApp verification codes, login PMB, exam/test entrance inquiries (tes masuk, seleksi), payment proof uploads (bukti transfer/bayar formulir), form revisions (salah isi, ubah prodi).
 - STUDY_SCHEDULE: Class timings, evening/working-student programs, schedule flexibility.
 - TRANSFER_CREDIT: Recognition of Prior Learning (RPL), credit transfer, alih jenjang.
 - INTERNATIONAL_STUDY: Dual degree, global programs, overseas exchange/internships.
 - CAREER_EMPLOYMENT: Career prospects, alumni professions, career center.
-- CAMPUS_LIFE: Facilities, labs, student organizations, sports, UKM, campus branches and locations.
+- CAMPUS_LIFE: Facilities, labs, student organizations, sports, UKM (technology/coding clubs), campus branches and locations, student affairs (kemahasiswaan), and academic systems/portals (SION login/reset password).
 
 Speech Acts:
 - DISCOVER_LIST: Exploring choices, available offerings, what exists.
@@ -289,7 +289,10 @@ Rules:
 4. For follow-ups (ellipsis/anaphora), set contextDependency.isFollowUp=true with appropriate referenceType, topicContinuity="CONTINUATION", and relevantPriorContext. If the turn introduces a new question or domain, set topicContinuity="NEW_TOPIC" and isFollowUp=false.
 5. For multi-entity or inherently ambiguous inquiries, preserve all candidate entities and set ambiguityLevel="HIGH".
 6. For recommendation / advice inquiries (speechAct="SEEK_ADVICE" or executionRoute="ACADEMIC_RECOMMENDATION"), populate userInterest with the normalized summary of the user's stated interest, hobby, career goal, or constraint (e.g. "analisis sistem dan manajemen basis data", "desain komunikasi visual dan ilustrasi", "pemasaran digital dan live commerce"), or null if none is stated.
-7. Return only the structured JSON adhering strictly to the schema.`;
+7. Return only the structured JSON adhering strictly to the schema.
+8. In-Domain Operations: Questions regarding admission registration (forms, KTP/KK, verification code/OTP, entrance selection exams, submitting payment proof, account issues) or student portal/support (SION, kemahasiswaan, coding readiness) MUST be classified as ADMISSION_ONBOARDING or CAMPUS_LIFE with executionRoute="RAG_RETRIEVAL". DO NOT route operational inquiries to UNKNOWN.
+9. Vocational Education: Vocational inquiries ('pendidikan vokasi', 'program vokasi', 'vokasi') refer to the official Diploma 3 program (D3 Manajemen Informatika) at ITB STIKOM Bali. DO NOT extract 'pendidikan vokasi' as an unsupported program.
+10. Graduate Research Focus: Data Science, Cyber Security, Enterprise System, and Medical Informatics mentioned in graduate / master's (S2) or research focus context are research concentrations under S2 Sistem Informasi, NOT standalone unoffered programs. Map them as curriculum aspects/research focus under S2 Sistem Informasi with requestedAspects=["curriculum"].`;
 
 /**
  * Creates a deterministic, safe UNKNOWN / HIGH_AMBIGUITY interpretation.

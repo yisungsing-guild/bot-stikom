@@ -20999,6 +20999,16 @@ async function _querySemanticRagInner(question, callerOptions = {}) {
   options.__isFactualRetrievalRequired = factualRetrievalRequired;
   let hybridRetrievalExecuted = false;
 
+  // Clear conversational turns before the factual data cache is warmed.
+  // This avoids a needless knowledge-table read for greetings and small-talk.
+  const earlySmallTalk = trySmallTalkAnswer(question);
+  const earlySmallTalkWords = String(question || '').trim().split(/\s+/).filter(Boolean).length;
+  const hasProgramEntity = canonicalUnderstanding && canonicalUnderstanding.entities && Array.isArray(canonicalUnderstanding.entities.programs) && canonicalUnderstanding.entities.programs.length > 0;
+  if (!hasProgramEntity && earlySmallTalk && earlySmallTalk.answer && shouldReturnSmallTalkImmediately(question, earlySmallTalkWords)) {
+    const smallTalkResp = buildDeterministicResponse(question, 'semantic-rag-small-talk', earlySmallTalk, { routeStage: 'pre-guard-small-talk' });
+    return await finalizeSemanticResult(question, smallTalkResp, resultCacheKey);
+  }
+
   // Ensure active TrainingData cache is populated early for deterministic handlers and pre-guards
   try {
     if (!trainingDbCache) {
@@ -21522,14 +21532,6 @@ async function _querySemanticRagInner(question, callerOptions = {}) {
     setCachedSemanticResult(resultCacheKey, disabled);
     return disabled;
   }
-  const earlySmallTalk = trySmallTalkAnswer(question);
-  const earlySmallTalkWords = String(question || '').trim().split(/\s+/).filter(Boolean).length;
-  const hasProgramEntity = canonicalUnderstanding && canonicalUnderstanding.entities && Array.isArray(canonicalUnderstanding.entities.programs) && canonicalUnderstanding.entities.programs.length > 0;
-  if (!hasProgramEntity && earlySmallTalk && earlySmallTalk.answer && shouldReturnSmallTalkImmediately(question, earlySmallTalkWords)) {
-    const smallTalkResp = buildDeterministicResponse(question, 'semantic-rag-small-talk', earlySmallTalk, { routeStage: 'pre-guard-small-talk' });
-    return await finalizeSemanticResult(question, smallTalkResp, resultCacheKey);
-  }
-
   const greetingPermission = strictDocumentOnly ? null : tryGreetingPermissionAnswer(routingQuestion || question);
   if (greetingPermission && greetingPermission.answer) {
     const builtGreetingPermission = buildDeterministicResponse(question, greetingPermission.source || 'semantic-rag-small-talk', greetingPermission, { routeStage: 'pre-guard-greeting-permission', normalizedRouting: normalizedRouting.changed });

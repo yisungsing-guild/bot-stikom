@@ -33,6 +33,7 @@ const logger = require('../logger');
 const { isPhase2Enabled, executePhase2Bridge } = require('../reasoning/phase2Bridge');
 const { isPhase2ShadowModeEnabled, runShadowEvaluationSafely } = require('../reasoning/shadowEvaluator');
 const { VERIFICATION_OUTCOME } = require('../reasoning/contracts');
+const { isVerifiedAnswer, buildSafeUnknownResponse, buildClarificationResponse } = require('./answerabilityResponse');
 const isUnifiedSemanticPipelineEnabled = () => false;
 const processUnifiedTurn = null;
 
@@ -210,28 +211,36 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
 
         if (synthRes && synthRes.success && synthRes.answer) {
           const verifRes = verifyFinalAnswer(synthRes.answer, frame, arbitratedForRec, null, recResult);
-          if (verifRes && (verifRes.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || verifRes.pass)) {
-            finalAnswer = synthRes.answer;
-            recVerification = verifRes;
-          } else if (verifRes && verifRes.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN) {
+          const verifiedRecommendation = verifRes?.pass === true &&
+            verifRes.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL &&
+            isVerifiedAnswer(synthRes.answer, verifRes);
+          if (verifiedRecommendation) {
             finalAnswer = synthRes.answer;
             recVerification = verifRes;
           } else {
             logger.warn({ reason: verifRes ? verifRes.reason : 'unknown' }, '[Orchestrator] Recommendation answer blocked by verifier');
-            finalAnswer = 'Mohon maaf, rekomendasi program studi belum dapat dipastikan secara lengkap saat ini. Silakan berkonsultasi langsung dengan admisi PMB ITB STIKOM Bali.';
+            finalAnswer = recAnswerability.status === ANSWERABILITY_STATUS.CLARIFY
+              ? buildClarificationResponse(frame)
+              : buildSafeUnknownResponse(frame, recAnswerability);
+            const blockedOutcome = verifRes?.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN
+              ? VERIFICATION_OUTCOME.SAFE_UNKNOWN
+              : VERIFICATION_OUTCOME.ESCALATION_GUIDANCE;
             recVerification = {
+              ...(verifRes || {}),
               pass: false,
-              outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+              outcome: blockedOutcome,
               interceptedFrom: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
               isInterception: true,
-              status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+              status: blockedOutcome,
               reason: verifRes?.reason || 'recommendation_blocked_escalation',
               isGrounded: false,
               handledSafely: true
             };
           }
         } else {
-          finalAnswer = synthRes?.answer || recAnswerability.guidance || 'Mohon maaf, rekomendasi program studi belum dapat dipastikan dari dokumen kurikulum yang tersedia saat ini. Silakan berkonsultasi langsung dengan admisi PMB ITB STIKOM Bali.';
+          finalAnswer = recAnswerability.status === ANSWERABILITY_STATUS.CLARIFY
+            ? buildClarificationResponse(frame)
+            : buildSafeUnknownResponse(frame, recAnswerability);
           recVerification = {
             pass: false,
             outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
@@ -297,7 +306,7 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
     if (bridgeResult && bridgeResult.comparisonEnvelope) {
       // Orchestrator owns synthesis, verification, fallback, and outbound dispatch for comparative evaluations
       const targetEntities = bridgeResult.targetEntities || [];
-      const frame = { domain: 'ACADEMIC_PROGRAM', intent: 'ask_program_comparison', entities: targetEntities };
+      const frame = { domain: 'ACADEMIC_PROGRAM', intent: 'ask_program_comparison', entities: targetEntities, rawQuery };
 
       let finalAnswer = null;
       let compVerification = null;
@@ -305,28 +314,32 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
 
       if (synthRes && synthRes.success && synthRes.answer) {
         const verifRes = verifyFinalAnswer(synthRes.answer, frame, {}, bridgeResult.comparisonEnvelope);
-        if (verifRes && (verifRes.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || verifRes.pass)) {
-          finalAnswer = synthRes.answer;
-          compVerification = verifRes;
-        } else if (verifRes && verifRes.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN) {
+        const verifiedComparison = verifRes?.pass === true &&
+          verifRes.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL &&
+          isVerifiedAnswer(synthRes.answer, verifRes);
+        if (verifiedComparison) {
           finalAnswer = synthRes.answer;
           compVerification = verifRes;
         } else {
           logger.warn({ reason: verifRes ? verifRes.reason : 'unknown' }, '[Orchestrator] Comparative answer blocked by verifier');
-          finalAnswer = 'Mohon maaf, informasi perbandingan resmi yang terverifikasi belum dapat dipastikan secara lengkap saat ini.';
+          finalAnswer = buildSafeUnknownResponse(frame, {});
+          const blockedOutcome = verifRes?.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN
+            ? VERIFICATION_OUTCOME.SAFE_UNKNOWN
+            : VERIFICATION_OUTCOME.ESCALATION_GUIDANCE;
           compVerification = {
+            ...(verifRes || {}),
             pass: false,
-            outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+            outcome: blockedOutcome,
             interceptedFrom: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
             isInterception: true,
-            status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+            status: blockedOutcome,
             reason: verifRes?.reason || 'comparative_blocked_escalation',
             isGrounded: false,
             handledSafely: true
           };
         }
       } else {
-        finalAnswer = 'Mohon maaf, informasi perbandingan resmi belum dapat diproses.';
+        finalAnswer = buildSafeUnknownResponse(frame, {});
         compVerification = {
           pass: false,
           outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
@@ -500,6 +513,23 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
           unconfirmedProgram: frame.unconfirmedProgram
         }
       });
+      const unsupportedAnswerVerified = synthRes?.success === true &&
+        ((verifRes?.pass === true && verifRes.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL && isVerifiedAnswer(synthRes.answer, verifRes)) ||
+         (verifRes?.handledSafely === true && verifRes?.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN));
+      const unsupportedSafeAnswer = unsupportedAnswerVerified
+        ? synthRes.answer
+        : buildSafeUnknownResponse(frame, {});
+      const unsupportedVerification = unsupportedAnswerVerified
+        ? verifRes
+        : {
+            ...(verifRes || {}),
+            pass: false,
+            outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+            status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+            reason: verifRes?.reason || 'unsupported_entity_not_factually_verified',
+            isGrounded: false,
+            handledSafely: true
+          };
       subQueryResults.push({
         frame,
         semanticFrame: frame,
@@ -512,8 +542,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         rejectedCount: 0,
         answerability: ANSWERABILITY_STATUS.UNKNOWN,
         status: frame.unconfirmedProgram ? 'unconfirmed_program' : 'unsupported_program',
-        answer: synthRes.answer,
-        verification: verifRes,
+        answer: unsupportedSafeAnswer,
+        verification: unsupportedVerification,
         arbitrated: { accepted: [], rejected: [] },
         arbitratedEvidence: { accepted: [], rejected: [] }
       });
@@ -559,32 +589,92 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       let reply = '';
       const isEnglish = frame.language === 'en' || frame.detectedLanguage === 'en';
       if (frame.intent === 'CONVERSATIONAL_GREETING') {
-        const hasPriorTurns = (Array.isArray(sessionData?.conversationHistory) && sessionData.conversationHistory.length > 0) || Boolean(sessionData?.lastQuery);
-        if (hasPriorTurns) {
+        if (frame.aspects?.includes('ping')) {
           reply = isEnglish
-            ? 'Hello again! How can I assist you further with campus information or admissions at ITB STIKOM Bali?'
-            : 'Halo kembali! Ada yang bisa kami bantu lagi terkait informasi kampus atau PMB ITB STIKOM Bali?';
+            ? 'Hello! Connection is active and stable. I am Tiko, the official virtual assistant of ITB STIKOM Bali. How can I assist you today?'
+            : 'Halo! Koneksi aktif dan lancar. Saya Tiko, asisten virtual resmi ITB STIKOM Bali. Ada yang bisa kami bantu terkait pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, atau informasi akademik lainnya?';
+        } else if (frame.aspects?.includes('punctuation_only')) {
+          reply = isEnglish
+            ? 'Hello! I am Tiko, the official assistant of ITB STIKOM Bali. Please feel free to ask any question regarding our campus admissions, study programs, or tuition fees.'
+            : 'Halo! Saya Tiko, asisten virtual resmi ITB STIKOM Bali. Silakan ketikkan pertanyaan yang ingin Anda ketahui seputar pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, atau kegiatan kampus ya.';
         } else {
-          reply = isEnglish
-            ? 'Hello! Welcome to the official information service of ITB STIKOM Bali. How can I assist you with admissions (PMB), study programs, tuition fees, or campus academic details?'
-            : 'Halo! Selamat datang di layanan informasi resmi ITB STIKOM Bali. Ada yang bisa kami bantu terkait pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, atau informasi akademik lainnya?';
+          const hasPriorTurns = (Array.isArray(sessionData?.conversationHistory) && sessionData.conversationHistory.length > 0) || Boolean(sessionData?.lastQuery);
+          if (hasPriorTurns) {
+            reply = isEnglish
+              ? 'Hello again! How can I assist you further with campus information or admissions at ITB STIKOM Bali?'
+              : 'Halo kembali! Ada yang bisa kami bantu lagi terkait informasi kampus atau PMB ITB STIKOM Bali?';
+          } else {
+            reply = isEnglish
+              ? 'Hello! Welcome to the official information service of ITB STIKOM Bali. How can I assist you with admissions (PMB), study programs, tuition fees, or campus academic details?'
+              : 'Halo! Selamat datang di layanan informasi resmi ITB STIKOM Bali. Ada yang bisa kami bantu terkait pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, atau informasi akademik lainnya?';
+          }
         }
+      } else if (frame.intent === 'AMBIGUOUS_CLARIFICATION') {
+        reply = isEnglish
+          ? 'Your question requires more context. Could you please clarify which study program, admission track, or campus topic you are inquiring about?'
+          : 'Pertanyaan Anda memerlukan konteks lebih lanjut. Boleh diperjelas program studi, jalur pendaftaran, atau topik informasi kampus apa yang Anda maksud?';
+      } else if (frame.intent === 'BROAD_CAMPUS_OVERVIEW') {
+        reply = isEnglish
+          ? 'Here is an overview of ITB STIKOM Bali:\n\n1. Admissions (PMB): Multiple intake waves via https://pmb.stikom-bali.ac.id\n2. Study Programs: S1 Information Systems, S1 Computer Systems, S1 Information Technology, S1 Digital Business, D3 Informatics Management, S2 Information Systems, and International Dual Degrees.\n3. Tuition & Scholarships: Flexible monthly DPP installments, early bird discounts, and foundation scholarships.\n4. Facilities & Career: Renon, Jimbaran, and Abiansemal campuses, INBIS startup incubator, and Career Center (CDC).\n\nWhich topic would you like to explore further?'
+          : 'Berikut ringkasan informasi utama seputar ITB STIKOM Bali:\n\n' +
+            '1. **Penerimaan Mahasiswa Baru (PMB)**:\n' +
+            '   - Pendaftaran dibuka secara bertahap melalui beberapa gelombang untuk TA 2026/2027 melalui portal resmi: https://pmb.stikom-bali.ac.id\n\n' +
+            '2. **Program Studi yang Tersedia**:\n' +
+            '   - **Sarjana (S1)**: Sistem Informasi, Sistem Komputer, Teknologi Informasi, Bisnis Digital\n' +
+            '   - **Diploma (D3)**: Manajemen Informatika\n' +
+            '   - **Magister (S2)**: Magister Sistem Informasi (M.Kom)\n' +
+            '   - **Program Internasional**: Dual Degree UTB Bandung, Double Degree HELP University (Malaysia), DNUI (China)\n\n' +
+            '3. **Biaya Pendidikan & Beasiswa**:\n' +
+            '   - Biaya SPP per semester berkisar Rp 4.500.000 (D3) hingga Rp 6.500.000 (S1), dengan Dana Pendidikan Pokok (DPP) yang dapat diangsur setiap bulan hingga UTS-1.\n' +
+            '   - Tersedia potongan beasiswa gelombang awal, diskon pelunasan tunai 10%, serta beasiswa yayasan dan KIP Kuliah.\n\n' +
+            '4. **Fasilitas & Karir**:\n' +
+            '   - Kampus Renon, Kampus Jimbaran, dan Kampus Abiansemal.\n' +
+            '   - Inkubator Bisnis (INBIS) dan Career Development Center (CDC) untuk magang dan penyaluran kerja.\n\n' +
+            'Apakah ada bagian tertentu yang ingin Kakak ketahui lebih rinci?';
       } else if (frame.intent === 'BOT_IDENTITY') {
         const isAskingCreator = frame.aspects?.includes('bot_creator') ||
-          /\b(?:siapa\s+(?:yang\s+)?(?:membuat|menciptakan|mengembangkan|merancang|bikin)|pembuat|pengembang)\b/i.test(frame.rawQuery || '');
+          /\b(?:siapa\s+(?:yang\s+)?(?:membuat|menciptakan|mengembangkan|merancang|bikin)|(?:kamu|anda|bot|tiko)\s+(?:di|yang\s+)?(?:buat|ciptakan|kembangkan|rancang|bikin)\s+(?:oleh\s+)?siapa|pembuat|pengembang)\b/i.test(frame.rawQuery || '');
+        const isAskingCapabilities = frame.aspects?.includes('bot_capabilities') ||
+          /\b(?:bantu\s+apa|fungsi|tugas|kegunaan|kemampuan|layani)\b/i.test(frame.rawQuery || '');
+        const isAskingFallback = frame.aspects?.includes('bot_fallback_policy') ||
+          /\b(?:tidak\s+tahu\s+jawabannya|belum\s+tahu)\b/i.test(frame.rawQuery || '');
+        const isAskingAuthenticity = frame.aspects?.includes('bot_authenticity') ||
+          /\b(?:resmi|terbaru|akurat|valid)\b/i.test(frame.rawQuery || '');
+
         if (isAskingCreator) {
           reply = isEnglish
             ? 'I am Tiko, the official virtual assistant of ITB STIKOM Bali, developed to help provide information about academics, admissions, study programs, tuition fees, facilities, and campus services at ITB STIKOM Bali.'
             : 'Saya adalah Tiko, asisten virtual resmi ITB STIKOM Bali yang dikembangkan untuk membantu memberikan informasi seputar akademik, pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, fasilitas, dan layanan kampus ITB STIKOM Bali.';
+        } else if (isAskingCapabilities) {
+          reply = isEnglish
+            ? 'I can assist you with official information regarding new student admissions (PMB), study programs & curriculum, tuition fees & scholarships, campus facilities, and academic services at ITB STIKOM Bali.'
+            : 'Saya dapat membantu Anda memberikan informasi resmi seputar pendaftaran mahasiswa baru (PMB), program studi dan kurikulum, rincian biaya kuliah dan beasiswa, fasilitas kampus, serta layanan akademik di ITB STIKOM Bali.';
+        } else if (isAskingFallback) {
+          reply = isEnglish
+            ? 'If verified official information is not yet available in our documents, I will transparently inform you and guide you directly to the relevant campus admissions or administrative office.'
+            : 'Jika informasi yang Anda tanyakan belum tercantum dalam dokumen resmi kami atau memerlukan konfirmasi khusus, saya akan menyampaikannya secara terbuka dan mengarahkan Anda langsung ke bagian admisi PMB atau unit layanan kampus resmi terkait.';
+        } else if (isAskingAuthenticity) {
+          reply = isEnglish
+            ? 'Yes, all information I provide is derived directly from verified official guides, academic regulations, and decree documents of ITB STIKOM Bali.'
+            : 'Ya, seluruh jawaban dan informasi yang saya sampaikan bersumber langsung dari dokumen resmi, pedoman akademik, dan surat keputusan pimpinan ITB STIKOM Bali yang terverifikasi.';
         } else {
           reply = isEnglish
             ? 'Hello! I am Tiko, the official virtual assistant of ITB STIKOM Bali. I am here to help you with information regarding admissions, study programs, tuition fees, facilities, and campus details. How can I assist you today?'
             : 'Halo! Saya Tiko, asisten virtual resmi ITB STIKOM Bali. Saya siap membantu Anda memberikan informasi seputar pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, fasilitas, dan kegiatan kampus ITB STIKOM Bali. Ada yang bisa saya bantu?';
         }
       } else if (frame.intent === 'CONVERSATIONAL_SMALL_TALK') {
-        reply = isEnglish
-          ? 'I am doing great, thank you! How can I assist you with information about ITB STIKOM Bali today?'
-          : 'Kabar baik, terima kasih! Ada yang bisa saya bantu terkait informasi kampus ITB STIKOM Bali?';
+        const queryText = (frame.rawQuery || frame.normalizedQuery || '').toLowerCase();
+        const isEmotionalVenting = frame.userState === 'VENTING' || frame.relation === 'EMPATHY' ||
+          /\b(?:sedih|kecewa|galau|stres|stress|depresi|terpuruk|patah\s*hati|putus\s*asa|capek|lelah|butuh\s*teman|boleh\s*cerita|curhat|curcol|cerita|lagi\s*down|sad|depressed|heartbroken|unhappy|feeling\s+down)\b/i.test(queryText);
+        if (isEmotionalVenting) {
+          reply = isEnglish
+            ? 'I empathize with you and am truly sorry to hear that you are feeling down. While I am a virtual campus assistant focused on university information at ITB STIKOM Bali and not a professional psychologist or counselor, I am here and willing to listen if you would like to share or talk about what is on your mind. I hope you feel better and find comfort soon.'
+            : 'Saya ikut berempati dan memahami jika Kakak sedang merasa sedih. Meskipun saya adalah asisten virtual yang berfokus pada informasi perkuliahan di ITB STIKOM Bali dan bukan seorang psikolog atau konselor profesional, saya tetap siap mendengarkan jika ada hal yang ingin Kakak ceritakan atau keluh kesah yang ingin dibagikan. Semoga perasaan Kakak lekas membaik dan merasa lebih tenang ya.';
+        } else {
+          reply = isEnglish
+            ? 'I am doing great, thank you! How can I assist you with information about ITB STIKOM Bali today?'
+            : 'Kabar baik, terima kasih! Ada yang bisa saya bantu terkait informasi kampus ITB STIKOM Bali?';
+        }
       } else if (frame.intent === 'CONVERSATIONAL_FAREWELL') {
         reply = isEnglish
           ? 'Goodbye! If you ever need further information regarding ITB STIKOM Bali, feel free to reach out anytime. Have a wonderful day!'
@@ -684,17 +774,27 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         verification = verifFn(synthesis.answer, frame, arbitrated, null, recResult);
         answer = synthesis.answer;
 
-        // Deterministic Recovery if synthesis failed verification or yielded unjustified SAFE_UNKNOWN on ANSWERABLE turn
-        const isUnjustifiedSafeUnknown = verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN &&
-          answerability.status === ANSWERABILITY_STATUS.ANSWERABLE;
+        // A factual synthesis is releasable only after an affirmative factual verification.
+        // SAFE_UNKNOWN / ESCALATION_GUIDANCE are safe outcomes, not permission to publish
+        // unverified factual prose that happened to be generated alongside them.
+        const hasVerifiedFactualOutcome = verification.pass === true &&
+          verification.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL &&
+          isVerifiedAnswer(synthesis.answer, verification);
+        const isSafeAbstention = (synthesis.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN || synthesis.handledSafely) &&
+          verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN &&
+          verification.handledSafely;
+        const isPartialGroundedOutcome = verification.pass === true &&
+          verification.outcome === 'PARTIAL' &&
+          verification.handledSafely === true;
+        const synthesisMustBeBlocked = !hasVerifiedFactualOutcome && !isSafeAbstention && !isPartialGroundedOutcome;
 
-        if (verification.outcome === VERIFICATION_OUTCOME.VERIFICATION_FAILED || isUnjustifiedSafeUnknown) {
+        if (synthesisMustBeBlocked) {
           logger.warn({ reason: verification.reason, outcome: verification.outcome }, '[Orchestrator] Synthesized answer flagged by verifier, attempting generic extractive recovery');
           let recovered = false;
           const extractiveRecovery = (groundedAnswerGenerator.buildGenericExtractiveFallback || buildGenericExtractiveFallback)(frame, arbitrated.accepted, synthOpts);
           if (extractiveRecovery && extractiveRecovery.success && extractiveRecovery.answer) {
             const recoveryVerif = verifFn(extractiveRecovery.answer, frame, arbitrated, null, recResult);
-            if (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.pass) {
+            if (recoveryVerif.pass === true && (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.outcome === 'PARTIAL')) {
               answer = extractiveRecovery.answer;
               verification = {
                 ...recoveryVerif,
@@ -705,23 +805,30 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
               recovered = true;
             }
           }
-          if (!recovered && verification.outcome === VERIFICATION_OUTCOME.VERIFICATION_FAILED) {
+          if (!recovered) {
+            // Never expose the original synthesis after a failed/unsafe verification.
             answer = null;
           }
         }
 
         if (!answer) {
-          if (verification.outcome !== VERIFICATION_OUTCOME.VERIFICATION_FAILED) {
+          if (hasVerifiedFactualOutcome || isPartialGroundedOutcome) {
             answer = synthesis.answer;
           } else {
-            logger.warn({ reason: verification.reason }, '[Orchestrator] Synthesized answer blocked by Final Verifier');
-            answer = 'Mohon maaf, informasi resmi yang terverifikasi belum dapat dipastikan secara lengkap saat ini. Silakan hubungi bagian informasi kampus untuk bantuan langsung.';
+            logger.warn({ reason: verification.reason, outcome: verification.outcome }, '[Orchestrator] Synthesized answer blocked by Final Verifier');
+            answer = answerability.status === ANSWERABILITY_STATUS.CLARIFY
+              ? buildClarificationResponse(frame)
+              : buildSafeUnknownResponse(frame, answerability);
+            const blockedOutcome = verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN
+              ? VERIFICATION_OUTCOME.SAFE_UNKNOWN
+              : VERIFICATION_OUTCOME.ESCALATION_GUIDANCE;
             verification = {
+              ...verification,
               pass: false,
-              outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+              outcome: blockedOutcome,
               interceptedFrom: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
               isInterception: true,
-              status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+              status: blockedOutcome,
               reason: verification.reason || 'blocked_by_final_verifier',
               isGrounded: false,
               handledSafely: true
@@ -733,7 +840,10 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         if (extractiveFallback && extractiveFallback.answer) {
           const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
           const recoveryVerif = verifFn(extractiveFallback.answer, frame, arbitrated);
-          if (extractiveFallback.success && (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.pass)) {
+          const isFallbackVerified = extractiveFallback.success && recoveryVerif.pass === true &&
+            (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.outcome === 'PARTIAL') &&
+            (recoveryVerif.outcome === 'PARTIAL' || isVerifiedAnswer(extractiveFallback.answer, recoveryVerif));
+          if (isFallbackVerified) {
             answer = extractiveFallback.answer;
             verification = {
               ...recoveryVerif,
@@ -742,7 +852,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
               handledSafely: true
             };
           } else {
-            answer = extractiveFallback.answer;
+            // The extracted text is only a candidate. If it fails verification, discard it.
+            answer = null;
             verification = {
               pass: false,
               outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
@@ -875,15 +986,26 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
 
     let newActiveEntity = null;
     let newPreservedEntity = sessionData.preservedBackgroundEntity || null;
+    let newLastAcademicProgram = sessionData.lastAcademicProgramEntity || null;
 
-    const isGeneralPmbOrCatalog = ['CURRENT_ENROLLMENT_STATUS', 'ADMISSION_SCHEDULE', 'GENERAL_PMB_INQUIRY', 'AVAILABLE_PROGRAMS_LIST'].includes(primaryFrame.intent) || primaryFrame.topicContinuity === 'NEW_TOPIC';
+    const isExplicitReset = Boolean(
+      primaryFrame.explicitReset ||
+      /\b(?:lupakan(?:\s+pertanyaan)?(?:\s+yang)?\s+(?:tadi|sebelumnya)|abaikan(?:\s+pertanyaan)?(?:\s+yang)?\s+(?:tadi|sebelumnya)|ganti\s+topik|mulai\s+dari\s+awal)\b/i.test(rawQuery)
+    );
+    const isGeneralPmbOrCatalog = ['CURRENT_ENROLLMENT_STATUS', 'ADMISSION_SCHEDULE', 'GENERAL_PMB_INQUIRY', 'AVAILABLE_PROGRAMS_LIST'].includes(primaryFrame.intent) || primaryFrame.topicContinuity === 'NEW_TOPIC' || isExplicitReset;
 
-    if (Array.isArray(primaryFrame.entities) && primaryFrame.entities.length > 0) {
+    if (isExplicitReset) {
+      newActiveEntity = null;
+      newPreservedEntity = null;
+      if (Array.isArray(primaryFrame.entities) && primaryFrame.entities.length > 0) {
+        newActiveEntity = primaryFrame.entities[0].canonical;
+      }
+    } else if (Array.isArray(primaryFrame.entities) && primaryFrame.entities.length > 0) {
       newActiveEntity = primaryFrame.entities[0].canonical;
       newPreservedEntity = null;
     } else if (isGeneralPmbOrCatalog) {
       newActiveEntity = null;
-      if (sessionData.activeEntity) {
+      if (sessionData.activeEntity && !/Dual Degree|Double Degree|Student Exchange/i.test(sessionData.activeEntity)) {
         newPreservedEntity = sessionData.activeEntity;
       }
     } else if (primaryFrame.domain === 'INTERNATIONAL') {
@@ -894,7 +1016,11 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       else if (isDD) newActiveEntity = 'International Dual Degree';
       else if (isExchange) newActiveEntity = 'Student Exchange';
       else newActiveEntity = sessionData.activeEntity || null;
-      newPreservedEntity = null;
+      if (sessionData.activeEntity && /^(?:S1|S2|D3)\s+/i.test(sessionData.activeEntity)) {
+        newPreservedEntity = sessionData.activeEntity;
+      } else {
+        newPreservedEntity = sessionData.preservedBackgroundEntity || null;
+      }
     } else if (isCampusWide || primaryFrame.intent === 'CONTACT_INQUIRY' || primaryFrame.intent === 'PMB_CONTACT_INQUIRY') {
       // Campus-wide query without explicit entity: isolate activeEntity to background
       newActiveEntity = null;
@@ -910,6 +1036,12 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       if (sessionData.activeEntity) {
         newPreservedEntity = sessionData.activeEntity;
       }
+    }
+
+    if (newActiveEntity && /^(?:S1|S2|D3)\s+/i.test(newActiveEntity)) {
+      newLastAcademicProgram = newActiveEntity;
+    } else if (sessionData.activeEntity && /^(?:S1|S2|D3)\s+/i.test(sessionData.activeEntity)) {
+      newLastAcademicProgram = sessionData.activeEntity;
     }
 
     let currentWave = null;
@@ -930,7 +1062,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       } else {
         const yearMatch = finalAnswer.match(/\b(?:tahun\s+(?:akademik|ajaran)|t\.?a\.?)\s*:?\s*(20\d{2}\s*\/\s*20\d{2})\b/i) ||
           finalAnswer.match(/\b(2026\s*\/\s*2027)\b/);
-        currentAcademicYear = yearMatch ? yearMatch[1].replace(/\s+/g, '') : '2026/2027';
+        currentAcademicYear = yearMatch ? yearMatch[1].replace(/\s+/g, '') : (sessionData.academicYear || null);
       }
     }
 
@@ -948,6 +1080,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         requestedAspects: primaryFrame.aspects || [],
         activeEntity: newActiveEntity,
         preservedBackgroundEntity: newPreservedEntity,
+        lastAcademicProgramEntity: newLastAcademicProgram,
         isProximityComparison: Boolean(primaryFrame.isProximityComparison || primaryFrame.aspects?.includes('proximity_comparison')),
         userOrigin: primaryFrame.userOrigin || sessionData.userOrigin || null,
         lastActiveWave: currentWave || sessionData.lastActiveWave || null,

@@ -21,15 +21,15 @@ function hasMultipleIntents(rawQuery) {
   if (!rawQuery) return false;
   const isComparison = /\b(perbedaan|beda|bedanya|banding(?:kan)?|dibandingkan|komparasi|versus|vs)\b/i.test(rawQuery) &&
     /\b(dan|serta|dengan)\b/i.test(rawQuery) &&
-    !/\b(?:dan|serta|dengan)\s+(?:bagaimana|cara|berapa|apa|apakah|kapan|di\s*mana|dimana)\b/i.test(rawQuery) &&
-    !/,\s*(?:dan|serta)\s+/i.test(rawQuery);
+    !/\b(?:dan|serta|dengan)\s+(?:bagaimana|cara|berapa|apa|apakah|kapan|di\s*mana|dimana)\b/i.test(rawQuery);
   const isContactCoord = /\b(?:nomor|telepon|telp|wa|whatsapp|hp)\s+(?:dan|serta|plus)\s+(?:kontak|nomor|telepon|wa|whatsapp)\b/i.test(rawQuery) ||
     /\bkontak\s+(?:dan|serta|plus)\s+(?:nomor|telepon|wa|whatsapp)\b/i.test(rawQuery);
   const isFacilityServiceCoord = (
     /\b(?:fasilitas|sarana)\s+(?:dan|serta)\s+(?:layanan|prasarana|program)\b/i.test(rawQuery) ||
     /\b(?:apakah\s+ada|ada\s+gak|ada\s+tidak|tersedia)\s+(?:inkubator(?:\s+bisnis)?|inbis|career\s+center|cdc)\s+(?:dan|serta)\s+(?:apa\s+saja\s+|apa\s+)?(?:layanan|fasilitas|program)(?:nya)?\b/i.test(rawQuery)
   ) && !/\b(?:dan|serta)\s+(?:bagaimana|cara|berapa|kapan|di\s*mana|dimana)\b/i.test(rawQuery);
-  if (isComparison || isContactCoord || isFacilityServiceCoord) return false;
+  const isMultiAspectAdmissionCoord = /\b(?:syarat(?:nya)?,\s*jadwal(?:nya)?,\s*dan\s*dokumen|jadwal(?:nya)?,\s*syarat(?:nya)?,\s*dan\s*dokumen|syarat(?:nya)?,\s*dokumen(?:nya)?,\s*dan\s*jadwal)\b/i.test(rawQuery);
+  if (isComparison || isContactCoord || isFacilityServiceCoord || isMultiAspectAdmissionCoord) return false;
 
   return MULTI_SPLIT_REGEX.test(rawQuery);
 }
@@ -37,7 +37,7 @@ function hasMultipleIntents(rawQuery) {
 function hasAnaphoricReference(part = '') {
   return /\b\w+nya\b/i.test(part) ||
     /\b(?:tersebut|itu|di\s+atas|tadi|ini)\b/i.test(part) ||
-    /\b(?:keuntungan|keunggulan|syarat(?:nya)?|biaya(?:nya)?|prospek(?:nya)?|peluang\s+kerja|kurikulum|mata\s*kuliah|matkul|akreditasi(?:nya)?|fasilitas(?:nya)?|layanan(?:nya)?)\b/i.test(part);
+    /\b(?:keuntungan|keunggulan|syarat(?:nya)?|biaya(?:nya)?|prospek(?:nya)?|peluang\s+kerja|kurikulum|mata\s*kuliah|matkul|akreditasi(?:nya)?|fasilitas(?:nya)?|layanan(?:nya)?|cicil(?:an)?|di?angsur(?:an)?)\b/i.test(part);
 }
 
 function pruneGenericInstitutionalCampus(frame) {
@@ -51,30 +51,102 @@ function pruneGenericInstitutionalCampus(frame) {
   }
 }
 
+function classifyFollowupEntityFamilies(partFrame) {
+  const aspects = new Set((partFrame?.aspects || []).map(aspect => String(aspect).toLowerCase()));
+  const domain = String(partFrame?.domain || '').toUpperCase();
+
+  if (domain === 'FACILITIES' || domain === 'CAMPUS_SERVICE' ||
+      ['location', 'campus_location', 'address', 'facilities', 'facility'].some(aspect => aspects.has(aspect))) {
+    return new Set(['campus_location', 'facility', 'campus_facility', 'campus_service']);
+  }
+  if (domain === 'ORGANIZATION_UKM' ||
+      ['organization', 'student_organization', 'ukm', 'sports', 'arts_culture'].some(aspect => aspects.has(aspect))) {
+    return new Set(['student_organization']);
+  }
+  if (['ACADEMIC_PROGRAM', 'ACADEMIC_CURRICULUM', 'TUITION_FEE', 'SCHOLARSHIP',
+    'ACCREDITATION', 'ACADEMIC_RECOMMENDATION', 'INTERNATIONAL'].includes(domain) ||
+      ['curriculum', 'courses', 'fee', 'tuition', 'dpp', 'career', 'career_prospects',
+        'accreditation', 'requirements', 'scholarship', 'study_duration', 'degree_award'].some(aspect => aspects.has(aspect))) {
+    return new Set(['academic_program', 'international_program']);
+  }
+
+  // A general anaphoric follow-up may refer to any entity, but only when its
+  // antecedent is unique in the immediately preceding compatible clause.
+  return null;
+}
+
 function resolveCompatibleAntecedent(part, subFrames, idx) {
   if (!hasAnaphoricReference(part)) return null;
 
+  // Classify the current subquery in isolation. Never infer compatibility from
+  // fixed question-wording lists or from whichever entity happens to be first.
+  const partFrame = resolveSemanticFrame(part, {});
+  const allowedFamilies = classifyFollowupEntityFamilies(partFrame);
+
   for (let prevIdx = idx - 1; prevIdx >= 0; prevIdx--) {
-    const prevFrame = subFrames[prevIdx];
-    if (!prevFrame || !Array.isArray(prevFrame.entities) || prevFrame.entities.length === 0) continue;
+    const previousFrame = subFrames[prevIdx];
+    if (!previousFrame || !Array.isArray(previousFrame.entities) || previousFrame.entities.length === 0) continue;
 
-    const cand = prevFrame.entities[0];
-    const candFamily = cand.family;
-
-    const isAcademicPart = /\b(?:biaya|biayanya|prospek|prospeknya|peluang\s+kerja|kurikulum|matkul|mata\s*kuliah|syarat|syaratnya|keunggulan)\b/i.test(part);
-    const isAcademicEntity = candFamily === 'academic_program' || candFamily === 'international_program';
-
-    const isCampusPart = /\b(?:fasilitas|fasilitasnya|lab|gedung|ruang|alamat|lokasi)\b/i.test(part);
-    const isCampusEntity = candFamily === 'campus_location' || cand.type === 'campus';
-
-    const isGeneralBenefit = /\b(?:keuntungan|manfaat|benefit|layanan(?:nya)?|fasilitas(?:nya)?)\b/i.test(part);
-
-    if ((isAcademicPart && isAcademicEntity) || (isCampusPart && isCampusEntity) || (isGeneralBenefit && (isAcademicEntity || candFamily === 'campus_service'))) {
-      return { entity: cand.canonical, domain: prevFrame.domain };
+    const compatible = new Map();
+    for (const candidate of previousFrame.entities) {
+      const family = candidate?.family || (candidate?.type === 'program' ? 'academic_program' : null);
+      if (allowedFamilies && !allowedFamilies.has(family)) continue;
+      const canonical = candidate?.canonical || candidate?.name;
+      if (canonical) compatible.set(String(canonical).toLowerCase(), candidate);
     }
+
+    if (compatible.size === 1) {
+      const entity = [...compatible.values()][0];
+      return {
+        entity: entity.canonical || entity.name,
+        family: entity.family || (entity.type === 'program' ? 'academic_program' : null),
+        domain: previousFrame.domain,
+        academicLevel: previousFrame.academicLevel || null,
+        academicYear: previousFrame.temporal?.academicYear || null
+      };
+    }
+    if (compatible.size > 1) return null;
   }
 
   return null;
+}
+
+function buildSubQuerySessionData(sessionData = {}, compatibleAntecedent = null) {
+  // Each subquery starts without stale context from the conversation before this
+  // compound turn. Only a uniquely resolved antecedent from an earlier clause may
+  // be carried forward.
+  const isolated = {
+    ...sessionData,
+    activeEntity: null,
+    activeEntities: null,
+    activeDomain: null,
+    activeIntent: null,
+    activeAcademicLevel: null,
+    activeCategory: null,
+    preservedBackgroundEntity: null,
+    lastAcademicProgramEntity: null,
+    academicLevel: null,
+    academicYear: null,
+    lastQuery: null,
+    lastAnswer: null,
+    conversationHistory: [],
+    history: []
+  };
+
+  if (compatibleAntecedent?.entity) {
+    isolated.activeEntity = compatibleAntecedent.entity;
+    isolated.activeEntities = [compatibleAntecedent.entity];
+    isolated.activeDomain = compatibleAntecedent.domain || null;
+    isolated.preservedBackgroundEntity = compatibleAntecedent.entity;
+
+    const isAcademic = compatibleAntecedent.family === 'academic_program' ||
+      compatibleAntecedent.family === 'international_program';
+    isolated.lastAcademicProgramEntity = isAcademic ? compatibleAntecedent.entity : null;
+    isolated.activeAcademicLevel = compatibleAntecedent.academicLevel || null;
+    isolated.academicLevel = compatibleAntecedent.academicLevel || null;
+    isolated.academicYear = compatibleAntecedent.academicYear || null;
+  }
+  return isolated;
 }
 
 /**
@@ -86,8 +158,7 @@ function decomposeQuery(rawQuery, sessionData = {}) {
 
   const isComparison = /\b(perbedaan|beda|bedanya|banding(?:kan)?|dibandingkan|komparasi|versus|vs)\b/i.test(query) &&
     /\b(dan|serta|dengan)\b/i.test(query) &&
-    !/\b(?:dan|serta|dengan)\s+(?:bagaimana|cara|berapa|apa|apakah|kapan|di\s*mana|dimana)\b/i.test(query) &&
-    !/,\s*(?:dan|serta)\s+/i.test(query);
+    !/\b(?:dan|serta|dengan)\s+(?:bagaimana|cara|berapa|apa|apakah|kapan|di\s*mana|dimana)\b/i.test(query);
   const isContactCoord = /\b(?:nomor|telepon|telp|wa|whatsapp|hp)\s+(?:dan|serta|plus)\s+(?:kontak|nomor|telepon|wa|whatsapp)\b/i.test(query) ||
     /\bkontak\s+(?:dan|serta|plus)\s+(?:nomor|telepon|wa|whatsapp)\b/i.test(query);
   const isFacilityServiceCoord = (
@@ -95,8 +166,9 @@ function decomposeQuery(rawQuery, sessionData = {}) {
     /\b(?:apakah\s+ada|ada\s+gak|ada\s+tidak|tersedia)\s+(?:inkubator(?:\s+bisnis)?|inbis|career\s+center|cdc)\s+(?:dan|serta)\s+(?:apa\s+saja\s+|apa\s+)?(?:layanan|fasilitas|program)(?:nya)?\b/i.test(query)
   ) && !/\b(?:dan|serta)\s+(?:bagaimana|cara|berapa|kapan|di\s*mana|dimana)\b/i.test(query);
 
+  const isMultiAspectAdmissionCoord = /\b(?:syarat(?:nya)?,\s*jadwal(?:nya)?,\s*dan\s*dokumen|jadwal(?:nya)?,\s*syarat(?:nya)?,\s*dan\s*dokumen|syarat(?:nya)?,\s*dokumen(?:nya)?,\s*dan\s*jadwal)\b/i.test(query);
   let parts = [query];
-  if (!isComparison && !isContactCoord && !isFacilityServiceCoord && MULTI_SPLIT_REGEX.test(query)) {
+  if (!isComparison && !isContactCoord && !isFacilityServiceCoord && !isMultiAspectAdmissionCoord && MULTI_SPLIT_REGEX.test(query)) {
     parts = query.split(MULTI_SPLIT_REGEX).map(p => p.trim()).filter(Boolean);
   }
 
@@ -115,19 +187,12 @@ function decomposeQuery(rawQuery, sessionData = {}) {
 
   for (let idx = 0; idx < parts.length; idx++) {
     const part = parts[idx];
-    let subSessionData = { ...sessionData };
-
-    if (idx > 0) {
-      const compatibleAntecedent = resolveCompatibleAntecedent(part, subFrames, idx);
-      if (compatibleAntecedent) {
-        subSessionData.activeEntity = compatibleAntecedent.entity;
-        subSessionData.activeDomain = compatibleAntecedent.domain;
-      } else {
-        // Enforce strict subquery context isolation
-        subSessionData.activeEntity = null;
-        subSessionData.activeDomain = null;
-      }
-    }
+    const compatibleAntecedent = idx > 0
+      ? resolveCompatibleAntecedent(part, subFrames, idx)
+      : null;
+    const subSessionData = idx > 0
+      ? buildSubQuerySessionData(sessionData, compatibleAntecedent)
+      : { ...sessionData };
 
     const frame = resolveSemanticFrame(part, subSessionData);
     pruneGenericInstitutionalCampus(frame);
@@ -146,8 +211,7 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
 
   const isComparison = /\b(perbedaan|beda|bedanya|banding(?:kan)?|dibandingkan|komparasi|versus|vs)\b/i.test(query) &&
     /\b(dan|serta|dengan)\b/i.test(query) &&
-    !/\b(?:dan|serta|dengan)\s+(?:bagaimana|cara|berapa|apa|apakah|kapan|di\s*mana|dimana)\b/i.test(query) &&
-    !/,\s*(?:dan|serta)\s+/i.test(query);
+    !/\b(?:dan|serta|dengan)\s+(?:bagaimana|cara|berapa|apa|apakah|kapan|di\s*mana|dimana)\b/i.test(query);
   const isContactCoord = /\b(?:nomor|telepon|telp|wa|whatsapp|hp)\s+(?:dan|serta|plus)\s+(?:kontak|nomor|telepon|wa|whatsapp)\b/i.test(query) ||
     /\bkontak\s+(?:dan|serta|plus)\s+(?:nomor|telepon|wa|whatsapp)\b/i.test(query);
   const isFacilityServiceCoord = (
@@ -157,8 +221,9 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
   const isSingleClauseRecommendation = /\b(?:saya|aku|anak\s+saya)\b.*\b(?:suka|senang|gemar|tertarik|hobi|minat|passion|ingin\s+kuliah|mau\s+kuliah|bingung)\b/i.test(query) &&
     !/\b(?:berapa|bagaimana\s+cara|kapan|di\s*mana)\b/i.test(query);
 
+  const isMultiAspectAdmissionCoord = /\b(?:syarat(?:nya)?,\s*jadwal(?:nya)?,\s*dan\s*dokumen|jadwal(?:nya)?,\s*syarat(?:nya)?,\s*dan\s*dokumen|syarat(?:nya)?,\s*dokumen(?:nya)?,\s*dan\s*jadwal)\b/i.test(query);
   let parts = [query];
-  if (!isComparison && !isContactCoord && !isFacilityServiceCoord && !isSingleClauseRecommendation && MULTI_SPLIT_REGEX.test(query)) {
+  if (!isComparison && !isContactCoord && !isFacilityServiceCoord && !isSingleClauseRecommendation && !isMultiAspectAdmissionCoord && MULTI_SPLIT_REGEX.test(query)) {
     parts = query.split(MULTI_SPLIT_REGEX).map(p => p.trim()).filter(Boolean);
   }
 
@@ -178,19 +243,12 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
 
   for (let idx = 0; idx < parts.length; idx++) {
     const part = parts[idx];
-    let subSessionData = { ...sessionData };
-
-    if (idx > 0) {
-      const compatibleAntecedent = resolveCompatibleAntecedent(part, subFrames, idx);
-      if (compatibleAntecedent) {
-        subSessionData.activeEntity = compatibleAntecedent.entity;
-        subSessionData.activeDomain = compatibleAntecedent.domain;
-      } else {
-        // Enforce strict subquery context isolation
-        subSessionData.activeEntity = null;
-        subSessionData.activeDomain = null;
-      }
-    }
+    const compatibleAntecedent = idx > 0
+      ? resolveCompatibleAntecedent(part, subFrames, idx)
+      : null;
+    const subSessionData = idx > 0
+      ? buildSubQuerySessionData(sessionData, compatibleAntecedent)
+      : { ...sessionData };
 
     const frame = (typeof resolveSemanticFrameAsync === 'function')
       ? await resolveSemanticFrameAsync(part, subSessionData, options)
