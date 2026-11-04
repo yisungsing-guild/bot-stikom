@@ -53,6 +53,7 @@ function buildRetrievalPlan(semanticFrame) {
     targetEntities = [];
   }
   const normalizedText = String(normalizedQuery || semanticFrame.rawQuery || '').toLowerCase();
+  const yr = semanticFrame.academicYear || temporal?.academicYear || null;
 
   const GENERIC_COMMON_WORDS = new Set([
     'akademik', 'kuliah', 'kampus', 'stikom', 'bali', 'mahasiswa', 'program',
