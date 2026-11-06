@@ -53,7 +53,7 @@ function appendConciseTurnHistory(existingHistory = [], userQuery = '', assistan
  * Selects up to maxCount chunks from accepted evidence while preserving
  * balanced representation across all targetEntities.
  */
-function selectBalancedEvidenceByEntity(accepted = [], targetEntities = [], maxCount = 10) {
+function selectBalancedEvidenceByEntity(accepted = [], targetEntities = [], maxCount = 10, requestedAttributes = []) {
   if (!Array.isArray(accepted) || accepted.length <= maxCount) {
     return Array.isArray(accepted) ? [...accepted] : [];
   }
@@ -68,6 +68,23 @@ function selectBalancedEvidenceByEntity(accepted = [], targetEntities = [], maxC
     if (docBuckets.size > 1) {
       const selected = [];
       const seen = new Set();
+      if (Array.isArray(requestedAttributes) && requestedAttributes.length >= 2) {
+        for (let round = 0; round < 2 && selected.length < maxCount; round++) {
+          for (const attr of requestedAttributes) {
+            const match = accepted.find(c => {
+              const key = c.id || c.chunkId || c.text || c;
+              if (seen.has(key)) return false;
+              const supp = Array.isArray(c.supportedAttributes) ? c.supportedAttributes : [];
+              return supp.includes(attr);
+            });
+            if (match && selected.length < maxCount) {
+              const key = match.id || match.chunkId || match.text || match;
+              seen.add(key);
+              selected.push(match);
+            }
+          }
+        }
+      }
       let addedInRound = true;
 
       while (selected.length < maxCount && addedInRound) {
@@ -515,21 +532,21 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       });
       const unsupportedAnswerVerified = synthRes?.success === true &&
         ((verifRes?.pass === true && verifRes.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL && isVerifiedAnswer(synthRes.answer, verifRes)) ||
-         (verifRes?.handledSafely === true && verifRes?.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN));
+          (verifRes?.handledSafely === true && verifRes?.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN));
       const unsupportedSafeAnswer = unsupportedAnswerVerified
         ? synthRes.answer
         : buildSafeUnknownResponse(frame, {});
       const unsupportedVerification = unsupportedAnswerVerified
         ? verifRes
         : {
-            ...(verifRes || {}),
-            pass: false,
-            outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
-            status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
-            reason: verifRes?.reason || 'unsupported_entity_not_factually_verified',
-            isGrounded: false,
-            handledSafely: true
-          };
+          ...(verifRes || {}),
+          pass: false,
+          outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+          status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+          reason: verifRes?.reason || 'unsupported_entity_not_factually_verified',
+          isGrounded: false,
+          handledSafely: true
+        };
       subQueryResults.push({
         frame,
         semanticFrame: frame,
@@ -555,11 +572,11 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       const isGambling = frame.intent === 'OUT_OF_DOMAIN_GAMBLING';
       const oodReply = isGambling
         ? (frame.language === 'en'
-            ? 'I apologize, but as the virtual assistant of ITB STIKOM Bali, I do not provide lottery predictions or gambling-related content. I only provide official campus information regarding admissions, study programs, and academics.'
-            : 'Mohon maaf, saya adalah asisten virtual resmi ITB STIKOM Bali dan tidak melayani ramalan, prediksi angka togel, atau perjudian. Layanan ini khusus menyediakan informasi akademik, pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, dan fasilitas kampus ITB STIKOM Bali.')
+          ? 'I apologize, but as the virtual assistant of ITB STIKOM Bali, I do not provide lottery predictions or gambling-related content. I only provide official campus information regarding admissions, study programs, and academics.'
+          : 'Mohon maaf, saya adalah asisten virtual resmi ITB STIKOM Bali dan tidak melayani ramalan, prediksi angka togel, atau perjudian. Layanan ini khusus menyediakan informasi akademik, pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, dan fasilitas kampus ITB STIKOM Bali.')
         : (frame.language === 'en'
-            ? 'I apologize, but I currently specialize in providing information regarding academics, admissions (PMB), study programs, tuition fees, and facilities at ITB STIKOM Bali. Your question is outside our campus information service scope.'
-            : 'Mohon maaf, layanan ini khusus melayani informasi seputar akademik, PMB, program studi, biaya kuliah, dan fasilitas ITB STIKOM Bali. Pertanyaan Anda berada di luar cakupan layanan informasi kampus kami.');
+          ? 'I apologize, but I currently specialize in providing information regarding academics, admissions (PMB), study programs, tuition fees, and facilities at ITB STIKOM Bali. Your question is outside our campus information service scope.'
+          : 'Mohon maaf, layanan ini khusus melayani informasi seputar akademik, PMB, program studi, biaya kuliah, dan fasilitas ITB STIKOM Bali. Pertanyaan Anda berada di luar cakupan layanan informasi kampus kami.');
       subQueryResults.push({
         frame,
         semanticFrame: frame,
@@ -661,20 +678,20 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         reply = isEnglish
           ? 'Here is an overview of ITB STIKOM Bali:\n\n1. Admissions (PMB): Multiple intake waves via https://pmb.stikom-bali.ac.id\n2. Study Programs: S1 Information Systems, S1 Computer Systems, S1 Information Technology, S1 Digital Business, D3 Informatics Management, S2 Information Systems, and International Dual Degrees.\n3. Tuition & Scholarships: Flexible monthly DPP installments, early bird discounts, and foundation scholarships.\n4. Facilities & Career: Renon, Jimbaran, and Abiansemal campuses, INBIS startup incubator, and Career Center (CDC).\n\nWhich topic would you like to explore further?'
           : 'Berikut ringkasan informasi utama seputar ITB STIKOM Bali:\n\n' +
-            '1. **Penerimaan Mahasiswa Baru (PMB)**:\n' +
-            '   - Pendaftaran dibuka secara bertahap melalui beberapa gelombang untuk TA 2026/2027 melalui portal resmi: https://pmb.stikom-bali.ac.id\n\n' +
-            '2. **Program Studi yang Tersedia**:\n' +
-            '   - **Sarjana (S1)**: Sistem Informasi, Sistem Komputer, Teknologi Informasi, Bisnis Digital\n' +
-            '   - **Diploma (D3)**: Manajemen Informatika\n' +
-            '   - **Magister (S2)**: Magister Sistem Informasi (M.Kom)\n' +
-            '   - **Program Internasional**: Dual Degree UTB Bandung, Double Degree HELP University (Malaysia), DNUI (China)\n\n' +
-            '3. **Biaya Pendidikan & Beasiswa**:\n' +
-            '   - Biaya SPP per semester berkisar Rp 4.500.000 (D3) hingga Rp 6.500.000 (S1), dengan Dana Pendidikan Pokok (DPP) yang dapat diangsur setiap bulan hingga UTS-1.\n' +
-            '   - Tersedia potongan beasiswa gelombang awal, diskon pelunasan tunai 10%, serta beasiswa yayasan dan KIP Kuliah.\n\n' +
-            '4. **Fasilitas & Karir**:\n' +
-            '   - Kampus Renon, Kampus Jimbaran, dan Kampus Abiansemal.\n' +
-            '   - Inkubator Bisnis (INBIS) dan Career Development Center (CDC) untuk magang dan penyaluran kerja.\n\n' +
-            'Apakah ada bagian tertentu yang ingin Kakak ketahui lebih rinci?';
+          '1. **Penerimaan Mahasiswa Baru (PMB)**:\n' +
+          '   - Pendaftaran dibuka secara bertahap melalui beberapa gelombang untuk TA 2026/2027 melalui portal resmi: https://pmb.stikom-bali.ac.id\n\n' +
+          '2. **Program Studi yang Tersedia**:\n' +
+          '   - **Sarjana (S1)**: Sistem Informasi, Sistem Komputer, Teknologi Informasi, Bisnis Digital\n' +
+          '   - **Diploma (D3)**: Manajemen Informatika\n' +
+          '   - **Magister (S2)**: Magister Sistem Informasi (M.Kom)\n' +
+          '   - **Program Internasional**: Dual Degree UTB Bandung, Double Degree HELP University (Malaysia), DNUI (China)\n\n' +
+          '3. **Biaya Pendidikan & Beasiswa**:\n' +
+          '   - Biaya SPP per semester berkisar Rp 4.500.000 (D3) hingga Rp 6.500.000 (S1), dengan Dana Pendidikan Pokok (DPP) yang dapat diangsur setiap bulan hingga UTS-1.\n' +
+          '   - Tersedia potongan beasiswa gelombang awal, diskon pelunasan tunai 10%, serta beasiswa yayasan dan KIP Kuliah.\n\n' +
+          '4. **Fasilitas & Karir**:\n' +
+          '   - Kampus Renon, Kampus Jimbaran, dan Kampus Abiansemal.\n' +
+          '   - Inkubator Bisnis (INBIS) dan Career Development Center (CDC) untuk magang dan penyaluran kerja.\n\n' +
+          'Apakah ada bagian tertentu yang ingin Kakak ketahui lebih rinci?';
       } else if (frame.intent === 'BOT_IDENTITY') {
         const isAskingCreator = frame.aspects?.includes('bot_creator') ||
           /\b(?:siapa\s+(?:yang\s+)?(?:membuat|menciptakan|mengembangkan|merancang|bikin)|(?:kamu|anda|bot|tiko)\s+(?:di|yang\s+)?(?:buat|ciptakan|kembangkan|rancang|bikin)\s+(?:oleh\s+)?siapa|pembuat|pengembang)\b/i.test(frame.rawQuery || '');
@@ -789,7 +806,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       (!plan.targetEntities || plan.targetEntities.length <= 1);
     const candidateTopK = Array.isArray(plan.targetEntities) && plan.targetEntities.length > 1
       ? Math.max(16, plan.targetEntities.length * 10)
-      : (isBroadScholarshipOrFeeInquiry ? 25 : 16);
+      : (isBroadScholarshipOrFeeInquiry ? 25 : (Array.isArray(plan.requestedAttributes) && plan.requestedAttributes.length >= 2 ? Math.max(18, plan.requestedAttributes.length * 6) : 16));
     const candidates = await retrieveCandidates(plan, { topK: candidateTopK });
 
     // 4. Stage B: Strict Evidence Arbitration (Hard Entity Lock, Temporal, Aspect)
@@ -797,14 +814,17 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     arbitrated.retrievalPlan = plan;
     arbitrated.sessionData = sessionData;
     arbitrated.rawAccepted = [...arbitrated.accepted];
-    const maxAcceptedCount = isBroadScholarshipOrFeeInquiry ? 12 : 10;
+    const maxAcceptedCount = isBroadScholarshipOrFeeInquiry ? 12 : (Array.isArray(plan.requestedAttributes) && plan.requestedAttributes.length >= 2 ? Math.max(12, plan.requestedAttributes.length * 4) : 10);
     if (arbitrated.accepted.length > maxAcceptedCount) {
-      arbitrated.accepted = selectBalancedEvidenceByEntity(arbitrated.accepted, plan.targetEntities, maxAcceptedCount);
+      arbitrated.accepted = selectBalancedEvidenceByEntity(arbitrated.accepted, plan.targetEntities, maxAcceptedCount, plan.requestedAttributes);
     }
 
     // 5. Evaluate Answerability
     const answerability = evaluateAnswerability(frame, arbitrated);
     arbitrated.missingAspects = answerability.missingAspects || [];
+    arbitrated.coveredAspects = answerability.coveredAspects || arbitrated.coveredAspects || [];
+    arbitrated.attributeEvaluation = answerability.attributeEvaluation || arbitrated.attributeEvaluation || {};
+    arbitrated.answerabilityStatus = answerability.status;
 
     let answer = null;
     let verification = {
@@ -853,7 +873,10 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         const isPartialGroundedOutcome = verification.pass === true &&
           verification.outcome === 'PARTIAL' &&
           verification.handledSafely === true;
-        const synthesisMustBeBlocked = !hasVerifiedFactualOutcome && !isSafeAbstention && !isPartialGroundedOutcome;
+        const isSafeClarificationPrompt = verification.outcome === VERIFICATION_OUTCOME.ESCALATION_GUIDANCE &&
+          verification.handledSafely === true &&
+          (verification.reason === 'clarification_prompt' || synthesis.reason === 'ambiguous_program_faculty_clarification');
+        const synthesisMustBeBlocked = !hasVerifiedFactualOutcome && !isSafeAbstention && !isPartialGroundedOutcome && !isSafeClarificationPrompt;
 
         if (synthesisMustBeBlocked) {
           logger.warn({ reason: verification.reason, outcome: verification.outcome }, '[Orchestrator] Synthesized answer flagged by verifier, attempting generic extractive recovery');
@@ -885,7 +908,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
             logger.warn({ reason: verification.reason, outcome: verification.outcome }, '[Orchestrator] Synthesized answer blocked by Final Verifier');
             answer = answerability.status === ANSWERABILITY_STATUS.CLARIFY
               ? buildClarificationResponse(frame)
-              : buildSafeUnknownResponse(frame, answerability);
+              : (verification.outcome !== VERIFICATION_OUTCOME.SAFE_UNKNOWN ? 'Mohon maaf, informasi resmi yang terverifikasi belum dapat dipastikan dari sumber resmi yang tersedia saat ini. Silakan menghubungi bagian kampus terkait untuk konfirmasi.' : buildSafeUnknownResponse(frame, answerability));
             const blockedOutcome = verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN
               ? VERIFICATION_OUTCOME.SAFE_UNKNOWN
               : VERIFICATION_OUTCOME.ESCALATION_GUIDANCE;
@@ -1088,7 +1111,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       } else {
         newPreservedEntity = sessionData.preservedBackgroundEntity || null;
       }
-    } else if (isCampusWide || primaryFrame.intent === 'CONTACT_INQUIRY' || primaryFrame.intent === 'PMB_CONTACT_INQUIRY') {
+    } else if ((isCampusWide || primaryFrame.intent === 'CONTACT_INQUIRY' || primaryFrame.intent === 'PMB_CONTACT_INQUIRY') && (!/Dual Degree|Double Degree|UTB|DNUI|HELP|Student Exchange/i.test(String(sessionData.activeEntity || '')) || /\b(?:kampus|stikom)\b/i.test(rawQuery) || !['CONTACT_INQUIRY', 'PMB_CONTACT_INQUIRY'].includes(primaryFrame.intent))) {
       // Campus-wide query without explicit entity: isolate activeEntity to background
       newActiveEntity = null;
       if (sessionData.activeEntity) {
@@ -1096,7 +1119,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       }
     } else if (primaryFrame.domain === sessionData.activeDomain ||
       ['ACADEMIC_CURRICULUM', 'TUITION_FEE', 'ACADEMIC_PROGRAM', 'ACADEMIC_ADMISSION', 'PMB', 'INTERNATIONAL'].includes(primaryFrame.domain) ||
-      ['ADMISSION_PROCEDURE', 'ADMISSION_REQUIREMENTS'].includes(primaryFrame.intent)) {
+      ['ADMISSION_PROCEDURE', 'ADMISSION_REQUIREMENTS', 'CONTACT_INQUIRY', 'PMB_CONTACT_INQUIRY'].includes(primaryFrame.intent)) {
       newActiveEntity = sessionData.activeEntity || null;
     } else {
       newActiveEntity = null;
@@ -1145,7 +1168,9 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         activeIntent: primaryFrame.intent,
         activeAspects: primaryFrame.aspects || [],
         requestedAspects: primaryFrame.aspects || [],
+        requestedAttributes: primaryFrame.requestedAttributes || primaryFrame.aspects || [],
         activeEntity: newActiveEntity,
+        activeEntities: subFrames.flatMap(sf => (sf.entities || []).map(e => e?.canonical || e?.name || (typeof e === 'string' ? e : null)).filter(Boolean)),
         preservedBackgroundEntity: newPreservedEntity,
         lastAcademicProgramEntity: newLastAcademicProgram,
         isProximityComparison: Boolean(primaryFrame.isProximityComparison || primaryFrame.aspects?.includes('proximity_comparison')),
@@ -1196,7 +1221,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     overallVerificationReason = 'all_subqueries_verified';
   } else if (hasPartialGrounded) {
     overallVerificationOutcome = 'PARTIAL';
-    overallVerificationReason = 'verified_branch_contact_with_facility_source_gap';
+    const partialSub = subQueryResults.find(s => s.verification?.outcome === 'PARTIAL' || s.verification?.status === 'PARTIAL');
+    overallVerificationReason = partialSub?.verification?.reason || 'verified_branch_contact_with_facility_source_gap';
   } else if (hasCorpusGap) {
     overallVerificationOutcome = VERIFICATION_OUTCOME.SAFE_UNKNOWN;
     overallVerificationReason = 'contains_unconfirmed_aspects';

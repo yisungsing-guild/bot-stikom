@@ -217,8 +217,8 @@ describe('Targeted Regression Tests: 4 Truth Audit Defect Fixes', () => {
     });
   });
 
-  describe('4. BATCH-068 — Total SKS S2 Sistem Informasi', () => {
-    test('4a: Query about total SKS for S2 Sistem Informasi returns 36 SKS in 4 semesters grounded in catalog', () => {
+  describe('4. BATCH-068 — Total SKS & Kurikulum S2 Sistem Informasi', () => {
+    test('4a: Query about total SKS for S2 Sistem Informasi returns canonical 56 SKS structure (47 mandatory + 9 offered elective) in 4 semesters with graduation SKS verification note', () => {
       const query = 'Berapa total SKS yang harus ditempuh mahasiswa S2 Sistem Informasi?';
       const semanticFrame = resolveSemanticFrame(query, {});
 
@@ -229,22 +229,19 @@ describe('Targeted Regression Tests: 4 Truth Audit Defect Fixes', () => {
       );
       expect(answer).toBeTruthy();
 
-      // Must be official 36 SKS and 4 semesters (not 144 SKS / 8 semesters of S1!)
-      expect(answer).toMatch(/36\s*SKS/i);
+      // Must reflect canonical 56 SKS curriculum structure (47 SKS mandatory + 9 SKS offered elective) and 4 semesters (not 36 SKS or 144 SKS!)
+      expect(answer).toMatch(/56\s*SKS/i);
+      expect(answer).toMatch(/47\s*SKS/i);
+      expect(answer).toMatch(/9\s*SKS/i);
       expect(answer).toMatch(/4\s*semester/i);
       expect(answer).toMatch(/M\.Kom/i);
+      expect(answer).not.toMatch(/36\s*SKS/i);
       expect(answer).not.toMatch(/144\s*SKS/i);
       expect(answer).not.toMatch(/8\s*semester/i);
 
-      // Must NOT contain unverified course titles or unverified 12+12+6+6 SKS breakdown
+      // Must NOT contain fabricated course titles
       expect(answer).not.toMatch(/Metodologi Penelitian Lanjut/i);
       expect(answer).not.toMatch(/Arsitektur Enterprise/i);
-      expect(answer).not.toMatch(/\b12\s*SKS\b/i);
-      expect(answer).not.toMatch(/\b6\s*SKS\b/i);
-
-      // Must include verified research focus areas
-      expect(answer).toMatch(/Cyber Security/i);
-      expect(answer).toMatch(/Data Science/i);
 
       // Verifier must accept this answer
       const verif = verifyFinalAnswer(answer, {
@@ -266,7 +263,7 @@ describe('Targeted Regression Tests: 4 Truth Audit Defect Fixes', () => {
       expect(verif.outcome).not.toBe(VERIFICATION_OUTCOME.VERIFICATION_FAILED);
     });
 
-    test('4b: Query about courses in a specific semester for S2 responds honestly without fabricated course list', () => {
+    test('4b: Query about courses in Semester 1 for S2 returns official Semester I courses (18 SKS across 6 mandatory courses) from canonical curriculum registry', () => {
       const query = 'Semester 1 S2 Sistem Informasi ada mata kuliah apa saja?';
       const semanticFrame = resolveSemanticFrame(query, {});
 
@@ -277,15 +274,16 @@ describe('Targeted Regression Tests: 4 Truth Audit Defect Fixes', () => {
       );
       expect(answer).toBeTruthy();
 
-      // Must state that specific course list per semester is not yet in public verified curriculum documents
-      expect(answer).toMatch(/belum tercantum/i);
-      expect(answer).toMatch(/Pascasarjana/i);
-      expect(answer).toMatch(/36\s*SKS/i);
+      // Must include official Semester I courses from ISIAN WEBSITE (1).pdf & Pascasarjana dataset
+      expect(answer).toMatch(/MI241001/i);
+      expect(answer).toMatch(/Metodologi Penelitian/i);
+      expect(answer).toMatch(/56\s*SKS/i);
+      expect(answer).toMatch(/47\s*SKS/i);
       expect(answer).toMatch(/4\s*semester/i);
+      expect(answer).not.toMatch(/36\s*SKS/i);
 
-      // Must NOT return fabricated course names
+      // Must NOT return old fabricated course names
       expect(answer).not.toMatch(/Metodologi Penelitian Lanjut/i);
-      expect(answer).not.toMatch(/Arsitektur Enterprise/i);
 
       // Verifier must accept this answer
       const verif = verifyFinalAnswer(answer, {

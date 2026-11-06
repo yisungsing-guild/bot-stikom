@@ -95,11 +95,31 @@ function isCandidateMatchingTargetEntity(candidateTextOrObj, targetEntityStr) {
     if (/\b(magister|s2|pascasarjana)\b/i.test(cleanText) && !hasS1OrUndergrad) {
       return false;
     }
+    // Contextual disambiguation between S1 Sistem Informasi and S2 Sistem Informasi:
+    // If all mentions of "sistem informasi" in the chunk are explicitly S2/Magister/Pascasarjana, do NOT match as S1 Sistem Informasi.
+    if (/^S1\s+Sistem\s+Informasi$/i.test(targetEntityStr.trim()) && cleanText.includes('sistem informasi')) {
+      const textWithoutS2Si = cleanText
+        .replace(/\b(?:s2|magister|pascasarjana)(?:\s+\w+){0,2}\s+sistem\s+informasi\b/gi, ' ')
+        .replace(/\bsistem\s+informasi\s+s2\b/gi, ' ');
+      if (!textWithoutS2Si.includes('sistem informasi')) {
+        return false;
+      }
+    }
   }
   if (/^S2\b/i.test(targetEntityStr)) {
     if (candLevel && ['S1', 'D3'].includes(candLevel)) return false;
     if (candLevel !== 'S2' && !/\b(magister|s2|pascasarjana)\b/i.test(cleanText) && !/\b(magister|s2|pascasarjana)\b/i.test(fileNorm)) {
       return false;
+    }
+    // Contextual disambiguation between S2 Sistem Informasi and S1 Sistem Informasi:
+    // If all mentions of "sistem informasi" in the chunk are explicitly S1/Sarjana/HIMAPRODI, do NOT match as S2 Sistem Informasi.
+    if (/^S2\s+(?:Magister\s+)?Sistem\s+Informasi$/i.test(targetEntityStr.trim()) && cleanText.includes('sistem informasi')) {
+      const textWithoutS1Si = cleanText
+        .replace(/\b(?:s1|sarjana|strata\s*1|hima(?:prodi)?)(?:\s+\w+){0,2}\s+sistem\s+informasi\b/gi, ' ')
+        .replace(/\bsistem\s+informasi\s+s1\b/gi, ' ');
+      if (!textWithoutS1Si.includes('sistem informasi')) {
+        return false;
+      }
     }
   }
   if (/^D3\b/i.test(targetEntityStr)) {
@@ -432,10 +452,10 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
         /\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(candidateText) &&
         /\b(?:3\.000\.000|4\.500\.000|4\.000\.000|dpp|biaya\s+per\s+semester)\b/i.test(candidateText)
       ) || (
-        // Direct continuation of Butir 12 containing recognized SKS brackets and DPP amounts
-        /\b(?:jumlah\s+)?pengakuan\s+sks\s+antara\b/i.test(candidateText) &&
-        /\b(?:4\.500\.000|5\.000\.000|7\.000\.000)\b/i.test(candidateText)
-      );
+          // Direct continuation of Butir 12 containing recognized SKS brackets and DPP amounts
+          /\b(?:jumlah\s+)?pengakuan\s+sks\s+antara\b/i.test(candidateText) &&
+          /\b(?:4\.500\.000|5\.000\.000|7\.000\.000)\b/i.test(candidateText)
+        );
       if (isFeeDoc && !mentionsRplFee) {
         return {
           accepted: false,
@@ -704,15 +724,18 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     const isMultiLevel = candidate.scope === 'PROGRAM_MULTI' &&
       (candidate.correctedLevel === 'S1_D3' ||
         (Array.isArray(candidate.supportedPrograms) && candidate.supportedPrograms.includes('MI') && ['S1', 'D3'].includes(targetLvl)));
-    // Institutional / Student Org / Multi-program Overview documents (e.g. ISIAN WEBSITE, HIMAPRODI profile with level Umum)
-    const isInstOrOrgGeneral = candLvl === 'UMUM' &&
-      (candidate.scope === 'INSTITUTIONAL_OR_ORG' || candidate.scope === 'PROGRAM_MULTI' || /buku ormawa himaprodi|profile hima|isian website/i.test(candidateFile)) &&
+    // Institutional / Student Org / Multi-program / Cross-Level documents (with level ALL or UMUM)
+    const isInstOrOrgGeneral = (candLvl === 'UMUM' || candLvl === 'ALL') &&
+      (candidate.scope === 'INSTITUTIONAL_OR_ORG' || candidate.scope === 'PROGRAM_MULTI' || candLvl === 'ALL' || /buku ormawa himaprodi|profile hima|isian website|pasca\.stikom-bali\.ac\.id/i.test(candidateFile)) &&
       (
         targetLvl === 'UMUM' ||
-        targetLvl === 'S1' ||
-        (targetLvl === 'D3' && /manajemen\s+informatika|men[\s\n]+informatika|\(d3\)/i.test(text)) ||
-        (targetLvl === 'S2' && /magister|pascasarjana|s2/i.test(text)) ||
-        (retrievalPlan?.domain === 'PMB' && /tahun\s+akademik|penerimaan\s+mahasiswa\s+baru/i.test(text))
+        targetLvl === 'ALL' ||
+        (targetLvl === 'S1' && (candLvl === 'UMUM' || /\b(?:s1|sarjana)\b/i.test(text))) ||
+        (targetLvl === 'D3' && /\b(?:d3|diploma|manajemen\s+informatika|men[\s\n]+informatika|\(d3\))\b/i.test(text)) ||
+        (targetLvl === 'S2' && /\b(?:magister|pascasarjana|s2)\b/i.test(text)) ||
+        (retrievalPlan?.domain === 'PMB' && /tahun\s+akademik|penerimaan\s+mahasiswa\s+baru/i.test(text)) ||
+        retrievalPlan?.intent === 'FACULTY_INQUIRY' ||
+        retrievalPlan?.retrievalScopeMode === 'PRODI_FACULTY_MEMBERSHIP'
       );
     if (candLvl !== targetLvl && !isMultiLevel && !isInstOrOrgGeneral) {
       return {
@@ -751,9 +774,13 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     ? (candidate.program ? String(candidate.program).toUpperCase() : null)
     : (getProgramCodeFromEntity(candRawProg) || (candidate?.id?.match(/^curr-([a-z0-9]+)/i) ? candidate.id.match(/^curr-([a-z0-9]+)/i)[1].toUpperCase() : null));
 
+  const hasUndergradInCandidate = /\b(?:s1|sarjana|d3|diploma)\b/i.test(candidateText);
+  const isCrossLevelInstitutionalChunk = ['ALL', 'UMUM'].includes(String(candLevelRaw || '').toUpperCase()) ||
+    ['INSTITUTIONAL_OR_ORG', 'PROGRAM_MULTI'].includes(candidate?.scope);
+
   const isCandidateS2 = candidate?.academicLevel === 'S2' || candidate?.level === 'S2' ||
-    /(?:pascasarjana|magister)/i.test(candidate?.source_file || candidate?.filename || candidate?.sourceDocument || '') ||
-    /\b(?:program pascasarjana|magister sistem informasi|s2 sistem informasi)\b/i.test(candidate?.text || candidate?.chunk || '');
+    (/(?:pascasarjana|magister)/i.test(candidate?.source_file || candidate?.filename || candidate?.sourceDocument || '') && !isCrossLevelInstitutionalChunk && !hasUndergradInCandidate) ||
+    (/\b(?:program pascasarjana|magister sistem informasi|s2 sistem informasi)\b/i.test(candidateText) && !hasUndergradInCandidate && !isCrossLevelInstitutionalChunk);
   if (isCandidateS2 && (candProgCode === 'SI' || candRawProg === 'SI' || !candProgCode)) {
     candProgCode = 'S2';
   }
@@ -826,11 +853,12 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     }
   }
 
-  // 1.5 Academic Level Isolation Gate: Conflicting non-Umum academic levels must be REJECTED
+  // 1.5 Academic Level Isolation Gate: Conflicting non-Umum/non-ALL academic levels must be REJECTED
   const planLevel = retrievalPlan.academicLevel || retrievalPlan.targetLevel;
-  if (planLevel && planLevel !== 'Umum') {
-    const candLevel = candidate.academicLevel;
-    if (candLevel && candLevel !== 'Umum' && candLevel !== planLevel) {
+  if (planLevel && !['UMUM', 'ALL'].includes(String(planLevel).toUpperCase())) {
+    const candLevel = candidate.academicLevel || candidate.level;
+    const candLevelUpper = candLevel ? String(candLevel).toUpperCase() : null;
+    if (candLevelUpper && !['UMUM', 'ALL'].includes(candLevelUpper) && candLevelUpper !== String(planLevel).toUpperCase()) {
       return {
         accepted: false,
         disposition: 'REJECT_SCOPE_MISMATCH',
@@ -1017,9 +1045,17 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   if (isEsportsChunk) providedAspects.push('esports_gaming');
   if (isSportsChunk) providedAspects.push('sports');
   if (isAccreditationChunk) providedAspects.push('akreditasi', 'peringkat', 'sk_akreditasi', 'accreditation');
+  const isFacultyChunk = /\b(fakultas|informatika\s+dan\s+komputer|bisnis\s+dan\s+vokasi|\bfik\b|\bfbv\b|infokom|bisvo)\b/i.test(text);
+  if (isFacultyChunk) providedAspects.push('faculty', 'academic_structure', 'faculty_mapping');
   const isThesisChunk = (candidateFile && /(?:pedoman\s+ta|pedoman\s+skripsi)/i.test(candidateFile)) ||
     /\b(pedoman\s+tugas\s+akhir|persyaratan\s+akademik|141\s+sks|tugas\s+akhir|bimbingan\s+tugas\s+akhir)\b/i.test(candTextLower);
   if (isThesisChunk) providedAspects.push('thesis_requirements', 'academic_requirements', 'guidelines', 'pedoman_ta', 'thesis_stages', 'guidance_procedure');
+
+  if (Array.isArray(candidate.providedAspects)) {
+    for (const pa of candidate.providedAspects) {
+      if (pa && !providedAspects.includes(pa)) providedAspects.push(pa);
+    }
+  }
 
   // Program Overview / Definition / Catalog: Guard against administrative signature blocks, thesis guide kaprodi lines, or pure institutional history
   if (retrievalPlan.intent === 'PROGRAM_OVERVIEW' || retrievalPlan.intent === 'DEFINITION' || retrievalPlan.intent === 'AVAILABLE_PROGRAMS_LIST') {
@@ -1115,12 +1151,37 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     (Array.isArray(requiredAspects) && requiredAspects.includes('curriculum_difference'));
 
   if (!isComparisonPlan && Array.isArray(requiredAspects) && requiredAspects.length > 0 && !requiredAspects.includes('general')) {
+    const DISTINCT_ATTRIBUTE_BUCKETS = [
+      ['fee', 'tuition', 'dpp'],
+      ['accreditation', 'akreditasi', 'peringkat', 'sk_akreditasi'],
+      ['curriculum', 'courses'],
+      ['faculty', 'academic_structure', 'faculty_mapping'],
+      ['degree_award'],
+      ['career', 'career_prospects', 'prospek_karir'],
+      ['scholarship', 'discount'],
+      ['location', 'campus_location', 'address', 'study_location'],
+      ['contact', 'helpdesk'],
+      ['facilities', 'lab', 'campus_infrastructure'],
+      ['student_organization', 'ukm', 'organization'],
+      ['schedule', 'waves', 'wave_info'],
+      ['procedure', 'admission_overview', 'admission_pathways', 'requirements']
+    ];
+    const requestedBuckets = DISTINCT_ATTRIBUTE_BUCKETS.filter(bucket =>
+      requiredAspects.some(req => bucket.includes(req)) ||
+      (Array.isArray(retrievalPlan.requestedAttributes) && retrievalPlan.requestedAttributes.some(req => bucket.includes(req)))
+    );
+    const isMultiAttributeRequest = requestedBuckets.length > 1;
+    const candidateSatisfiesSecondaryBucket = isMultiAttributeRequest && requestedBuckets.some(bucket =>
+      providedAspects.some(pa => bucket.includes(pa))
+    );
+
     const wantsLocation = requiredAspects.some(a => ['location', 'campus_location', 'address'].includes(a)) || retrievalPlan.intent === 'CAMPUS_LOCATION';
     const wantsContact = !wantsLocation && (requiredAspects.some(a => ['contact', 'helpdesk'].includes(a)) || retrievalPlan.intent === 'PMB_CONTACT_INQUIRY');
     const wantsSchedule = requiredAspects.some(a => ['schedule', 'wave_info'].includes(a)) || retrievalPlan.intent === 'ADMISSION_SCHEDULE';
     const wantsFee = requiredAspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)) || retrievalPlan.domain === 'TUITION_FEE';
     const wantsCareer = requiredAspects.some(a => ['career', 'career_prospects', 'prospek_karir'].includes(a)) || retrievalPlan.intent === 'CAREER_PROSPECTS_INQUIRY';
     const wantsCurriculum = !wantsCareer && (requiredAspects.some(a => ['curriculum', 'courses'].includes(a)) || retrievalPlan.domain === 'ACADEMIC_CURRICULUM');
+    const wantsFaculty = requiredAspects.some(a => ['faculty', 'academic_structure', 'faculty_mapping'].includes(a)) || retrievalPlan.intent === 'FACULTY_INQUIRY';
     const wantsOverview = requiredAspects.some(a => ['overview', 'definition', 'curriculum_difference'].includes(a));
     const wantsScholarship = requiredAspects.some(a => ['scholarship', 'discount'].includes(a)) || retrievalPlan.domain === 'SCHOLARSHIP';
     const wantsFacilities = !wantsLocation && (requiredAspects.some(a => ['facilities', 'lab'].includes(a)) || retrievalPlan.domain === 'FACILITIES');
@@ -1139,7 +1200,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
         candidate.category === 'LOKASI' ||
         (candidate.metadata && (candidate.metadata.docCategory === 'LOKASI' || candidate.metadata.category === 'LOKASI')) ||
         /\b(lokasi|alamat|berlokasi|beralamat|terletak|jl\.|jalan|puputan|udayana|dauh\s+yeh\s+cani)\b/i.test(text);
-      if ((!isLocationChunk && !(isStudyLocationInquiry && isStudyLocationChunk)) || (isCurriculumChunk && !hasExplicitAddressOrLocSignal)) {
+      if (((!isLocationChunk && !(isStudyLocationInquiry && isStudyLocationChunk)) || (isCurriculumChunk && !hasExplicitAddressOrLocSignal)) && !candidateSatisfiesSecondaryBucket) {
         return {
           accepted: false,
           disposition: 'REJECT_ASPECT_MISMATCH',
@@ -1149,7 +1210,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     } else if (wantsContact) {
       const hasContactSignal = /\b(whatsapp|wa|telepon|telp|call\s*center|email|kontak|08\d{8,}|\+62|0361|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
       const hasExplicitPhoneOrContact = /\b(telepon|telp|hotline|\(0361\)|08\d{8,}|info@stikom-bali\.ac\.id)\b/i.test(text);
-      if (!hasContactSignal || isHobbyChunk || (isCurriculumChunk && !hasExplicitPhoneOrContact)) {
+      if ((!hasContactSignal || isHobbyChunk || (isCurriculumChunk && !hasExplicitPhoneOrContact)) && !candidateSatisfiesSecondaryBucket) {
         return {
           accepted: false,
           disposition: 'REJECT_ASPECT_MISMATCH',
@@ -1166,7 +1227,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
         // In multi-aspect PMB queries, accept requirements, documents, and program profile evidence
       } else {
         const hasScheduleSignal = /\b(gelombang|jadwal|periode|pendaftaran|buka|tutup|kalender|oktober|desember|januari|februari|maret|april|mei|juni|juli|agustus|september)\b/i.test(text);
-        if (!hasScheduleSignal || isHobbyChunk || isCurriculumChunk) {
+        if ((!hasScheduleSignal || isHobbyChunk || isCurriculumChunk) && !candidateSatisfiesSecondaryBucket) {
           return {
             accepted: false,
             disposition: 'REJECT_ASPECT_MISMATCH',
@@ -1198,17 +1259,25 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
           };
         }
       }
-      if (!isFeeChunk) {
+      if (!isFeeChunk && !candidateSatisfiesSecondaryBucket) {
         return {
           accepted: false,
           disposition: 'REJECT_ASPECT_MISMATCH',
           reason: 'evidence_does_not_contain_fee_aspect'
         };
       }
+    } else if (wantsFaculty) {
+      if (!isFacultyChunk && !providedAspects.includes('faculty') && !candidateSatisfiesSecondaryBucket) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_does_not_contain_faculty_aspect'
+        };
+      }
     } else if (wantsCurriculum) {
       const isIsoPolicy = /\b(manajemen berkomitmen untuk|kebijakan mutu)\b/i.test(text);
       const isThesisGuideDoc = candidateFile && /pedoman\s+ta/i.test(candidateFile);
-      if (isIsoPolicy || (!isCurriculumChunk && !isOverviewChunk && !isThesisGuideDoc)) {
+      if ((isIsoPolicy || (!isCurriculumChunk && !isOverviewChunk && !isThesisGuideDoc)) && !candidateSatisfiesSecondaryBucket) {
         return {
           accepted: false,
           disposition: 'REJECT_ASPECT_MISMATCH',
@@ -1216,7 +1285,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
         };
       }
     } else if (wantsScholarship) {
-      if (!isScholarshipChunk) {
+      if (!isScholarshipChunk && !candidateSatisfiesSecondaryBucket) {
         return {
           accepted: false,
           disposition: 'REJECT_ASPECT_MISMATCH',
@@ -1345,7 +1414,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     }
     if (wantsCareer) {
       const isFeeDoc = isFeeChunk || (candidateFile && /rincian biaya/i.test(candidateFile));
-      if (isFeeDoc) {
+      if (isFeeDoc && !candidateSatisfiesSecondaryBucket) {
         return {
           accepted: false,
           disposition: 'REJECT_ASPECT_MISMATCH',
@@ -1356,14 +1425,14 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
         /\b(?:program\s+studi\s+deskripsi\s+singkat)\b/i.test(text)) &&
         !/\b(?:peluang\s+kar(?:i)?er|prospek\s+kar(?:i)?er|peluang\s+kerja|profesi\s+lulusan|career\s+center)\b/i.test(text) &&
         !/(?:company-profile-cdc|penjelasan prodi dan karier)/i.test(candidateFile);
-      if (isMultiProgramOverview) {
+      if (isMultiProgramOverview && !candidateSatisfiesSecondaryBucket) {
         return {
           accepted: false,
           disposition: 'REJECT_ASPECT_MISMATCH',
           reason: 'evidence_is_multi_program_overview_not_career_prospect'
         };
       }
-      if (!isCareerChunk && !isOverviewChunk) {
+      if (!isCareerChunk && !isOverviewChunk && !candidateSatisfiesSecondaryBucket) {
         return {
           accepted: false,
           disposition: 'REJECT_ASPECT_MISMATCH',
@@ -1389,7 +1458,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
           reason: 'generic_facility_document_not_inbis_profile'
         };
       }
-      if (!isInbisChunk && !isOverviewChunk) {
+      if (!isInbisChunk && !isOverviewChunk && !candidateSatisfiesSecondaryBucket) {
         return {
           accepted: false,
           disposition: 'REJECT_ASPECT_MISMATCH',
@@ -1545,6 +1614,282 @@ function curateCandidatePassages(candidate, retrievalPlan = {}) {
 }
 
 /**
+ * Enriches an arbitrated candidate chunk with the Stage 4 Inter-Module Evidence Contract (Section E):
+ * - canonicalEntity
+ * - matchedEntities
+ * - sourceDocument
+ * - academicLevel
+ * - scope
+ * - supportedAttributes
+ * - supportedInformationNeeds
+ * - temporalRelevance
+ * - provenance
+ * - evidenceRole
+ * - verificationStatus
+ */
+function buildEvidenceContractMetadata(candidate = {}, evaluation = {}, retrievalPlan = {}) {
+  const supportedEntities = Array.isArray(evaluation.supportedEntities) && evaluation.supportedEntities.length > 0
+    ? evaluation.supportedEntities
+    : (Array.isArray(candidate.supportedEntities) ? candidate.supportedEntities : []);
+  const canonicalEntity = candidate.canonicalEntity || supportedEntities[0] || (Array.isArray(retrievalPlan.targetEntities) && retrievalPlan.targetEntities[0]) || null;
+  const sourceDocument = candidate.source_file || candidate.sourceDocument || candidate.sourceFile || candidate.filename || candidate.source || 'canonical_corpus';
+  const academicLevel = candidate.academicLevel || candidate.level || (candidate.metadata && (candidate.metadata.academicLevel || candidate.metadata.level)) || retrievalPlan.academicLevel || 'UMUM';
+  const scope = candidate.scope || (supportedEntities.length > 1 ? 'PROGRAM_MULTI' : (supportedEntities.length === 1 ? 'PROGRAM_SINGLE' : 'INSTITUTIONAL_OR_ORG'));
+  const supportedAttributes = Array.from(new Set(evaluation.providedAspects || candidate.providedAspects || []));
+
+  // Map supportedAttributes to informationNeeds keys
+  const supportedInformationNeeds = [];
+  const planNeeds = Array.isArray(retrievalPlan.structuredInformationNeeds)
+    ? retrievalPlan.structuredInformationNeeds
+    : (Array.isArray(retrievalPlan.informationNeedPlans) ? retrievalPlan.informationNeedPlans : []);
+  const ATTR_SYNONYMS = {
+    fee: ['fee', 'tuition', 'dpp', 'components'],
+    accreditation: ['accreditation', 'akreditasi', 'peringkat', 'sk_akreditasi'],
+    curriculum: ['curriculum', 'courses', 'competencies'],
+    sks: ['curriculum', 'courses'],
+    faculty: ['faculty', 'academic_structure', 'faculty_mapping'],
+    degree_award: ['degree_award'],
+    career_prospects: ['career_prospects', 'career'],
+    scholarship: ['scholarship', 'discount'],
+    location: ['location', 'campus_location', 'address', 'study_location'],
+    contact: ['contact'],
+    facilities: ['facilities', 'lab', 'campus_infrastructure'],
+    student_organization: ['student_organization', 'ukm', 'organization'],
+    schedule: ['schedule', 'waves', 'wave_info'],
+    procedure: ['procedure', 'admission_overview', 'admission_pathways'],
+    requirements: ['requirements', 'admission_overview']
+  };
+
+  for (const need of planNeeds) {
+    const needEntity = need.entity || null;
+    const needAttr = need.attribute || 'general';
+    const entityMatches = !needEntity || supportedEntities.includes(needEntity) || canonicalEntity === needEntity || scope === 'INSTITUTIONAL_OR_ORG' || scope === 'PROGRAM_MULTI';
+    const attrSyns = ATTR_SYNONYMS[needAttr] || [needAttr];
+    const attrMatches = needAttr === 'general' || supportedAttributes.some(sa => attrSyns.includes(sa));
+    if (entityMatches && attrMatches) {
+      supportedInformationNeeds.push(need.id || `${needEntity || 'INSTITUTION'}::${needAttr}`);
+    }
+  }
+
+  const rawCandidateText = String(candidate.text || candidate.chunk || '');
+  const isHistoricalArchiveDoc = Boolean(
+    evaluation.isHistoricalOnly ||
+    candidate.isHistorical ||
+    candidate.temporalRelevance === 'HISTORICAL_ARCHIVE' ||
+    (/\b(?:arsip\s+lama|dokumen\s+historis|tahun\s+akademik\s+202[0-4]\/202[1-5]|kurikulum\s+(?:lama|2019|2020))\b/i.test(rawCandidateText + ' ' + sourceDocument) &&
+     !/\b(?:2025\/2026|2026\/2027|kurikulum\s+2025)\b/i.test(rawCandidateText + ' ' + sourceDocument))
+  );
+
+  const periodMatch = (rawCandidateText + ' ' + sourceDocument).match(/\b(20\d{2}\s*\/\s*20\d{2})\b/);
+  const period = candidate.period || (periodMatch ? periodMatch[1].replace(/\s+/g, '') : (isHistoricalArchiveDoc ? 'HISTORICAL' : 'ACTIVE'));
+
+  let temporalRelevance = 'ATEMPORAL';
+  if (isHistoricalArchiveDoc) {
+    temporalRelevance = 'HISTORICAL_ARCHIVE';
+  } else if (evaluation.disposition === 'REJECT_TEMPORAL_MISMATCH') {
+    temporalRelevance = 'EXPIRED';
+  } else if (retrievalPlan.temporalConstraint === 'NOW' || periodMatch) {
+    temporalRelevance = 'CURRENT';
+  }
+
+  const explicitTier = candidate.governanceMetadata?.authorityTier;
+  const isPrimaryOfficialDoc = explicitTier !== undefined && explicitTier !== null
+    ? explicitTier === 1
+    : /(?:sertifikat|akreditasi|sk_|pasca\.stikom-bali\.ac\.id|pedoman|kurikulum|rincian\s+biaya)/i.test(sourceDocument);
+  const provenance = {
+    sourceDocument,
+    authorityTier: explicitTier || (isPrimaryOfficialDoc ? 1 : 2),
+    authority: candidate.governanceMetadata?.authority || (isPrimaryOfficialDoc ? 'tier_1_primary_document' : 'tier_2_corpus_document'),
+    owner: candidate.governanceMetadata?.owner || null,
+    version: candidate.governanceMetadata?.version || null,
+    isPrimarySource: isPrimaryOfficialDoc
+  };
+
+  let evidenceRole = 'REJECTED';
+  if (evaluation.accepted) {
+    if (isHistoricalArchiveDoc) {
+      evidenceRole = 'HISTORICAL_CONTEXT';
+    } else if (candidate.isContradicting || candidate.evidenceRole === 'CONTRADICTING') {
+      evidenceRole = 'CONTRADICTING';
+    } else {
+      evidenceRole = 'SUPPORTING';
+    }
+  }
+
+  let verificationStatus = 'UNVERIFIED';
+  if (evaluation.accepted) {
+    if (isHistoricalArchiveDoc) {
+      verificationStatus = 'HISTORICAL_ONLY';
+    } else if (candidate.verificationStatus) {
+      verificationStatus = candidate.verificationStatus;
+    } else if (/d3\s+manajemen\s+informatika/i.test(canonicalEntity || '') && /\b11[05]\s*sks\b/i.test(rawCandidateText)) {
+      verificationStatus = 'NEEDS_SOURCE_VALIDATION';
+    } else {
+      verificationStatus = 'VERIFIED';
+    }
+  }
+
+  return {
+    canonicalEntity,
+    matchedEntities: supportedEntities,
+    sourceDocument,
+    academicLevel,
+    scope,
+    supportedAttributes,
+    supportedInformationNeeds,
+    period,
+    temporalRelevance,
+    provenance,
+    evidenceRole,
+    verificationStatus
+  };
+}
+
+/**
+ * Detects cross-chunk contradictions and provenance conflicts across accepted evidence.
+ * Bound strictly to (entity, attribute, period, provenance) tuples.
+ */
+function detectSourceConflictsAndProvenance(accepted = [], retrievalPlan = {}) {
+  const conflicts = [];
+  if (!Array.isArray(accepted) || accepted.length < 2) {
+    return { conflicts, hasConflict: false };
+  }
+
+  // Group active (non-historical) accepted chunks by (canonicalEntity, period)
+  const byEntityAndPeriod = new Map();
+  for (const chunk of accepted) {
+    if (chunk.temporalRelevance === 'HISTORICAL_ARCHIVE' || chunk.evidenceRole === 'HISTORICAL_CONTEXT') {
+      continue;
+    }
+    const entKey = chunk.canonicalEntity || (chunk.supportedEntities && chunk.supportedEntities[0]) || 'INSTITUTION';
+    const periodKey = chunk.period || 'ACTIVE';
+    const groupKey = `${entKey}::${periodKey}`;
+    if (!byEntityAndPeriod.has(groupKey)) {
+      byEntityAndPeriod.set(groupKey, { entity: entKey, period: periodKey, chunks: [] });
+    }
+    byEntityAndPeriod.get(groupKey).chunks.push(chunk);
+  }
+
+  for (const { entity, period, chunks } of byEntityAndPeriod.values()) {
+    if (chunks.length < 2) continue;
+
+    // 1. Check conflicting graduation SKS claims (e.g., 110 SKS vs 115 SKS, or 144 SKS vs 120 SKS)
+    const sksClaims = [];
+    for (const c of chunks) {
+      const txt = c.text || c.chunk || '';
+      const sksMatch = txt.match(/\b(?:total(?:\s+beban\s+studi|\s+sks(?:\s+kelulusan)?)?|minimal\s+kelulusan|lulus(?:\s+minimal)?)\s*(?:adalah|:)?\s*(\d{2,3})\s*sks\b/i) ||
+        txt.match(/\b(144|110|115|56|41|36)\s*sks\b/i);
+      if (sksMatch) {
+        sksClaims.push({ value: `${sksMatch[1]} SKS`, chunk: c, source: c.sourceDocument, tier: c.provenance?.authorityTier || 2 });
+      }
+    }
+    const distinctSks = Array.from(new Set(sksClaims.map(s => s.value)));
+    if (distinctSks.length > 1) {
+      conflicts.push({
+        entity,
+        attribute: 'sks',
+        period,
+        values: distinctSks,
+        sources: sksClaims.map(s => ({ value: s.value, sourceDocument: s.source, authorityTier: s.tier })),
+        resolution: 'PREFER_HIGHER_AUTHORITY_OR_DISCLOSE_VALIDATION_NEEDED'
+      });
+      const bestTier = Math.min(...sksClaims.map(s => s.tier));
+      for (const claim of sksClaims) {
+        if (claim.tier > bestTier) {
+          claim.chunk.evidenceRole = 'CONTRADICTING';
+          claim.chunk.verificationStatus = 'CONFLICT_DETECTED';
+        } else if (sksClaims.filter(s => s.tier === bestTier && s.value !== claim.value).length > 0) {
+          claim.chunk.verificationStatus = 'NEEDS_SOURCE_VALIDATION';
+        }
+      }
+    }
+
+    // 2. Check conflicting accreditation rank claims (e.g. Unggul vs Baik Sekali vs Baik for the same entity & period)
+    const accClaims = [];
+    for (const c of chunks) {
+      const txt = c.text || c.chunk || '';
+      const rankMatch = txt.match(/\b(?:terakreditasi|peringkat(?:\s+akreditasi)?)\s+(unggul|baik\s+sekali|baik|\ba\b|\bb\b)\b/i);
+      if (rankMatch) {
+        const rankNorm = rankMatch[1].toUpperCase().replace(/\s+/g, ' ').trim();
+        accClaims.push({ value: rankNorm, chunk: c, source: c.sourceDocument, tier: c.provenance?.authorityTier || 2 });
+      }
+    }
+    const distinctAcc = Array.from(new Set(accClaims.map(a => a.value)));
+    if (distinctAcc.length > 1) {
+      conflicts.push({
+        entity,
+        attribute: 'accreditation',
+        period,
+        values: distinctAcc,
+        sources: accClaims.map(a => ({ value: a.value, sourceDocument: a.source, authorityTier: a.tier })),
+        resolution: 'PREFER_PRIMARY_CERTIFICATE_SK'
+      });
+      const bestTier = Math.min(...accClaims.map(a => a.tier));
+      for (const claim of accClaims) {
+        if (claim.tier > bestTier) {
+          claim.chunk.evidenceRole = 'CONTRADICTING';
+          claim.chunk.verificationStatus = 'CONFLICT_DETECTED';
+        }
+      }
+    }
+
+    // 3. Component-bound fee claims (fee:dpp vs fee:spp) bound to (entity, attribute, period, provenance)
+    // Different components (e.g., DPP Rp 12.000.000 vs SPP Rp 5.100.000) are distinct attributes and NOT conflicts.
+    const dppClaims = [];
+    const sppClaims = [];
+    for (const c of chunks) {
+      const txt = c.text || c.chunk || '';
+      const dppMatch = txt.match(/\b(?:dana\s+pendidikan\s+pokok|\bdpp\b)(?:\s*\(dpp\))?\s*(?:[:=-]|sebesar|adalah)?\s*rp\.?\s*([\d.]{5,15})/i);
+      if (dppMatch) {
+        dppClaims.push({
+          value: `Rp ${dppMatch[1].replace(/\.+$/, '')}`,
+          chunk: c,
+          source: c.sourceDocument,
+          tier: c.provenance?.authorityTier || 2
+        });
+      }
+      const sppMatch = txt.match(/\b(?:biaya\s+pendidikan\s+per\s+semester|biaya\s+per\s+semester|\bspp\b)(?:\s*\(spp\))?\s*(?:[:=-]|sebesar|adalah)?\s*rp\.?\s*([\d.]{5,15})/i);
+      if (sppMatch) {
+        sppClaims.push({
+          value: `Rp ${sppMatch[1].replace(/\.+$/, '')}`,
+          chunk: c,
+          source: c.sourceDocument,
+          tier: c.provenance?.authorityTier || 2
+        });
+      }
+    }
+
+    for (const [compAttr, compClaims] of [['fee:dpp', dppClaims], ['fee:spp', sppClaims]]) {
+      const distinctVals = Array.from(new Set(compClaims.map(f => f.value)));
+      if (distinctVals.length > 1) {
+        conflicts.push({
+          entity,
+          attribute: compAttr,
+          period,
+          values: distinctVals,
+          sources: compClaims.map(f => ({ value: f.value, sourceDocument: f.source, authorityTier: f.tier })),
+          resolution: 'PREFER_PRIMARY_OFFICIAL_TARIFF_SK'
+        });
+        const bestTier = Math.min(...compClaims.map(f => f.tier));
+        for (const claim of compClaims) {
+          if (claim.tier > bestTier) {
+            claim.chunk.evidenceRole = 'CONTRADICTING';
+            claim.chunk.verificationStatus = 'CONFLICT_DETECTED';
+          } else if (compClaims.filter(f => f.tier === bestTier && f.value !== claim.value).length > 0) {
+            claim.chunk.verificationStatus = 'NEEDS_SOURCE_VALIDATION';
+          }
+        }
+      }
+    }
+  }
+
+  return {
+    conflicts,
+    hasConflict: conflicts.length > 0
+  };
+}
+
+/**
  * Filters candidates and separates into accepted and rejected evidence
  */
 function arbitrateEvidence(candidates = [], retrievalPlan = {}) {
@@ -1570,9 +1915,11 @@ function arbitrateEvidence(candidates = [], retrievalPlan = {}) {
 
   for (const candidate of candidates) {
     const evaluation = evaluateEvidenceCompatibility(candidate, retrievalPlan);
+    const contractMeta = buildEvidenceContractMetadata(candidate, evaluation, retrievalPlan);
     if (evaluation.accepted) {
       const curated = curateCandidatePassages({
         ...candidate,
+        ...contractMeta,
         disposition: evaluation.disposition,
         dispositionReason: evaluation.reason,
         reason: evaluation.reason,
@@ -1583,6 +1930,7 @@ function arbitrateEvidence(candidates = [], retrievalPlan = {}) {
     } else {
       rejected.push({
         ...candidate,
+        ...contractMeta,
         disposition: evaluation.disposition,
         dispositionReason: evaluation.reason,
         reason: evaluation.reason,
@@ -1591,6 +1939,8 @@ function arbitrateEvidence(candidates = [], retrievalPlan = {}) {
       });
     }
   }
+
+  const conflictReport = detectSourceConflictsAndProvenance(accepted, retrievalPlan);
 
   // Sort accepted evidence to prioritize core requested aspect content
   if (retrievalPlan.domain === 'TUITION_FEE' || (retrievalPlan.requiredAspects && retrievalPlan.requiredAspects.includes('fee'))) {
@@ -1702,6 +2052,8 @@ function arbitrateEvidence(candidates = [], retrievalPlan = {}) {
     rejected,
     retrievalPlan,
     hasSupportedEvidence: accepted.length > 0,
+    sourceConflicts: conflictReport.conflicts,
+    hasSourceConflict: conflictReport.hasConflict,
     unsupportedEntity: Boolean(retrievalPlan.unsupportedEntity || retrievalPlan.isUnsupportedEntity),
     unsupportedEntityName: retrievalPlan.unsupportedEntityName || retrievalPlan.unsupportedProgramName || null,
     entityResolutionStatus: retrievalPlan.entityResolutionStatus || 'RESOLVED',
@@ -1714,5 +2066,7 @@ module.exports = {
   evaluateEvidenceCompatibility,
   arbitrateEvidence,
   arbitrateEvidenceWithContract,
-  curateCandidatePassages
+  curateCandidatePassages,
+  buildEvidenceContractMetadata,
+  detectSourceConflictsAndProvenance
 };

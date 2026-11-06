@@ -230,7 +230,7 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       }
 
       if (/\b(?:lebih\s+dari\s+satu|dua|beberapa)\s+(?:prodi|program\s+studi|jurusan)\b/i.test(rawQ) ||
-          /\b(?:satu\s+orang\s+boleh\s+(?:memilih|pilih)|boleh(?:kah)?\s+(?:memilih|pilih)\s+(?:lebih\s+dari\s+satu|dua|beberapa))\b/i.test(rawQ)) {
+        /\b(?:satu\s+orang\s+boleh\s+(?:memilih|pilih)|boleh(?:kah)?\s+(?:memilih|pilih)\s+(?:lebih\s+dari\s+satu|dua|beberapa))\b/i.test(rawQ)) {
         return {
           status: ANSWERABILITY_STATUS.UNKNOWN,
           reason: 'corpus_gap_pmb_multi_program_choice',
@@ -243,7 +243,7 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       }
 
       if (/\b(?:menerima|buka|terima)\s+(?:mahasiswa\s+baru|pendaftaran)\s+tahun\s+ini\b/i.test(rawQ) ||
-          /\bkampus\s+ini\s+menerima\s+mahasiswa\s+baru\s+tahun\s+ini\b/i.test(rawQ)) {
+        /\bkampus\s+ini\s+menerima\s+mahasiswa\s+baru\s+tahun\s+ini\b/i.test(rawQ)) {
         const { extractAcademicYearFromEvidence } = require('./groundedAnswerGenerator');
         const detectedAy = extractAcademicYearFromEvidence(accepted, null);
         if (detectedAy) {
@@ -492,8 +492,24 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
     };
   }
 
-  // 3. Aspect Coverage Verification:
+  // 3. Aspect Coverage Verification (Stage 4 Aspect-Driven & InformationNeed-Driven Answerability):
   let requiredAspects = (semanticFrame.aspects || []).filter(a => a !== 'general');
+  const MULTI_ATTRIBUTE_PRIMARY_SET = new Set([
+    'fee', 'accreditation', 'curriculum', 'faculty', 'degree_award',
+    'career_prospects', 'scholarship', 'location', 'contact', 'facilities', 'student_organization'
+  ]);
+  const extraAttrs = [
+    ...(Array.isArray(semanticFrame.requestedAttributes) ? semanticFrame.requestedAttributes : []),
+    ...(Array.isArray(arbitratedEvidence?.retrievalPlan?.requiredAspects) ? arbitratedEvidence.retrievalPlan.requiredAspects : []),
+    ...(Array.isArray(arbitratedEvidence?.retrievalPlan?.requestedAttributes) ? arbitratedEvidence.retrievalPlan.requestedAttributes : [])
+  ];
+  if (requiredAspects.length > 0 || (Array.isArray(semanticFrame.requestedAttributes) && semanticFrame.requestedAttributes.length > 0 && (!semanticFrame.aspects || semanticFrame.aspects.length === 0))) {
+    for (const attr of extraAttrs) {
+      if (attr && MULTI_ATTRIBUTE_PRIMARY_SET.has(attr) && !requiredAspects.includes(attr)) {
+        requiredAspects.push(attr);
+      }
+    }
+  }
   if (semanticFrame.intent === 'ORGANIZATION_MEMBERSHIP_CHECK') {
     // In membership verification, the category aspect being questioned is the hypothesis under test, not an evidence requirement
     requiredAspects = requiredAspects.filter(a => !['arts_culture', 'sports', 'reasoning_tech', 'religious'].includes(a));
@@ -509,7 +525,19 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       if (Array.isArray(chunk.providedAspects)) {
         chunk.providedAspects.forEach(a => allProvidedAspects.add(a));
       }
+      if (Array.isArray(chunk.supportedAttributes)) {
+        chunk.supportedAttributes.forEach(a => allProvidedAspects.add(a));
+      }
       const text = (chunk.text || chunk.chunk || '').toLowerCase();
+      if (/\b(?:akreditasi|terakreditasi|ban-?pt|lam-?infokom|peringkat\s+akreditasi|sk\s+akreditasi)\b/i.test(text)) {
+        allProvidedAspects.add('accreditation');
+        allProvidedAspects.add('akreditasi');
+        allProvidedAspects.add('peringkat');
+      }
+      if (/\b(?:\d{2,3}\s*sks|beban\s+studi|total\s+sks)\b/i.test(text)) {
+        allProvidedAspects.add('sks');
+        allProvidedAspects.add('curriculum');
+      }
       if (/\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(text)) {
         allProvidedAspects.add('rpl');
       }
@@ -605,9 +633,10 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         allProvidedAspects.add('student_affairs');
         allProvidedAspects.add('contact');
       }
-      if (/\b(?:kurikulum|matkul|mata\s+kuliah|sks|semester|pembelajaran)\b/i.test(text)) {
+      if (/\b(?:kurikulum|matkul|mata\s+kuliah|sks|semester|pembelajaran|mempelajari)\b/i.test(text)) {
         allProvidedAspects.add('curriculum');
         allProvidedAspects.add('course');
+        allProvidedAspects.add('courses');
       }
       if (/\b(?:empat\s+pilar\s+riset|pilar\s+riset\s+utama|fokus\s+penelitian|fokus\s+keilmuan|data\s+science.*cyber\s+security|enterprise\s+system)\b/i.test(text)) {
         allProvidedAspects.add('research_focus');
@@ -652,9 +681,15 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         allProvidedAspects.add('admission_wave');
         allProvidedAspects.add('timeline');
       }
-      if (/\b(?:biaya|uang\s+kuliah|tarif|spp)\b/i.test(text)) {
+      if (/\b(?:biaya|uang\s+kuliah|tarif|spp|dpp)\b/i.test(text)) {
         allProvidedAspects.add('fee');
         allProvidedAspects.add('tuition');
+        if (/\b(?:dpp|dana\s+pendidikan\s+pokok)\b/i.test(text)) {
+          allProvidedAspects.add('dpp');
+        }
+        if (/\b(?:dpp|spp|pendaftaran|semester|rincian)\b/i.test(text)) {
+          allProvidedAspects.add('components');
+        }
       }
       if (/\b(?:rincian\s+biaya|komponen\s+biaya|struktur\s+biaya|skema\s+biaya|angsuran|tahap\s+pembayaran)\b/i.test(text)) {
         allProvidedAspects.add('fee_structure');
@@ -788,6 +823,38 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
     const coveredAspects = requiredAspects.filter(req => allProvidedAspects.has(req));
     const missingAspects = requiredAspects.filter(req => !allProvidedAspects.has(req));
 
+    // Build per-attribute and per-informationNeed evaluation map (Stage 4 Section D)
+    const attributeEvaluation = {};
+    for (const reqAttr of requiredAspects) {
+      const isSupported = allProvidedAspects.has(reqAttr);
+      const supportingChunks = accepted.filter(c => {
+        const cAspects = [...(c.providedAspects || []), ...(c.supportedAttributes || [])];
+        if (cAspects.includes(reqAttr)) return true;
+        const t = (c.text || c.chunk || '').toLowerCase();
+        if (reqAttr === 'fee' && /\b(?:biaya|dpp|spp|uang\s+kuliah|tarif)\b/i.test(t)) return true;
+        if ((reqAttr === 'accreditation' || reqAttr === 'akreditasi') && /\b(?:akreditasi|terakreditasi|ban-?pt|lam-?infokom)\b/i.test(t)) return true;
+        if (reqAttr === 'faculty' && /\b(?:fakultas|fik\b|fbv\b|infokom|bisvo)\b/i.test(t)) return true;
+        if (reqAttr === 'curriculum' && /\b(?:kurikulum|mata\s+kuliah|sks|semester)\b/i.test(t)) return true;
+        return false;
+      });
+      const hasConflict = supportingChunks.some(c => c.verificationStatus === 'CONFLICT_DETECTED' || c.evidenceRole === 'CONTRADICTING');
+      const needsValidation = supportingChunks.some(c => c.verificationStatus === 'NEEDS_SOURCE_VALIDATION');
+      attributeEvaluation[reqAttr] = {
+        attribute: reqAttr,
+        supported: isSupported,
+        status: !isSupported ? 'MISSING' : (hasConflict ? 'CONFLICT_DETECTED' : (needsValidation ? 'NEEDS_SOURCE_VALIDATION' : 'SUPPORTED')),
+        supportingChunkCount: supportingChunks.length,
+        sourceDocuments: Array.from(new Set(supportingChunks.map(c => c.sourceDocument || c.source_file || c.filename || 'canonical_corpus'))),
+        temporalRelevance: supportingChunks[0]?.temporalRelevance || 'ATEMPORAL'
+      };
+    }
+
+    if (arbitratedEvidence && typeof arbitratedEvidence === 'object') {
+      arbitratedEvidence.coveredAspects = coveredAspects;
+      arbitratedEvidence.missingAspects = missingAspects;
+      arbitratedEvidence.attributeEvaluation = attributeEvaluation;
+    }
+
     if (coveredAspects.length === 0) {
       if (
         (semanticFrame.domain === 'FACILITIES' || semanticFrame.intent === 'FACILITY_INQUIRY') &&
@@ -810,7 +877,7 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         }
       }
       if (/\b(?:menerima|buka|terima)\s+(?:mahasiswa\s+baru|pendaftaran)\s+tahun\s+ini\b/i.test(rawQ) ||
-          /\bkampus\s+ini\s+menerima\s+mahasiswa\s+baru\s+tahun\s+ini\b/i.test(rawQ)) {
+        /\bkampus\s+ini\s+menerima\s+mahasiswa\s+baru\s+tahun\s+ini\b/i.test(rawQ)) {
         const { extractAcademicYearFromEvidence } = require('./groundedAnswerGenerator');
         const detectedAy = extractAcademicYearFromEvidence(accepted, null);
         if (detectedAy) {
@@ -952,7 +1019,7 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
 
     if (missingAspects.length > 0 && coveredAspects.length > 0) {
       if (/\b(?:menerima|buka|terima)\s+(?:mahasiswa\s+baru|pendaftaran)\s+tahun\s+ini\b/i.test(rawQ) ||
-          /\bkampus\s+ini\s+menerima\s+mahasiswa\s+baru\s+tahun\s+ini\b/i.test(rawQ)) {
+        /\bkampus\s+ini\s+menerima\s+mahasiswa\s+baru\s+tahun\s+ini\b/i.test(rawQ)) {
         const { extractAcademicYearFromEvidence } = require('./groundedAnswerGenerator');
         const detectedAy = extractAcademicYearFromEvidence(accepted, null);
         if (detectedAy) {
@@ -994,6 +1061,7 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         reason: 'partial_aspect_coverage',
         coveredAspects,
         missingAspects,
+        attributeEvaluation,
         guidance: isEn
           ? `Information regarding ${missingAspects.join(', ')} is not fully listed in the available guidelines.`
           : `Informasi terkait ${missingAspects.join(', ')} belum tercantum secara lengkap dalam panduan yang tersedia.`
@@ -1007,7 +1075,8 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       status: ANSWERABILITY_STATUS.PARTIAL,
       reason: 'multi_subquery_partial_coverage',
       coveredAspects: requiredAspects,
-      missingAspects: []
+      missingAspects: [],
+      attributeEvaluation: arbitratedEvidence?.attributeEvaluation || {}
     };
   }
 
@@ -1016,7 +1085,8 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
     status: ANSWERABILITY_STATUS.ANSWERABLE,
     reason: 'sufficient_supported_evidence',
     coveredAspects: requiredAspects,
-    missingAspects: []
+    missingAspects: [],
+    attributeEvaluation: arbitratedEvidence?.attributeEvaluation || {}
   };
 }
 

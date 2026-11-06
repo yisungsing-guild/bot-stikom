@@ -186,6 +186,9 @@ tests/*
 !tests/wave3UnifiedEvidenceAndContext.test.js
 !tests/fixtures/
 !tests/fixtures/candidateMetadataFixture.json
+!tests/stage3SemanticAndContextGeneralization.test.js
+!tests/stage4RetrievalAndEvidenceReasoning.test.js
+!tests/stage5MultiAttributeAndConflictComposition.test.js
 
 tools/
 quarantined_backups/

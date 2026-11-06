@@ -1037,13 +1037,6 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
   const userLang = semanticFrame.language || detectQueryLanguage(rawQuery || '');
   const missingAspects = arbitratedEvidence.missingAspects || [];
 
-  if (semanticFrame.domain === 'ACADEMIC_RECOMMENDATION' || semanticFrame.intent === 'PROGRAM_RECOMMENDATION') {
-    const { evaluateRecommendation } = require('../reasoning/recommendationEngine');
-    const recResult = evaluateRecommendation(semanticFrame.rawQuery || rawQuery);
-    const recAnswer = renderRecommendationAnswer(recResult);
-    return appendMissingAspectNote(recAnswer);
-  }
-
   // Helper to append missing aspect notes
   function appendMissingAspectNote(answerText) {
     const filteredMissing = (missingAspects || []).filter(a => {
@@ -1084,7 +1077,7 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
       const can = (e.canonical || e.name || String(e)).toLowerCase();
       return /^(?:s1|s2|d3|d4)\s+/i.test(can) && e.type !== 'academic_scope';
     });
-  const isAcademicCatalogDomain = !semanticFrame.domain || semanticFrame.domain === 'ACADEMIC_PROGRAM';
+  const isAcademicCatalogDomain = !semanticFrame.domain || semanticFrame.domain === 'ACADEMIC_PROGRAM' || semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST';
 
   // Institutional Academic Catalog Listing with verified degree scope filtering
   if (semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST' && isAcademicCatalogDomain && !isFacilityInquiry && !hasSpecificProgramEntity) {
@@ -1108,18 +1101,42 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
   }
 
   // Institutional Faculty Inquiry (Programs per faculty or faculty assignment)
-  if (semanticFrame.intent === 'FACULTY_INQUIRY') {
+  if (
+    semanticFrame.intent === 'FACULTY_INQUIRY' ||
+    /\b(?:fakultas|fik|fbv|infokom|bisvo)\b/i.test(rawQuery)
+  ) {
     const facultySummary = generateGroundedFacultySummary(rawQuery, userLang);
     if (facultySummary) {
       return appendMissingAspectNote(facultySummary);
     }
   }
 
-  // Campus Location & Count Inquiry
+  const hasExplicitNonRecommendationTopic = /\b(?:biaya|spp|dpp|uang\s+kuliah|tarif|akreditasi|fakultas|fik|fbv|infokom|bisvo|(?:jurusan|prodi|program\s+studi)\s+apa\s+saja|apa\s+saja\s+(?:jurusan|prodi|program\s+studi))\b/i.test(rawQuery);
+  if (hasExplicitNonRecommendationTopic && (!accepted || accepted.length === 0) && /\b(?:biaya|spp|dpp|uang\s+kuliah|tarif)\b/i.test(rawQuery)) {
+    return null;
+  }
+
+  if (
+    (semanticFrame.domain === 'ACADEMIC_RECOMMENDATION' || semanticFrame.intent === 'PROGRAM_RECOMMENDATION') &&
+    !['AVAILABLE_PROGRAMS_LIST', 'FACULTY_INQUIRY', 'TUITION_FEE_INQUIRY', 'PROGRAM_ACCREDITATION'].includes(semanticFrame.intent) &&
+    !hasExplicitNonRecommendationTopic
+  ) {
+    const { evaluateRecommendation } = require('../reasoning/recommendationEngine');
+    const recResult = evaluateRecommendation(semanticFrame.rawQuery || rawQuery);
+    const recAnswer = renderRecommendationAnswer(recResult);
+    return appendMissingAspectNote(recAnswer);
+  }
+
+  // Campus Location & Count Inquiry (Zero-evidence general overview fallback; evidence-backed or branch-specific queries are handled by extractGroundedCampusDirectory)
   const isAskingLocationOrCount = semanticFrame.intent === 'CAMPUS_LOCATION' ||
     /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus\s+(?:renon|jimbaran|abiansemal)|dimana\s+kampus|berapa\s+(?:ada\s+)?kampus|ada\s+berapa\s+kampus|jumlah\s+kampus|lokasi(?:nya)?\s+di\s*mana|di\s*mana(?:\s+saja)?\s+lokasi(?:nya)?)\b/i.test(rawQuery);
+  const hasSpecificBranchOrProximity = Boolean(
+    semanticFrame.targetBranch ||
+    semanticFrame.locationScope === 'SINGLE' ||
+    /\b(?:renon|jimbaran|abiansemal|dekat|terdekat|kuta|ubud|sanur|gianyar|tabanan|telepon|telp|hotline|wa|whatsapp|kontak)\b/i.test(rawQuery)
+  );
 
-  if (isAskingLocationOrCount) {
+  if (isAskingLocationOrCount && (!accepted || accepted.length === 0) && !hasSpecificBranchOrProximity) {
     const isCountQuery = /\b(?:berapa\s+(?:ada\s+)?kampus|ada\s+berapa\s+kampus|berapa\s+jumlah\s+kampus|jumlah\s+kampus|berapa\s+banyak\s+kampus|berapa\s+(?:ada\s+)?cabang|ada\s+berapa\s+cabang)\b/i.test(rawQuery);
     const countIntro = isCountQuery
       ? (userLang === 'en'
@@ -1129,27 +1146,32 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
         ? `ITB STIKOM Bali has three strategic campus locations in Bali:\n\n`
         : `ITB STIKOM Bali memiliki tiga lokasi kampus yang strategis di Bali:\n\n`);
 
+    const campusLocs = ACADEMIC_FACTS_REGISTRY?.campusLocations || {};
+    const renonAddr = campusLocs.renon?.address || 'Jl. Raya Puputan No. 86 Renon, Denpasar, Bali';
+    const jimbaranAddr = campusLocs.jimbaran?.address || 'Jl. Raya Kampus Udayana, Jimbaran, Kuta Selatan, Badung, Bali';
+    const abiansemalAddr = campusLocs.abiansemal?.address || 'Jl. Janger, Dauh Yeh Cani, Kec. Abiansemal, Kabupaten Badung, Bali';
+
     const campusLocationAnswer = userLang === 'en'
       ? `${countIntro}` +
       `1. **Kampus Renon (Main Campus)**:\n` +
-      `   Jl. Raya Puputan No. 86, Renon, Denpasar, Bali.\n\n` +
+      `   ${renonAddr}.\n\n` +
       `2. **Kampus Jimbaran**:\n` +
-      `   Jl. Raya Kampus Udayana No. 8, Jimbaran, Kuta Selatan, Badung, Bali.\n\n` +
+      `   ${jimbaranAddr}.\n\n` +
       `3. **Kampus Abiansemal**:\n` +
-      `   Jl. Jenderal Sudirman, Blahkiuh, Abiansemal, Badung, Bali.\n\n` +
+      `   ${abiansemalAddr}.\n\n` +
       `All three campus locations provide academic consultation, student services, and PMB registration. Feel free to ask if you need further directions or information!`
       : `${countIntro}` +
       `1. **Kampus Renon (Kampus Pusat)**:\n` +
-      `   Jl. Raya Puputan No. 86, Renon, Denpasar, Bali.\n\n` +
+      `   ${renonAddr}.\n\n` +
       `2. **Kampus Jimbaran**:\n` +
-      `   Jl. Raya Kampus Udayana No. 8, Jimbaran, Kuta Selatan, Badung, Bali.\n\n` +
+      `   ${jimbaranAddr}.\n\n` +
       `3. **Kampus Abiansemal**:\n` +
-      `   Jl. Jenderal Sudirman, Blahkiuh, Abiansemal, Badung, Bali.\n\n` +
+      `   ${abiansemalAddr}.\n\n` +
       `Ketiga lokasi kampus tersebut melayani konsultasi akademik, layanan mahasiswa, serta pendaftaran mahasiswa baru (PMB). Silakan tanyakan jika Kakak membutuhkan panduan rute atau informasi lebih lanjut!`;
     return appendMissingAspectNote(campusLocationAnswer);
   }
 
-  // Institutional Current Admission Wave Status Inquiry (e.g. "Sekarang buka gelombang berapa?", "Apakah sekarang buka gelombang pendaftaran?")
+  // Institutional Current Admission Wave Status Inquiry (Zero-evidence general fallback; when calendar evidence is present, getCalendarSummaryFromEvidence in buildGenericExtractiveFallback synthesizes exact wave dates)
   const academicYearLabel = semanticFrame.academicYear || semanticFrame.temporal?.academicYear;
   const hasSpecificWave = /\b(gelombang\s*(?:khusus|sisipan|[1-4]|iv|iii|ii|i\b))/i.test(rawQuery);
   const isCurrentEnrollmentStatus = !hasSpecificWave && (semanticFrame.intent === 'CURRENT_ENROLLMENT_STATUS' ||
@@ -1157,7 +1179,7 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
     (/\b(?:sekarang\s+buka\s+gelombang|gelombang\s+berapa\s+(?:sekarang|saat\s*ini)|apakah\s+(?:sekarang|saat\s*ini)\s+buka\s+gelombang|status\s+gelombang|jadwal\s+pendaftaran|kapan\s+pendaftaran)\b/i.test(rawQuery) &&
       !/\b(syarat|persyaratan|dokumen|cara\s+daftar|biaya)\b/i.test(rawQuery)));
 
-  if (isCurrentEnrollmentStatus) {
+  if (isCurrentEnrollmentStatus && (!accepted || accepted.length === 0)) {
     const isEn = userLang === 'en';
     const yearHeadingId = academicYearLabel ? ` Tahun Akademik ${academicYearLabel}` : '';
     const yearHeadingEn = academicYearLabel ? ` for Academic Year ${academicYearLabel}` : '';
@@ -1219,7 +1241,7 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
       `The exact calendar date for the graduation ceremony is not recorded in the official documents currently available in the system. The official BAAK documents (Pengumuman No. 047/DIRAKA/WRI/ITBSTIKOM/VII/26) specify the schedule for Yudisium leading to Wisuda XXXVIII, while the ceremony date itself is announced separately via BAAK circulars.\n\n` +
       `Additionally, the official tuition decree (SK No. 629/ITBSTIKOM/WDS/X/25) specifies that certification, yudisium, and graduation fees are determined separately. Students are advised to monitor official announcements from BAAK or visit Loket Akademik for the confirmed graduation ceremony schedule.`
       : `Mengenai tanggal dan jadwal pelaksanaan ${eventName} di ITB STIKOM Bali:\n\n` +
-      `Tanggal pasti pelaksanaan upacara wisuda belum tercantum dalam dokumen resmi yang tersedia di sistem saat ini. Dokumen resmi BAAK yang tersedia (Pengumuman No. 047/DIRAKA/WRI/ITBSTIKOM/VII/26) mengatur jadwal pelaksanaan Yudisium menuju periode Wisuda XXXVIII, sedangkan tanggal pelaksanaan upacara wisuda diumumkan melalui surat edaran tersendiri.\n\n` +
+      `Tanggal pasti pelaksanaan upacara wisuda belum tercantum dalam dokumen resmi yang tersedia di sistem saat ini sehingga belum dapat dipastikan. Dokumen resmi BAAK yang tersedia (Pengumuman No. 047/DIRAKA/WRI/ITBSTIKOM/VII/26) mengatur jadwal pelaksanaan Yudisium menuju periode Wisuda XXXVIII, sedangkan tanggal pelaksanaan upacara wisuda diumumkan melalui surat edaran tersendiri.\n\n` +
       `Selain itu, dokumen resmi SK Tarif Biaya Pendidikan No. 629/ITBSTIKOM/WDS/X/25 mencatat bahwa biaya sertifikasi, yudisium, dan wisuda akan ditentukan kemudian secara terpisah. Untuk memastikan tanggal resmi upacara wisuda periode terdekat, mahasiswa disarankan memantau pengumuman resmi berkala dari BAAK atau menghubungi Loket Akademik ITB STIKOM Bali.`;
     return appendMissingAspectNote(academicEventAnswer);
   }
@@ -2051,8 +2073,8 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
       }
 
       const totalSksText = /s2|magister/i.test(prodiName)
-        ? '4 semester (total 36 SKS)'
-        : (/d3/i.test(prodiName) ? '6 semester (total 108 SKS)' : '8 semester (total 144 SKS)');
+        ? '4 semester (struktur kurikulum 56 SKS: 47 SKS mata kuliah wajib dan 9 SKS mata kuliah pilihan yang ditawarkan)'
+        : (/d3/i.test(prodiName) ? '6 semester (indeks kurikulum OBE mencatat 110 SKS)' : '8 semester (total 144 SKS)');
       let full = `Kurikulum untuk **${prodiName}** ITB STIKOM Bali dirancang untuk ${totalSksText}:\n\n`;
       full += lines.join('\n');
       full += `\n\nUntuk informasi silabus lengkap per mata kuliah, Kakak dapat mengakses portal akademik SION atau menanyakan semester tertentu.`;
@@ -2060,20 +2082,10 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
     }
 
     if (isS2) {
-      if (requestedSemester) {
-        const s2SemesterAnswer = `Untuk program **S2 Magister Sistem Informasi (M.Kom)** di ITB STIKOM Bali, rincian daftar mata kuliah spesifik per semester (termasuk Semester ${requestedSemester}) belum tercantum dalam ringkasan kurikulum publik yang terverifikasi.\n\n` +
-          `Secara keseluruhan, kurikulum dirancang dengan total beban studi **36 SKS** untuk **4 semester** (masa studi normal) dengan fokus riset pada Cyber Security, Data Science, Enterprise System, dan Medical Informatics.\n\n` +
-          `Untuk mendapatkan silabus lengkap dan daftar mata kuliah per semester, disarankan untuk mengonfirmasi langsung ke Program Pascasarjana ITB STIKOM Bali atau melalui layanan informasi PMB di https://pmb.stikom-bali.ac.id.`;
-        return appendMissingAspectNote(s2SemesterAnswer);
+      const s2CurricRes = buildGroundedCurriculumAnswer(semanticFrame, accepted, arbitratedEvidence);
+      if (s2CurricRes && s2CurricRes.success && s2CurricRes.answer) {
+        return appendMissingAspectNote(s2CurricRes.answer);
       }
-      const s2TotalSksAnswer = `Untuk program **S2 Magister Sistem Informasi (M.Kom)** di ITB STIKOM Bali:\n\n` +
-        `• **Total Beban Studi**: **36 SKS**.\n` +
-        `• **Masa Studi**: Dirancang untuk **4 semester** (masa studi normal).\n` +
-        `• **Gelar Kelulusan**: Magister Komputer (**M.Kom**).\n` +
-        `• **Fokus Keilmuan & Riset**: Cyber Security, Data Science, Enterprise System, dan Medical Informatics.\n` +
-        `• **Fleksibilitas Perkuliahan**: Kurikulum berbasis industri yang dirancang adaptif bagi kalangan profesional maupun akademisi.\n\n` +
-        `Untuk informasi kurikulum lengkap dan pendaftaran resmi, Kakak dapat mengunjungi portal PMB di https://pmb.stikom-bali.ac.id atau menghubungi sekretariat Program Pascasarjana ITB STIKOM Bali.`;
-      return appendMissingAspectNote(s2TotalSksAnswer);
     }
 
     if (isSk) {
@@ -2448,7 +2460,7 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
   }
 
   // 7d. International Programs (Double Degree DNUI, HELP, GCCP, BCCP, Magang Jepang, Student Exchange)
-  if (semanticFrame.domain === 'INTERNATIONAL' || targetEntities.some(e => ['Double Degree DNUI', 'Double Degree HELP University', 'Dual Degree UTB', 'GCCP', 'BCCP', 'Program Hi-Think (Magang Jepang)', 'Student Exchange'].includes(e)) || /\b(dnui|dalian|help\s+university|gccp|bccp|magang\s+jepang|hi-?think|student\s+exchange|pertukaran\s+mahasiswa|bali\s+cross\s+cultur)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
+  if (semanticFrame.domain === 'INTERNATIONAL' || targetEntities.some(e => ['Double Degree DNUI', 'Double Degree HELP University', 'Dual Degree UTB', 'GCCP', 'BCCP', 'Program Hi-Think (Magang Jepang)', 'Student Exchange'].includes(e)) || /\b(dnui|dalian|help\s+university|gccp|bccp|magang\s+jepang|hi-?think|student\s+exchange|pertukaran\s+mahasiswa|bali\s+cross\s+cultur|double\s*degree|dual\s*degree|gelar\s+ganda|dua\s+gelar)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
     const isDnui = targetEntities.some(e => /dnui|dalian/i.test(e)) || /\b(dnui|dalian|china|cina)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
     const isHelp = targetEntities.some(e => /help/i.test(e)) || /\b(help|malaysia)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
     const isGccp = targetEntities.some(e => /gccp/i.test(e)) || /\b(gccp|global\s+cross\s+cultural)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
@@ -2564,7 +2576,8 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
     // Present supported choices without prematurely assuming international-only
     const isGenericDoubleDegree = /\b(?:double\s*degree|dual\s*degree|gelar\s+ganda|dua\s+gelar)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) &&
       !isDnui && !isHelp && !isGccp && !isJapan && !isStudentExchange &&
-      !/\b(?:utb|bandung|dkv|nasional|dalam\s+negeri|china|cina|dalian|malaysia)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+      !/\b(?:utb|bandung|dkv|nasional|dalam\s+negeri|china|cina|dalian|malaysia)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) &&
+      Array.isArray(accepted) && accepted.length > 0;
 
     if (isGenericDoubleDegree) {
       const genericDdAnswer = `ITB STIKOM Bali menyelenggarakan program **Double Degree (Dual Degree / Gelar Ganda)** baik jalur nasional maupun internasional yang bekerja sama dengan universitas mitra resmi:\n\n` +
@@ -2918,16 +2931,6 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
     const facultySummary = generateGroundedFacultySummary(rawQuery, accepted);
     if (facultySummary) {
       return appendMissingAspectNote(facultySummary);
-    }
-  }
-
-  // 8. Generic Clean Passages Fallback
-  const rawClean = cleanDocumentArtifacts(cleanAll);
-  if (rawClean && rawClean.length > 30) {
-    const paragraphs = rawClean.split(/\n{2,}/).map(p => p.trim()).filter(p => p.length >= 25);
-    if (paragraphs.length > 0) {
-      let genericAnswer = `${paragraphs.slice(0, 3).join('\n\n')}\n\nSemoga informasi ini membantu ya Kak! Jika ada bagian yang kurang jelas atau butuh detail lebih lanjut, silakan beri tahu kami.`;
-      return appendMissingAspectNote(genericAnswer);
     }
   }
 
@@ -3374,18 +3377,20 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     });
   const isFacilityInquiry = semanticFrame.domain === 'FACILITIES' ||
     (semanticFrame.aspects && semanticFrame.aspects.some(a => ['facilities', 'lab', 'campus_infrastructure'].includes(a)));
-  const isAcademicCatalogDomain = !semanticFrame.domain || semanticFrame.domain === 'ACADEMIC_PROGRAM';
-  if (isAcademicCatalogDomain && semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST' && !hasSpecificProgramEntity && !isFacilityInquiry) {
-    const scopeResolution = semanticFrame.academicScope ||
-      arbitratedEvidence?.retrievalPlan?.academicScope ||
-      resolveAcademicScope(semanticFrame.scopeLevel || semanticFrame.academicLevel || semanticFrame);
+  const isAcademicCatalogDomain = !semanticFrame.domain || semanticFrame.domain === 'ACADEMIC_PROGRAM' || semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST' || semanticFrame.intent === 'FACULTY_INQUIRY';
+  if (isAcademicCatalogDomain && (semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST' || semanticFrame.intent === 'FACULTY_INQUIRY') && !hasSpecificProgramEntity && !isFacilityInquiry) {
+    if (semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST') {
+      const scopeResolution = semanticFrame.academicScope ||
+        arbitratedEvidence?.retrievalPlan?.academicScope ||
+        resolveAcademicScope(semanticFrame.scopeLevel || semanticFrame.academicLevel || semanticFrame);
 
-    if (scopeResolution.status === ACADEMIC_SCOPE_STATUS.UNSUPPORTED) {
-      return {
-        success: false,
-        answer: null,
-        reason: 'unsupported_degree_scope'
-      };
+      if (scopeResolution.status === ACADEMIC_SCOPE_STATUS.UNSUPPORTED) {
+        return {
+          success: false,
+          answer: null,
+          reason: 'unsupported_degree_scope'
+        };
+      }
     }
 
     const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, arbitratedEvidence.accepted || [], arbitratedEvidence);
@@ -3503,25 +3508,6 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
   const hasImplicitRecCandidates = isRecInquiry && !hasExplicitEmptyAccepted && Boolean(recObj && Array.isArray(recObj.scoredCandidates) && recObj.scoredCandidates.length > 0);
   const accepted = arbitratedEvidence.accepted || [];
 
-  // 0a. Check Grounded Curriculum Answer BEFORE summary (e.g. AI safe unknown, S1 TI pillars, S1 SI ML)
-  const curriculumResEarly = buildGroundedCurriculumAnswer(semanticFrame, accepted, arbitratedEvidence);
-  if (curriculumResEarly && curriculumResEarly.success && curriculumResEarly.answer) {
-    return curriculumResEarly;
-  }
-
-  // Grounded Deterministic Summary check (PMB procedure, catalog, locations) before empty accepted bail-out
-  const preSummaryAnswer = buildGroundedDeterministicSummary(semanticFrame, accepted, arbitratedEvidence);
-  if (preSummaryAnswer) {
-    return {
-      success: true,
-      answer: preSummaryAnswer,
-      source: 'grounded_deterministic_summary',
-      isExtractive: true,
-      handledSafely: true,
-      outcome: 'VERIFIED_FACTUAL'
-    };
-  }
-
   if (accepted.length === 0 && !isBroadOrAmbiguousRec && !hasImplicitRecCandidates) {
     if (isRecInquiry) {
       const userLang = semanticFrame.language || detectQueryLanguage(semanticFrame.rawQuery || '');
@@ -3549,6 +3535,24 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
         source: 'unanswerable_natural_guidance'
       };
     }
+
+    // Zero-evidence canonical registry & institutional catalog/procedure resolution (only when not marked unanswerable)
+    const zeroEvCurricRes = buildGroundedCurriculumAnswer(semanticFrame, accepted, arbitratedEvidence);
+    if (zeroEvCurricRes && zeroEvCurricRes.success && zeroEvCurricRes.answer) {
+      return zeroEvCurricRes;
+    }
+    const zeroEvSummary = buildGroundedDeterministicSummary(semanticFrame, accepted, arbitratedEvidence);
+    if (zeroEvSummary) {
+      return {
+        success: true,
+        answer: zeroEvSummary,
+        source: 'grounded_deterministic_summary',
+        isExtractive: true,
+        handledSafely: true,
+        outcome: 'VERIFIED_FACTUAL'
+      };
+    }
+
     return {
       success: false,
       answer: null,
@@ -3556,11 +3560,27 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     };
   }
 
-  // Prioritize specific program evidence over multi-program catalogs if specific evidence exists
-  let generationEvidence = accepted;
+  // Stage 5: Conflict-Aware & Temporal-Aware Evidence Preparation
+  const conflictState = prepareConflictAwareEvidence(accepted, semanticFrame, arbitratedEvidence);
+  if (conflictState.onlyHistoricalAvailable && !conflictState.isExplicitHistoricalQuery) {
+    return buildHistoricalOnlyDisclosureAnswer(semanticFrame, conflictState.historicalChunks, arbitratedEvidence);
+  }
+  if (
+    conflictState.unresolvedConflictNotes.length > 0 &&
+    (conflictState.requestedComposableAttrs.length <= 1 || conflictState.requestedComposableAttrs.every(a => ['sks', 'curriculum'].includes(a)))
+  ) {
+    const conflictSingleRes = composeConflictTransparentSingleAnswer(semanticFrame, conflictState, arbitratedEvidence);
+    if (conflictSingleRes && conflictSingleRes.success && conflictSingleRes.answer) {
+      return conflictSingleRes;
+    }
+  }
+
+  // Prioritize specific program evidence over multi-program catalogs if specific evidence exists,
+  // while preserving multi-program chunks that support requested attributes not covered by single-program chunks.
+  let generationEvidence = conflictState.activeEvidence;
   const hasSiblingExclusions = Array.isArray(arbitratedEvidence.retrievalPlan?.excludedConflictingEntities) &&
     arbitratedEvidence.retrievalPlan.excludedConflictingEntities.length > 0;
-  if (hasSiblingExclusions && generationEvidence.length > 1) {
+  if (hasSiblingExclusions && generationEvidence.length > 1 && conflictState.requestedComposableAttrs.length <= 1) {
     const specificSingleProgramEvidence = generationEvidence.filter(e => {
       const scope = e.scope || '';
       const isMulti = scope === 'PROGRAM_MULTI' || (Array.isArray(e.supportedPrograms) && e.supportedPrograms.length > 1);
@@ -3568,6 +3588,20 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     });
     if (specificSingleProgramEvidence.length > 0) {
       generationEvidence = specificSingleProgramEvidence;
+    }
+  }
+
+  // Stage 5: Multi-Attribute Composite Synthesis (when 2+ primary attributes are requested)
+  if (
+    conflictState.requestedComposableAttrs.length >= 2 &&
+    !isProgramComparisonInquiry(semanticFrame?.rawQuery, semanticFrame) &&
+    !isDiscountStackingInquiry(semanticFrame?.rawQuery, semanticFrame) &&
+    !arbitratedEvidence.unsupportedEntity &&
+    semanticFrame.domain !== 'UNSUPPORTED_PROGRAM'
+  ) {
+    const multiAttrRes = composeMultiAttributeAnswer(semanticFrame, generationEvidence, arbitratedEvidence, conflictState);
+    if (multiAttrRes && multiAttrRes.success && multiAttrRes.answer) {
+      return multiAttrRes;
     }
   }
 
@@ -3625,11 +3659,30 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       arbitratedEvidence
     });
     if (feeRes && feeRes.success && feeRes.answer) {
+      let finalFeeAnswer = feeRes.answer;
+      const nonFeeMissing = (arbitratedEvidence.missingAspects || []).filter(a =>
+        !['fee', 'tuition', 'dpp', 'spp', 'components', 'fee_structure', 'fee_components', 'total_cost'].includes(a)
+      );
+      if (nonFeeMissing.length > 0) {
+        const userLang = semanticFrame.language || detectQueryLanguage(semanticFrame.rawQuery || '');
+        const aspectLabels = userLang === 'en'
+          ? { accreditation: 'accreditation', akreditasi: 'accreditation', career_prospects: 'career prospects', scholarship: 'scholarships', curriculum: 'curriculum details', facilities: 'campus facilities', faculty: 'faculty structure', degree_award: 'degree award' }
+          : { accreditation: 'akreditasi', akreditasi: 'akreditasi', career_prospects: 'prospek karir', scholarship: 'beasiswa', curriculum: 'rincian kurikulum', facilities: 'fasilitas kampus', faculty: 'struktur fakultas', degree_award: 'gelar lulusan' };
+        const missingNames = Array.from(new Set(nonFeeMissing.map(a => aspectLabels[a] || a)));
+        const missingNote = userLang === 'en'
+          ? `\n\n_Note: Official information regarding ${missingNames.join(', ')} is not confirmed in the available evidence records._`
+          : `\n\n_Catatan: Informasi mengenai ${missingNames.join(', ')} belum terkonfirmasi dalam sumber bukti yang tersedia saat ini._`;
+        if (!finalFeeAnswer.includes(missingNote)) {
+          finalFeeAnswer += missingNote;
+        }
+      }
       return {
         success: true,
-        answer: feeRes.answer,
+        answer: finalFeeAnswer,
         source: 'fee_calculation_engine',
-        groundedFacts: feeRes.groundedFacts || []
+        groundedFacts: feeRes.groundedFacts || [],
+        partialCoverage: nonFeeMissing.length > 0,
+        missingAspects: nonFeeMissing
       };
     }
   }
@@ -3759,7 +3812,10 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     const reply = rawReply.trim();
     if (!reply) {
       logger.warn('[GroundedAnswerGenerator] Empty content from model completion; falling back to generic extractive fallback');
-      const fallbackRes = buildGenericExtractiveFallback(semanticFrame, generationEvidence, arbitratedEvidence);
+      const fallbackRes = buildGenericExtractiveFallback(semanticFrame, generationEvidence, {
+        ...arbitratedEvidence,
+        skipDeterministicDomainTemplates: true
+      });
       return {
         ...fallbackRes,
         emptyModelResponse: true
@@ -3778,7 +3834,10 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     }
     logger.warn({ err: err.message }, '[GroundedAnswerGenerator] LLM synthesis fallback');
 
-    const extractiveRes = buildGenericExtractiveFallback(semanticFrame, generationEvidence, arbitratedEvidence);
+    const extractiveRes = buildGenericExtractiveFallback(semanticFrame, generationEvidence, {
+      ...arbitratedEvidence,
+      skipDeterministicDomainTemplates: true
+    });
     return {
       ...extractiveRes,
       llmError: err.message
@@ -4607,22 +4666,212 @@ function formatCurriculumTable(rawInput, targetSemester = null) {
  * 3. Artificial intelligence queries ("Apakah belajar Artificial Intelligence?")
  * 4. General curriculum / course lists ("Mata kuliahnya apa saja?")
  */
+/**
+ * Resolves the effective canonical study program entity from semanticFrame,
+ * rawQuery, retrievalPlan, and multi-turn session context.
+ */
+function resolveEffectiveTargetEntity(semanticFrame, arbitratedEvidence = {}) {
+  const rawQuery = (semanticFrame?.rawQuery || semanticFrame?.query || arbitratedEvidence?.rawQuery || '').toLowerCase();
+
+  const normalizeProgramCandidate = (val) => {
+    if (!val) return null;
+    const s = String(val).trim();
+    if (/^(?:s2|magister|pascasarjana|program\s+magister)/i.test(s) || /\b(?:s2\s+sistem\s+informasi|magister\s+sistem\s+informasi)\b/i.test(s)) {
+      return 'S2 Sistem Informasi';
+    }
+    if (/^(?:d3|diploma)/i.test(s) || /\b(?:manajemen\s+informatika|d3\s+mi)\b/i.test(s)) {
+      return 'D3 Manajemen Informatika';
+    }
+    if (/\bbisnis\s+digital\b/i.test(s)) return 'S1 Bisnis Digital';
+    if (/\bsistem\s+komputer\b/i.test(s)) return 'S1 Sistem Komputer';
+    if (/\bteknologi\s+informasi\b/i.test(s)) return 'S1 Teknologi Informasi';
+    if (/\bsistem\s+informasi\b/i.test(s)) return 'S1 Sistem Informasi';
+    return null;
+  };
+
+  // 1. Explicit entities in semanticFrame
+  for (const e of (semanticFrame?.entities || [])) {
+    if (e && e.type === 'academic_scope') continue;
+    const rawEnt = e?.canonical || e?.name || String(e || '');
+    const norm = normalizeProgramCandidate(rawEnt);
+    if (norm) return norm;
+  }
+
+  // 2. Explicit mention in rawQuery
+  if (/\b(?:s2|magister|pascasarjana)\b/i.test(rawQuery)) return 'S2 Sistem Informasi';
+  if (/\b(?:d3|diploma|manajemen\s+informatika|\bd3\s*mi\b)\b/i.test(rawQuery)) return 'D3 Manajemen Informatika';
+  if (/\b(?:bisnis\s+digital)\b/i.test(rawQuery)) return 'S1 Bisnis Digital';
+  if (/\b(?:sistem\s+komputer)\b/i.test(rawQuery)) return 'S1 Sistem Komputer';
+  if (/\b(?:teknologi\s+informasi)\b/i.test(rawQuery)) return 'S1 Teknologi Informasi';
+  if (/\b(?:s1\s+sistem\s+informasi|sistem\s+informasi)\b/i.test(rawQuery)) return 'S1 Sistem Informasi';
+
+  // 3. Multi-turn context from semanticFrame & sessionData & retrievalPlan
+  // Guard: Only inherit activeEntity when the query is not switching to an unrelated non-academic domain
+  // and does not contain ambiguous multi-program comparisons.
+  const isUnrelatedNonAcademicDomain = ['FACILITIES', 'CAMPUS_LOCATION', 'ORGANIZATION_UKM', 'ACADEMIC_EVENT'].includes(semanticFrame?.domain) ||
+    /\b(?:lokasi\s+kampus|alamat\s+kampus|ukm|organisasi|parkir|kantin|wisuda|yudisium)\b/i.test(rawQuery);
+  if (isUnrelatedNonAcademicDomain || semanticFrame?.shouldInheritContext === false) {
+    return null;
+  }
+
+  const contextCandidates = [
+    semanticFrame?.activeEntity,
+    semanticFrame?.targetEntity,
+    ...(Array.isArray(semanticFrame?.resolvedEntities) ? semanticFrame.resolvedEntities : []),
+    arbitratedEvidence?.sessionData?.activeEntity,
+    arbitratedEvidence?.sessionData?.lastProgram,
+    arbitratedEvidence?.sessionData?.currentProgram,
+    arbitratedEvidence?.sessionData?.program,
+    ...(Array.isArray(arbitratedEvidence?.retrievalPlan?.targetEntities) ? arbitratedEvidence.retrievalPlan.targetEntities : []),
+    arbitratedEvidence?.retrievalPlan?.targetEntity
+  ];
+
+  const distinctContextPrograms = new Set();
+  for (const cand of contextCandidates) {
+    const rawCand = typeof cand === 'object' ? (cand?.canonical || cand?.name || '') : String(cand || '');
+    const norm = normalizeProgramCandidate(rawCand);
+    if (norm) distinctContextPrograms.add(norm);
+  }
+  if (distinctContextPrograms.size === 1) {
+    return Array.from(distinctContextPrograms)[0];
+  }
+
+  return null;
+}
+
+function buildS2CurriculumRegistryTable(s2Fact, targetSem = null) {
+  if (!s2Fact?.distribution) return null;
+  const semMap = {
+    '1': 'Semester I', 'I': 'Semester I',
+    '2': 'Semester II', 'II': 'Semester II',
+    '3': 'Semester III', 'III': 'Semester III',
+    '4': 'Semester IV', 'IV': 'Semester IV'
+  };
+  let filterKey = null;
+  if (targetSem) {
+    const m = String(targetSem).match(/([1-4]|IV|III|II|I)\b/i);
+    if (m) filterKey = semMap[m[1].toUpperCase()] || null;
+  }
+  const semKeys = filterKey ? [filterKey] : Object.keys(s2Fact.distribution);
+  const blocks = [];
+  for (const semName of semKeys) {
+    const semData = s2Fact.distribution[semName];
+    if (!semData || !Array.isArray(semData.courses)) continue;
+    const headerNote = semName === 'Semester II'
+      ? `${semName} (9 SKS Wajib + 9 SKS Pilihan Ditawarkan)`
+      : `${semName} (${semData.mandatorySks} SKS Wajib)`;
+    const lines = semData.courses.map((c, idx) => {
+      const tag = c.type === 'PILIHAN' ? ' [Mata Kuliah Pilihan]' : ' [Wajib]';
+      return `${idx + 1}. **${c.name}** (${c.code}) — ${c.sks} SKS${tag}`;
+    });
+    blocks.push(`**${headerNote}**:\n${lines.join('\n')}`);
+  }
+  return blocks.length > 0 ? blocks.join('\n\n') : null;
+}
+
 function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitratedEvidence = {}) {
   const rawQuery = (semanticFrame?.rawQuery || semanticFrame?.query || arbitratedEvidence?.rawQuery || '').toLowerCase();
 
   const userLang = semanticFrame?.language || detectQueryLanguage(rawQuery || '');
   const isEn = userLang === 'en';
 
-  let targetEntity = (semanticFrame?.entities || []).find(e => {
-    const can = (e.canonical || e.name || String(e)).toLowerCase();
-    return (/^(?:s1|s2|d3|d4)\s+/i.test(can) || /\b(?:s2|magister)\b/i.test(can)) && e.type !== 'academic_scope';
-  })?.canonical || semanticFrame?.activeEntity || (Array.isArray(arbitratedEvidence?.retrievalPlan?.targetEntities) ? arbitratedEvidence.retrievalPlan.targetEntities[0] : arbitratedEvidence?.retrievalPlan?.targetEntity) || null;
+  let targetEntity = resolveEffectiveTargetEntity(semanticFrame, arbitratedEvidence);
 
-  if (!targetEntity && (semanticFrame?.entities || []).some(e => /magister|\bs2\b/i.test(e.canonical || e.name || String(e)))) {
-    targetEntity = 'Program Magister (S2)';
-  }
-  if (!targetEntity && /\b(?:s2|magister)\b/i.test(rawQuery)) {
-    targetEntity = 'Program Magister (S2)';
+  // 0. Unified Canonical SKS & Study Load Resolution (S2 SI, D3 MI, S1) — handles direct & multi-turn context queries
+  const isSksOrStudyLoadQuery = Boolean(
+    semanticFrame?.relation === 'S2_TOTAL_SKS' ||
+    semanticFrame?.relation === 'D3_TOTAL_SKS' ||
+    (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.some(a => ['sks', 'study_load', 'credits', 'graduation_sks'].includes(a))) ||
+    (/\b(?:sks|beban\s+studi|kredit|satuan\s+kredit)\b/i.test(rawQuery) &&
+      !/\b(?:biaya\s+per\s+sks|harga\s+per\s+sks|tarif\s+sks)\b/i.test(rawQuery))
+  );
+
+  if (isSksOrStudyLoadQuery && targetEntity) {
+    if (targetEntity === 'S2 Sistem Informasi' || targetEntity === 'Program Magister (S2)') {
+      const s2Fact = ACADEMIC_FACTS_REGISTRY?.curriculumFacts?.['S2 Sistem Informasi'] || {};
+      const totalSks = s2Fact.totalSks || 56;
+      const mandatorySks = s2Fact.mandatorySks || 47;
+      const mandatoryCount = s2Fact.mandatoryCoursesCount || 13;
+      const electiveSks = s2Fact.electiveOfferedSks || 9;
+      const electiveCount = s2Fact.electiveOfferedCoursesCount || 3;
+      const semesters = s2Fact.normalDurationSemesters || 4;
+      const degree = s2Fact.degreeAwarded || 'Magister Komputer (M.Kom.)';
+      const sourceDoc = s2Fact.sourceDocument || 'ISIAN WEBSITE (1).pdf & Training_Dataset_Pascasarjana_ITB_STIKOM_Bali.xlsx';
+
+      const s2Ans = isEn
+        ? `Based on the official curriculum structure of the **Postgraduate Master of Information Systems (S2 Sistem Informasi)** program at ITB STIKOM Bali (*${sourceDoc}*):\n\n` +
+          `• **Total Offered Curriculum Structure**: **${totalSks} SKS (credits)** across a normal study duration of **${semesters} semesters (2 years)** for the **${degree}** degree.\n` +
+          `• **Mandatory Courses (Mata Kuliah Wajib)**: **${mandatorySks} SKS** across **${mandatoryCount} mandatory courses** (Semester I: 18 SKS [6 courses], Semester II: 9 SKS [3 courses], Semester III: 12 SKS [3 courses], Semester IV Thesis: 8 SKS [1 course]).\n` +
+          `• **Offered Elective Courses (Mata Kuliah Pilihan)**: **${electiveSks} SKS** across **${electiveCount} elective courses** offered in Semester II (*System Enterprise Mutakhir* 3 SKS, *Intelligence, Security, and Infosphere* 3 SKS, and *Deep Learning* 3 SKS).\n\n` +
+          `_Verification Note (PARTIAL_OR_NEEDS_VALIDATION): While the complete curriculum structure lists ${totalSks} SKS (${mandatorySks} mandatory SKS + ${electiveSks} offered elective SKS), the exact minimum graduation SKS requirement (whether all ${electiveSks} elective SKS or a subset must be taken to graduate) requires confirmation from the official Postgraduate Academic Handbook (Buku Pedoman Akademik Pascasarjana) or the Postgraduate Secretariat._`
+        : `Berdasarkan dokumen struktur kurikulum **Program Pascasarjana Magister Sistem Informasi (S2)** ITB STIKOM Bali (*${sourceDoc}*):\n\n` +
+          `• **Total Struktur Kurikulum yang Ditawarkan**: **${totalSks} SKS** dengan masa studi normal **${semesters} semester (2 tahun)** untuk memperoleh gelar **${degree}**.\n` +
+          `• **Beban Mata Kuliah Wajib**: **${mandatorySks} SKS** yang terdiri atas **${mandatoryCount} mata kuliah wajib** (Semester I: 18 SKS [6 MK], Semester II: 9 SKS [3 MK], Semester III: 12 SKS [3 MK], dan Semester IV Tesis: 8 SKS [1 MK]).\n` +
+          `• **Beban Mata Kuliah Pilihan yang Ditawarkan**: **${electiveSks} SKS** yang terdiri atas **${electiveCount} mata kuliah pilihan** pada Semester II (*System Enterprise Mutakhir* 3 SKS, *Intelligence, Security, and Infosphere* 3 SKS, serta *Deep Learning* 3 SKS).\n\n` +
+          `_Catatan Verifikasi (PARTIAL_OR_NEEDS_VALIDATION): Dokumen struktur kurikulum mencantumkan total ${totalSks} SKS mata kuliah yang tersusun dalam kurikulum (${mandatorySks} SKS wajib dan ${electiveSks} SKS pilihan yang ditawarkan). Namun, ketentuan batas minimal SKS wajib tempuh untuk kelulusan (apakah seluruh ${electiveSks} SKS mata kuliah pilihan wajib diambil seluruhnya atau sebagian) memerlukan verifikasi lebih lanjut pada Buku Pedoman Akademik Pascasarjana resmi atau Sekretariat Program Pascasarjana ITB STIKOM Bali._`;
+
+      return {
+        success: true,
+        answer: s2Ans,
+        source: 'canonical_academic_facts_registry',
+        isExtractive: true,
+        handledSafely: true,
+        outcome: 'PARTIAL',
+        verificationStatus: s2Fact.verificationStatus || 'PARTIAL_OR_NEEDS_VALIDATION'
+      };
+    }
+
+    if (targetEntity === 'D3 Manajemen Informatika') {
+      const d3Fact = ACADEMIC_FACTS_REGISTRY?.curriculumFacts?.['D3 Manajemen Informatika'] || {};
+      const indexedSks = d3Fact.totalSks || 110;
+      const listedCoursesSks = d3Fact.listedCoursesSumSks || 75;
+      const semesters = d3Fact.normalDurationSemesters || 6;
+      const degree = d3Fact.degreeAwarded || 'Ahli Madya Komputer (A.Md.Kom.)';
+      const dist = d3Fact.distribution || { 'Tingkat I': 38, 'Tingkat II': 40, 'Tingkat III': 32 };
+      const sourceDoc = d3Fact.sourceDocument || 'MI_curriculum_verified_obe-2023.json';
+
+      const d3Ans = isEn
+        ? `Based on the available OBE curriculum index for **D3 Informatics Management (D3 Manajemen Informatika)** at ITB STIKOM Bali (*${sourceDoc}*):\n\n` +
+          `• **Indexed Study Load**: **${indexedSks} SKS (credits)** over a normal study duration of **${semesters} semesters (3 years)** for the **${degree}** vocational degree.\n` +
+          `• **Level Distribution**: Level I (*Tingkat I*): **${dist['Tingkat I']} SKS**, Level II (*Tingkat II*): **${dist['Tingkat II']} SKS**, and Level III (*Tingkat III*): **${dist['Tingkat III']} SKS**.\n\n` +
+          `_Verification Note (PARTIAL_OR_NEEDS_VALIDATION): While the level summary in the OBE curriculum index records ${indexedSks} SKS, the indexed per-semester course table covers ${listedCoursesSks} SKS and requires primary curriculum document verification with the D3 Manajemen Informatika study program or Academic Office (BAAK) to confirm the final mandatory graduation SKS requirement._`
+        : `Berdasarkan data indeks kurikulum OBE yang tersedia untuk Program Studi **D3 Manajemen Informatika** ITB STIKOM Bali (*${sourceDoc}*):\n\n` +
+          `• **Beban Studi Terindeks**: Mencatat total **${indexedSks} SKS** dengan masa studi normal **${semesters} semester (3 tahun)** untuk memperoleh gelar vokasi **${degree}**.\n` +
+          `• **Distribusi Beban per Tingkat**: **Tingkat I: ${dist['Tingkat I']} SKS**, **Tingkat II: ${dist['Tingkat II']} SKS**, dan **Tingkat III: ${dist['Tingkat III']} SKS**.\n\n` +
+          `_Catatan Verifikasi (PARTIAL_OR_NEEDS_VALIDATION): Ringkasan struktur tingkat pada indeks kurikulum lokal mencatat angka ${indexedSks} SKS, namun rincian daftar mata kuliah per semester yang terindeks pada dokumen lokal baru mencakup sebagian mata kuliah (${listedCoursesSks} SKS). Oleh karena itu, kepastian tabel mata kuliah lengkap dan batas SKS wajib kelulusan final masih memerlukan verifikasi langsung pada dokumen kurikulum primer resmi Program Studi D3 Manajemen Informatika atau Bagian Akademik (BAAK) ITB STIKOM Bali._`;
+
+      return {
+        success: true,
+        answer: d3Ans,
+        source: 'canonical_academic_facts_registry',
+        isExtractive: true,
+        handledSafely: true,
+        outcome: 'PARTIAL',
+        verificationStatus: d3Fact.verificationStatus || 'PARTIAL_OR_NEEDS_VALIDATION'
+      };
+    }
+
+    if (/^S1\s+/i.test(targetEntity)) {
+      const s1Fact = ACADEMIC_FACTS_REGISTRY?.curriculumFacts?.[targetEntity] || {};
+      const totalSks = s1Fact.totalSks || 144;
+      const semesters = s1Fact.normalDurationSemesters || 8;
+      const degree = s1Fact.degreeAwarded || (/Bisnis Digital/i.test(targetEntity) ? 'Sarjana Bisnis (S.Bns.)' : 'Sarjana Komputer (S.Kom.)');
+      const sourceDoc = s1Fact.sourceDocument || 'ISIAN WEBSITE (1).pdf & Pedoman Akademik Program Sarjana ITB STIKOM Bali';
+
+      const s1Ans = isEn
+        ? `Based on the official academic guidelines of ITB STIKOM Bali (*${sourceDoc}*), the **${targetEntity}** program has a total study load of **${totalSks} SKS (credits)** designed for a normal study duration of **${semesters} semesters (4 years)**, awarding the **${degree}** degree.`
+        : `Berdasarkan pedoman akademik resmi ITB STIKOM Bali (*${sourceDoc}*), Program Studi **${targetEntity}** memiliki total beban studi wajib kelulusan sebesar **${totalSks} SKS** dengan masa studi normal **${semesters} semester (4 tahun)** dan gelar lulusan **${degree}**.`;
+
+      return {
+        success: true,
+        answer: s1Ans,
+        source: 'canonical_academic_facts_registry',
+        isExtractive: true,
+        handledSafely: true,
+        outcome: 'VERIFIED_FACTUAL',
+        verificationStatus: 'VERIFIED_PRIMARY_SOURCE'
+      };
+    }
   }
 
   // 1. Coding requirement inquiry
@@ -5078,8 +5327,38 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
       }
     }
 
-    // If S2 Magister Sistem Informasi: format official curriculum courses (No. 215)
+    // If D3 Manajemen Informatika: format indexed curriculum distribution & courses with partial verification note
+    if (targetEntity === 'D3 Manajemen Informatika') {
+      const d3Fact = ACADEMIC_FACTS_REGISTRY?.curriculumFacts?.['D3 Manajemen Informatika'] || {};
+      const dist = d3Fact.distribution || { 'Tingkat I': 38, 'Tingkat II': 40, 'Tingkat III': 32 };
+      const d3CourseAns = isEn
+        ? `Based on the OBE curriculum index for **D3 Informatics Management (D3 Manajemen Informatika)** at ITB STIKOM Bali (*${d3Fact.sourceDocument || 'MI_curriculum_verified_obe-2023.json'}*):\n\n` +
+          `• **Normal Study Duration**: **${d3Fact.normalDurationSemesters || 6} semesters (3 years)** — Degree: **${d3Fact.degreeAwarded || 'Ahli Madya Komputer (A.Md.Kom.)'}**\n` +
+          `• **Indexed Credit Distribution**: Total **${d3Fact.totalSks || 110} SKS** across 3 levels (**Tingkat I: ${dist['Tingkat I']} SKS**, **Tingkat II: ${dist['Tingkat II']} SKS**, **Tingkat III: ${dist['Tingkat III']} SKS**).\n` +
+          `• **Core Vocational Focus**: Practical application programming, database administration, web design, computer networks, and information systems operations.\n\n` +
+          `_Verification Note (PARTIAL_OR_NEEDS_VALIDATION): The per-semester course table indexed in the local dataset covers ${d3Fact.listedCoursesSumSks || 75} SKS. For the complete semester-by-semester course list and confirmation of final graduation SKS requirements, please verify directly with the D3 Manajemen Informatika study program or the Academic Office (BAAK)._`
+        : `Berdasarkan indeks kurikulum OBE Program Studi **D3 Manajemen Informatika** ITB STIKOM Bali (*${d3Fact.sourceDocument || 'MI_curriculum_verified_obe-2023.json'}*):\n\n` +
+          `• **Masa Studi Normal**: **${d3Fact.normalDurationSemesters || 6} semester (3 tahun)** — Gelar: **${d3Fact.degreeAwarded || 'Ahli Madya Komputer (A.Md.Kom.)'}**\n` +
+          `• **Distribusi Beban Studi Terindeks**: Mencatat total **${d3Fact.totalSks || 110} SKS** pada 3 tingkat (**Tingkat I: ${dist['Tingkat I']} SKS**, **Tingkat II: ${dist['Tingkat II']} SKS**, **Tingkat III: ${dist['Tingkat III']} SKS**).\n` +
+          `• **Fokus Pembelajaran Vokasi**: Pemrograman aplikasi terapan, administrasi basis data, perancangan web, jaringan komputer, dan operasional sistem informasi.\n\n` +
+          `_Catatan Verifikasi (PARTIAL_OR_NEEDS_VALIDATION): Rincian daftar mata kuliah per semester yang terindeks pada dokumen lokal baru mencakup sebagian mata kuliah (${d3Fact.listedCoursesSumSks || 75} SKS). Untuk rincian tabel mata kuliah lengkap per semester serta konfirmasi beban SKS wajib kelulusan final, silakan melakukan verifikasi langsung pada dokumen kurikulum primer resmi Program Studi D3 Manajemen Informatika atau Bagian Akademik (BAAK) ITB STIKOM Bali._`;
+      return {
+        success: true,
+        answer: d3CourseAns,
+        source: 'canonical_academic_facts_registry',
+        isExtractive: true,
+        handledSafely: true,
+        outcome: 'PARTIAL',
+        verificationStatus: 'PARTIAL_OR_NEEDS_VALIDATION'
+      };
+    }
+
+    // If S2 Magister Sistem Informasi: format official curriculum courses (No. 215, 214, 363, 365)
     if (targetEntity === 'S2 Magister Sistem Informasi' || targetEntity === 'S2 Sistem Informasi' || targetEntity === 'Program Magister (S2)' || targetEntity === 'Magister Sistem Informasi (S2)' || (!targetEntity && /\b(?:s2|magister)\b/i.test(rawQuery))) {
+      const s2Fact = ACADEMIC_FACTS_REGISTRY?.curriculumFacts?.['S2 Sistem Informasi'] || {};
+      const semMatch = rawQuery.match(/semester\s*([IVX]+|\d+)/i);
+      const targetSem = semMatch ? semMatch[0] : null;
+
       const s2Chunks = evidenceList.filter(c => {
         const t = (c.text || c.chunk || '');
         return (c.id && (c.id.startsWith('75e94d8b') || c.id.startsWith('c8417d98'))) ||
@@ -5094,10 +5373,18 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
           s2Texts = fb.map(c => c.chunk || c.text || '').filter(Boolean);
         } catch (_) {}
       }
-      const formattedS2Table = formatCurriculumTable(s2Texts);
+      const formattedS2Table = buildS2CurriculumRegistryTable(s2Fact, targetSem) || formatCurriculumTable(s2Texts, targetSem);
       if (formattedS2Table) {
-        const header = `Berikut adalah struktur kurikulum resmi untuk **Program Pascasarjana Magister Sistem Informasi (S2)** ITB STIKOM Bali:\n\n`;
-        const footer = `\n\nTotal beban kurikulum resmi S2 Sistem Informasi adalah **56 SKS** yang ditempuh dalam **4 semester (2 tahun)** dengan 4 pilar fokus riset: *Data Science*, *Medical Informatics*, *Cyber Security*, dan *Enterprise System*. Lulusan memperoleh gelar **Magister Komputer (M.Kom.)**.`;
+        const formattedSemName = targetSem ? targetSem.replace(/^semester\s*/i, 'Semester ').toUpperCase() : null;
+        const header = formattedSemName
+          ? `Berikut adalah daftar mata kuliah resmi untuk **${formattedSemName}** pada **Program Pascasarjana Magister Sistem Informasi (S2)** ITB STIKOM Bali:\n\n`
+          : `Berikut adalah struktur kurikulum resmi untuk **Program Pascasarjana Magister Sistem Informasi (S2)** ITB STIKOM Bali:\n\n`;
+        const footer = `\n\n**Ringkasan Struktur Beban SKS S2 Sistem Informasi**:\n` +
+          `• **Total Struktur Kurikulum yang Ditawarkan**: **56 SKS** dalam masa studi normal **4 semester (2 tahun)** (gelar **Magister Komputer / M.Kom.**).\n` +
+          `• **Mata Kuliah Wajib**: **47 SKS** (13 mata kuliah: Semester I 18 SKS, Semester II 9 SKS, Semester III 12 SKS, Semester IV Tesis 8 SKS).\n` +
+          `• **Mata Kuliah Pilihan yang Ditawarkan**: **9 SKS** (3 mata kuliah pilihan kode MI2421xx pada Semester II).\n` +
+          `• **Fokus Riset**: *Data Science*, *Medical Informatics*, *Cyber Security*, dan *Enterprise System*.\n\n` +
+          `_Catatan Verifikasi: Total 56 SKS merupakan keseluruhan mata kuliah yang tersusun dalam struktur kurikulum. Ketentuan batas minimal SKS wajib tempuh untuk kelulusan (apakah seluruh 9 SKS mata kuliah pilihan wajib ditempuh atau sebagian) mengacu pada Buku Pedoman Akademik Pascasarjana resmi._`;
         return {
           success: true,
           answer: header + formattedS2Table + footer,
@@ -5166,27 +5453,49 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
   const isEn = userLang === 'en';
   const rawQuery = (semanticFrame?.rawQuery || semanticFrame?.query || arbitratedEvidence?.rawQuery || '').toLowerCase();
 
-  // 0a. Check Grounded Curriculum Answer (e.g. S1 Teknologi Informasi, AI safe unknown, S1 SI machine learning)
-  const curriculumRes = buildGroundedCurriculumAnswer(semanticFrame, evidenceList, arbitratedEvidence);
-  if (curriculumRes && curriculumRes.success && curriculumRes.answer) {
-    return curriculumRes;
+  // Stage 5: Conflict-Aware & Temporal-Aware Evidence Preparation
+  const conflictState = prepareConflictAwareEvidence(evidenceList, semanticFrame, arbitratedEvidence);
+  if (conflictState.onlyHistoricalAvailable && !conflictState.isExplicitHistoricalQuery) {
+    return buildHistoricalOnlyDisclosureAnswer(semanticFrame, conflictState.historicalChunks, arbitratedEvidence);
+  }
+  if (
+    conflictState.unresolvedConflictNotes.length > 0 &&
+    (conflictState.requestedComposableAttrs.length <= 1 || conflictState.requestedComposableAttrs.every(a => ['sks', 'curriculum'].includes(a)))
+  ) {
+    const conflictSingleRes = composeConflictTransparentSingleAnswer(semanticFrame, conflictState, arbitratedEvidence);
+    if (conflictSingleRes && conflictSingleRes.success && conflictSingleRes.answer) {
+      return conflictSingleRes;
+    }
+  }
+  evidenceList = conflictState.activeEvidence;
+
+  // Stage 5: Multi-Attribute Composite Synthesis
+  if (
+    conflictState.requestedComposableAttrs.length >= 2 &&
+    !isProgramComparisonInquiry(semanticFrame?.rawQuery, semanticFrame) &&
+    !isDiscountStackingInquiry(semanticFrame?.rawQuery, semanticFrame) &&
+    !arbitratedEvidence?.unsupportedEntity &&
+    semanticFrame?.domain !== 'UNSUPPORTED_PROGRAM'
+  ) {
+    const multiAttrRes = composeMultiAttributeAnswer(semanticFrame, evidenceList, arbitratedEvidence, conflictState);
+    if (multiAttrRes && multiAttrRes.success && multiAttrRes.answer) {
+      return multiAttrRes;
+    }
   }
 
-  // 0b. Check Grounded Deterministic Summary (e.g. general PMB registration steps, catalog, campus locations)
-  const summaryAnswer = buildGroundedDeterministicSummary(semanticFrame, evidenceList, arbitratedEvidence);
-  if (summaryAnswer) {
-    return {
-      success: true,
-      answer: summaryAnswer,
-      source: 'grounded_deterministic_summary',
-      isExtractive: true,
-      handledSafely: true,
-      outcome: 'VERIFIED_FACTUAL'
-    };
+  const hasMissingAspects = Array.isArray(arbitratedEvidence?.missingAspects) && arbitratedEvidence.missingAspects.length > 0;
+  const skipDomainTemplates = Boolean(arbitratedEvidence?.skipDeterministicDomainTemplates || hasMissingAspects);
+
+  // 0a. Check Grounded Curriculum Answer (canonical SKS, semester tables, S1 TI focus, AI courses)
+  if (!skipDomainTemplates) {
+    const curriculumRes = buildGroundedCurriculumAnswer(semanticFrame, evidenceList, arbitratedEvidence);
+    if (curriculumRes && curriculumRes.success && curriculumRes.answer) {
+      return curriculumRes;
+    }
   }
 
-  // 1. Structured Academic Advisory Resolution via Registry
-  if (semanticFrame?.intent === 'ACADEMIC_ADVISORY_DEFINITION' || /\b(?:perwalian|dosen\s+wali|pembimbing\s+akademik)\b/i.test(rawQuery)) {
+  // 1. Structured Academic Advisory Resolution via Registry (only when not in raw extractive fallback mode)
+  if (!skipDomainTemplates && (semanticFrame?.intent === 'ACADEMIC_ADVISORY_DEFINITION' || /\b(?:perwalian|dosen\s+wali|pembimbing\s+akademik)\b/i.test(rawQuery))) {
     const adv = ACADEMIC_FACTS_REGISTRY?.academicAdvisory;
     const advisoryAns = adv
       ? `Berikut penjelasan mengenai *${adv.dosenWali.title}* dan *${adv.perwalian.title}* berdasarkan ${adv.sourceDocument} ITB STIKOM Bali:\n\n1. *${adv.dosenWali.title}*:\n   ${adv.dosenWali.definition}\n\n2. *${adv.perwalian.title}*:\n   ${adv.perwalian.definition}\n\n_Catatan: Prosedur perwalian dan pengesahan KRS dilakukan sesuai jadwal kalender akademik pada sistem informasi akademik kampus._`
@@ -5202,9 +5511,9 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
   }
 
   // 2. Handler for ONLINE_LEARNING_PLATFORM (SION factual vs LMS gap)
-  if (semanticFrame?.intent === 'ONLINE_LEARNING_PLATFORM' ||
+  if (!skipDomainTemplates && (semanticFrame?.intent === 'ONLINE_LEARNING_PLATFORM' ||
       (/\b(?:kuliah|perkuliahan)\s+.*(?:online|daring)\b/i.test(rawQuery) &&
-       /\b(?:aplikasi|platform|software|media|pake|pakai|menggunakan)\b/i.test(rawQuery))) {
+       /\b(?:aplikasi|platform|software|media|pake|pakai|menggunakan)\b/i.test(rawQuery)))) {
     const platformAns = 'Berdasarkan dokumen resmi akademik ITB STIKOM Bali yang tersedia:\n\n' +
       '1. *SION (Sistem Informasi Online)*:\n' +
       '   Portal daring resmi kampus yang terbukti digunakan mahasiswa untuk administrasi akademik, pengisian dan persetujuan Kartu Rencana Studi (KRS), serta pengajuan usulan proposal tugas akhir/skripsi secara daring.\n\n' +
@@ -5221,42 +5530,8 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     };
   }
 
-  // 3. Structured Curriculum SKS Resolution via Registry (D3 Manajemen Informatika)
-  if (semanticFrame?.relation === 'D3_TOTAL_SKS' ||
-      (/\b(?:d3|diploma|manajemen\s+informatika)\b/i.test(rawQuery) && /\b(?:sks|beban\s+studi)\b/i.test(rawQuery) && /\b(?:total|berapa|lulus|selesai|jumlah)\b/i.test(rawQuery))) {
-    const d3Fact = ACADEMIC_FACTS_REGISTRY?.curriculumFacts?.['D3 Manajemen Informatika'];
-    const d3SksAns = d3Fact
-      ? `Berdasarkan kurikulum resmi Program Studi **${d3Fact.program}** (program vokasi ${Math.round(d3Fact.normalDurationSemesters / 2)} tahun) ITB STIKOM Bali, total beban studi kumulatif yang harus ditempuh mahasiswa untuk menyelesaikan studi dan memperoleh gelar **${d3Fact.degreeAwarded}** adalah tepat **${d3Fact.totalSks} SKS** yang ditempuh dalam **${d3Fact.normalDurationSemesters} semester** (distribusi beban: Tingkat I ${d3Fact.distribution['Tingkat I']} SKS, Tingkat II ${d3Fact.distribution['Tingkat II']} SKS, Tingkat III ${d3Fact.distribution['Tingkat III']} SKS).\n\n*(Catatan: Rincian kurikulum lengkap ${d3Fact.totalSks} SKS terverifikasi pada ${d3Fact.sourceDocument}. Dokumen RAG runtime lokal saat ini memuat ringkasan profil lulusan.)*`
-      : 'Total beban studi D3 Manajemen Informatika adalah 110 SKS.';
-    return {
-      success: true,
-      answer: d3SksAns,
-      source: 'canonical_academic_facts_registry',
-      isExtractive: true,
-      handledSafely: true,
-      outcome: 'VERIFIED_FACTUAL'
-    };
-  }
-
-  // 4. Structured Curriculum SKS Resolution via Registry (S2 Sistem Informasi)
-  if (semanticFrame?.relation === 'S2_TOTAL_SKS' ||
-      (/\b(?:s2|magister)\b/i.test(rawQuery) && /\b(?:sks|beban\s+studi)\b/i.test(rawQuery) && /\b(?:total|berapa|lulus|selesai|jumlah)\b/i.test(rawQuery))) {
-    const s2Fact = ACADEMIC_FACTS_REGISTRY?.curriculumFacts?.['S2 Sistem Informasi'];
-    const s2SksAns = s2Fact
-      ? `Berdasarkan kurikulum resmi Program Pascasarjana **Magister Sistem Informasi (S2)** ITB STIKOM Bali, total beban studi yang harus ditempuh mahasiswa untuk menyelesaikan pendidikan dan memperoleh gelar **${s2Fact.degreeAwarded}** adalah **${s2Fact.totalSks} SKS** dengan masa studi normal **${s2Fact.normalDurationSemesters} semester (${Math.round(s2Fact.normalDurationSemesters / 2)} tahun)** berdasarkan ${s2Fact.sourceDocument}.`
-      : 'Total beban studi S2 Sistem Informasi adalah 56 SKS.';
-    return {
-      success: true,
-      answer: s2SksAns,
-      source: 'canonical_academic_facts_registry',
-      isExtractive: true,
-      handledSafely: true,
-      outcome: 'VERIFIED_FACTUAL'
-    };
-  }
-
-  // 5. Structured Admission Waves Resolution via Registry (SK 629)
-  if (semanticFrame?.intent === 'ADMISSION_WAVE_CLARIFICATION' || /^gelombang\??$/i.test(rawQuery.trim())) {
+  // 3. Structured Admission Waves Resolution via Registry (SK 629)
+  if (!skipDomainTemplates && (semanticFrame?.intent === 'ADMISSION_WAVE_CLARIFICATION' || /^gelombang\??$/i.test(rawQuery.trim()))) {
     const waveData = ACADEMIC_FACTS_REGISTRY?.admissionWaves;
     let waveList = '';
     if (waveData) {
@@ -5956,7 +6231,8 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     };
   }
 
-  if (semanticFrame?.domain === 'ACADEMIC_RECOMMENDATION' || semanticFrame?.intent === 'PROGRAM_RECOMMENDATION' || arbitratedEvidence?.recommendationResult) {
+  const isExplicitFacultyOrCatalogOrFeeQuery = /\b(?:biaya|spp|dpp|uang\s+kuliah|tarif|akreditasi|fakultas|fik|fbv|infokom|bisvo|(?:jurusan|prodi|program\s+studi)\s+apa\s+saja|apa\s+saja\s+(?:jurusan|prodi|program\s+studi))\b/i.test(rawQuery);
+  if ((semanticFrame?.domain === 'ACADEMIC_RECOMMENDATION' || semanticFrame?.intent === 'PROGRAM_RECOMMENDATION' || arbitratedEvidence?.recommendationResult) && !isExplicitFacultyOrCatalogOrFeeQuery) {
     const { evaluateRecommendation } = require('../reasoning/recommendationEngine');
     const recResult = arbitratedEvidence?.recommendationResult || evaluateRecommendation(semanticFrame?.rawQuery || '', {}, semanticFrame, evidenceList);
     const hasAcceptedEvidence = Array.isArray(evidenceList) && evidenceList.length > 0;
@@ -6035,26 +6311,20 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     };
   }
 
-  // 0b. Check Grounded Curriculum Answer BEFORE summary 2 (e.g. AI safe unknown, S1 TI pillars, S1 SI ML)
-  const curriculumResEarly2 = buildGroundedCurriculumAnswer(semanticFrame, evidenceList || [], arbitratedEvidence);
-  if (curriculumResEarly2 && curriculumResEarly2.success && curriculumResEarly2.answer) {
-    return curriculumResEarly2;
-  }
-
-  // Grounded Deterministic Summary check (PMB procedure, catalog, locations) before empty evidenceList bail-out
-  const preSummaryAnswer = buildGroundedDeterministicSummary(semanticFrame, evidenceList || [], arbitratedEvidence);
-  if (preSummaryAnswer) {
-    return {
-      success: true,
-      answer: preSummaryAnswer,
-      source: 'grounded_deterministic_summary',
-      isExtractive: true,
-      handledSafely: true,
-      outcome: 'VERIFIED_FACTUAL'
-    };
-  }
-
   if (!evidenceList || evidenceList.length === 0) {
+    if (!skipDomainTemplates) {
+      const zeroEvSummary = buildGroundedDeterministicSummary(semanticFrame, [], arbitratedEvidence);
+      if (zeroEvSummary) {
+        return {
+          success: true,
+          answer: zeroEvSummary,
+          source: 'grounded_deterministic_summary',
+          isExtractive: true,
+          handledSafely: true,
+          outcome: 'VERIFIED_FACTUAL'
+        };
+      }
+    }
     return {
       success: false,
       answer: isEn
@@ -6622,65 +6892,10 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     };
   }
 
-  // Structured grounded response for Dual Degree UTB (National Class) (No. 409)
-  const isUtbEntityInquiry = (targetEntitiesList.some(e => /utb|universitas\s+teknologi\s+bandung/i.test(e)) ||
-    /\b(?:dual\s+degree\s+utb|double\s+degree\s+utb|universitas\s+teknologi\s+bandung|\butb\b)\b/i.test(rawQuery)) &&
-    semanticFrame?.domain !== 'TUITION_FEE' &&
-    !(Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)));
-
-  if (isUtbEntityInquiry) {
-    const utbAnswer = `Program **Dual Degree (National Class)** di ITB STIKOM Bali diselenggarakan melalui kolaborasi resmi antara **ITB STIKOM Bali** dan **Universitas Teknologi Bandung (UTB)**:\n\n` +
-      `• **Kolaborasi Program Studi**: Menggabungkan Program Studi **S1 Bisnis Digital** (ITB STIKOM Bali) dan **S1 Desain Komunikasi Visual / DKV** (Universitas Teknologi Bandung).\n` +
-      `• **Gelar Lulusan**: Mahasiswa yang menyelesaikan program ini memperoleh dua gelar sarjana sekaligus, yaitu **Sarjana Bisnis (S.Bns.)** dari ITB STIKOM Bali dan **Sarjana Desain (S.Ds.)** dari UTB.\n` +
-      `• **Masa Studi & Skema**: Ditempuh dalam waktu normal **4 tahun (8 semester)** dengan kurikulum terintegrasi yang memadukan penguasaan strategi bisnis digital, *e-commerce*, serta kompetensi desain komunikasi visual dan multimedia kreatif.\n\n` +
-      `Untuk informasi pendaftaran dan rincian biaya program Dual Degree UTB, Kakak dapat mengunjungi portal resmi https://pmb.stikom-bali.ac.id atau menghubungi layanan admisi PMB di (0361) 244445.`;
-    return {
-      success: true,
-      answer: utbAnswer,
-      source: 'generic_extractive_fallback',
-      isExtractive: true,
-      handledSafely: true
-    };
-  }
-
-  // Structured grounded response for General International Double Degree Inquiries (No. 279, 286, 410)
-  const isGeneralDoubleDegreeInquiry = (
-    targetEntitiesList.some(e => /International Dual Degree/i.test(e)) ||
-    /\b(?:double\s*degree|dual\s*degree|dua\s+gelar|gelar\s+ganda)\b/i.test(rawQuery) ||
-    (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.includes('double_degree'))
-  ) && !isHelpInquiry && !isDnuiInquiry && !isUtbEntityInquiry &&
-    semanticFrame?.domain !== 'TUITION_FEE' &&
-    !(Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)));
-
-  if (isGeneralDoubleDegreeInquiry) {
-    const hasDdEvidence = (Array.isArray(evidenceList) ? evidenceList : []).some(c => {
-      const t = (c.text || c.chunk || '').toLowerCase();
-      return t.includes('double degree') || t.includes('dual degree') || t.includes('help university') || t.includes('dnui') || t.includes('dalian') || t.includes('utb') || t.includes('dua gelar');
-    });
-    if (!Array.isArray(evidenceList) || evidenceList.length === 0 || !hasDdEvidence) {
-      return null;
-    }
-    const ddOverviewAnswer = `ITB STIKOM Bali menyelenggarakan **Program Double Degree / Dual Degree** yang memungkinkan mahasiswa meraih **dua gelar sarjana sekaligus** dalam masa studi normal **4 tahun (8 semester)** melalui kerja sama perguruan tinggi mitra:\n\n` +
-      `1. **International Double Degree – HELP University, Malaysia**\n` +
-      `   • **Program Studi**: **S1 Sistem Informasi**\n` +
-      `   • **Skema Perkuliahan**: Dilaksanakan **full offline (4 tahun) di kampus ITB STIKOM Bali** tanpa harus meninggalkan Indonesia, menggunakan kurikulum berstandar internasional HELP University.\n` +
-      `   • **Gelar Lulusan**: **Sarjana Komputer (S.Kom.)** dari ITB STIKOM Bali dan **Bachelor of Information Technology (BIT)** dari HELP University, Malaysia.\n\n` +
-      `2. **International Double Degree – Dalian Neusoft University of Information (DNUI), China**\n` +
-      `   • **Program Studi**: **S1 Bisnis Digital** (kolaborasi dengan program *E-Commerce* DNUI)\n` +
-      `   • **Skema Perkuliahan**: **Tahun 1 & 2** kuliah di ITB STIKOM Bali, **Tahun 3** kuliah *online* dengan kurikulum DNUI, dan **Tahun 4** kuliah langsung (*onsite*) di kampus DNUI, Dalian, China (mendapatkan fasilitas *free dormitory shared room*).\n` +
-      `   • **Gelar Lulusan**: **Sarjana Bisnis (S.Bns.)** dari ITB STIKOM Bali dan **Bachelor of Management (B.M.)** dari DNUI, China.\n\n` +
-      `3. **National Dual Degree – Universitas Teknologi Bandung (UTB)**\n` +
-      `   • **Program Studi**: Kolaborasi **S1 Bisnis Digital** (ITB STIKOM Bali) & **S1 Desain Komunikasi Visual / DKV** (UTB)\n` +
-      `   • **Gelar Lulusan**: **Sarjana Bisnis (S.Bns.)** dan **Sarjana Desain (S.Ds.)**.\n\n` +
-      `Untuk konsultasi syarat pendaftaran dan rincian program Double Degree, silakan menghubungi Admisi PMB di **(0361) 244445** atau melalui portal https://pmb.stikom-bali.ac.id.`;
-    return {
-      success: true,
-      answer: ddOverviewAnswer,
-      source: 'generic_extractive_fallback',
-      isExtractive: true,
-      handledSafely: true
-    };
-  }
+  // Note: Dual Degree UTB / DKV and General Double Degree inquiries are delegated to
+  // buildGroundedDeterministicSummary (lines 2566–2631) so that DKV standalone-program
+  // clarification ("bukan merupakan program studi mandiri") and unbiased National vs
+  // International Dual Degree options remain unified in one canonical place.
 
   // Structured grounded response for Foreign Student Admission (No. 295) & International Office Contact (No. 296)
   const isForeignStudentAdmission = (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.includes('foreign_student_admission')) ||
@@ -6743,8 +6958,9 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
 
   // Structured grounded response for S1 Bisnis Digital Overview (No. 408)
   const isBdOverviewQuery = (semanticFrame?.domain === 'ACADEMIC_PROGRAM' || semanticFrame?.intent === 'PROGRAM_OVERVIEW') &&
+    !['FACULTY_INQUIRY', 'DEGREE_AWARD', 'CAREER_PROSPECTS_INQUIRY', 'PROGRAM_ACCREDITATION'].includes(semanticFrame?.intent) &&
     ((targetEntitiesList && targetEntitiesList.includes('S1 Bisnis Digital')) || /\bbisnis\s+digital\b/i.test(rawQuery)) &&
-    !/\b(?:biaya|spp|dpp|uang|bayar|daftar|pendaftaran|kurikulum|matkul|semester\s*\d+)\b/i.test(rawQuery);
+    !/\b(?:biaya|spp|dpp|uang|bayar|daftar|pendaftaran|kurikulum|matkul|semester\s*\d+|fakultas|gelar)\b/i.test(rawQuery);
   if (isBdOverviewQuery) {
     const bdAns = `Program Studi **S1 Bisnis Digital** di ITB STIKOM Bali memadukan ilmu manajemen bisnis terapan dengan penguasaan teknologi informasi dan ekosistem industri *e-commerce*:\n\n` +
       `• **Fokus Pembelajaran**: Analisis data bisnis, strategi pemasaran digital (*digital marketing*), *e-commerce*, *branding*, pengembangan *startup*, dan kewirausahaan berbasis teknologi.\n` +
@@ -6883,7 +7099,7 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
   }
 
   // Structured grounded response for campus facilities inquiries (FACILITIES / FACILITY_INQUIRY)
-  const isFacilityIntent = !isCareerCenterInquiry && !isCampusServiceInquiry && (
+  const isFacilityIntent = !skipDomainTemplates && !isCareerCenterInquiry && !isCampusServiceInquiry && (
     semanticFrame?.domain === 'FACILITIES' ||
     semanticFrame?.intent === 'FACILITY_INQUIRY' ||
     (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.some(a => ['facilities', 'lab', 'campus_infrastructure'].includes(a)) && semanticFrame?.intent !== 'CAMPUS_LOCATION')
@@ -6971,6 +7187,31 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
       isExtractive: true,
       handledSafely: true
     };
+  }
+
+  if (!skipDomainTemplates) {
+    const detSummary = buildGroundedDeterministicSummary(semanticFrame, evidenceList, arbitratedEvidence);
+    if (detSummary) {
+      return {
+        success: true,
+        answer: detSummary,
+        source: 'grounded_deterministic_summary',
+        isExtractive: true,
+        handledSafely: true,
+        outcome: 'VERIFIED_FACTUAL'
+      };
+    }
+    if (semanticFrame?.domain === 'ORGANIZATION_UKM' && /\b(?:nomor|kontak|telp|telepon|wa|whatsapp|ketua|pengurus|biaya|iuran|tahun\s+\d{4})\b/i.test(rawQuery)) {
+      return {
+        success: false,
+        answer: null,
+        source: 'unanswerable_natural_guidance',
+        reason: 'unrecorded_organization_detail',
+        outcome: 'SAFE_UNKNOWN',
+        isExtractive: false,
+        handledSafely: true
+      };
+    }
   }
 
   const cleanPassages = [];
@@ -7171,12 +7412,767 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
   };
 }
 
+const STAGE5_PRIMARY_ATTRIBUTES = [
+  'fee',
+  'accreditation',
+  'curriculum',
+  'sks',
+  'career_prospects',
+  'faculty',
+  'degree_award',
+  'study_mode',
+  'scholarship',
+  'location',
+  'contact',
+  'facilities'
+];
+
+const STAGE5_ATTRIBUTE_ORDER_PATTERNS = {
+  fee: /\b(?:biaya(?:\s+kuliah)?|rincian\s+biaya|uang\s+kuliah|dana\s+(?:kuliah|pendidikan|didik)|spp\b|dpp\b|tarif\s+kuliah|ukt\b)\b/i,
+  accreditation: /\b(?:akreditasi(?:nya)?|terakreditasi|peringkat\s+akreditasi|status\s+akreditasi)\b/i,
+  curriculum: /\b(?:kurikulum(?:nya)?|mata\s+kuliah|matkul|apa\s+saja\s+yang\s+dipelajari|yang\s+dipelajari|belajar\s+apa)\b/i,
+  sks: /\b(?:total\s+sks|jumlah\s+sks|berapa\s+sks|beban\s+studi|sks\b)\b/i,
+  career_prospects: /\b(?:prospek\s+kar(?:i)?er|peluang\s+kar(?:i)?er|peluang\s+kerja|prospek\s+kerja|profesi\s+lulusan|lulusan.*kerja|kerja\s+apa)\b/i,
+  faculty: /\b(?:masuk\s+fakultas|fakultas\s+apa|di\s+bawah\s+fakultas|berada\s+di\s+fakultas|fakultas(?:nya)?)\b/i,
+  degree_award: /\b(?:gelar(?:\s+lulusan|\s+akademik|\s+apa|nya)?|dapat\s+gelar)\b/i,
+  study_mode: /\b(?:kuliah\s+sore|kelas\s+sore|kelas\s+karyawan|kuliah\s+malam|sambil\s+kerja|kelas\s+malam|kuliah\s+sambil\s+kerja|mode\s+kuliah|jadwal\s+kuliah)\b/i,
+  scholarship: /\b(?:beasiswa|potongan\s+(?:biaya|dpp)|kip(?:-|\s*)?kuliah)\b/i,
+  location: /\b(?:lokasi|alamat|letak\s+kampus)\b/i,
+  contact: /\b(?:kontak|nomor\s+(?:wa|whatsapp|telepon)|hubungi)\b/i,
+  facilities: /\b(?:fasilitas|sarana|laboratorium|lab\b)\b/i
+};
+
+function getOrderedComposableAttributes(semanticFrame = {}, arbitratedEvidence = {}) {
+  const rawQuery = String(semanticFrame?.rawQuery || semanticFrame?.query || '').toLowerCase();
+  const candidates = new Set();
+
+  const frameAttrs = Array.isArray(semanticFrame?.requestedAttributes) ? semanticFrame.requestedAttributes : [];
+  const planAttrs = Array.isArray(arbitratedEvidence?.retrievalPlan?.requestedAttributes) ? arbitratedEvidence.retrievalPlan.requestedAttributes : [];
+  const aspectAttrs = Array.isArray(semanticFrame?.aspects) ? semanticFrame.aspects : [];
+
+  for (const a of [...frameAttrs, ...planAttrs, ...aspectAttrs]) {
+    const norm = a === 'akreditasi' ? 'accreditation' : (a === 'tuition' ? 'fee' : a);
+    if (STAGE5_PRIMARY_ATTRIBUTES.includes(norm)) {
+      candidates.add(norm);
+    }
+  }
+
+  for (const [attr, rx] of Object.entries(STAGE5_ATTRIBUTE_ORDER_PATTERNS)) {
+    if (rx.test(rawQuery)) {
+      if (attr === 'fee' && semanticFrame?.negatedAspects?.has?.('fee')) continue;
+      if (attr === 'accreditation' && semanticFrame?.negatedAspects?.has?.('accreditation')) continue;
+      if (attr === 'sks' && candidates.has('curriculum') && !/\b(?:berapa\s+sks|total\s+sks|jumlah\s+sks|beban\s+studi)\b/i.test(rawQuery)) continue;
+      candidates.add(attr);
+    }
+  }
+
+  if (candidates.has('curriculum') && candidates.has('sks') && !/\b(?:berapa\s+sks|total\s+sks|jumlah\s+sks|beban\s+studi)\b/i.test(rawQuery)) {
+    candidates.delete('sks');
+  }
+
+  const list = Array.from(candidates);
+  return list
+    .map((attr, idx) => {
+      const rx = STAGE5_ATTRIBUTE_ORDER_PATTERNS[attr];
+      const m = rx ? rx.exec(rawQuery) : null;
+      return { attr, pos: m ? m.index : 10000 + idx, idx };
+    })
+    .sort((a, b) => (a.pos !== b.pos ? a.pos - b.pos : a.idx - b.idx))
+    .map(item => item.attr);
+}
+
+function isChunkPrimaryAuthority(chunk = {}) {
+  const prov = chunk.provenance || {};
+  return Boolean(
+    prov.authorityTier === 1 ||
+    prov.isPrimarySource === true ||
+    chunk.authorityTier === 1 ||
+    chunk.isPrimarySource === true ||
+    chunk.verificationStatus === 'VERIFIED_PRIMARY'
+  );
+}
+
+function prepareConflictAwareEvidence(evidenceList = [], semanticFrame = {}, arbitratedEvidence = {}) {
+  const list = Array.isArray(evidenceList) ? evidenceList : [];
+  const rawQuery = String(semanticFrame?.rawQuery || semanticFrame?.query || '');
+  const isExplicitHistoricalQuery = Boolean(
+    semanticFrame?.constraints?.temporalConstraint === 'HISTORICAL_ARCHIVE' ||
+    /\b(?:arsip|historis|tahun\s+lalu|masa\s+lalu|202[0-4]\/202[1-5])\b/i.test(rawQuery)
+  );
+
+  const requestedComposableAttrs = getOrderedComposableAttributes(semanticFrame, arbitratedEvidence);
+  const sourceConflicts = Array.isArray(arbitratedEvidence?.sourceConflicts) ? arbitratedEvidence.sourceConflicts : [];
+
+  // Identify primary chunks per attribute/entity
+  const primaryChunks = list.filter(c => isChunkPrimaryAuthority(c) && c.evidenceRole !== 'CONTRADICTING');
+  const hasPrimaryAuthority = primaryChunks.length > 0;
+
+  let excludedContradictingCount = 0;
+  const nonContradicting = list.filter(chunk => {
+    if (chunk.evidenceRole === 'CONTRADICTING') {
+      if (hasPrimaryAuthority || !isChunkPrimaryAuthority(chunk)) {
+        excludedContradictingCount++;
+        return false;
+      }
+    }
+    const prov = chunk.provenance || {};
+    const tier = prov.authorityTier || chunk.authorityTier || 2;
+    if (tier > 1 && hasPrimaryAuthority) {
+      const chunkId = chunk.id || chunk.chunkId || '';
+      const isFlaggedInConflicts = sourceConflicts.some(sc =>
+        (Array.isArray(sc.secondaryChunkIds) && sc.secondaryChunkIds.includes(chunkId)) ||
+        (sc.losingChunkId && sc.losingChunkId === chunkId) ||
+        (sc.contradictingChunkId && sc.contradictingChunkId === chunkId)
+      );
+      if (isFlaggedInConflicts) {
+        excludedContradictingCount++;
+        return false;
+      }
+    }
+    return true;
+  });
+
+  // Separate active vs historical archive chunks
+  const activeChunks = [];
+  const historicalChunks = [];
+  for (const chunk of nonContradicting) {
+    const isHistorical = chunk.temporalRelevance === 'HISTORICAL_ARCHIVE' ||
+      chunk.evidenceRole === 'HISTORICAL_CONTEXT' ||
+      chunk.provenance?.temporalStatus === 'HISTORICAL_ARCHIVE';
+    if (isHistorical) {
+      historicalChunks.push(chunk);
+    } else {
+      activeChunks.push(chunk);
+    }
+  }
+
+  const onlyHistoricalAvailable = list.length > 0 && activeChunks.length === 0 && historicalChunks.length > 0;
+  const activeEvidence = isExplicitHistoricalQuery
+    ? nonContradicting
+    : (activeChunks.length > 0 ? activeChunks : []);
+
+  // Detect unresolved primary-vs-primary conflicts or NEEDS_SOURCE_VALIDATION
+  const unresolvedConflictNotes = [];
+  const seenConflictKeys = new Set();
+
+  for (const sc of sourceConflicts) {
+    const isUnresolvedPrimary = Boolean(
+      sc.verificationStatus === 'NEEDS_SOURCE_VALIDATION' ||
+      sc.resolution === 'UNRESOLVED_NEEDS_SOURCE_VALIDATION' ||
+      sc.requiresValidation === true ||
+      (sc.primaryConflict === true) ||
+      (sc.authorityTierA === 1 && sc.authorityTierB === 1)
+    );
+    if (isUnresolvedPrimary) {
+      const entityLabel = sc.entity || (semanticFrame?.targetEntities?.[0]) || 'program studi terkait';
+      const attrLabel = sc.attribute || 'atribut akademik';
+      const valuesDesc = Array.isArray(sc.conflictingValues) && sc.conflictingValues.length > 0
+        ? sc.conflictingValues.join(' vs ')
+        : (sc.valueA && sc.valueB ? `${sc.valueA} vs ${sc.valueB}` : null);
+      const key = `${entityLabel}::${attrLabel}::${valuesDesc || 'conflict'}`;
+      if (!seenConflictKeys.has(key)) {
+        seenConflictKeys.add(key);
+        unresolvedConflictNotes.push({
+          entity: entityLabel,
+          attribute: attrLabel,
+          valuesDesc,
+          verificationStatus: 'NEEDS_SOURCE_VALIDATION',
+          note: valuesDesc
+            ? `Terdapat perbedaan data pada sumber primer yang tersedia mengenai **${attrLabel}** untuk **${entityLabel}** (${valuesDesc}), sehingga berstatus **NEEDS_SOURCE_VALIDATION** dan masih memerlukan verifikasi dokumen resmi lebih lanjut.`
+            : `Terdapat perbedaan data antar sumber primer mengenai **${attrLabel}** untuk **${entityLabel}**, sehingga berstatus **NEEDS_SOURCE_VALIDATION** dan masih memerlukan verifikasi dokumen resmi lebih lanjut.`
+        });
+      }
+    }
+  }
+
+  // Also inspect activeChunks directly for two authorityTier=1 chunks with conflicting values or NEEDS_SOURCE_VALIDATION
+  const tier1Chunks = activeChunks.filter(c => isChunkPrimaryAuthority(c) || c.verificationStatus === 'NEEDS_SOURCE_VALIDATION');
+  const needsValidationChunks = activeChunks.filter(c => c.verificationStatus === 'NEEDS_SOURCE_VALIDATION' || c.provenance?.verificationStatus === 'NEEDS_SOURCE_VALIDATION');
+  if (needsValidationChunks.length > 0 && unresolvedConflictNotes.length === 0) {
+    const allTexts = activeChunks.map(c => c.text || c.chunk || c.content || '');
+    const sksValues = Array.from(new Set(
+      allTexts.flatMap(t => (t.match(/\b(\d{2,3})\s*SKS\b/gi) || []).map(m => m.replace(/\s+/g, ' ').toUpperCase()))
+    ));
+    const rpValues = Array.from(new Set(
+      allTexts.flatMap(t => (t.match(/Rp\.?\s*\d{1,3}(?:\.\d{3})+/gi) || []).map(m => m.replace(/\s+/g, ' ')))
+    ));
+    const entityLabel = semanticFrame?.targetEntities?.[0] || semanticFrame?.entities?.[0]?.canonical || 'program studi terkait';
+    const valuesDesc = sksValues.length >= 2
+      ? sksValues.join(' vs ')
+      : (rpValues.length >= 2 ? rpValues.join(' vs ') : null);
+    unresolvedConflictNotes.push({
+      entity: entityLabel,
+      attribute: sksValues.length >= 2 ? 'sks' : 'factual_attribute',
+      valuesDesc,
+      verificationStatus: 'NEEDS_SOURCE_VALIDATION',
+      chunksText: allTexts.join('\n'),
+      note: valuesDesc
+        ? `Berdasarkan sumber yang tersedia untuk **${entityLabel}**, terdapat perbedaan pencatatan data (${valuesDesc}) yang berstatus **NEEDS_SOURCE_VALIDATION**, sehingga angka pasti masih memerlukan verifikasi dokumen resmi lebih lanjut.`
+        : `Berdasarkan sumber yang tersedia untuk **${entityLabel}**, data ini berstatus **NEEDS_SOURCE_VALIDATION** dan masih memerlukan verifikasi dokumen resmi lebih lanjut.`
+    });
+  } else if (tier1Chunks.length >= 2 && unresolvedConflictNotes.length === 0) {
+    const sksPerChunk = tier1Chunks
+      .map(c => {
+        const m = String(c.text || c.chunk || '').match(/\b(\d{2,3})\s*SKS\b/i);
+        return m ? `${m[1]} SKS` : null;
+      })
+      .filter(Boolean);
+    const uniqueSks = Array.from(new Set(sksPerChunk));
+    if (uniqueSks.length >= 2 && /\b(?:sks|beban\s+studi|kurikulum)\b/i.test(rawQuery)) {
+      const entityLabel = semanticFrame?.targetEntities?.[0] || semanticFrame?.entities?.[0]?.canonical || 'program studi terkait';
+      unresolvedConflictNotes.push({
+        entity: entityLabel,
+        attribute: 'sks',
+        valuesDesc: uniqueSks.join(' vs '),
+        verificationStatus: 'NEEDS_SOURCE_VALIDATION',
+        chunksText: tier1Chunks.map(c => c.text || c.chunk || '').join('\n'),
+        note: `Terdapat perbedaan data pada sumber primer yang tersedia untuk **${entityLabel}** (${uniqueSks.join(' vs ')}), sehingga berstatus **NEEDS_SOURCE_VALIDATION** dan masih memerlukan verifikasi dokumen kurikulum resmi lebih lanjut.`
+      });
+    }
+  }
+
+  return {
+    activeEvidence,
+    historicalChunks,
+    onlyHistoricalAvailable,
+    isExplicitHistoricalQuery,
+    excludedContradictingCount,
+    unresolvedConflictNotes,
+    requestedComposableAttrs
+  };
+}
+
+function buildHistoricalOnlyDisclosureAnswer(semanticFrame = {}, historicalChunks = [], arbitratedEvidence = {}) {
+  const userLang = semanticFrame?.language || detectQueryLanguage(semanticFrame?.rawQuery || '');
+  const isEn = userLang === 'en';
+  const entityLabel = semanticFrame?.targetEntities?.[0] || semanticFrame?.entities?.[0]?.canonical || 'ITB STIKOM Bali';
+  const combinedText = (Array.isArray(historicalChunks) ? historicalChunks : [])
+    .map(c => cleanDocumentArtifacts(c.text || c.chunk || c.content || ''))
+    .filter(Boolean)
+    .join('\n');
+  const yearMatch = combinedText.match(/\b(20\d{2}\/20\d{2}|20\d{2})\b/);
+  const archivePeriod = historicalChunks[0]?.academicYear || historicalChunks[0]?.provenance?.academicYear || (yearMatch ? yearMatch[1] : (isEn ? 'previous period' : 'periode terdahulu'));
+
+  const excerpt = combinedText.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ').trim();
+  const answer = isEn
+    ? `Based on **historical archive records (${archivePeriod})** for **${entityLabel}**, the archived document states:\n\n` +
+      `> ${excerpt}\n\n` +
+      `_Important Note: The information above comes from a **historical archive (${archivePeriod})** and is **not confirmed as an active policy currently in effect**. Please verify the current active regulations with the official ITB STIKOM Bali administration._`
+    : `Berdasarkan **dokumen arsip historis (${archivePeriod})** yang tercatat untuk **${entityLabel}**:\n\n` +
+      `• ${excerpt}\n\n` +
+      `_Catatan Penting: Informasi di atas berasal dari **arsip historis (${archivePeriod})** dan **bukan merupakan ketentuan aktif yang dipastikan berlaku saat ini**. Untuk kepastian ketentuan terbaru yang berlaku aktif, silakan mengonfirmasi langsung ke bagian terkait di ITB STIKOM Bali._`;
+
+  return {
+    success: true,
+    answer,
+    source: 'historical_archive_disclosure',
+    temporalRelevance: 'HISTORICAL_ARCHIVE',
+    isExtractive: true,
+    handledSafely: true,
+    outcome: 'VERIFIED_FACTUAL'
+  };
+}
+
+function composeConflictTransparentSingleAnswer(semanticFrame = {}, conflictState = {}, arbitratedEvidence = {}) {
+  const notes = Array.isArray(conflictState.unresolvedConflictNotes) ? conflictState.unresolvedConflictNotes : [];
+  if (notes.length === 0) return null;
+
+  const entityLabel = semanticFrame?.targetEntities?.[0] || semanticFrame?.entities?.[0]?.canonical || notes[0].entity || 'program studi terkait';
+  const chunkDetails = (conflictState.activeEvidence || [])
+    .map((c, idx) => {
+      const src = c.provenance?.sourceDocument || c.sourceFile || c.filename || `Sumber ${idx + 1}`;
+      const txt = cleanDocumentArtifacts(c.text || c.chunk || c.content || '').trim();
+      return txt ? `• **${src}**: ${txt}` : null;
+    })
+    .filter(Boolean);
+
+  const bodyLines = [
+    `Mengenai informasi untuk **${entityLabel}**, berikut catatan transparan berdasarkan sumber yang tersedia:`,
+    ''
+  ];
+  if (chunkDetails.length > 0) {
+    bodyLines.push(...chunkDetails, '');
+  }
+  for (const item of notes) {
+    bodyLines.push(`⚠️ **Catatan Validasi Sumber (NEEDS_SOURCE_VALIDATION)**: ${item.note}`);
+  }
+
+  return {
+    success: true,
+    answer: bodyLines.join('\n').trim(),
+    source: 'conflict_aware_transparent_composer',
+    verificationStatus: 'NEEDS_SOURCE_VALIDATION',
+    isExtractive: true,
+    handledSafely: true,
+    outcome: 'VERIFIED_FACTUAL'
+  };
+}
+
+function filterEvidenceForEntity(evidenceList = [], targetEntity = null, excludedEntities = []) {
+  if (!targetEntity) return evidenceList;
+  const targetLower = String(targetEntity).toLowerCase();
+  const targetBase = targetLower.replace(/^(?:s1|s2|d3|d4)\s+/i, '').trim();
+
+  return evidenceList.filter(chunk => {
+    const suppEnts = Array.isArray(chunk.supportedEntities) ? chunk.supportedEntities.map(e => String(e).toLowerCase()) : [];
+    if (suppEnts.length > 0) {
+      if (suppEnts.includes(targetLower)) return true;
+      const hasOnlyOtherProgram = suppEnts.every(e => e !== targetLower && /^(?:s1|s2|d3|d4)\s+/i.test(e));
+      if (hasOnlyOtherProgram) return false;
+    }
+    const raw = String(chunk.text || chunk.chunk || chunk.content || '');
+    const rawLower = raw.toLowerCase();
+    if (rawLower.includes(targetLower)) return true;
+
+    // Prevent mixing S1 vs S2 vs D3 of the same base name (e.g. S1 Sistem Informasi vs S2 Sistem Informasi)
+    const degreeMatch = targetLower.match(/^(s1|s2|d3|d4)\b/i);
+    if (degreeMatch) {
+      const reqDeg = degreeMatch[1].toLowerCase();
+      const otherDegs = ['s1', 's2', 'd3', 'd4'].filter(d => d !== reqDeg);
+      const mentionsOtherSameBase = otherDegs.some(d => rawLower.includes(`${d} ${targetBase}`) || rawLower.includes(`${targetBase} (${d})`));
+      const mentionsReqDeg = rawLower.includes(`${reqDeg} ${targetBase}`) || rawLower.includes(`${targetBase} (${reqDeg})`);
+      if (mentionsOtherSameBase && !mentionsReqDeg) return false;
+    }
+
+    if (excludedEntities.length > 0 && !rawLower.includes(targetBase)) {
+      const mentionsExcluded = excludedEntities.some(ex => {
+        const exLower = String(ex).toLowerCase();
+        return rawLower.includes(exLower);
+      });
+      if (mentionsExcluded) return false;
+    }
+    return true;
+  });
+}
+
+function buildSpecialistSectionForAttribute(attr, targetEntity, entityEvidence = [], semanticFrame = {}, arbitratedEvidence = {}) {
+  const userLang = semanticFrame?.language || detectQueryLanguage(semanticFrame?.rawQuery || '');
+  const isEn = userLang === 'en';
+  const excludedEntities = (arbitratedEvidence?.retrievalPlan?.excludedConflictingEntities) ||
+    (semanticFrame?.retrievalPlan?.excludedConflictingEntities) || [];
+
+  const isolatedPassages = [];
+  for (const chunk of entityEvidence) {
+    const raw = String(chunk.text || chunk.chunk || chunk.content || '').replace(/&amp;/g, '&');
+    if (!raw.trim()) continue;
+    const parts = targetEntity ? isolateTargetPassages(raw, [targetEntity], excludedEntities) : [raw];
+    for (const p of parts) {
+      if (p && p.trim()) isolatedPassages.push(cleanDocumentArtifacts(p.trim()));
+    }
+  }
+  const evText = isolatedPassages.join('\n');
+  const hasExplicitAttrChunk = entityEvidence.some(c =>
+    Array.isArray(c.supportedAttributes) && c.supportedAttributes.includes(attr)
+  );
+
+  if (attr === 'fee') {
+    const hasFeeSignalInEv = hasExplicitAttrChunk || /\b(?:biaya|spp|dpp|rp\.?\s*\d|ukt|uang\s+kuliah|sk\s+rektor\s+no\.?\s*629)\b/i.test(evText);
+    if (!hasFeeSignalInEv) return null;
+
+    const feeRes = generateFeeAnswer(semanticFrame?.rawQuery || `Biaya kuliah ${targetEntity || ''}`, arbitratedEvidence?.sessionData || {}, {
+      semanticFrame: { ...semanticFrame, domain: 'TUITION_FEE' },
+      acceptedEvidence: entityEvidence,
+      arbitratedEvidence
+    });
+    if (feeRes && feeRes.success && feeRes.answer) {
+      const cleanedFee = feeRes.answer
+        .replace(/\n\n_Catatan: Informasi mengenai .*? belum terkonfirmasi dalam sumber bukti yang tersedia saat ini\._/g, '')
+        .replace(/\n\n_Note: Official information regarding .*? is not confirmed in the available evidence records\._/g, '')
+        .trim();
+      return {
+        attr: 'fee',
+        title: isEn ? `Tuition Fee (${targetEntity || 'Program'})` : `Rincian Biaya Kuliah (${targetEntity || 'Program Studi'})`,
+        body: cleanedFee
+      };
+    }
+    const feeLines = isolatedPassages.filter(p => /\b(?:biaya|spp|dpp|rp\.?\s*\d|ukt|semester)\b/i.test(p));
+    if (feeLines.length > 0) {
+      return {
+        attr: 'fee',
+        title: isEn ? `Tuition Fee (${targetEntity || 'Program'})` : `Rincian Biaya Kuliah (${targetEntity || 'Program Studi'})`,
+        body: `**Rincian Biaya Kuliah (${targetEntity || 'Program Studi'})**:\n${feeLines.join('\n')}`
+      };
+    }
+    return null;
+  }
+
+  if (attr === 'accreditation') {
+    const hasAccSignal = hasExplicitAttrChunk || /\b(?:akreditasi|terakreditasi|ban-pt|lam\s*infokom|baik\s+sekali|unggul)\b/i.test(evText);
+    if (!hasAccSignal) return null;
+
+    const extractedAcc = extractAccreditationFromEvidence(evText, targetEntity);
+    const accSentences = isolatedPassages
+      .flatMap(p => p.split(/(?<=[.!?])\s+|\n+/))
+      .filter(s => /\b(?:akreditasi|terakreditasi|ban-pt|lam\s*infokom)\b/i.test(s));
+
+    let accDetail = '';
+    if (accSentences.length > 0) {
+      accDetail = accSentences.slice(0, 2).join(' ').trim();
+    } else if (extractedAcc) {
+      accDetail = `Program Studi **${targetEntity || 'terkait'}** telah **${extractedAcc}**.`;
+    } else {
+      const regAcc = targetEntity ? resolveProgramAccreditation(targetEntity) : null;
+      if (regAcc && regAcc.rank) {
+        accDetail = `Program Studi **${targetEntity}** terakreditasi **${regAcc.rank}** oleh **${regAcc.body || 'BAN-PT/LAM INFOKOM'}**${regAcc.decreeNumber ? ` (${regAcc.decreeNumber})` : ''}.`;
+      }
+    }
+    if (!accDetail) return null;
+    return {
+      attr: 'accreditation',
+      title: isEn ? `Accreditation (${targetEntity || 'Program'})` : `Status Akreditasi (${targetEntity || 'Program Studi'})`,
+      body: `**Status Akreditasi (${targetEntity || 'Program Studi'})**:\n${accDetail}`
+    };
+  }
+
+  if (attr === 'curriculum') {
+    const hasCurrSignal = hasExplicitAttrChunk || /\b(?:kurikulum|mata\s+kuliah|matkul|mempelajari|fokus|semester|sks|basis\s+data|pemrograman|enterprise|jaringan|algoritma|artificial\s+intelligence|analisis|desain\s+sistem|e-business|cloud|cyber)\b/i.test(evText);
+    if (!hasCurrSignal) return null;
+
+    const rawYangDipelajari = targetEntity ? extractYangDipelajariFromEvidence(evText, targetEntity) : null;
+    const yangDipelajari = Array.isArray(rawYangDipelajari)
+      ? (rawYangDipelajari.length > 0 ? rawYangDipelajari.join(', ') : null)
+      : (typeof rawYangDipelajari === 'string' && rawYangDipelajari.trim() ? rawYangDipelajari.trim() : null);
+    const currSentences = isolatedPassages
+      .flatMap(p => p.split(/(?<=[.!?])\s+|\n+/))
+      .filter(s => /\b(?:kurikulum|mata\s+kuliah|matkul|mempelajari|fokus\s+pembelajaran|kompetensi|sks|basis\s+data|pemrograman|enterprise|jaringan|analisis|desain\s+sistem|e-business)\b/i.test(s) && !/\b(?:biaya|spp|dpp|rp\.?\s*\d)\b/i.test(s));
+
+    let currBody = '';
+    if (yangDipelajari && currSentences.length > 0) {
+      const extraSent = currSentences.find(s => !yangDipelajari.toLowerCase().includes(s.slice(0, 25).toLowerCase()));
+      currBody = `Fokus materi dan mata kuliah yang dipelajari pada **${targetEntity || 'program studi ini'}** meliputi: ${yangDipelajari}.${extraSent ? ' ' + extraSent : ''}`;
+    } else if (yangDipelajari) {
+      currBody = `Fokus materi dan mata kuliah yang dipelajari pada **${targetEntity || 'program studi ini'}** meliputi: ${yangDipelajari}.`;
+    } else if (currSentences.length > 0) {
+      currBody = currSentences.slice(0, 3).join(' ').trim();
+    } else {
+      const currRes = buildGroundedCurriculumAnswer(
+        { ...semanticFrame, intent: 'CURRICULUM_INQUIRY', domain: 'ACADEMIC_CURRICULUM' },
+        entityEvidence,
+        arbitratedEvidence
+      );
+      if (currRes && currRes.success && currRes.answer) {
+        currBody = currRes.answer;
+      }
+    }
+    if (!currBody) return null;
+    return {
+      attr: 'curriculum',
+      title: isEn ? `Curriculum & Courses (${targetEntity || 'Program'})` : `Kurikulum & Mata Kuliah (${targetEntity || 'Program Studi'})`,
+      body: currBody.startsWith('**') ? currBody : `**Kurikulum & Mata Kuliah (${targetEntity || 'Program Studi'})**:\n${currBody}`
+    };
+  }
+
+  if (attr === 'sks') {
+    const hasSksSignal = hasExplicitAttrChunk || /\b\d{2,3}\s*sks\b/i.test(evText);
+    if (!hasSksSignal) return null;
+    const sksSentences = isolatedPassages
+      .flatMap(p => p.split(/(?<=[.!?])\s+|\n+/))
+      .filter(s => /\b\d{2,3}\s*sks\b/i.test(s));
+    if (sksSentences.length === 0) return null;
+    return {
+      attr: 'sks',
+      title: isEn ? `Total Credits / SKS (${targetEntity || 'Program'})` : `Beban Studi / Total SKS (${targetEntity || 'Program Studi'})`,
+      body: `**Beban Studi / Total SKS (${targetEntity || 'Program Studi'})**:\n${sksSentences.slice(0, 2).join(' ').trim()}`
+    };
+  }
+
+  if (attr === 'career_prospects') {
+    const hasCareerSignal = hasExplicitAttrChunk || /\b(?:prospek|peluang\s+(?:kerja|kar(?:i)?er)|profesi|lulusan\s+dapat\s+bekerja|kar(?:i)?er\s+lulusan|analyst|developer|engineer|consultant|specialist|manager|programmer|administrator|technopreneur|animator|designer)\b/i.test(evText);
+    if (!hasCareerSignal) return null;
+
+    const rawCareers = targetEntity ? extractCareersFromEvidence(evText, targetEntity) : null;
+    const extractedCareers = Array.isArray(rawCareers)
+      ? (rawCareers.length > 0 ? rawCareers.join(', ') : null)
+      : (typeof rawCareers === 'string' && rawCareers.trim() ? rawCareers.trim() : null);
+    const careerSentences = isolatedPassages
+      .flatMap(p => p.split(/(?<=[.!?])\s+|\n+/))
+      .filter(s => /\b(?:prospek|peluang\s+(?:kerja|kar(?:i)?er)|profesi|lulusan\s+dapat\s+bekerja|kar(?:i)?er\s+lulusan|analyst|developer|engineer|consultant|specialist|manager|programmer|administrator|technopreneur)\b/i.test(s) && !/\b(?:biaya|spp|dpp)\b/i.test(s));
+
+    let careerBody = '';
+    if (extractedCareers && careerSentences.length > 0) {
+      careerBody = `Peluang kerja dan prospek karier lulusan **${targetEntity || 'program studi ini'}** meliputi: **${extractedCareers}**.`;
+    } else if (extractedCareers) {
+      careerBody = `Peluang kerja dan prospek karier lulusan **${targetEntity || 'program studi ini'}** meliputi: **${extractedCareers}**.`;
+    } else if (careerSentences.length > 0) {
+      careerBody = careerSentences.slice(0, 2).join(' ').trim();
+    }
+    if (!careerBody) return null;
+    return {
+      attr: 'career_prospects',
+      title: isEn ? `Career Prospects (${targetEntity || 'Program'})` : `Peluang Kerja & Prospek Karier (${targetEntity || 'Program Studi'})`,
+      body: `**Peluang Kerja & Prospek Karier (${targetEntity || 'Program Studi'})**:\n${careerBody}`
+    };
+  }
+
+  if (attr === 'faculty') {
+    const hasFacSignal = hasExplicitAttrChunk || /\b(?:fakultas|fik\b|fbv\b|informatika\s+dan\s+komputer|bisnis\s+dan\s+vokasi)\b/i.test(evText);
+    if (!hasFacSignal) return null;
+
+    const facSentences = isolatedPassages
+      .flatMap(p => p.split(/(?<=[.!?])\s+|\n+/))
+      .filter(s => /\b(?:fakultas|fik\b|fbv\b|informatika\s+dan\s+komputer|bisnis\s+dan\s+vokasi)\b/i.test(s));
+    if (facSentences.length > 0) {
+      return {
+        attr: 'faculty',
+        title: isEn ? `Faculty (${targetEntity || 'Program'})` : `Fakultas (${targetEntity || 'Program Studi'})`,
+        body: `**Fakultas (${targetEntity || 'Program Studi'})**:\n${facSentences.slice(0, 2).join(' ').trim()}`
+      };
+    }
+    const facSummary = generateGroundedFacultySummary({ ...semanticFrame, intent: 'FACULTY_INQUIRY' }, entityEvidence);
+    if (facSummary) {
+      return {
+        attr: 'faculty',
+        title: isEn ? `Faculty (${targetEntity || 'Program'})` : `Fakultas (${targetEntity || 'Program Studi'})`,
+        body: `**Fakultas (${targetEntity || 'Program Studi'})**:\n${facSummary}`
+      };
+    }
+    return null;
+  }
+
+  if (attr === 'degree_award') {
+    const hasDegSignal = hasExplicitAttrChunk || /\b(?:gelar|s\.kom|s\.bns|m\.kom|a\.md\.kom|sarjana\s+komputer|sarjana\s+bisnis|magister\s+komputer|ahli\s+madya)\b/i.test(evText);
+    if (!hasDegSignal) return null;
+
+    const deg = extractDegreeFromEvidence(evText, targetEntity);
+    const dur = extractDurationFromEvidence(evText, targetEntity);
+    if (deg) {
+      return {
+        attr: 'degree_award',
+        title: isEn ? `Degree Awarded (${targetEntity || 'Program'})` : `Gelar Lulusan (${targetEntity || 'Program Studi'})`,
+        body: `**Gelar Lulusan (${targetEntity || 'Program Studi'})**:\nLulusan **${targetEntity || 'program studi ini'}** memperoleh gelar akademik **${deg}**${dur ? ` dengan masa studi normal **${dur}**` : ''}.`
+      };
+    }
+    const degSentences = isolatedPassages
+      .flatMap(p => p.split(/(?<=[.!?])\s+|\n+/))
+      .filter(s => /\b(?:gelar|s\.kom|s\.bns|m\.kom|a\.md\.kom)\b/i.test(s));
+    if (degSentences.length > 0) {
+      return {
+        attr: 'degree_award',
+        title: isEn ? `Degree Awarded (${targetEntity || 'Program'})` : `Gelar Lulusan (${targetEntity || 'Program Studi'})`,
+        body: `**Gelar Lulusan (${targetEntity || 'Program Studi'})**:\n${degSentences.slice(0, 2).join(' ').trim()}`
+      };
+    }
+    return null;
+  }
+
+  if (attr === 'study_mode') {
+    const hasModeSignal = hasExplicitAttrChunk || /\b(?:kelas\s+(?:reguler|sore|karyawan|malam|eksekutif)|kuliah\s+(?:sore|malam|sambil\s+kerja)|mode\s+perkuliahan|fleksibel)\b/i.test(evText);
+    if (!hasModeSignal) return null;
+    const modeSentences = isolatedPassages
+      .flatMap(p => p.split(/(?<=[.!?])\s+|\n+/))
+      .filter(s => /\b(?:kelas\s+(?:reguler|sore|karyawan|malam|eksekutif)|kuliah\s+(?:sore|malam|sambil\s+kerja)|mode\s+perkuliahan|fleksibel)\b/i.test(s));
+    if (modeSentences.length === 0) return null;
+    return {
+      attr: 'study_mode',
+      title: isEn ? `Study Mode (${targetEntity || 'Program'})` : `Mode Perkuliahan (${targetEntity || 'Program Studi'})`,
+      body: `**Mode Perkuliahan (${targetEntity || 'Program Studi'})**:\n${modeSentences.slice(0, 2).join(' ').trim()}`
+    };
+  }
+
+  if (['scholarship', 'location', 'contact', 'facilities'].includes(attr)) {
+    const rxMap = {
+      scholarship: /\b(?:beasiswa|potongan\s+(?:dpp|biaya)|kip(?:-|\s*)?kuliah|keringanan)\b/i,
+      location: /\b(?:alamat|lokasi|jl\.|jalan|puputan|kampus\s+(?:renon|jimbaran|abiansemal))\b/i,
+      contact: /\b(?:telepon|telp|hotline|whatsapp|wa\b|email|\(0361\)|08\d{8,})\b/i,
+      facilities: /\b(?:fasilitas|laboratorium|lab\b|perpustakaan|inbis|cdc)\b/i
+    };
+    const rx = rxMap[attr];
+    if (!hasExplicitAttrChunk && (!rx || !rx.test(evText))) return null;
+    const matchingSentences = isolatedPassages
+      .flatMap(p => p.split(/(?<=[.!?])\s+|\n+/))
+      .filter(s => rx ? rx.test(s) : true);
+    if (matchingSentences.length === 0) return null;
+    const titleMap = {
+      scholarship: 'Beasiswa & Keringanan Biaya',
+      location: 'Lokasi Kampus',
+      contact: 'Kontak Resmi',
+      facilities: 'Fasilitas Pendukung'
+    };
+    return {
+      attr,
+      title: titleMap[attr] || attr,
+      body: `**${titleMap[attr] || attr}**:\n${matchingSentences.slice(0, 3).join(' ').trim()}`
+    };
+  }
+
+  return null;
+}
+
+function composeMultiAttributeAnswer(semanticFrame = {}, evidenceList = [], arbitratedEvidence = {}, precomputedConflictState = null) {
+  const conflictState = precomputedConflictState || prepareConflictAwareEvidence(evidenceList, semanticFrame, arbitratedEvidence);
+  if (conflictState.onlyHistoricalAvailable && !conflictState.isExplicitHistoricalQuery) {
+    return buildHistoricalOnlyDisclosureAnswer(semanticFrame, conflictState.historicalChunks, arbitratedEvidence);
+  }
+
+  const orderedAttrs = conflictState.requestedComposableAttrs;
+  if (!Array.isArray(orderedAttrs) || orderedAttrs.length < 2) {
+    return null;
+  }
+
+  const userLang = semanticFrame?.language || detectQueryLanguage(semanticFrame?.rawQuery || '');
+  const isEn = userLang === 'en';
+  const targetEntities = (Array.isArray(semanticFrame?.targetEntities) && semanticFrame.targetEntities.length > 0)
+    ? semanticFrame.targetEntities.map(e => (typeof e === 'object' && e ? (e.canonical || e.name || String(e)) : String(e)))
+    : ((Array.isArray(semanticFrame?.entities) ? semanticFrame.entities.map(e => e.canonical || e.name || String(e)) : []));
+  const primaryEntity = targetEntities.find(e => e !== 'Kampus ITB STIKOM Bali') || targetEntities[0] || null;
+  const excludedEntities = (arbitratedEvidence?.retrievalPlan?.excludedConflictingEntities) ||
+    (semanticFrame?.retrievalPlan?.excludedConflictingEntities) || [];
+
+  const entityFilteredEvidence = filterEvidenceForEntity(conflictState.activeEvidence, primaryEntity, excludedEntities);
+  const explicitMissingSet = new Set(Array.isArray(arbitratedEvidence?.missingAspects) ? arbitratedEvidence.missingAspects : []);
+  const attrEval = arbitratedEvidence?.attributeEvaluation || {};
+
+  const composedSections = [];
+  const supportedAttrs = [];
+  const missingAttrs = [];
+  const seenSentenceNorms = new Set();
+
+  for (const attr of orderedAttrs) {
+    const evalStatus = attrEval[attr]?.status;
+    if (explicitMissingSet.has(attr) || evalStatus === 'UNSUPPORTED') {
+      if (!missingAttrs.includes(attr)) missingAttrs.push(attr);
+      continue;
+    }
+
+    // If curriculum already covered SKS and user didn't ask for separate SKS breakdown, avoid duplicate section
+    if (attr === 'sks' && supportedAttrs.includes('curriculum')) {
+      const currSec = composedSections.find(s => s.attr === 'curriculum');
+      if (currSec && /\b\d{2,3}\s*sks\b/i.test(currSec.body)) {
+        supportedAttrs.push('sks');
+        continue;
+      }
+    }
+
+    const section = buildSpecialistSectionForAttribute(attr, primaryEntity, entityFilteredEvidence, semanticFrame, arbitratedEvidence);
+    if (section && section.body) {
+      // Deduplicate lines across sections
+      const lines = section.body.split('\n');
+      const dedupedLines = [];
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          dedupedLines.push(line);
+          continue;
+        }
+        const normLine = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        if (normLine.length > 25 && seenSentenceNorms.has(normLine)) {
+          continue;
+        }
+        if (normLine.length > 25) seenSentenceNorms.add(normLine);
+        dedupedLines.push(line);
+      }
+      const cleanedBody = dedupedLines.join('\n').trim();
+      if (cleanedBody) {
+        composedSections.push({ ...section, body: cleanedBody });
+        supportedAttrs.push(attr);
+      } else {
+        if (!missingAttrs.includes(attr)) missingAttrs.push(attr);
+      }
+    } else {
+      if (!missingAttrs.includes(attr)) missingAttrs.push(attr);
+    }
+  }
+
+  for (const m of explicitMissingSet) {
+    const normM = m === 'akreditasi' ? 'accreditation' : (m === 'tuition' ? 'fee' : m);
+    if (!supportedAttrs.includes(normM) && !missingAttrs.includes(normM) && STAGE5_PRIMARY_ATTRIBUTES.includes(normM)) {
+      missingAttrs.push(normM);
+    }
+  }
+
+  if (composedSections.length === 0) {
+    return {
+      success: false,
+      answer: null,
+      source: 'multi_attribute_composer_empty',
+      outcome: 'SAFE_UNKNOWN',
+      handledSafely: true
+    };
+  }
+
+  const header = primaryEntity
+    ? (isEn
+      ? `Here is the complete official information regarding **${primaryEntity}** at ITB STIKOM Bali:`
+      : `Berikut informasi lengkap mengenai **${primaryEntity}** berdasarkan sumber resmi ITB STIKOM Bali:`)
+    : (isEn
+      ? `Here is the requested official information at ITB STIKOM Bali:`
+      : `Berikut informasi resmi ITB STIKOM Bali sesuai pertanyaan Anda:`);
+
+  const numberedBlocks = composedSections.map((sec, idx) => `${idx + 1}. ${sec.body}`);
+  let compositeAnswer = `${header}\n\n${numberedBlocks.join('\n\n')}`;
+
+  if (conflictState.unresolvedConflictNotes.length > 0) {
+    const conflictText = conflictState.unresolvedConflictNotes
+      .map(item => `⚠️ **Catatan Validasi Sumber (NEEDS_SOURCE_VALIDATION)**: ${item.note}`)
+      .join('\n');
+    compositeAnswer += `\n\n${conflictText}`;
+  }
+
+  const isPartial = missingAttrs.length > 0;
+  if (isPartial) {
+    const aspectLabels = isEn
+      ? {
+          fee: 'tuition fees',
+          accreditation: 'accreditation',
+          curriculum: 'curriculum & courses',
+          sks: 'total credit hours (SKS)',
+          career_prospects: 'career prospects',
+          faculty: 'faculty structure',
+          degree_award: 'degree title',
+          study_mode: 'study mode / schedule',
+          scholarship: 'scholarships',
+          location: 'campus location',
+          contact: 'official contact',
+          facilities: 'campus facilities'
+        }
+      : {
+          fee: 'biaya kuliah',
+          accreditation: 'akreditasi',
+          curriculum: 'rincian kurikulum & mata kuliah',
+          sks: 'total beban studi (SKS)',
+          career_prospects: 'prospek karir & peluang kerja',
+          faculty: 'fakultas',
+          degree_award: 'gelar lulusan',
+          study_mode: 'mode perkuliahan / jadwal kelas',
+          scholarship: 'beasiswa',
+          location: 'lokasi kampus',
+          contact: 'kontak resmi',
+          facilities: 'fasilitas kampus'
+        };
+    const missingNames = Array.from(new Set(missingAttrs.map(a => aspectLabels[a] || a)));
+    const missingNote = isEn
+      ? `\n\n_Note: Official information regarding **${missingNames.join(', ')}** is not confirmed in the available evidence records._`
+      : `\n\n_Catatan: Informasi mengenai **${missingNames.join(', ')}** belum terkonfirmasi dalam sumber bukti yang tersedia saat ini._`;
+    compositeAnswer += missingNote;
+
+    if (arbitratedEvidence && typeof arbitratedEvidence === 'object') {
+      arbitratedEvidence.missingAspects = Array.from(new Set([...(arbitratedEvidence.missingAspects || []), ...missingAttrs]));
+      arbitratedEvidence.coveredAspects = Array.from(new Set([...(arbitratedEvidence.coveredAspects || []), ...supportedAttrs]));
+    }
+  }
+
+  return {
+    success: true,
+    answer: compositeAnswer,
+    source: 'multi_attribute_composite_synthesizer',
+    supportedAttributes: supportedAttrs,
+    missingAspects: missingAttrs,
+    partialCoverage: isPartial,
+    outcome: isPartial ? 'PARTIAL' : 'VERIFIED_FACTUAL',
+    isExtractive: true,
+    handledSafely: true
+  };
+}
+
 module.exports = {
   buildSynthesisPrompt,
   cleanDocumentArtifacts,
   buildGenericExtractiveFallback,
   buildGroundedDeterministicSummary,
   synthesizeAnswer,
+  prepareConflictAwareEvidence,
+  composeMultiAttributeAnswer,
+  buildHistoricalOnlyDisclosureAnswer,
   renderRecommendationAnswer,
   normalizeAcademicScope,
   getCatalogEntriesByScope,

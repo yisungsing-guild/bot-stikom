@@ -446,8 +446,9 @@ function evaluateChunkMetadata(chunk = {}, contract = {}) {
   }
 
   // 2. Academic Level Conflict Check
-  if (requestedLevel && requestedLevel !== 'ALL' && chunkLevels.length > 0) {
-    const isLevelMatch = chunkLevels.includes(requestedLevel);
+  if (requestedLevel && requestedLevel !== 'ALL' && requestedLevel !== 'UMUM' && chunkLevels.length > 0) {
+    const isLevelMatch = chunkLevels.includes(requestedLevel) ||
+      chunkLevels.some(l => ['ALL', 'UMUM'].includes(String(l).toUpperCase()));
     if (!isLevelMatch) {
       // Coarse document-level metadata may conflict with a specific section/chunk.
       // If the chunk body explicitly mentions/verifies the requested level, allow it.
@@ -683,7 +684,8 @@ function arbitrateEvidenceWithContract(candidates = [], contract = {}, options =
           !/\b(?:s1|d4|sarjana|magister|s2)\b/i.test(text);
         if (isSmaSmkOnly) levelMismatch = true;
       }
-      if (candidate.academicLevel && candidate.academicLevel !== requestedLevel) {
+      const candLvlUpper = candidate.academicLevel ? String(candidate.academicLevel).toUpperCase() : null;
+      if (candLvlUpper && !['ALL', 'UMUM'].includes(candLvlUpper) && candLvlUpper !== String(requestedLevel).toUpperCase()) {
         let textSupportsRequestedLevel = false;
         if (requestedLevel === 'S2' && /\b(?:s2|magister|pascasarjana)\b/i.test(text)) {
           textSupportsRequestedLevel = true;

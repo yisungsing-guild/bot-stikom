@@ -411,7 +411,7 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
     if (isProgramOverviewQuery) {
       if (/isian website|penjelasan prodi/i.test(f) || /fokus praktis pada pengelolaan|deskripsi singkat/i.test(normalizedRawText)) {
         score *= 3.0;
-      } else if (/rincian biaya/i.test(f)) {
+      } else if (!hasFeeAspect && /rincian biaya/i.test(f)) {
         score *= 0.25;
       }
     }
@@ -444,6 +444,19 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       }
     }
 
+    // Boost program accreditation documents
+    const hasAccreditationAspect = (
+      retrievalPlan.intent === 'PROGRAM_ACCREDITATION' ||
+      retrievalPlan.intent === 'INSTITUTIONAL_ACCREDITATION' ||
+      (retrievalPlan.requiredAspects && retrievalPlan.requiredAspects.some(a => ['accreditation', 'akreditasi', 'peringkat'].includes(a))) ||
+      /\b(?:akreditasi|terakreditasi|ban-?pt|lam-?infokom)\b/i.test(query)
+    );
+    if (hasAccreditationAspect) {
+      if (/sertifikat akreditasi|akreditasi/i.test(f) || /\b(?:terakreditasi|sertifikat akreditasi|lam\s*infokom|peringkat akreditasi)\b/i.test(rawText)) {
+        score *= 3.0;
+      }
+    }
+
     // Aspect & Category alignment: Career prospects
     const isCareerQuery = (retrievalPlan.requiredAspects && retrievalPlan.requiredAspects.includes('career_prospects')) ||
       retrievalPlan.intent === 'CAREER_PROSPECTS' ||
@@ -452,7 +465,7 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       if (/penjelasan prodi dan karier/i.test(f) || /peluang kerja|profil lulusan/i.test(rawText)) {
         score *= 2.5;
       }
-      if (/rincian biaya/i.test(f) || ctx?.category === 'BIAYA') {
+      if (!hasFeeAspect && (/rincian biaya/i.test(f) || ctx?.category === 'BIAYA')) {
         score *= 0.1;
       }
     }

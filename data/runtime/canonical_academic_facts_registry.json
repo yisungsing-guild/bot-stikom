@@ -1,31 +1,287 @@
 {
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "registryVersion": "2.0.0",
+  "lastUpdated": "2026-11-06",
   "academicYear": "2026/2027",
+  "sourceOfTruth": "Unified Canonical Academic & Institutional Facts Registry — ITB STIKOM Bali",
+  "officialFaculty": {
+    "Fakultas Informatika dan Komputer": {
+      "canonicalName": "Fakultas Informatika dan Komputer",
+      "aliases": ["FIK", "INFOKOM", "Fakultas Informatika & Komputer"],
+      "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+      "sourceDocument": "https://pasca.stikom-bali.ac.id/tentang & ISIAN WEBSITE (1).pdf",
+      "dean": {
+        "name": "Dr. Putri Srinadi, SE., MM.Kom.",
+        "role": "Dekan Fakultas Informatika dan Komputer",
+        "status": "VERIFIED_PRIMARY_SOURCE"
+      },
+      "programs": [
+        {
+          "canonicalName": "S1 Sistem Informasi",
+          "code": "SI",
+          "degreeLevel": "S1",
+          "degreeAwarded": "S.Kom.",
+          "kaprodi": "Ricky Aurelius Nurtanto Diaz, S.Kom., M.T.",
+          "sekprodi": "Madeastri Pradnyani, S.Kom., M.Kom.",
+          "status": "VERIFIED_PRIMARY_SOURCE"
+        },
+        {
+          "canonicalName": "S1 Sistem Komputer",
+          "code": "SK",
+          "degreeLevel": "S1",
+          "degreeAwarded": "S.Kom.",
+          "kaprodi": "Evi Dwi Krisna, S.Kom., M.T.",
+          "sekprodi": "Gede Hendra Pradnyana, S.Kom., M.T.",
+          "status": "VERIFIED_PRIMARY_SOURCE"
+        },
+        {
+          "canonicalName": "S1 Teknologi Informasi",
+          "code": "TI",
+          "degreeLevel": "S1",
+          "degreeAwarded": "S.Kom.",
+          "kaprodi": "Dian Pramana, S.Kom., M.Kom.",
+          "sekprodi": "I Gede Putu Krisna Juliharta, S.T., M.T.",
+          "status": "VERIFIED_PRIMARY_SOURCE"
+        },
+        {
+          "canonicalName": "S2 Sistem Informasi",
+          "code": "S2-SI",
+          "degreeLevel": "S2",
+          "degreeAwarded": "M.Kom.",
+          "kaprodi": "Dr. Dandy Pramana Hostiadi, S.Kom., M.T.",
+          "status": "VERIFIED_PRIMARY_SOURCE"
+        }
+      ]
+    },
+    "Fakultas Bisnis dan Vokasi": {
+      "canonicalName": "Fakultas Bisnis dan Vokasi",
+      "aliases": ["FBV", "BISVO", "Fakultas Bisnis & Vokasi"],
+      "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+      "sourceDocument": "https://pasca.stikom-bali.ac.id/tentang & ISIAN WEBSITE (1).pdf",
+      "dean": {
+        "name": "I Made Sarjana, SE., MM.",
+        "role": "Dekan Fakultas Bisnis dan Vokasi",
+        "status": "VERIFIED_PRIMARY_SOURCE"
+      },
+      "programs": [
+        {
+          "canonicalName": "S1 Bisnis Digital",
+          "code": "BD",
+          "degreeLevel": "S1",
+          "degreeAwarded": "S.Bns.",
+          "kaprodi": "Ni LuhWiartini, S.E., M.M.",
+          "sekprodi": null,
+          "status": "VERIFIED_PRIMARY_SOURCE"
+        },
+        {
+          "canonicalName": "D3 Manajemen Informatika",
+          "code": "MI",
+          "degreeLevel": "D3",
+          "degreeAwarded": "A.Md.Kom.",
+          "kaprodi": "Luh Gede Surya Kartika, S.Kom., M.T.",
+          "sekprodi": null,
+          "status": "VERIFIED_PRIMARY_SOURCE"
+        }
+      ]
+    },
+    "Program Pascasarjana": {
+      "canonicalName": "Program Pascasarjana",
+      "aliases": ["Pascasarjana", "Magister", "S2"],
+      "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+      "sourceDocument": "https://pasca.stikom-bali.ac.id/tentang, ISIAN WEBSITE (1).pdf & Training_Dataset_Pascasarjana_ITB_STIKOM_Bali.xlsx",
+      "programs": [
+        {
+          "canonicalName": "S2 Sistem Informasi",
+          "code": "S2-SI",
+          "degreeLevel": "S2",
+          "degreeAwarded": "M.Kom.",
+          "kaprodi": "Dr. Dandy Pramana Hostiadi, S.Kom., M.T.",
+          "status": "VERIFIED_PRIMARY_SOURCE"
+        }
+      ]
+    }
+  },
   "curriculumFacts": {
+    "S1 Sistem Informasi": {
+      "program": "S1 Sistem Informasi",
+      "degreeLevel": "S1",
+      "degreeAwarded": "Sarjana Komputer (S.Kom.)",
+      "totalSks": 144,
+      "mandatorySks": null,
+      "electiveOfferedSks": null,
+      "graduationMinimumSks": 144,
+      "normalDurationSemesters": 8,
+      "normalDurationYears": 4,
+      "sourceDocument": "ISIAN WEBSITE (1).pdf, Kalender Akademik Ganjil, Genap dan Antara TA 2025-2026 (1).pdf & knowledge/raw/curriculum_current_2025/SI_curriculum_verified_2025.json",
+      "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+      "status": "OFFICIAL_PROVENANCE"
+    },
+    "S1 Sistem Komputer": {
+      "program": "S1 Sistem Komputer",
+      "degreeLevel": "S1",
+      "degreeAwarded": "Sarjana Komputer (S.Kom.)",
+      "totalSks": 144,
+      "mandatorySks": null,
+      "electiveOfferedSks": null,
+      "graduationMinimumSks": 144,
+      "normalDurationSemesters": 8,
+      "normalDurationYears": 4,
+      "sourceDocument": "ISIAN WEBSITE (1).pdf, Kalender Akademik Ganjil, Genap dan Antara TA 2025-2026 (1).pdf & knowledge/raw/curriculum_current_2025/SK_curriculum_verified_2025.json",
+      "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+      "status": "OFFICIAL_PROVENANCE"
+    },
+    "S1 Teknologi Informasi": {
+      "program": "S1 Teknologi Informasi",
+      "degreeLevel": "S1",
+      "degreeAwarded": "Sarjana Komputer (S.Kom.)",
+      "totalSks": 144,
+      "mandatorySks": null,
+      "electiveOfferedSks": null,
+      "graduationMinimumSks": 144,
+      "normalDurationSemesters": 8,
+      "normalDurationYears": 4,
+      "sourceDocument": "ISIAN WEBSITE (1).pdf, Kalender Akademik Ganjil, Genap dan Antara TA 2025-2026 (1).pdf & knowledge/raw/curriculum_current_2025/TI_curriculum_verified_2025.json",
+      "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+      "status": "OFFICIAL_PROVENANCE"
+    },
+    "S1 Bisnis Digital": {
+      "program": "S1 Bisnis Digital",
+      "degreeLevel": "S1",
+      "degreeAwarded": "Sarjana Bisnis (S.Bns.)",
+      "totalSks": 144,
+      "mandatorySks": null,
+      "electiveOfferedSks": null,
+      "graduationMinimumSks": 144,
+      "normalDurationSemesters": 8,
+      "normalDurationYears": 4,
+      "sourceDocument": "ISIAN WEBSITE (1).pdf, Kalender Akademik Ganjil, Genap dan Antara TA 2025-2026 (1).pdf & knowledge/raw/curriculum_current_2025/BD_curriculum_verified_2023.json",
+      "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+      "status": "OFFICIAL_PROVENANCE"
+    },
     "D3 Manajemen Informatika": {
       "program": "D3 Manajemen Informatika",
       "degreeLevel": "D3",
       "degreeAwarded": "Ahli Madya Komputer (A.Md.Kom.)",
       "totalSks": 110,
+      "indexedTotalSks": 110,
+      "listedCoursesSumSks": 75,
+      "graduationMinimumSks": null,
       "normalDurationSemesters": 6,
+      "normalDurationYears": 3,
       "distribution": {
         "Tingkat I": 38,
         "Tingkat II": 40,
         "Tingkat III": 32
       },
-      "sourceDocument": "Dokumen Kurikulum OBE Program Studi D3 Manajemen Informatika",
+      "sourceDocument": "knowledge/raw/curriculum_current_2025/MI_curriculum_verified_obe-2023.json (Indeks Kurikulum OBE Program Studi D3 Manajemen Informatika)",
       "academicYear": "2024/2025",
-      "status": "OFFICIAL_PROVENANCE"
+      "verificationStatus": "PARTIAL_OR_NEEDS_VALIDATION",
+      "status": "PARTIAL_OR_NEEDS_VALIDATION",
+      "verificationNote": "Ringkasan struktur tingkat pada indeks kurikulum OBE mencatat beban studi 110 SKS (Tingkat I: 38 SKS, Tingkat II: 40 SKS, Tingkat III: 32 SKS), sedangkan rincian daftar mata kuliah per semester yang terindeks saat ini baru berjumlah 75 SKS dan konfirmasi beban SKS wajib kelulusan final memerlukan verifikasi dokumen kurikulum primer resmi Program Studi D3 Manajemen Informatika."
     },
     "S2 Sistem Informasi": {
       "program": "S2 Sistem Informasi",
       "degreeLevel": "S2",
       "degreeAwarded": "Magister Komputer (M.Kom.)",
       "totalSks": 56,
+      "totalCurriculumSks": 56,
+      "mandatorySks": 47,
+      "mandatoryCoursesCount": 13,
+      "electiveOfferedSks": 9,
+      "electiveOfferedCoursesCount": 3,
+      "graduationMinimumSks": null,
       "normalDurationSemesters": 4,
-      "sourceDocument": "Buku Pedoman Akademik Program Magister S2",
+      "normalDurationYears": 2,
+      "distribution": {
+        "Semester I": {
+          "mandatorySks": 18,
+          "coursesCount": 6,
+          "courses": [
+            { "code": "MI241001", "name": "Metodologi Penelitian", "sks": 3, "type": "WAJIB" },
+            { "code": "MI241002", "name": "Keamanan dan Privasi Data", "sks": 3, "type": "WAJIB" },
+            { "code": "MI241003", "name": "Rekayasa Sistem Informasi Lanjut", "sks": 3, "type": "WAJIB" },
+            { "code": "MI241004", "name": "Tata Kelola dan Audit Sistem Informasi", "sks": 3, "type": "WAJIB" },
+            { "code": "MI241005", "name": "Transformasi Digital dan Inovasi Bisnis", "sks": 3, "type": "WAJIB" },
+            { "code": "MI241006", "name": "Data Science dan Big Data Analytics", "sks": 3, "type": "WAJIB" }
+          ]
+        },
+        "Semester II": {
+          "mandatorySks": 9,
+          "mandatoryCoursesCount": 3,
+          "electiveOfferedSks": 9,
+          "electiveOfferedCoursesCount": 3,
+          "totalListedSks": 18,
+          "courses": [
+            { "code": "MI242001", "name": "Arsitektur dan Integrasi Sistem Enterprise", "sks": 3, "type": "WAJIB" },
+            { "code": "MI242002", "name": "Manajemen Proyek Sistem Informasi Lanjut", "sks": 3, "type": "WAJIB" },
+            { "code": "MI242003", "name": "Sistem Pendukung Keputusan Cerdas", "sks": 3, "type": "WAJIB" },
+            { "code": "MI242101", "name": "System Enterprise Mutakhir", "sks": 3, "type": "PILIHAN" },
+            { "code": "MI242102", "name": "Intelligence, Security, and Infosphere", "sks": 3, "type": "PILIHAN" },
+            { "code": "MI242103", "name": "Deep Learning", "sks": 3, "type": "PILIHAN" }
+          ]
+        },
+        "Semester III": {
+          "mandatorySks": 12,
+          "coursesCount": 3,
+          "courses": [
+            { "code": "MI243001", "name": "Seminar Proposal Tesis", "sks": 4, "type": "WAJIB" },
+            { "code": "MI243002", "name": "Riset dan Publikasi Ilmiah I", "sks": 4, "type": "WAJIB" },
+            { "code": "MI243003", "name": "Studi Mandiri Terarah", "sks": 4, "type": "WAJIB" }
+          ]
+        },
+        "Semester IV": {
+          "mandatorySks": 8,
+          "coursesCount": 1,
+          "courses": [
+            { "code": "MI244001", "name": "Tesis dan Publikasi Ilmiah II", "sks": 8, "type": "WAJIB" }
+          ]
+        }
+      },
+      "researchFocusPillars": [
+        "Data Science",
+        "Medical Informatics",
+        "Cyber Security",
+        "Enterprise System"
+      ],
+      "sourceDocument": "ISIAN WEBSITE (1).pdf (Tabel Kurikulum Program Studi Magister Sistem Informasi) & Training_Dataset_Pascasarjana_ITB_STIKOM_Bali.xlsx",
       "academicYear": "2025/2026",
-      "status": "OFFICIAL_PROVENANCE"
+      "verificationStatus": "PARTIAL_OR_NEEDS_VALIDATION",
+      "curriculumStructureStatus": "VERIFIED_PRIMARY_SOURCE",
+      "graduationMinSksStatus": "PARTIAL_OR_NEEDS_VALIDATION",
+      "status": "PARTIAL_OR_NEEDS_VALIDATION",
+      "verificationNote": "Total struktur kurikulum yang ditawarkan tercatat 56 SKS (terdiri atas 47 SKS mata kuliah wajib pada 13 mata kuliah dan 9 SKS mata kuliah pilihan yang ditawarkan pada 3 mata kuliah di Semester II). Ketentuan batas minimal SKS wajib tempuh untuk kelulusan (apakah seluruh 9 SKS mata kuliah pilihan wajib ditempuh atau sebagian) memerlukan verifikasi pada Buku Pedoman Akademik Pascasarjana resmi."
+    }
+  },
+  "campusLocations": {
+    "renon": {
+      "id": "campus_renon",
+      "canonicalName": "Kampus Renon (Kampus Pusat Denpasar)",
+      "branchKey": "renon",
+      "address": "Jl. Raya Puputan No. 86 Renon, Denpasar, Bali",
+      "phone": "(0361) 244445",
+      "hotline": "082247312226",
+      "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+      "sourceDocument": "ISIAN WEBSITE (1).pdf (Section 6: Kontak & Lokasi Kampus)"
+    },
+    "jimbaran": {
+      "id": "campus_jimbaran",
+      "canonicalName": "Kampus Jimbaran (Badung Selatan)",
+      "branchKey": "jimbaran",
+      "address": "Jl. Raya Kampus Udayana, Jimbaran, Kuta Selatan, Badung, Bali",
+      "phone": "(0361) 8953534",
+      "hotline": "081288778840",
+      "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+      "sourceDocument": "ISIAN WEBSITE (1).pdf (Section 6: Kontak & Lokasi Kampus)"
+    },
+    "abiansemal": {
+      "id": "campus_abiansemal",
+      "canonicalName": "Kampus Abiansemal (Badung Utara)",
+      "branchKey": "abiansemal",
+      "address": "Jl. Janger, Dauh Yeh Cani, Kec. Abiansemal, Kabupaten Badung, Bali",
+      "phone": "(0361) 4790925",
+      "hotline": "082145099633",
+      "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+      "sourceDocument": "ISIAN WEBSITE (1).pdf (Section 6: Kontak & Lokasi Kampus)"
     }
   },
   "admissionWaves": {
@@ -45,13 +301,15 @@
     ],
     "finalIntakeDeadline": "11 September 2026",
     "portalUrl": "https://pmb.stikom-bali.ac.id",
-    "sourceDocument": "Surat Keputusan ITB STIKOM Bali Nomor : 629/ITBSTIKOM/WDS/X/25"
+    "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+    "sourceDocument": "CamScanner 12-02-2026 14.39 (1).pdf & rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf (SK ITB STIKOM Bali Nomor : 629/ITBSTIKOM/WDS/X/25)"
   },
   "uncatalogedScholarshipEntities": {
     "1K1S": {
       "entity": "1K1S",
       "canonicalName": "Beasiswa 1 Keluarga 1 Sarjana (1K1S)",
       "aliases": ["1k1s", "1 keluarga 1 sarjana", "satu keluarga satu sarjana"],
+      "verificationStatus": "SOURCE_GAP",
       "status": "SOURCE_NOT_FOUND",
       "explanation": "Informasi resmi mengenai program \"Beasiswa 1 Keluarga 1 Sarjana (1K1S)\" belum tercantum dalam dokumen pedoman beasiswa resmi maupun SK PMB ITB STIKOM Bali yang tersedia (SOURCE_NOT_FOUND).",
       "action": "Calon mahasiswa diarahkan untuk mengonfirmasi langsung ketersediaan program, persyaratan, maupun periode pendaftarannya ke Bagian Admisi / Panitia PMB ITB STIKOM Bali."
@@ -60,14 +318,16 @@
       "entity": "SKSS",
       "canonicalName": "Beasiswa SKSS",
       "aliases": ["skss"],
+      "verificationStatus": "SOURCE_GAP",
       "status": "SOURCE_NOT_FOUND",
       "explanation": "Informasi resmi mengenai program atau singkatan \"Beasiswa SKSS\" belum tercantum dalam dokumen pedoman beasiswa resmi ITB STIKOM Bali yang tersedia (SOURCE_NOT_FOUND). Entitas atau singkatan \"SKSS\" tidak terdefinisi secara resmi dalam dokumen panduan kampus.",
       "action": "Untuk kepastian program beasiswa, kepanjangan singkatan, maupun persyaratannya, calon mahasiswa diarahkan untuk mengonfirmasi langsung ke Bagian Admisi / Panitia PMB ITB STIKOM Bali."
     }
   },
   "academicAdvisory": {
-    "sourceDocument": "Pedoman Akademik ITB STIKOM Bali",
+    "sourceDocument": "Pedoman TA S1 2019 Revisi 1.pdf & Kalender Akademik Ganjil, Genap dan Antara TA 2025-2026 (1).pdf",
     "academicYear": "2025/2026",
+    "verificationStatus": "PARTIAL_OR_NEEDS_VALIDATION",
     "dosenWali": {
       "title": "Dosen Wali (Pembimbing Akademik / PA)",
       "definition": "Dosen tetap yang ditugaskan oleh program studi untuk mendampingi dan membimbing mahasiswa selama masa studi, meliputi konsultasi perencanaan studi, persetujuan dan pengesahan Kartu Rencana Studi (KRS), serta pemantauan perkembangan akademik berkala."
@@ -75,6 +335,14 @@
     "perwalian": {
       "title": "Perwalian",
       "definition": "Agenda konsultasi akademik wajib antara mahasiswa dengan Dosen Wali di setiap awal semester untuk merencanakan pengambilan mata kuliah (KRS) dan mengevaluasi hasil studi semester sebelumnya."
+    }
+  },
+  "systemPolicies": {
+    "privacy": {
+      "verificationStatus": "SOURCE_GAP",
+      "status": "SOURCE_NOT_FOUND",
+      "sourceDocument": null,
+      "verificationNote": "Dokumen resmi kebijakan privasi (privacy policy), ketentuan perlindungan data pribadi, maupun mekanisme pembagian data mahasiswa ke pihak ketiga belum tercantum dalam korpus dokumen publikasi kampus yang tersedia."
     }
   }
 }

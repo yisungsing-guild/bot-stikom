@@ -1,5 +1,16 @@
 'use strict';
 
+let CANONICAL_FACTS_REGISTRY = null;
+try {
+  CANONICAL_FACTS_REGISTRY = require('../../data/runtime/canonical_academic_facts_registry.json');
+} catch (_) {
+  CANONICAL_FACTS_REGISTRY = {};
+}
+
+const CURRICULUM_FACTS = CANONICAL_FACTS_REGISTRY?.curriculumFacts || {};
+const D3_MI_FACTS = CURRICULUM_FACTS['D3 Manajemen Informatika'] || {};
+const S2_SI_FACTS = CURRICULUM_FACTS['S2 Sistem Informasi'] || {};
+
 /**
  * src/core/academicCatalog.js
  *
@@ -187,11 +198,12 @@ const INSTITUTIONAL_ACADEMIC_CATALOG = Object.freeze([
     nameEn: 'S1 Information Systems (Sistem Informasi)',
     degree: 'S1',
     degreeTitle: 'Sarjana Komputer (S.Kom)',
-    sks: 144,
-    semesters: 8,
+    sks: CURRICULUM_FACTS['S1 Sistem Informasi']?.totalSks || 144,
+    semesters: CURRICULUM_FACTS['S1 Sistem Informasi']?.normalDurationSemesters || 8,
+    verificationStatus: CURRICULUM_FACTS['S1 Sistem Informasi']?.verificationStatus || 'VERIFIED_PRIMARY_SOURCE',
     focusId: 'Fokus pada perancangan sistem enterprise, tata kelola TI, basis data, dan analisis bisnis digital.',
     focusEn: 'Focuses on enterprise systems, IT governance, database management, and digital business analytics.',
-    provenance: 'Pedoman Akademik & Kurikulum S1 Sistem Informasi ITB STIKOM Bali'
+    provenance: CURRICULUM_FACTS['S1 Sistem Informasi']?.sourceDocument || 'ISIAN WEBSITE (1).pdf & Pedoman Akademik Program Sarjana ITB STIKOM Bali'
   },
   {
     id: 's1_sk',
@@ -199,11 +211,12 @@ const INSTITUTIONAL_ACADEMIC_CATALOG = Object.freeze([
     nameEn: 'S1 Computer Systems (Sistem Komputer)',
     degree: 'S1',
     degreeTitle: 'Sarjana Komputer (S.Kom)',
-    sks: 144,
-    semesters: 8,
+    sks: CURRICULUM_FACTS['S1 Sistem Komputer']?.totalSks || 144,
+    semesters: CURRICULUM_FACTS['S1 Sistem Komputer']?.normalDurationSemesters || 8,
+    verificationStatus: CURRICULUM_FACTS['S1 Sistem Komputer']?.verificationStatus || 'VERIFIED_PRIMARY_SOURCE',
     focusId: 'Fokus pada perangkat keras (hardware), Internet of Things (IoT), embedded system, robotika, dan keamanan jaringan.',
     focusEn: 'Focuses on hardware engineering, Internet of Things (IoT), embedded systems, robotics, and network security.',
-    provenance: 'Pedoman Akademik & Kurikulum S1 Sistem Komputer ITB STIKOM Bali'
+    provenance: CURRICULUM_FACTS['S1 Sistem Komputer']?.sourceDocument || 'ISIAN WEBSITE (1).pdf & Pedoman Akademik Program Sarjana ITB STIKOM Bali'
   },
   {
     id: 's1_ti',
@@ -211,11 +224,12 @@ const INSTITUTIONAL_ACADEMIC_CATALOG = Object.freeze([
     nameEn: 'S1 Information Technology (Teknologi Informasi)',
     degree: 'S1',
     degreeTitle: 'Sarjana Komputer (S.Kom)',
-    sks: 144,
-    semesters: 8,
+    sks: CURRICULUM_FACTS['S1 Teknologi Informasi']?.totalSks || 144,
+    semesters: CURRICULUM_FACTS['S1 Teknologi Informasi']?.normalDurationSemesters || 8,
+    verificationStatus: CURRICULUM_FACTS['S1 Teknologi Informasi']?.verificationStatus || 'VERIFIED_PRIMARY_SOURCE',
     focusId: 'Fokus pada keamanan siber (cyber security), integrasi sistem ICT, cloud computing, dan infrastruktur jaringan.',
     focusEn: 'Focuses on cyber security, ICT system integration, cloud computing, and network infrastructure.',
-    provenance: 'Pedoman Akademik & Kurikulum S1 Teknologi Informasi ITB STIKOM Bali'
+    provenance: CURRICULUM_FACTS['S1 Teknologi Informasi']?.sourceDocument || 'ISIAN WEBSITE (1).pdf & Pedoman Akademik Program Sarjana ITB STIKOM Bali'
   },
   {
     id: 's1_bd',
@@ -223,11 +237,12 @@ const INSTITUTIONAL_ACADEMIC_CATALOG = Object.freeze([
     nameEn: 'S1 Digital Business (Bisnis Digital)',
     degree: 'S1',
     degreeTitle: 'Sarjana Bisnis (S.Bns)',
-    sks: 144,
-    semesters: 8,
+    sks: CURRICULUM_FACTS['S1 Bisnis Digital']?.totalSks || 144,
+    semesters: CURRICULUM_FACTS['S1 Bisnis Digital']?.normalDurationSemesters || 8,
+    verificationStatus: CURRICULUM_FACTS['S1 Bisnis Digital']?.verificationStatus || 'VERIFIED_PRIMARY_SOURCE',
     focusId: 'Fokus pada inovasi bisnis berbasis teknologi, e-commerce, digital marketing, analitika bisnis, dan pengembangan startup.',
     focusEn: 'Focuses on tech-driven business innovation, e-commerce, digital marketing, business analytics, and startup development.',
-    provenance: 'Pedoman Akademik & Kurikulum S1 Bisnis Digital ITB STIKOM Bali'
+    provenance: CURRICULUM_FACTS['S1 Bisnis Digital']?.sourceDocument || 'ISIAN WEBSITE (1).pdf & Pedoman Akademik Program Sarjana ITB STIKOM Bali'
   },
   {
     id: 'd3_mi',
@@ -235,11 +250,17 @@ const INSTITUTIONAL_ACADEMIC_CATALOG = Object.freeze([
     nameEn: 'D3 Informatics Management (Manajemen Informatika)',
     degree: 'D3',
     degreeTitle: 'Ahli Madya Komputer (A.Md.Kom)',
-    sks: 108,
-    semesters: 6,
+    sks: D3_MI_FACTS.totalSks || 110,
+    indexedTotalSks: D3_MI_FACTS.indexedTotalSks || 110,
+    listedCoursesSumSks: D3_MI_FACTS.listedCoursesSumSks || 75,
+    graduationMinimumSks: D3_MI_FACTS.graduationMinimumSks ?? null,
+    semesters: D3_MI_FACTS.normalDurationSemesters || 6,
+    distribution: D3_MI_FACTS.distribution || { 'Tingkat I': 38, 'Tingkat II': 40, 'Tingkat III': 32 },
+    verificationStatus: D3_MI_FACTS.verificationStatus || 'PARTIAL_OR_NEEDS_VALIDATION',
+    verificationNote: D3_MI_FACTS.verificationNote || null,
     focusId: 'Fokus pada aplikasi terapan teknologi informasi, operasional bisnis, pengolahan data, administrasi sistem informasi, dan IT support praktis.',
     focusEn: 'Focuses on applied information technology applications, business operations, data processing, information systems administration, and practical IT support.',
-    provenance: 'Pedoman Akademik & Kurikulum D3 Manajemen Informatika ITB STIKOM Bali'
+    provenance: D3_MI_FACTS.sourceDocument || 'MI_curriculum_verified_obe-2023.json (Indeks Kurikulum OBE Program Studi D3 Manajemen Informatika)'
   },
   {
     id: 's2_si',
@@ -248,11 +269,21 @@ const INSTITUTIONAL_ACADEMIC_CATALOG = Object.freeze([
     nameEn: 'S2 Master of Information Systems (Magister Sistem Informasi - M.Kom)',
     degree: 'S2',
     degreeTitle: 'Magister Komputer (M.Kom)',
-    sks: 36,
-    semesters: 4,
+    sks: S2_SI_FACTS.totalSks || 56,
+    totalCurriculumSks: S2_SI_FACTS.totalCurriculumSks || 56,
+    mandatorySks: S2_SI_FACTS.mandatorySks || 47,
+    mandatoryCoursesCount: S2_SI_FACTS.mandatoryCoursesCount || 13,
+    electiveOfferedSks: S2_SI_FACTS.electiveOfferedSks || 9,
+    electiveOfferedCoursesCount: S2_SI_FACTS.electiveOfferedCoursesCount || 3,
+    graduationMinimumSks: S2_SI_FACTS.graduationMinimumSks ?? null,
+    semesters: S2_SI_FACTS.normalDurationSemesters || 4,
+    verificationStatus: S2_SI_FACTS.verificationStatus || 'PARTIAL_OR_NEEDS_VALIDATION',
+    curriculumStructureStatus: S2_SI_FACTS.curriculumStructureStatus || 'VERIFIED_PRIMARY_SOURCE',
+    graduationMinSksStatus: S2_SI_FACTS.graduationMinSksStatus || 'PARTIAL_OR_NEEDS_VALIDATION',
+    verificationNote: S2_SI_FACTS.verificationNote || null,
     focusId: 'Fokus pada riset terapan sistem informasi tingkat lanjut, arsitektur enterprise, kepemimpinan teknologi strategis, dan tata kelola TI tingkat magister.',
     focusEn: 'Focuses on advanced applied information systems research, enterprise architecture, strategic IT leadership, and master-level IT governance.',
-    provenance: 'Pedoman Akademik Program Magister (S2) Sistem Informasi ITB STIKOM Bali'
+    provenance: S2_SI_FACTS.sourceDocument || 'ISIAN WEBSITE (1).pdf & Training_Dataset_Pascasarjana_ITB_STIKOM_Bali.xlsx'
   }
 ]);
 
@@ -317,21 +348,29 @@ function generateGroundedCatalogSummary(canonicalScope, userLang = 'id') {
   }
 
   if (effectiveScope === 'D3') {
+    const d3Entry = entries[0] || {};
+    const d3Sks = d3Entry.sks || 110;
+    const d3Sem = d3Entry.semesters || 6;
     if (isEn) {
       const items = entries.map((e, idx) => `${idx + 1}. **${e.nameEn}**\n   ${e.focusEn}`).join('\n');
-      return `At ITB STIKOM Bali, the available **Diploma (D3)** study program is:\n\n${items}\n\nThe Diploma (D3) program consists of 108 credits (6 semesters) with an applied, hands-on curriculum. Registration can be completed online at https://pmb.stikom-bali.ac.id. Would you like to know more about this D3 program?`;
+      return `At ITB STIKOM Bali, the available **Diploma (D3)** study program is:\n\n${items}\n\nThe Diploma (D3) program is designed for ${d3Sem} semesters (indexed OBE curriculum structure records ${d3Sks} credits / SKS across 3 levels, with final graduation credit requirements subject to official study program curriculum verification) with an applied, hands-on curriculum. Registration can be completed online at https://pmb.stikom-bali.ac.id. Would you like to know more about this D3 program?`;
     }
     const items = entries.map((e, idx) => `${idx + 1}. **${e.canonical}**\n   ${e.focusId}`).join('\n');
-    return `Di ITB STIKOM Bali, tersedia pilihan **Program Diploma (D3)**:\n\n${items}\n\nProgram Diploma (D3) berbeban studi 108 SKS (6 semester) dengan kurikulum terapan yang siap kerja. Pendaftaran dapat diakses di https://pmb.stikom-bali.ac.id. Ada yang ingin Kakak tanyakan seputar prodi D3 ini?`;
+    return `Di ITB STIKOM Bali, tersedia pilihan **Program Diploma (D3)**:\n\n${items}\n\nProgram Diploma (D3) dirancang untuk masa studi normal ${d3Sem} semester (indeks struktur kurikulum OBE mencatat beban studi ${d3Sks} SKS pada 3 tingkat, dengan konfirmasi beban SKS wajib kelulusan final mengacu pada dokumen kurikulum primer resmi prodi) dengan kurikulum terapan yang siap kerja. Pendaftaran dapat diakses di https://pmb.stikom-bali.ac.id. Ada yang ingin Kakak tanyakan seputar prodi D3 ini?`;
   }
 
   if (effectiveScope === 'S2') {
+    const s2Entry = entries[0] || {};
+    const s2Total = s2Entry.sks || 56;
+    const s2Mandatory = s2Entry.mandatorySks || 47;
+    const s2Elective = s2Entry.electiveOfferedSks || 9;
+    const s2Sem = s2Entry.semesters || 4;
     if (isEn) {
       const items = entries.map((e, idx) => `${idx + 1}. **${e.nameEn}**\n   ${e.focusEn}`).join('\n');
-      return `At ITB STIKOM Bali, the available **Postgraduate (Master/S2)** study program is:\n\n${items}\n\nThe Master (S2) program consists of 36 credits (4 semesters). Registration can be completed online at https://pmb.stikom-bali.ac.id. Would you like more information about the Master's program?`;
+      return `At ITB STIKOM Bali, the available **Postgraduate (Master/S2)** study program is:\n\n${items}\n\nThe Master (S2) program is designed for ${s2Sem} semesters (curriculum structure comprises ${s2Total} offered credits / SKS: ${s2Mandatory} mandatory credits and ${s2Elective} offered elective credits; minimum graduation credit requirements are subject to official postgraduate academic guidelines). Registration can be completed online at https://pmb.stikom-bali.ac.id. Would you like more information about the Master's program?`;
     }
     const items = entries.map((e, idx) => `${idx + 1}. **${e.canonical}**\n   ${e.focusId}`).join('\n');
-    return `Di ITB STIKOM Bali, tersedia pilihan **Program Pascasarjana (S2)**:\n\n${items}\n\nProgram Magister (S2) berbeban studi 36 SKS (4 semester). Pendaftaran dapat diakses di https://pmb.stikom-bali.ac.id. Tertarik untuk melanjutkan studi S2 di ITB STIKOM Bali?`;
+    return `Di ITB STIKOM Bali, tersedia pilihan **Program Pascasarjana (S2)**:\n\n${items}\n\nProgram Magister (S2) dirancang untuk masa studi normal ${s2Sem} semester (struktur kurikulum mencakup total ${s2Total} SKS yang ditawarkan, terdiri atas ${s2Mandatory} SKS mata kuliah wajib dan ${s2Elective} SKS mata kuliah pilihan yang ditawarkan; ketentuan batas minimal SKS wajib kelulusan mengacu pada pedoman akademik pascasarjana resmi). Pendaftaran dapat diakses di https://pmb.stikom-bali.ac.id. Tertarik untuk melanjutkan studi S2 di ITB STIKOM Bali?`;
   }
 
   if (effectiveScope === 'ALL') {
@@ -606,7 +645,36 @@ function generateGroundedContactSummary(userLang = 'id') {
     'Layanan kampus siap membantu pertanyaan seputar pendaftaran, persyaratan masuk, dan informasi program perkuliahan.';
 }
 
+/**
+ * Retrieve unified canonical curriculum and program facts by program name or level.
+ * Returns normalized metadata including provenance (sourceDocument) and verificationStatus.
+ */
+function getCanonicalProgramFacts(programQuery) {
+  if (!programQuery) return null;
+  const q = String(programQuery).toLowerCase().trim();
+  if (/\b(?:s2|magister|pascasarjana)\b/i.test(q)) {
+    return CURRICULUM_FACTS['S2 Sistem Informasi'] || null;
+  }
+  if (/\b(?:d3|diploma|manajemen\s+informatika|\bmi\b)\b/i.test(q)) {
+    return CURRICULUM_FACTS['D3 Manajemen Informatika'] || null;
+  }
+  if (/\b(?:bisnis\s+digital|\bbd\b)\b/i.test(q)) {
+    return CURRICULUM_FACTS['S1 Bisnis Digital'] || null;
+  }
+  if (/\b(?:sistem\s+komputer|\bsk\b)\b/i.test(q)) {
+    return CURRICULUM_FACTS['S1 Sistem Komputer'] || null;
+  }
+  if (/\b(?:teknologi\s+informasi|\bti\b)\b/i.test(q)) {
+    return CURRICULUM_FACTS['S1 Teknologi Informasi'] || null;
+  }
+  if (/\b(?:sistem\s+informasi|\bsi\b)\b/i.test(q)) {
+    return CURRICULUM_FACTS['S1 Sistem Informasi'] || null;
+  }
+  return null;
+}
+
 module.exports = {
+  CANONICAL_FACTS_REGISTRY,
   ACADEMIC_SCOPE_STATUS,
   SUPPORTED_CANONICAL_DEGREES,
   INSTITUTIONAL_ACADEMIC_CATALOG,
@@ -622,5 +690,6 @@ module.exports = {
   getProgramsForFaculty,
   generateGroundedFacultySummary,
   generateGroundedCampusLocationSummary,
-  generateGroundedContactSummary
+  generateGroundedContactSummary,
+  getCanonicalProgramFacts
 };

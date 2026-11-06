@@ -18,6 +18,158 @@ const {
   resolveAcademicScope
 } = require('./academicCatalog');
 
+/**
+ * Compositional Concept/Attribute-to-Retrieval Expansion Dictionary (Stage 4).
+ * Maps normalized semantic attributes to domain vocabulary and document-level retrieval anchors
+ * so unseen paraphrases that resolve to an attribute automatically receive targeted expansions.
+ */
+const CONCEPT_RETRIEVAL_EXPANSIONS = Object.freeze({
+  fee: (entity) => entity
+    ? [`rincian biaya pendidikan ${entity}`, `biaya kuliah ${entity} per semester DPP SPP`]
+    : ['rincian biaya pendidikan mahasiswa baru kelas reguler DPP SPP'],
+  accreditation: (entity) => entity
+    ? [`sertifikat akreditasi ${entity} peringkat resmi`, `status akreditasi program studi ${entity}`]
+    : ['status akreditasi institusi program studi BAN-PT LAM INFOKOM'],
+  curriculum: (entity) => entity
+    ? [`kurikulum ${entity} mata kuliah sebaran semester`, `struktur kurikulum beban studi SKS ${entity}`]
+    : ['kurikulum program studi mata kuliah sebaran semester'],
+  sks: (entity) => entity
+    ? [`total beban studi SKS kelulusan kurikulum ${entity}`, `jumlah SKS mata kuliah ${entity}`]
+    : ['total beban studi SKS kelulusan program studi'],
+  faculty: (entity) => entity
+    ? [
+        `fakultas program studi ${entity}`,
+        `program studi ${entity} masuk fakultas apa`,
+        'Fakultas Informatika dan Komputer Fakultas Bisnis dan Vokasi ITB STIKOM Bali'
+      ]
+    : [
+        'Fakultas Informatika dan Komputer Fakultas Bisnis dan Vokasi ITB STIKOM Bali',
+        'daftar fakultas dan program studi di bawah fakultas ITB STIKOM Bali'
+      ],
+  degree_award: (entity) => entity
+    ? [`gelar lulusan ${entity} sarjana komputer magister diploma`, `masa studi durasi kuliah ${entity} semester`]
+    : ['gelar lulusan sarjana komputer magister diploma ITB STIKOM Bali'],
+  study_duration: (entity) => entity
+    ? [`masa studi durasi kuliah ${entity} semester lulusan`, `berapa lama kuliah ${entity}`]
+    : ['masa studi durasi kuliah semester lulus'],
+  career_prospects: (entity) => entity
+    ? [`peluang kerja prospek karir profesi lulusan ${entity}`, `penjelasan prodi dan karier masa depan ${entity}`]
+    : ['peluang kerja prospek karir lulusan Career Center ITB STIKOM Bali'],
+  schedule: (entity, yr) => [
+    `jadwal gelombang pendaftaran PMB ${yr || ''} periode pendaftaran kalender pendaftaran`.trim(),
+    entity ? `jadwal pendaftaran ${entity}` : 'jadwal pendaftaran mahasiswa baru gelombang PMB ITB STIKOM Bali'
+  ],
+  admission_schedule: (entity, yr) => [
+    `jadwal gelombang pendaftaran PMB ${yr || ''} periode pendaftaran kalender pendaftaran`.trim(),
+    entity ? `jadwal pendaftaran ${entity}` : 'jadwal pendaftaran mahasiswa baru gelombang PMB ITB STIKOM Bali'
+  ],
+  procedure: (entity) => entity
+    ? [`alur prosedur cara pendaftaran ${entity}`, `langkah tahapan pendaftaran ${entity}`]
+    : ['alur prosedur pendaftaran mahasiswa baru PMB ITB STIKOM Bali'],
+  admission_procedure: (entity) => entity
+    ? [`alur prosedur cara pendaftaran ${entity}`, `langkah tahapan pendaftaran ${entity}`]
+    : ['alur prosedur pendaftaran mahasiswa baru PMB ITB STIKOM Bali'],
+  requirements: (entity) => entity
+    ? [`syarat persyaratan berkas pendaftaran ${entity}`]
+    : ['syarat persyaratan berkas pendaftaran mahasiswa baru PMB ITB STIKOM Bali'],
+  admission_requirements: (entity) => entity
+    ? [`syarat persyaratan berkas pendaftaran ${entity}`]
+    : ['syarat persyaratan berkas pendaftaran mahasiswa baru PMB ITB STIKOM Bali'],
+  location: (entity) => entity
+    ? [`lokasi kampus tempat kuliah alamat ${entity}`]
+    : ['lokasi kampus ITB STIKOM Bali Renon Jimbaran Abiansemal alamat'],
+  contact: (entity) => entity
+    ? [`kontak nomor telepon whatsapp layanan informasi ${entity}`]
+    : ['kontak nomor telepon whatsapp hotline resmi ITB STIKOM Bali'],
+  scholarship: (entity) => entity
+    ? [`beasiswa potongan DPP keringanan biaya ${entity}`]
+    : ['beasiswa dana pendidikan pokok DPP potongan biaya KIP Kuliah ITB STIKOM Bali'],
+  student_organization: (entity) => entity
+    ? [`organisasi kemahasiswaan himaprodi UKM ${entity} profil kegiatan`]
+    : ['unit kegiatan mahasiswa UKM ormawa himaprodi ITB STIKOM Bali'],
+  ukm: (entity) => entity
+    ? [`unit kegiatan mahasiswa UKM ${entity} profil kegiatan`]
+    : ['unit kegiatan mahasiswa UKM ormawa ITB STIKOM Bali'],
+  facilities: (entity) => entity
+    ? [`fasilitas sarana prasarana laboratorium ${entity}`]
+    : ['fasilitas laboratorium komputer perpustakaan sarana prasarana ITB STIKOM Bali'],
+  overview: (entity) => entity
+    ? [`profil program studi ${entity} fokus pendidikan yang dipelajari`, `penjelasan prodi dan karier masa depan ${entity}`]
+    : ['profil program studi ITB STIKOM Bali'],
+  study_mode: (entity) => entity
+    ? [`pilihan kelas reguler kelas sore kuliah sambil bekerja ${entity}`]
+    : ['kelas karyawan kelas sore kuliah sambil bekerja jadwal fleksibel'],
+  catalog_list: () => [
+    'daftar program studi sarjana S1 diploma D3 magister S2 ITB STIKOM Bali',
+    'Fakultas Informatika dan Komputer Fakultas Bisnis dan Vokasi ITB STIKOM Bali'
+  ]
+});
+
+/**
+ * Normalizes semantic attributes into canonical retrieval aspect identifiers.
+ */
+function normalizeAttributeForPlan(attr) {
+  if (!attr || typeof attr !== 'string') return null;
+  const a = attr.trim().toLowerCase();
+  if (['biaya', 'tuition', 'fee', 'spp', 'dpp', 'components', 'installment', 'wave_discount'].includes(a)) return 'fee';
+  if (['akreditasi', 'accreditation', 'peringkat', 'sk_akreditasi'].includes(a)) return 'accreditation';
+  if (['kurikulum', 'curriculum', 'courses', 'matkul', 'mata_kuliah', 'curriculum_difference'].includes(a)) return 'curriculum';
+  if (['sks', 'total_sks', 'beban_studi', 'sks_count', 'graduation_rule'].includes(a)) return 'sks';
+  if (['fakultas', 'faculty', 'academic_structure', 'faculty_mapping'].includes(a)) return 'faculty';
+  if (['gelar', 'degree_award', 'titel'].includes(a)) return 'degree_award';
+  if (['durasi', 'duration', 'study_period', 'study_duration', 'masa_studi'].includes(a)) return 'study_duration';
+  if (['karir', 'karier', 'prospek', 'career', 'career_prospects', 'prospek_karir'].includes(a)) return 'career_prospects';
+  if (['jadwal', 'schedule', 'admission_schedule', 'waves', 'wave_info', 'status', 'stages'].includes(a)) return 'schedule';
+  if (['prosedur', 'procedure', 'admission_procedure', 'alur', 'admission_overview', 'admission_pathways'].includes(a)) return 'procedure';
+  if (['syarat', 'persyaratan', 'requirements', 'admission_requirements', 'documents'].includes(a)) return 'requirements';
+  if (['lokasi', 'location', 'campus_location', 'address', 'study_location', 'all_locations'].includes(a)) return 'location';
+  if (['kontak', 'contact', 'phone', 'whatsapp'].includes(a)) return 'contact';
+  if (['beasiswa', 'scholarship', 'discount'].includes(a)) return 'scholarship';
+  if (['organisasi', 'student_organization', 'ukm', 'ormawa', 'activities'].includes(a)) return 'student_organization';
+  if (['fasilitas', 'facilities', 'lab', 'campus_infrastructure'].includes(a)) return 'facilities';
+  if (['profil', 'overview', 'definition'].includes(a)) return 'overview';
+  if (['kelas_karyawan', 'study_mode', 'class_schedule', 'working_students', 'evening_class'].includes(a)) return 'study_mode';
+  if (['catalog_list', 'program_list', 'degrees'].includes(a)) return 'catalog_list';
+  return a;
+}
+
+/**
+ * Builds structured InformationNeed retrieval plans from Stage 3 representation.
+ */
+function buildInformationNeedPlans(semanticFrame = {}, targetEntities = [], effectiveAspects = [], yr = null) {
+  const rawRequestedAttrs = Array.isArray(semanticFrame.requestedAttributes) && semanticFrame.requestedAttributes.length > 0
+    ? semanticFrame.requestedAttributes
+    : effectiveAspects;
+  const normalizedAttrs = Array.from(new Set(
+    rawRequestedAttrs.map(normalizeAttributeForPlan).filter(Boolean)
+  ));
+
+  const entitiesForNeeds = targetEntities.length > 0 ? targetEntities : [null];
+  const attrsForNeeds = normalizedAttrs.length > 0 ? normalizedAttrs : ['general'];
+  const needPlans = [];
+
+  for (const entity of entitiesForNeeds) {
+    for (const attribute of attrsForNeeds) {
+      const expander = CONCEPT_RETRIEVAL_EXPANSIONS[attribute];
+      const queries = typeof expander === 'function'
+        ? expander(entity, yr)
+        : (entity ? [`${attribute} ${entity}`] : []);
+      needPlans.push({
+        id: `${entity || 'INSTITUTION'}::${attribute}`,
+        entity: entity || null,
+        attribute,
+        academicLevel: semanticFrame.academicLevel || semanticFrame.constraints?.academicLevel || null,
+        queryVariants: queries
+      });
+    }
+  }
+
+  return {
+    normalizedAttributes: normalizedAttrs,
+    needPlans
+  };
+}
+
 function buildRetrievalPlan(semanticFrame) {
   if (!semanticFrame) {
     return {
@@ -25,6 +177,10 @@ function buildRetrievalPlan(semanticFrame) {
       targetEntities: [],
       excludedConflictingEntities: [],
       requiredAspects: [],
+      requestedAttributes: [],
+      informationNeeds: [],
+      informationNeedPlans: [],
+      retrievalScopeMode: 'INSTITUTIONAL_GENERAL',
       temporalConstraint: 'GENERAL',
       queryVariants: []
     };
@@ -36,6 +192,24 @@ function buildRetrievalPlan(semanticFrame) {
   const effectiveAspects = Array.isArray(aspects) && aspects.length > 0
     ? [...aspects]
     : (Array.isArray(semanticFrame.requestedFields) ? [...semanticFrame.requestedFields] : []);
+
+  // Merge Stage 3 requestedAttributes into effectiveAspects for multi-attribute queries
+  // (e.g., "Berapa biaya kuliah dan akreditasi S1 Sistem Informasi?" -> ['fee', 'accreditation'])
+  const PRIMARY_MERGEABLE_ATTRIBUTES = new Set([
+    'fee', 'accreditation', 'curriculum', 'faculty', 'degree_award',
+    'career_prospects', 'scholarship', 'location', 'contact', 'facilities', 'student_organization'
+  ]);
+  if (Array.isArray(semanticFrame.requestedAttributes)) {
+    for (const attr of semanticFrame.requestedAttributes) {
+      const normAttr = normalizeAttributeForPlan(attr);
+      if (normAttr && PRIMARY_MERGEABLE_ATTRIBUTES.has(normAttr) && !effectiveAspects.includes(normAttr)) {
+        // Only merge into effectiveAspects if effectiveAspects already had a specific aspect (not 'general')
+        if (!effectiveAspects.includes('general')) {
+          effectiveAspects.push(normAttr);
+        }
+      }
+    }
+  }
   const retrievalContract = buildRetrievalContract(semanticFrame);
   const contractTargets = retrievalContract.scopeConstraints?.targetEntities || [];
   let targetEntities = contractTargets.length > 0
@@ -102,6 +276,16 @@ function buildRetrievalPlan(semanticFrame) {
             }
           }
         }
+      }
+    }
+  }
+
+  // Merge explicitly negated entities from Stage 3 semanticFrame.excludedEntities
+  if (Array.isArray(semanticFrame.excludedEntities)) {
+    for (const negEnt of semanticFrame.excludedEntities) {
+      const negStr = typeof negEnt === 'object' && negEnt ? (negEnt.canonical || negEnt.name || '') : String(negEnt || '');
+      if (negStr && !targetEntitySet.has(negStr.toLowerCase()) && !excludedConflictingEntities.includes(negStr)) {
+        excludedConflictingEntities.push(negStr);
       }
     }
   }
@@ -626,6 +810,16 @@ function buildRetrievalPlan(semanticFrame) {
     }
   }
 
+  // Stage 4 Compositional InformationNeed Query Expansion
+  const { normalizedAttributes, needPlans } = buildInformationNeedPlans(semanticFrame, targetEntities, effectiveAspects, yr);
+  for (const np of needPlans) {
+    for (const qv of np.queryVariants || []) {
+      if (qv && !queryVariants.includes(qv)) {
+        queryVariants.push(qv);
+      }
+    }
+  }
+
   if (targetEntities.length > 0) {
     const combined = `${targetEntities.join(' ')} ${cleanKeywords}`.trim();
     if (!queryVariants.includes(combined)) queryVariants.push(combined);
@@ -637,17 +831,48 @@ function buildRetrievalPlan(semanticFrame) {
 
   const resolvedScope = semanticFrame.academicScope || resolveAcademicScope(semanticFrame);
 
+  // Determine explicit retrieval scope mode (Stage 4 Section B)
+  let retrievalScopeMode = 'INSTITUTIONAL_GENERAL';
+  if (isFacultyInquiry || normalizedAttributes.includes('faculty')) {
+    retrievalScopeMode = 'PRODI_FACULTY_MEMBERSHIP';
+  } else if (intent === 'PROGRAM_COMPARISON' || semanticFrame.entityRelationships?.isComparison || targetEntities.length > 1) {
+    retrievalScopeMode = 'COMPARATIVE_MULTI_ENTITY';
+  } else if (intent === 'AVAILABLE_PROGRAMS_LIST' || normalizedAttributes.includes('catalog_list')) {
+    retrievalScopeMode = 'SCOPE_CATALOG_MEMBERSHIP';
+  } else if (targetEntities.length === 1 && normalizedAttributes.length > 1) {
+    retrievalScopeMode = 'SINGLE_ENTITY_MULTI_ATTRIBUTE';
+  } else if (targetEntities.length === 1) {
+    retrievalScopeMode = 'SINGLE_ENTITY_FOCUS';
+  }
+
   return {
     domain,
     intent,
-    academicLevel: semanticFrame.academicLevel || null,
+    academicLevel: semanticFrame.academicLevel || semanticFrame.constraints?.academicLevel || null,
     academicScope: resolvedScope,
     scopeLevel: semanticFrame.scopeLevel || resolvedScope.level || (resolvedScope.status === ACADEMIC_SCOPE_STATUS.UNSUPPORTED ? 'UNSUPPORTED' : null),
+    retrievalScopeMode,
     retrievalRequired: semanticFrame.retrievalRequired !== false,
     participantScope: semanticFrame.participantScope || (/\b(mahasiswa\s+asing|warga\s+negara\s+asing|wna|orang\s+asing|foreign\s+students?|international\s+students?|mahasiswa\s+internasional|kui|kantor\s+urusan\s+internasional|visa|itas|kitas|izin\s+belajar|study\s+permit|e-?visa|e30b)\b/i.test(normalizedText) ? 'foreign' : 'domestic'),
     targetEntities,
     excludedConflictingEntities,
+    excludedEntities: excludedConflictingEntities,
     requiredAspects: effectiveAspects,
+    requestedAttributes: normalizedAttributes,
+    informationNeeds: semanticFrame.informationNeeds || needPlans.map(np => `${domain || 'GENERAL'}:${np.attribute}`),
+    structuredInformationNeeds: semanticFrame.structuredInformationNeeds || needPlans,
+    informationNeedPlans: needPlans,
+    entityRelationships: semanticFrame.entityRelationships || {
+      relationType: retrievalScopeMode,
+      scopeLevel: semanticFrame.scopeLevel || semanticFrame.academicLevel || null,
+      isMultiTarget: targetEntities.length > 1,
+      isComparison: intent === 'PROGRAM_COMPARISON'
+    },
+    constraints: semanticFrame.constraints || {
+      academicLevel: semanticFrame.academicLevel || null,
+      academicYear: semanticFrame.academicYear || temporal?.academicYear || null,
+      temporalConstraint: temporal ? temporal.constraint : 'GENERAL'
+    },
     academicYear: semanticFrame.academicYear || temporal?.academicYear || null,
     temporalConstraint: temporal ? temporal.constraint : 'GENERAL',
     rawQuery: semanticFrame.rawQuery || normalizedQuery || '',
@@ -664,5 +889,8 @@ function buildRetrievalPlan(semanticFrame) {
 
 module.exports = {
   buildRetrievalPlan,
-  buildRetrievalContract
+  buildRetrievalContract,
+  buildInformationNeedPlans,
+  normalizeAttributeForPlan,
+  CONCEPT_RETRIEVAL_EXPANSIONS
 };
