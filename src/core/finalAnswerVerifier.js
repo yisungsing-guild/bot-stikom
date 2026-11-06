@@ -678,8 +678,10 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
             const entNorm = entityName.toLowerCase();
             const isPasca = entNorm.includes('s2') || entNorm.includes('magister') || entNorm.includes('pascasarjana');
             const matchesPasca = isPasca && (txt.includes('pascasarjana') || txt.includes('magister') || txt.includes('s2'));
+            const isRpl = entNorm.includes('rpl') || entNorm.includes('rekognisi');
+            const matchesRpl = isRpl && (txt.includes('rpl') || txt.includes('rekognisi') || txt.includes('pengakuan sks antara'));
             const progWords = entNorm.replace(/\b(s1|d3|s2|program|studi|magister)\b/g, '').trim().split(/\s+/).filter(w => w.length > 2);
-            const matchesEntity = matchesPasca || txt.includes(entNorm) || (progWords.length > 0 && progWords.every(w => txt.includes(w)));
+            const matchesEntity = matchesRpl || matchesPasca || txt.includes(entNorm) || (progWords.length > 0 && progWords.every(w => txt.includes(w)));
             if (!matchesEntity) {
               return false; // Nominal found in evidence for a different program!
             }
@@ -1140,6 +1142,19 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   }
 
   const isExplicitAbstain = /\b(belum\s+(?:tercantum|tersedia|ditemukan|memuat|cukup)|tidak\s+(?:ditemukan|tersedia|tercantum|memuat)|tidak\s+dapat\s+(?:diverifikasi|dipastikan)|belum\s+dapat\s+dipastikan|not\s+(?:listed|found|available|recorded)|unrecorded)\b/i.test(text);
+  const isAiCurriculumQuery = /\b(?:ai\b|artificial\s+intelligence|kecerdasan\s+buatan)\b/i.test(semanticFrame?.rawQuery || '') &&
+    /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|semester)\b/i.test(semanticFrame?.rawQuery || '');
+  if (isAiCurriculumQuery && isExplicitAbstain) {
+    return {
+      pass: false,
+      outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+      status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+      reason: 'ai_curriculum_source_gap_handled_safely',
+      isGrounded: false,
+      handledSafely: true
+    };
+  }
+
   const isAnswerable = arbitratedEvidence?.answerability === 'ANSWERABLE' ||
     arbitratedEvidence?.answerabilityStatus === 'ANSWERABLE';
 
@@ -1160,7 +1175,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     /^\s*tahapan\s+prosedur\s+pendaftaran\s+rinci.*belum\s+tercantum/is.test(text);
 
   const hasSubstantiveContent = text.length > 80 && !isPureRefusalTemplate && (
-    /\b(antara\s+lain|meliputi|bekerja\s+sama|mitra|lulusan\s+memperoleh|potongan|persyaratan|berikut|kurikulum|fasilitas|layanan|sarana|wadah|discounts?|requirements?|guidelines?|includes?|tuition)\b/i.test(text)
+    /\b(antara\s+lain|meliputi|bekerja\s+sama|mitra|lulusan\s+memperoleh|potongan|persyaratan|berikut|kurikulum|fasilitas|layanan|sarana|wadah|discounts?|requirements?|guidelines?|includes?|tuition|biaya|tarif|dpp|spp|dana\s+pendidikan|angsuran|cicilan)\b/i.test(text)
   );
 
   if (isExplicitAbstain) {
@@ -1249,6 +1264,25 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
           outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
           status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
           reason: 'multi_aspect_claims_unproven_safe_unknown',
+          isGrounded: false,
+          handledSafely: true
+        };
+      }
+
+      const isFeeSourceGapRefusal = (
+        semanticFrame?.intent === 'TUITION_FEE_INQUIRY' ||
+        semanticFrame?.domain === 'TUITION_FEE' ||
+        (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.includes('fee'))
+      ) && (
+        /\b(?:total\s+keseluruhan\s+biaya.*belum\s+dapat\s+dipastikan|nominal\s+pasti\s+dpp.*belum\s+dapat\s+dipastikan|tarif.*belum\s+dapat\s+dipastikan|tarif\s+resmi.*belum\s+tercantum)\b/i.test(text)
+      );
+
+      if (isFeeSourceGapRefusal) {
+        return {
+          pass: false,
+          outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+          status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+          reason: 'safe_unknown',
           isGrounded: false,
           handledSafely: true
         };
@@ -1362,8 +1396,13 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
           return !ce || !MODIFIER_FAMS.has(ce.family);
         });
 
-      if (primaryEnts.length > 1) {
-        const supportedPrimaryEnts = primaryEnts.filter(ent =>
+      const hasSpecificEntity = primaryEnts.some(ent => ent !== 'Kampus ITB STIKOM Bali' && ent !== 'ITB STIKOM Bali');
+      const filteredPrimaryEnts = hasSpecificEntity
+        ? primaryEnts.filter(ent => ent !== 'Kampus ITB STIKOM Bali' && ent !== 'ITB STIKOM Bali')
+        : primaryEnts;
+
+      if (filteredPrimaryEnts.length > 1) {
+        const supportedPrimaryEnts = filteredPrimaryEnts.filter(ent =>
           arbitratedEvidence.accepted.some(c =>
             (Array.isArray(c.supportedEntities) && c.supportedEntities.some(se => String(se).toLowerCase() === String(ent).toLowerCase())) ||
             (c.text || c.chunk || '').toLowerCase().includes(ent.replace(/^(?:S1|S2|D3|D4)\s+/i, '').toLowerCase())

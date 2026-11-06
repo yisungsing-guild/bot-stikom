@@ -1,0 +1,80 @@
+{
+  "version": "1.0.0",
+  "academicYear": "2026/2027",
+  "curriculumFacts": {
+    "D3 Manajemen Informatika": {
+      "program": "D3 Manajemen Informatika",
+      "degreeLevel": "D3",
+      "degreeAwarded": "Ahli Madya Komputer (A.Md.Kom.)",
+      "totalSks": 110,
+      "normalDurationSemesters": 6,
+      "distribution": {
+        "Tingkat I": 38,
+        "Tingkat II": 40,
+        "Tingkat III": 32
+      },
+      "sourceDocument": "Dokumen Kurikulum OBE Program Studi D3 Manajemen Informatika",
+      "academicYear": "2024/2025",
+      "status": "OFFICIAL_PROVENANCE"
+    },
+    "S2 Sistem Informasi": {
+      "program": "S2 Sistem Informasi",
+      "degreeLevel": "S2",
+      "degreeAwarded": "Magister Komputer (M.Kom.)",
+      "totalSks": 56,
+      "normalDurationSemesters": 4,
+      "sourceDocument": "Buku Pedoman Akademik Program Magister S2",
+      "academicYear": "2025/2026",
+      "status": "OFFICIAL_PROVENANCE"
+    }
+  },
+  "admissionWaves": {
+    "skNumber": "629/ITBSTIKOM/WDS/X/25",
+    "academicYear": "2026/2027",
+    "waves": [
+      "Gelombang Khusus",
+      "Gelombang I",
+      "Gelombang II",
+      "Gelombang III",
+      "Gelombang IV",
+      "Gelombang Sisipan"
+    ],
+    "subWaves": [
+      "Gelombang Sisipan 1",
+      "Gelombang Sisipan 2"
+    ],
+    "finalIntakeDeadline": "11 September 2026",
+    "portalUrl": "https://pmb.stikom-bali.ac.id",
+    "sourceDocument": "Surat Keputusan ITB STIKOM Bali Nomor : 629/ITBSTIKOM/WDS/X/25"
+  },
+  "uncatalogedScholarshipEntities": {
+    "1K1S": {
+      "entity": "1K1S",
+      "canonicalName": "Beasiswa 1 Keluarga 1 Sarjana (1K1S)",
+      "aliases": ["1k1s", "1 keluarga 1 sarjana", "satu keluarga satu sarjana"],
+      "status": "SOURCE_NOT_FOUND",
+      "explanation": "Informasi resmi mengenai program \"Beasiswa 1 Keluarga 1 Sarjana (1K1S)\" belum tercantum dalam dokumen pedoman beasiswa resmi maupun SK PMB ITB STIKOM Bali yang tersedia (SOURCE_NOT_FOUND).",
+      "action": "Calon mahasiswa diarahkan untuk mengonfirmasi langsung ketersediaan program, persyaratan, maupun periode pendaftarannya ke Bagian Admisi / Panitia PMB ITB STIKOM Bali."
+    },
+    "SKSS": {
+      "entity": "SKSS",
+      "canonicalName": "Beasiswa SKSS",
+      "aliases": ["skss"],
+      "status": "SOURCE_NOT_FOUND",
+      "explanation": "Informasi resmi mengenai program atau singkatan \"Beasiswa SKSS\" belum tercantum dalam dokumen pedoman beasiswa resmi ITB STIKOM Bali yang tersedia (SOURCE_NOT_FOUND). Entitas atau singkatan \"SKSS\" tidak terdefinisi secara resmi dalam dokumen panduan kampus.",
+      "action": "Untuk kepastian program beasiswa, kepanjangan singkatan, maupun persyaratannya, calon mahasiswa diarahkan untuk mengonfirmasi langsung ke Bagian Admisi / Panitia PMB ITB STIKOM Bali."
+    }
+  },
+  "academicAdvisory": {
+    "sourceDocument": "Pedoman Akademik ITB STIKOM Bali",
+    "academicYear": "2025/2026",
+    "dosenWali": {
+      "title": "Dosen Wali (Pembimbing Akademik / PA)",
+      "definition": "Dosen tetap yang ditugaskan oleh program studi untuk mendampingi dan membimbing mahasiswa selama masa studi, meliputi konsultasi perencanaan studi, persetujuan dan pengesahan Kartu Rencana Studi (KRS), serta pemantauan perkembangan akademik berkala."
+    },
+    "perwalian": {
+      "title": "Perwalian",
+      "definition": "Agenda konsultasi akademik wajib antara mahasiswa dengan Dosen Wali di setiap awal semester untuk merencanakan pengambilan mata kuliah (KRS) dan mengevaluasi hasil studi semester sebelumnya."
+    }
+  }
+}

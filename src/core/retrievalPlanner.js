@@ -267,6 +267,20 @@ function buildRetrievalPlan(semanticFrame) {
     queryVariants.push('Kalender Akademik perkuliahan jadwal akademik Direktorat Administrasi Akademik BAAK');
   }
 
+  // Institutional Privacy Policy & Personal Data Protection query variants
+  const isPrivacyPolicyQuery = domain === 'CAMPUS_POLICY' && (intent === 'PRIVACY_POLICY_INQUIRY' || (effectiveAspects && effectiveAspects.includes('privacy_policy')));
+  if (isPrivacyPolicyQuery) {
+    queryVariants.push('kebijakan privasi perlindungan data pribadi kerahasiaan data mahasiswa');
+    queryVariants.push('ketentuan privasi dan perlindungan data');
+  }
+
+  // Institutional Quality Policy query variants
+  const isQualityPolicyQuery = domain === 'CAMPUS_POLICY' && (intent === 'QUALITY_POLICY_INQUIRY' || (effectiveAspects && effectiveAspects.includes('quality_policy')));
+  if (isQualityPolicyQuery) {
+    queryVariants.push('Kebijakan Mutu Institusi ITB STIKOM Bali memuaskan kebutuhan seluruh stakeholder');
+    queryVariants.push('Kebijakan Mutu standar pendidikan penelitian pengabdian masyarakat');
+  }
+
   // Admission Schedule & Waves query variants (guarded: never pollute wisuda or academic calendar with PMB waves)
   const isPmbAdmissionScheduleQuery = !isWisudaQuery && !isAcademicCalendarQuery && (
     intent === 'ADMISSION_SCHEDULE' ||
@@ -292,13 +306,25 @@ function buildRetrievalPlan(semanticFrame) {
   }
 
   // RPL (Rekognisi Pembelajaran Lampau) query variants
-  const isRplQuery = rawIntent === 'ask_rpl' || /\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(normalizedText);
+  const isRplQuery = rawIntent === 'ask_rpl' ||
+    ['RPL_INQUIRY', 'RPL_PROCEDURE', 'RPL_FORM_PROCEDURE', 'RPL_ADMISSION_STAGES', 'RPL_REQUIREMENTS', 'RPL_ASSESSMENT_CONVERSION'].includes(intent) ||
+    (effectiveAspects && effectiveAspects.includes('rpl')) ||
+    /\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(normalizedText);
   if (isRplQuery) {
     if (!effectiveAspects.includes('rpl')) effectiveAspects.push('rpl');
     queryVariants.push('PEDOMAN-RPL-SK Sistem Komputer-1779258342105.pdf');
-    queryVariants.push('pedoman penyelenggaraan rekognisi pembelajaran lampau RPL sarjana sistem komputer formulir evaluasi diri');
-    queryVariants.push('persyaratan pendaftaran kuliah jalur RPL portofolio kriteria VATC valid asli terkini cukup transfer sks perolehan sks');
-    queryVariants.push('alur prosedur pengajuan rekognisi pembelajaran lampau RPL pengalaman kerja ijazah transkrip nilai');
+    if (intent === 'RPL_FORM_PROCEDURE' || (effectiveAspects && effectiveAspects.includes('rpl_form'))) {
+      queryVariants.push('Formulir Aplikasi RPL Form 1 F01 data calon mahasiswa daftar mata kuliah riwayat pengalaman kerja evaluasi diri');
+      queryVariants.push('Pedoman Penyelenggaraan Rekognisi Pembelajaran Lampau S1 Sistem Komputer Formulir Aplikasi RPL dan Riwayat Pengalaman Kerja');
+    } else if (intent === 'RPL_ASSESSMENT_CONVERSION' || (effectiveAspects && effectiveAspects.includes('assessment'))) {
+      queryVariants.push('Kriteria Bukti Portofolio dan Asesmen Evaluasi Diri Jalur RPL Prinsip V-A-T-M valid otentik terkini memadai');
+      queryVariants.push('asesmen penilaian pengalaman kerja pengakuan perolehan sks transfer sks asesor program studi');
+    } else if (intent === 'RPL_REQUIREMENTS' || (effectiveAspects && effectiveAspects.includes('documents'))) {
+      queryVariants.push('persyaratan berkas dokumen pendaftaran RPL ijazah transkrip portofolio formulir evaluasi diri F01');
+    } else {
+      queryVariants.push('pedoman penyelenggaraan rekognisi pembelajaran lampau RPL sarjana sistem komputer formulir evaluasi diri');
+      queryVariants.push('alur tahapan pendaftaran jalur RPL portal pmb pendaftaran online penyerahan dokumen asesmen registrasi');
+    }
   }
 
   // Multi-intent PMB inquiry (requirements + schedule + documents) e.g. No. 402

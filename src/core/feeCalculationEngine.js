@@ -551,27 +551,21 @@ function formatWhatsAppFeeResponse(calcResult, rawQuery = '') {
 
   // Case 1: RPL or Transfer Credit with unverified tuition structure
   if (profile.canonical.includes('RPL') || profile.canonical.includes('Transfer Kredit')) {
-    return `*Informasi Biaya ${profile.canonical}*
-` +
-      `Jenjang: ${profile.degree}
-` +
-      `Tahun akademik: ${profile.academicYear}
-
-` +
-      `*Komponen Dasar Terverifikasi:*
-` +
-      `- Biaya Pendaftaran: ${formatRp(base.pendaftaran)} (dibayar saat mendaftar)
-` +
-      (base.perlengkapan ? `- Biaya Perlengkapan Awal: ${formatRp(base.perlengkapan)} (saat Registrasi I)
-` : '') +
-      `- Biaya Pendidikan Per Semester: ${formatRp(base.semester)} per semester
-
-` +
-      `*Catatan Khusus (SOURCE_GAP):*
-` +
-      `Rincian konversi SKS, penetapan Dana Pendidikan Pokok (DPP), dan biaya per SKS hasil asesmen RPL/Transfer Kredit ditentukan tersendiri setelah proses penyetaraan transkrip akademik oleh Tim Asesor.
-
-` +
+    return `*Informasi Biaya ${profile.canonical}*\n` +
+      `Jenjang: ${profile.degree}\n` +
+      `Tahun akademik: ${profile.academicYear}\n` +
+      `Dasar penetapan: SK Rektor Nomor : 629/ITBSTIKOM/WDS/X/25 (Butir 12)\n\n` +
+      `*Komponen Dasar Terverifikasi:*\n` +
+      `- Biaya Pendaftaran: ${formatRp(base.pendaftaran)} (dibayar saat mendaftar)\n` +
+      (base.perlengkapan ? `- Biaya Perlengkapan Awal: ${formatRp(base.perlengkapan)} (saat Registrasi I)\n` : '') +
+      `- Biaya Pendidikan Per Semester: ${formatRp(base.semester)} per semester\n\n` +
+      `*Dana Pendidikan Pokok (DPP) Jalur RPL (Berdasarkan Pengakuan SKS Butir 12):*\n` +
+      `- Pengakuan 85 s/d 100 SKS: Rp 4.500.000\n` +
+      `- Pengakuan 44 s/d 84 SKS: Rp 5.000.000\n` +
+      `- Pengakuan 20 s/d 43 SKS: Rp 7.000.000\n` +
+      `- Pengakuan di bawah 20 SKS: Mengikuti ketentuan DPP reguler SMA (ketentuan gelombang berlaku)\n\n` +
+      `*Catatan Khusus (SOURCE_GAP):*\n` +
+      `Biaya konversi per SKS dan total akhir biaya studi ditentukan secara individual setelah proses penyetaraan transkrip oleh Tim Asesor RPL.\n\n` +
       `Untuk konsultasi dan evaluasi transkrip mata kuliah, silakan menghubungi Sekretariat PMB melalui https://pmb.stikom-bali.ac.id atau (0361) 244445.`;
   }
 
@@ -923,6 +917,8 @@ function formatWhatsAppFeeResponse(calcResult, rawQuery = '') {
     if (base.dpp > 0) {
       lines.push(`• Dana Pendidikan Pokok (DPP): ${formatRp(base.dpp)}`);
       lines.push(`  Ketentuan DPP: Dapat dicicil/diangsur per bulan hingga UTS-1 (tidak wajib dibayar tunai sekaligus saat masuk). Jika dibayar tunai langsung lunas, diberikan tambahan potongan 10%.`);
+    } else if (profile.academicLevel === 'S2' || profile.canonical === 'S2 Sistem Informasi' || profile.degree === 'S2') {
+      lines.push(`• Dana Pendidikan Pokok (DPP): Rp 0 / Tidak Dikenakan (Program Pascasarjana S2 tidak mengenakan komponen DPP terpisah)`);
     } else if (profile.sourceGaps?.dpp) {
       lines.push(`• Dana Pendidikan Pokok (DPP): ${profile.sourceGaps.dpp}`);
     }
@@ -993,7 +989,9 @@ function formatWhatsAppFeeResponse(calcResult, rawQuery = '') {
   const dppLabel = comps.dpp?.label || 'Dana Pendidikan Pokok (DPP)';
   const hasInstallment = Boolean(comps.dpp?.installment);
   const installmentText = hasInstallment ? ` (Ketentuan: ${comps.dpp.installment}, tidak wajib tunai sekaligus saat masuk)` : '';
-  if (base.dpp === 0 && profile.sourceGaps?.dpp) {
+  if (profile.academicLevel === 'S2' || profile.canonical === 'S2 Sistem Informasi' || profile.degree === 'S2') {
+    lines.push(`- ${dppLabel}: Rp 0 / Tidak Dikenakan (Program Pascasarjana S2 tidak mengenakan komponen DPP terpisah)`);
+  } else if (base.dpp === 0 && profile.sourceGaps?.dpp) {
     lines.push(`- ${dppLabel}: Belum tercantum dalam dokumen resmi (SOURCE_GAP)`);
   } else if (discounts.dppDiscount > 0) {
     lines.push(`- ${dppLabel}: ${formatRp(net.dpp)} (setelah potongan biaya ${registrationWave} ${formatRp(discounts.dppDiscount)}, normal ${formatRp(base.dpp)})`);
@@ -1062,6 +1060,10 @@ function formatWhatsAppFeeResponse(calcResult, rawQuery = '') {
     lines.push(`  3. Menjelang Semester II: Biaya Penguatan Bahasa Mandarin ${formatRp(base.bahasa)}`);
     lines.push(`  4. Setiap awal semester: Biaya Pendidikan Per Semester ${formatRp(base.semester)}`);
     lines.push(`- Batasan perhitungan: Ketiga komponen awal (Pendaftaran, DPP, dan Bahasa Mandarin) memiliki jadwal pembayaran terpisah sesuai tahapannya dan tidak ditagihkan sekaligus saat pendaftaran awal. Biaya semester (${formatRp(base.semester)}) dibayar tersendiri setiap awal semester.`);
+  } else if (profile.academicLevel === 'S2' || profile.canonical === 'S2 Sistem Informasi') {
+    lines.push(`- Pembayaran saat pendaftaran: Biaya Pendaftaran ${formatRp(net.pendaftaran)}`);
+    lines.push(`- Total biaya awal pendaftaran: ${formatRp(net.pendaftaran)} (Program Pascasarjana S2 tidak mengenakan komponen Dana Pendidikan Pokok/DPP terpisah maupun biaya perlengkapan)`);
+    lines.push(`- Biaya perkuliahan per semester: ${formatRp(base.semester)} (dibayar terpisah setiap awal semester)`);
   } else {
     lines.push(`- Pembayaran langsung registrasi awal (pendaftaran + perlengkapan): ${formatRp(net.biayaLangsungRegistrasi)} (dibayar tunai di awal)`);
     lines.push(`- Total kewajiban biaya awal sebelum potongan: ${formatRp(initialTotalBeforeDiscounts)} (Pendaftaran ${formatRp(base.pendaftaran)} + Perlengkapan ${formatRp(base.perlengkapan)} + DPP ${formatRp(base.dpp)})`);
@@ -1340,24 +1342,129 @@ function formatAmbiguousProgramFeeResponse(scopeParams, rawQuery = '') {
     else if (/transfer/i.test(qLower)) programEntity = 'Transfer Kredit S1';
   }
 
-  // Handle RPL specific source gap if asking about RPL conversions
+  // Handle RPL specific fee inquiries grounded strictly in SK Rektor TA 2026/2027 Butir 12
   if (programEntity === 'RPL Sistem Informasi' || /\brpl\b/i.test(rawQuery + ' ' + normQuery)) {
-    const rplAnswer = `*Informasi Biaya Kuliah Rekognisi Pembelajaran Lampau (RPL) S1 Sistem Informasi*\n\n` +
-      `Jenjang: S1\n` +
-      `Tahun akademik: 2026/2027\n\n` +
-      `*Komponen Biaya Terverifikasi:*\n` +
-      `- Biaya Pendaftaran: Rp 500.000 (Pada Saat Daftar)\n` +
-      `- Biaya Perlengkapan Awal: Rp 1.500.000 (Jas Almamater, Topi, Kaos, Tas, GMTI — dibayar saat Registrasi I)\n` +
-      `- Biaya Pendidikan Per Semester: Rp 6.500.000 (Menjelang perwalian tiap semester; Reguler 1 dicicil 2 kali s/d UTS)\n\n` +
-      `*Ketentuan Konversi & DPP (SOURCE_GAP):*\n` +
-      `Biaya per SKS konversi dan penetapan Dana Pendidikan Pokok (DPP) untuk jalur RPL belum tercantum dalam dokumen penetapan biaya resmi SK Rektor Nomor : 629/ITBSTIKOM/WDS/X/25. Besaran SKS yang diakui serta total biaya akhir ditentukan secara individual setelah proses asesmen portofolio atau transkrip oleh Tim RPL.\n\n` +
-      `Untuk konsultasi dan evaluasi transkrip mata kuliah, silakan menghubungi Tim PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id atau (0361) 244445.`;
+    const qText = (rawQuery + ' ' + normQuery).toLowerCase();
+
+    // Check if a specific SKS number or range is requested
+    const under20Match = /\b(?:di\s*bawah|kurang\s*(?:dari)?|<)\s*20(?:\s*sks)?\b/i.test(qText);
+    const above100Match = /\b(?:di\s*atas|lebih\s*(?:dari)?|>)\s*100(?:\s*sks)?\b/i.test(qText);
+    const sksMatch = qText.match(/(?:pengakuan\s+)?(\b\d{1,3}\b)\s*sks\b/i);
+    const sksNum = sksMatch ? parseInt(sksMatch[1], 10) : null;
+
+    let rplAnswer = '';
+    let isRplSourceGap = false;
+
+    if (above100Match || (sksNum !== null && sksNum > 100)) {
+      // SKS > 100: Unsupported range by Butir 12
+      isRplSourceGap = true;
+      const displaySks = sksNum !== null ? `${sksNum} SKS` : 'di atas 100 SKS';
+      rplAnswer = `*Informasi Dana Pendidikan Pokok (DPP) Jalur RPL (Pengakuan ${displaySks})*\n\n` +
+        `Jenjang: S1\n` +
+        `Tahun akademik: 2026/2027\n` +
+        `Dasar penetapan: SK Rektor Nomor : 629/ITBSTIKOM/WDS/X/25 (Butir 12)\n\n` +
+        `*Ketentuan Pengakuan SKS (Butir 12):*\n` +
+        `Berdasarkan SK Rektor TA 2026/2027 Butir 12, skema tarif DPP jalur RPL hanya mengatur pengakuan hingga maksimal 100 SKS (kategori tertinggi adalah rentang 85 s/d 100 SKS seharga Rp 4.500.000).\n\n` +
+        `*Status Informasi (SAFE_UNKNOWN):*\n` +
+        `Ketentuan tarif resmi untuk pengakuan ${displaySks} belum tercantum dalam SK Rektor yang berlaku, sehingga besaran tarifnya belum dapat dipastikan di awal.\n\n` +
+        `Untuk konsultasi dan konfirmasi lebih lanjut terkait pengakuan SKS di atas 100 SKS, silakan menghubungi Tim PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id atau (0361) 244445.`;
+    } else if (under20Match || (sksNum !== null && sksNum < 20)) {
+      // Bracket 4: Di bawah 20 SKS
+      isRplSourceGap = true;
+      const displaySks = sksNum !== null ? `${sksNum} SKS` : 'Di Bawah 20 SKS';
+      rplAnswer = `*Informasi Dana Pendidikan Pokok (DPP) Jalur RPL (Pengakuan ${displaySks})*\n\n` +
+        `Jenjang: S1\n` +
+        `Tahun akademik: 2026/2027\n` +
+        `Dasar penetapan: SK Rektor Nomor : 629/ITBSTIKOM/WDS/X/25 (Butir 12)\n\n` +
+        `*Ketentuan Tarif Terverifikasi (Butir 12):*\n` +
+        `Berdasarkan ketentuan resmi Butir 12 SK Rektor TA 2026/2027:\n` +
+        `• Untuk jumlah pengakuan SKS **di bawah 20 SKS**, biaya DPP **sama dengan lulusan SMA / akan masuk ke jalur reguler**.\n` +
+        `• Ketentuan pendaftaran dan registrasi per gelombang berlaku.\n\n` +
+        `*Status Nominal Pasti (SAFE_UNKNOWN):*\n` +
+        `Nominal pasti DPP reguler bergantung pada program studi dan gelombang pendaftaran yang dipilih (mengikuti ketentuan tarif reguler masing-masing program studi dan gelombang). Karena program studi dan gelombang pendaftaran belum ditentukan pada pertanyaan ini, nominal pasti DPP belum dapat dipastikan secara tunggal.\n\n` +
+        `*Catatan Total Biaya Akhir:*\n` +
+        `Besaran pengakuan SKS dan total akhir biaya studi ditentukan secara individual setelah proses asesmen oleh Tim Asesor RPL.`;
+    } else if (sksNum !== null && sksNum >= 85 && sksNum <= 100) {
+      // Bracket 1: 85 - 100 SKS
+      isRplSourceGap = false;
+      rplAnswer = `*Informasi Dana Pendidikan Pokok (DPP) Jalur RPL (Pengakuan ${sksNum} SKS)*\n\n` +
+        `Jenjang: S1\n` +
+        `Tahun akademik: 2026/2027\n` +
+        `Dasar penetapan: SK Rektor Nomor : 629/ITBSTIKOM/WDS/X/25 (Butir 12)\n` +
+        `Cakupan Program Studi: S1 Sistem Informasi, S1 Teknologi Informasi, dan S1 Bisnis Digital (S1 Sistem Komputer diatur dalam SK tersendiri)\n\n` +
+        `*Tarif DPP Terverifikasi (Butir 12):*\n` +
+        `Dengan asumsi pengakuan ${sksNum} SKS telah ditetapkan oleh Tim Asesor RPL (berada dalam rentang 85 s/d 100 SKS), besaran Dana Pendidikan Pokok (DPP) yang berlaku adalah:\n` +
+        `• **Dana Pendidikan Pokok (DPP)**: **Rp 4.500.000**\n` +
+        `• Ketentuan pendaftaran dan registrasi per gelombang berlaku.\n\n` +
+        `*Komponen Biaya Terkait Lainnya (Program Studi Terkait):*\n` +
+        `- Biaya Pendaftaran: Rp 500.000 (Pada Saat Daftar)\n` +
+        `- Biaya Perlengkapan Awal: Rp 1.500.000 (Jas Almamater, Topi, Kaos, Tas, GMTI — saat Registrasi I)\n` +
+        `- Biaya Pendidikan Per Semester: Rp 6.500.000 per semester\n\n` +
+        `*Catatan Total Biaya Studi:*\n` +
+        `Total keseluruhan biaya studi hingga lulus ditentukan oleh sisa mata kuliah/SKS yang wajib ditempuh berdasarkan hasil konversi kurikulum oleh Tim Asesor RPL.`;
+    } else if (sksNum !== null && sksNum >= 44 && sksNum <= 84) {
+      // Bracket 2: 44 - 84 SKS
+      isRplSourceGap = false;
+      rplAnswer = `*Informasi Dana Pendidikan Pokok (DPP) Jalur RPL (Pengakuan ${sksNum} SKS)*\n\n` +
+        `Jenjang: S1\n` +
+        `Tahun akademik: 2026/2027\n` +
+        `Dasar penetapan: SK Rektor Nomor : 629/ITBSTIKOM/WDS/X/25 (Butir 12)\n` +
+        `Cakupan Program Studi: S1 Sistem Informasi, S1 Teknologi Informasi, dan S1 Bisnis Digital (S1 Sistem Komputer diatur dalam SK tersendiri)\n\n` +
+        `*Tarif DPP Terverifikasi (Butir 12):*\n` +
+        `Dengan asumsi pengakuan ${sksNum} SKS telah ditetapkan oleh Tim Asesor RPL (berada dalam rentang 44 s/d 84 SKS), besaran Dana Pendidikan Pokok (DPP) yang berlaku adalah:\n` +
+        `• **Dana Pendidikan Pokok (DPP)**: **Rp 5.000.000**\n` +
+        `• Ketentuan pendaftaran dan registrasi per gelombang berlaku.\n\n` +
+        `*Komponen Biaya Terkait Lainnya (Program Studi Terkait):*\n` +
+        `- Biaya Pendaftaran: Rp 500.000 (Pada Saat Daftar)\n` +
+        `- Biaya Perlengkapan Awal: Rp 1.500.000 (Jas Almamater, Topi, Kaos, Tas, GMTI — saat Registrasi I)\n` +
+        `- Biaya Pendidikan Per Semester: Rp 6.500.000 per semester\n\n` +
+        `*Catatan Total Biaya Studi:*\n` +
+        `Total keseluruhan biaya studi hingga lulus ditentukan oleh sisa mata kuliah/SKS yang wajib ditempuh berdasarkan hasil konversi kurikulum oleh Tim Asesor RPL.`;
+    } else if (sksNum !== null && sksNum >= 20 && sksNum <= 43) {
+      // Bracket 3: 20 - 43 SKS
+      isRplSourceGap = false;
+      rplAnswer = `*Informasi Dana Pendidikan Pokok (DPP) Jalur RPL (Pengakuan ${sksNum} SKS)*\n\n` +
+        `Jenjang: S1\n` +
+        `Tahun akademik: 2026/2027\n` +
+        `Dasar penetapan: SK Rektor Nomor : 629/ITBSTIKOM/WDS/X/25 (Butir 12)\n` +
+        `Cakupan Program Studi: S1 Sistem Informasi, S1 Teknologi Informasi, dan S1 Bisnis Digital (S1 Sistem Komputer diatur dalam SK tersendiri)\n\n` +
+        `*Tarif DPP Terverifikasi (Butir 12):*\n` +
+        `Dengan asumsi pengakuan ${sksNum} SKS telah ditetapkan oleh Tim Asesor RPL (berada dalam rentang 20 s/d 43 SKS), besaran Dana Pendidikan Pokok (DPP) yang berlaku adalah:\n` +
+        `• **Dana Pendidikan Pokok (DPP)**: **Rp 7.000.000**\n` +
+        `• Ketentuan pendaftaran dan registrasi per gelombang berlaku.\n\n` +
+        `*Komponen Biaya Terkait Lainnya (Program Studi Terkait):*\n` +
+        `- Biaya Pendaftaran: Rp 500.000 (Pada Saat Daftar)\n` +
+        `- Biaya Perlengkapan Awal: Rp 1.500.000 (Jas Almamater, Topi, Kaos, Tas, GMTI — saat Registrasi I)\n` +
+        `- Biaya Pendidikan Per Semester: Rp 6.500.000 per semester\n\n` +
+        `*Catatan Total Biaya Studi:*\n` +
+        `Total keseluruhan biaya studi hingga lulus ditentukan oleh sisa mata kuliah/SKS yang wajib ditempuh berdasarkan hasil konversi kurikulum oleh Tim Asesor RPL.`;
+    } else {
+      // General RPL fee inquiry (e.g. "Berapa biaya RPL?")
+      isRplSourceGap = true;
+      rplAnswer = `*Informasi Biaya Kuliah Rekognisi Pembelajaran Lampau (RPL) S1*\n\n` +
+        `Jenjang: S1\n` +
+        `Tahun akademik: 2026/2027\n` +
+        `Dasar penetapan: SK Rektor Nomor : 629/ITBSTIKOM/WDS/X/25 (Butir 12)\n` +
+        `Cakupan Program Studi: S1 Sistem Informasi, S1 Teknologi Informasi, dan S1 Bisnis Digital (S1 Sistem Komputer diatur dalam SK tersendiri)\n\n` +
+        `*Komponen Biaya Terverifikasi (Program Studi Terkait):*\n` +
+        `- Biaya Pendaftaran: Rp 500.000 (Pada Saat Daftar)\n` +
+        `- Biaya Perlengkapan Awal: Rp 1.500.000 (Jas Almamater, Topi, Kaos, Tas, GMTI — dibayar saat Registrasi I)\n` +
+        `- Biaya Pendidikan Per Semester: Rp 6.500.000 (Menjelang perwalian tiap semester; Reguler 1 dicicil 2 kali s/d UTS)\n\n` +
+        `*Dana Pendidikan Pokok (DPP) Jalur RPL (Berdasarkan Pengakuan SKS Butir 12):*\n` +
+        `• Pengakuan 85 s/d 100 SKS: **Rp 4.500.000**\n` +
+        `• Pengakuan 44 s/d 84 SKS: **Rp 5.000.000**\n` +
+        `• Pengakuan 20 s/d 43 SKS: **Rp 7.000.000**\n` +
+        `• Pengakuan di bawah 20 SKS: Biaya DPP sama dengan lulusan SMA / masuk ke jalur reguler (ketentuan pendaftaran dan registrasi per gelombang berlaku)\n\n` +
+        `*Ketentuan Total Akhir & Asesmen (SOURCE_GAP / Belum Dapat Dihitung):*\n` +
+        `Besaran SKS yang diakui serta total akhir biaya studi ditentukan secara individual setelah proses asesmen portofolio atau transkrip oleh Tim Asesor RPL. Biaya konversi per SKS tidak diatur tersendiri dalam SK Rektor, sehingga total keseluruhan biaya penyelesaian studi belum dapat dipastikan di awal.\n\n` +
+        `Untuk konsultasi dan evaluasi transkrip mata kuliah, silakan menghubungi Tim PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id atau (0361) 244445.`;
+    }
 
     return {
       success: true,
       answer: rplAnswer,
       source: 'grounded_fee_engine',
-      isRplSourceGap: true
+      isRplSourceGap
     };
   }
 

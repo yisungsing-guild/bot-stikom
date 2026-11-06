@@ -280,6 +280,18 @@ function isCandidateMatchingTargetEntity(candidateTextOrObj, targetEntityStr) {
         }
       }
     }
+
+    if (canonicalEntry.family === 'admission_track' || canonicalEntry.type === 'admission_track') {
+      if (/\brpl\b|rekognisi\s+pembelajaran\s+lampau/i.test(canonicalEntry.canonical)) {
+        if (/\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(cleanText) || /\b(?:rpl|rekognisi)\b/i.test(fileNorm)) {
+          return true;
+        }
+        // Direct continuation chunk of Butir 12 containing recognized SKS brackets
+        if (/\b(?:jumlah\s+)?pengakuan\s+sks\s+antara\b/i.test(cleanText)) {
+          return true;
+        }
+      }
+    }
   }
 
   // 3. Generic distinctive token matching for target entity
@@ -344,6 +356,94 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
       disposition: 'REJECT_ASPECT_MISMATCH',
       reason: 'REJECT_ASPECT_MISMATCH'
     };
+  }
+
+  // 0.15 Privacy Policy & Student Personal Data Protection Aspect Gate
+  // When user is inquiring about institutional privacy policy, data protection, or data sharing:
+  // Reject irrelevant quality policy (kebijakan mutu), student organizations (BEM), student exchange (GCCP), and marketing/fee brochures.
+  const isPrivacyPolicyQuery = retrievalPlan.intent === 'PRIVACY_POLICY_INQUIRY' ||
+    (Array.isArray(requiredAspects) && requiredAspects.some(a => ['privacy_policy', 'data_protection', 'personal_data_confidentiality', 'data_sharing', 'third_party_data_sharing'].includes(a))) ||
+    /\b(?:kebijakan\s+privasi|melindungi\s+data\s+pribadi|perlindungan\s+data\s+pribadi|kerahasiaan\s+data|data\s+mahasiswa\s+dibagikan)\b/i.test(queryText);
+
+  if (isPrivacyPolicyQuery) {
+    const isQualityPolicyDoc = /kebijakan\s+mutu\s+institusi/i.test(candidateText) && !/privasi|perlindungan\s+data/i.test(candidateText);
+    const isBemDoc = /profil_bem|badan\s+eksekutif\s+mahasiswa|bem-pm/i.test(candidateText + ' ' + (candidate.filename || ''));
+    const isStudentExchangeDoc = /student\s+exchange|gccp|global\s+cross\s+cultural/i.test(candidateText + ' ' + (candidate.filename || ''));
+    const isFeeOrPmbDoc = /rincian\s+biaya|brosur|biaya\s+kuliah|gelombang/i.test(candidate.filename || '') && !/privasi/i.test(candidateText);
+
+    if (isQualityPolicyDoc || isBemDoc || isStudentExchangeDoc || isFeeOrPmbDoc) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_ASPECT_MISMATCH',
+        reason: 'irrelevant_doc_rejected_for_privacy_policy'
+      };
+    }
+
+    const hasSubstantivePrivacy = /\b(?:kebijakan\s+privasi|perlindungan\s+data\s+pribadi|kerahasiaan\s+data\s+pribadi|hak\s+privasi|pemrosesan\s+data\s+pribadi)\b/i.test(text);
+    if (!hasSubstantivePrivacy) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_ASPECT_MISMATCH',
+        reason: 'lacks_substantive_privacy_policy_content'
+      };
+    }
+  }
+
+  // 0.16 RPL (Rekognisi Pembelajaran Lampau) Evidence Gate
+  const isRplQuery = retrievalPlan.intent === 'RPL_INQUIRY' ||
+    retrievalPlan.intent === 'RPL_PROCEDURE' ||
+    retrievalPlan.intent === 'RPL_FORM_PROCEDURE' ||
+    retrievalPlan.intent === 'RPL_ADMISSION_STAGES' ||
+    retrievalPlan.intent === 'RPL_REQUIREMENTS' ||
+    retrievalPlan.intent === 'RPL_ASSESSMENT_CONVERSION' ||
+    (Array.isArray(requiredAspects) && requiredAspects.includes('rpl')) ||
+    /\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(queryText);
+
+  if (isRplQuery) {
+    const candidateDocName = (candidate && (candidate.filename || candidate.sourceDocument || candidate.sourceFile || '')) || '';
+    const isYudisiumChunk = /yudisium|wisuda/i.test(candidateDocName);
+    if (isYudisiumChunk) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_ASPECT_MISMATCH',
+        reason: 'yudisium_doc_not_applicable_to_rpl'
+      };
+    }
+
+    const isFeeInquiry = retrievalPlan.domain === 'TUITION_FEE' ||
+      retrievalPlan.intent === 'TUITION_FEE_INQUIRY' ||
+      (Array.isArray(requiredAspects) && requiredAspects.some(a => ['fee', 'tuition', 'dpp', 'rpl_fee'].includes(a))) ||
+      /\b(?:biaya|spp|dpp|uang\s+kuliah|bayar)\b/i.test(queryText);
+    const isFeeDoc = (candidate && (candidate.docCategory === 'BIAYA' || candidate.category === 'BIAYA')) ||
+      /rincian\s+biaya|brosur|biaya\s+kuliah/i.test(candidateDocName);
+
+    if (!isFeeInquiry) {
+      // Reject fee tables for procedural, form, stages, requirements, or assessment inquiries
+      if (isFeeDoc) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_is_fee_table_not_rpl_procedure'
+        };
+      }
+    } else {
+      // For RPL fee query: chunk MUST specifically mention RPL rates or provisions (e.g. Butir 12)
+      const mentionsRplFee = (
+        /\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(candidateText) &&
+        /\b(?:3\.000\.000|4\.500\.000|4\.000\.000|dpp|biaya\s+per\s+semester)\b/i.test(candidateText)
+      ) || (
+        // Direct continuation of Butir 12 containing recognized SKS brackets and DPP amounts
+        /\b(?:jumlah\s+)?pengakuan\s+sks\s+antara\b/i.test(candidateText) &&
+        /\b(?:4\.500\.000|5\.000\.000|7\.000\.000)\b/i.test(candidateText)
+      );
+      if (isFeeDoc && !mentionsRplFee) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'fee_chunk_does_not_contain_rpl_rates'
+        };
+      }
+    }
   }
 
   // 0.2 PMB Registration Form Fee vs DPP Discount / Wave Discount Gate

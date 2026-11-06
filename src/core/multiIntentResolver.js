@@ -12,10 +12,17 @@
  * -> SubQuery 2: "apa keuntungan GCCP" (BENEFIT)
  */
 
-const { resolveSemanticFrame, resolveSemanticFrameAsync } = require('./semanticFrameResolver');
+const { resolveSemanticFrame, resolveSemanticFrameAsync, isPrivacyViolationQuery } = require('./semanticFrameResolver');
 
 // Enhanced multi-intent delimiter regex
 const MULTI_SPLIT_REGEX = /(?:\s*\?+\s*|,\s*(?:terus|lalu|kemudian)\s+(?:kalau|untuk|soal|mengenai)?\s*|\s+(?:terus|lalu|kemudian)\s+(?:kalau|untuk|soal|mengenai)\s+|,\s*(?:dan|serta|plus)\s*|\s+(?:dan|serta|sekaligus|dan juga|plus)\s+(?=(?:apa|bagaimana|berapa|apakah|kapan|di\s*mana|dimana|adakah|ada\s+(?:beasiswa|program|jurusan|prodi|jalur|biaya)|keuntungan|syarat(?:nya)?|biaya(?:nya)?|rincian(?:nya)?|fasilitas|program|layanan|training|rekrutmen|pembuatan|prosedur|alur|tata\s+cara|kontak|alamat|lokasi|prospek(?:nya)?|peluang|jadwal(?:nya)?|akreditasi(?:nya)?|penjelasan|info|informasi|jelaskan)\b))/i;
+
+// Shared Predicate Helpers for Multi-Intent & Safety Guardrails (imported from semanticFrameResolver)
+
+function isCompoundCourseBenefitQuery(rawQuery) {
+  if (!rawQuery) return false;
+  return /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|ai\b|artificial\s+intelligence|kecerdasan\s+buatan)\b.*\b(?:semester\s+berapa\s+dan\s+apa|dan\s+apa\s+manfaat(?:nya)?)\b/i.test(rawQuery);
+}
 
 function hasMultipleIntents(rawQuery) {
   if (!rawQuery) return false;
@@ -29,7 +36,10 @@ function hasMultipleIntents(rawQuery) {
     /\b(?:apakah\s+ada|ada\s+gak|ada\s+tidak|tersedia)\s+(?:inkubator(?:\s+bisnis)?|inbis|career\s+center|cdc)\s+(?:dan|serta)\s+(?:apa\s+saja\s+|apa\s+)?(?:layanan|fasilitas|program)(?:nya)?\b/i.test(rawQuery)
   ) && !/\b(?:dan|serta)\s+(?:bagaimana|cara|berapa|kapan|di\s*mana|dimana)\b/i.test(rawQuery);
   const isMultiAspectAdmissionCoord = /\b(?:syarat(?:nya)?,\s*jadwal(?:nya)?,\s*dan\s*dokumen|jadwal(?:nya)?,\s*syarat(?:nya)?,\s*dan\s*dokumen|syarat(?:nya)?,\s*dokumen(?:nya)?,\s*dan\s*jadwal)\b/i.test(rawQuery);
-  if (isComparison || isContactCoord || isFacilityServiceCoord || isMultiAspectAdmissionCoord) return false;
+  const isCompoundCourseQuestion = /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|ai\b|artificial\s+intelligence|kecerdasan\s+buatan)\b.*\b(?:semester\s+berapa\s+dan\s+apa|dan\s+apa\s+manfaat(?:nya)?)\b/i.test(rawQuery);
+  const isPrivacyViolationAttempt = isPrivacyViolationQuery(rawQuery);
+
+  if (isComparison || isContactCoord || isFacilityServiceCoord || isMultiAspectAdmissionCoord || isPrivacyViolationAttempt || isCompoundCourseQuestion) return false;
 
   return MULTI_SPLIT_REGEX.test(rawQuery);
 }
@@ -166,9 +176,25 @@ function decomposeQuery(rawQuery, sessionData = {}) {
     /\b(?:apakah\s+ada|ada\s+gak|ada\s+tidak|tersedia)\s+(?:inkubator(?:\s+bisnis)?|inbis|career\s+center|cdc)\s+(?:dan|serta)\s+(?:apa\s+saja\s+|apa\s+)?(?:layanan|fasilitas|program)(?:nya)?\b/i.test(query)
   ) && !/\b(?:dan|serta)\s+(?:bagaimana|cara|berapa|kapan|di\s*mana|dimana)\b/i.test(query);
 
-  const isMultiAspectAdmissionCoord = /\b(?:syarat(?:nya)?,\s*jadwal(?:nya)?,\s*dan\s*dokumen|jadwal(?:nya)?,\s*syarat(?:nya)?,\s*dan\s*dokumen|syarat(?:nya)?,\s*dokumen(?:nya)?,\s*dan\s*jadwal)\b/i.test(query);
+  const isMultiAspectAdmissionCoord = /\b(?:syarat(?:nya)?,\s*jadwal(?:nya)?,\s*dan\s*dokumen|jadwal(?:nya)?,\s*syarat(?:nya)?,\s*dan\s*dokumen|syarat(?:nya)?,\s*dokumen(?:nya)?,\s*dan\s*jadwal)\b/i.test(rawQuery);
+  const isCompoundCourseQuestion = isCompoundCourseBenefitQuery(query);
+  const isPrivacyViolationAttempt = isPrivacyViolationQuery(query);
   let parts = [query];
-  if (!isComparison && !isContactCoord && !isFacilityServiceCoord && !isMultiAspectAdmissionCoord && MULTI_SPLIT_REGEX.test(query)) {
+  const commaTopicMatch = query.replace(/\?+$/, '').match(/^(?:sebutkan|jelaskan|tampilkan|berikan|bisa\s+berikan)?\s*(?:ringkasan\s+lengkap\s+tentang\s+)?(.*?)(?:,\s*(?:dan|serta)\s*|\s+(?:dan|serta)\s+)([^,]+)$/i);
+  if (commaTopicMatch && !isComparison && !isContactCoord && !isFacilityServiceCoord && !isMultiAspectAdmissionCoord) {
+    const listPart = commaTopicMatch[1];
+    const lastPart = commaTopicMatch[2].trim();
+    const items = listPart.split(',').map(s => s.trim()).filter(Boolean);
+    if (items.length >= 2) {
+      const campusTopics = /\b(?:prodi|program\s*studi|jurusan|biaya|spp|dpp|uang\s*kuliah|kontak|pmb|beasiswa|prospek\s*kerja|jadwal|syarat)\b/i;
+      const allLookLikeTopics = items.every(it => campusTopics.test(it)) && campusTopics.test(lastPart);
+      if (allLookLikeTopics) {
+        parts = [...items, lastPart];
+      }
+    }
+  }
+
+  if (parts.length === 1 && !isComparison && !isContactCoord && !isFacilityServiceCoord && !isMultiAspectAdmissionCoord && !isPrivacyViolationAttempt && !isCompoundCourseQuestion && MULTI_SPLIT_REGEX.test(query)) {
     parts = query.split(MULTI_SPLIT_REGEX).map(p => p.trim()).filter(Boolean);
   }
 
@@ -221,9 +247,12 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
   const isSingleClauseRecommendation = /\b(?:saya|aku|anak\s+saya)\b.*\b(?:suka|senang|gemar|tertarik|hobi|minat|passion|ingin\s+kuliah|mau\s+kuliah|bingung)\b/i.test(query) &&
     !/\b(?:berapa|bagaimana\s+cara|kapan|di\s*mana)\b/i.test(query);
 
-  const isMultiAspectAdmissionCoord = /\b(?:syarat(?:nya)?,\s*jadwal(?:nya)?,\s*dan\s*dokumen|jadwal(?:nya)?,\s*syarat(?:nya)?,\s*dan\s*dokumen|syarat(?:nya)?,\s*dokumen(?:nya)?,\s*dan\s*jadwal)\b/i.test(query);
+  const isMultiAspectAdmissionCoord = /\b(?:syarat(?:nya)?,\s*jadwal(?:nya)?,\s*dan\s*dokumen|jadwal(?:nya)?,\s*syarat(?:nya)?,\s*dan\s*dokumen|syarat(?:nya)?,\s*dokumen(?:nya)?,\s*dan\s*jadwal)\b/i.test(rawQuery);
+  const isCompoundCourseQuestion = /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|ai\b|artificial\s+intelligence|kecerdasan\s+buatan)\b.*\b(?:semester\s+berapa\s+dan\s+apa|dan\s+apa\s+manfaat(?:nya)?)\b/i.test(rawQuery);
+  const isPrivacyViolationAttempt = isPrivacyViolationQuery(query);
+
   let parts = [query];
-  if (!isComparison && !isContactCoord && !isFacilityServiceCoord && !isSingleClauseRecommendation && !isMultiAspectAdmissionCoord && MULTI_SPLIT_REGEX.test(query)) {
+  if (!isComparison && !isContactCoord && !isFacilityServiceCoord && !isSingleClauseRecommendation && !isMultiAspectAdmissionCoord && !isPrivacyViolationAttempt && !isCompoundCourseQuestion && MULTI_SPLIT_REGEX.test(query)) {
     parts = query.split(MULTI_SPLIT_REGEX).map(p => p.trim()).filter(Boolean);
   }
 

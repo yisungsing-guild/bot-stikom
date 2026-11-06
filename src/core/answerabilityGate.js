@@ -110,6 +110,23 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       };
     }
 
+    // Privacy Policy & Student Personal Data Protection Inquiry Gap
+    if (
+      semanticFrame.intent === 'PRIVACY_POLICY_INQUIRY' ||
+      (semanticFrame.aspects && semanticFrame.aspects.some(a => ['privacy_policy', 'data_protection', 'personal_data_confidentiality', 'data_sharing', 'third_party_data_sharing'].includes(a))) ||
+      /\b(?:kebijakan\s+privasi|melindungi\s+data\s+pribadi|perlindungan\s+data\s+pribadi|kerahasiaan\s+data|data\s+mahasiswa\s+dibagikan)\b/i.test(semanticFrame.rawQuery || '')
+    ) {
+      return {
+        status: ANSWERABILITY_STATUS.UNKNOWN,
+        reason: 'corpus_gap_privacy_policy',
+        coveredAspects: [],
+        missingAspects: ['privacy_policy', 'data_protection'],
+        guidance: isEn
+          ? 'Official documents regarding institutional privacy policies, personal data protection, or third-party data sharing terms are currently not available in our published campus records. For official privacy and data governance provisions, please contact the campus administration or secretariat directly.'
+          : 'Informasi mengenai dokumen resmi kebijakan privasi (privacy policy), ketentuan perlindungan data pribadi, maupun mekanisme pembagian data mahasiswa ke pihak ketiga saat ini belum tercantum dalam dokumen publikasi kampus yang tersedia. Untuk memperoleh ketentuan resmi terkait tata kelola dan privasi data, silakan menghubungi unit administrasi atau Sekretariat ITB STIKOM Bali secara langsung.'
+      };
+    }
+
     // Check for private contact inquiries (e.g. personal WA/phone of rector, kaprodi)
     const isPrivateContact = /\b(nomor\s+pribadi|wa\s+pribadi|whatsapp\s+pribadi|nomor\s+hp|kontak\s+pribadi|private\s+contact|personal\s+number)\b/i.test(semanticFrame.rawQuery || '');
     if (isPrivateContact) {
@@ -119,6 +136,19 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         guidance: isEn
           ? 'We apologize, but personal contact numbers are not published in official guidelines. Please contact the official university offices or public relations.'
           : 'Mohon maaf, nomor kontak pribadi tidak dipublikasikan dalam panduan resmi. Silakan menghubungi saluran resmi kampus atau humas ITB STIKOM Bali.'
+      };
+    }
+
+    // SKSS Scholarship Inquiry Check
+    if (/\bskss\b/i.test(semanticFrame.rawQuery || '')) {
+      return {
+        status: ANSWERABILITY_STATUS.UNKNOWN,
+        reason: 'corpus_gap_skss_unrecognized',
+        coveredAspects: [],
+        missingAspects: ['skss_scholarship'],
+        guidance: isEn
+          ? 'Official information regarding the program or acronym "Beasiswa SKSS" is not recognized or listed in the available ITB STIKOM Bali scholarship guidelines (SOURCE_NOT_FOUND). The abbreviation "SKSS" is not officially defined in campus records. To confirm available scholarship programs and their requirements, please consult the Admissions Committee (PMB).'
+          : 'Informasi resmi mengenai program atau singkatan "Beasiswa SKSS" belum tercantum dalam dokumen pedoman beasiswa resmi ITB STIKOM Bali yang tersedia (SOURCE_NOT_FOUND). Entitas atau singkatan "SKSS" tidak terdefinisi secara resmi dalam dokumen panduan kampus. Untuk kepastian program beasiswa, kepanjangan singkatan, maupun persyaratannya, calon mahasiswa diarahkan untuk mengonfirmasi langsung ke Bagian Admisi / Panitia PMB ITB STIKOM Bali.'
       };
     }
 
@@ -343,6 +373,21 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         };
       }
 
+      const isGeneralRegistrationProcedure = (
+        semanticFrame.intent === 'ADMISSION_PROCEDURE' ||
+        semanticFrame.intent === 'GENERAL_PMB_INQUIRY' ||
+        /\b(?:cara\s+daftar|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+daftar|(?:mau|mw|pengen|ingin|bisa)\s+daftar|mulai\s+dari\s+mana)\b/i.test(rawQ)
+      ) && !/\b(?:tes|ujian|otp|verifikasi|salah\s+mengisi|paket\s+c|ktp|kk)\b/i.test(rawQ);
+
+      if (isGeneralRegistrationProcedure) {
+        return {
+          status: ANSWERABILITY_STATUS.ANSWERABLE,
+          reason: 'general_pmb_registration_procedure_supported',
+          coveredAspects: ['procedure', 'registration_portal', 'admission_overview'],
+          missingAspects: []
+        };
+      }
+
       return {
         status: ANSWERABILITY_STATUS.UNKNOWN,
         reason: 'corpus_gap',
@@ -382,6 +427,18 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
   const isSpecificExternalScholarship = /\b(pemda|pemerintah\s+daerah|provinsi\s+papua|beasiswa\s+pemda)\b/i.test(rawQ);
 
   const combinedEvidenceText = accepted.map(c => c.text || c.chunk || '').join(' ').toLowerCase();
+
+  if (/\bskss\b/i.test(rawQ)) {
+    return {
+      status: ANSWERABILITY_STATUS.UNKNOWN,
+      reason: 'corpus_gap_skss_unrecognized',
+      coveredAspects: [],
+      missingAspects: ['skss_scholarship'],
+      guidance: isEn
+        ? 'Official information regarding the program or acronym "Beasiswa SKSS" is not recognized or listed in the available ITB STIKOM Bali scholarship guidelines (SOURCE_NOT_FOUND). The abbreviation "SKSS" is not officially defined in campus records. To confirm available scholarship programs and their requirements, please consult the Admissions Committee (PMB).'
+        : 'Informasi resmi mengenai program atau singkatan "Beasiswa SKSS" belum tercantum dalam dokumen pedoman beasiswa resmi ITB STIKOM Bali yang tersedia (SOURCE_NOT_FOUND). Entitas atau singkatan "SKSS" tidak terdefinisi secara resmi dalam dokumen panduan kampus. Untuk kepastian program beasiswa, kepanjangan singkatan, maupun persyaratannya, calon mahasiswa diarahkan untuk mengonfirmasi langsung ke Bagian Admisi / Panitia PMB ITB STIKOM Bali.'
+    };
+  }
 
   if (isPrivateContact && !/\b(?:nomor|kontak|wa|hp)\s+pribadi\b/i.test(combinedEvidenceText)) {
     return {
@@ -452,7 +509,37 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       if (Array.isArray(chunk.providedAspects)) {
         chunk.providedAspects.forEach(a => allProvidedAspects.add(a));
       }
-      const text = (chunk.text || '').toLowerCase();
+      const text = (chunk.text || chunk.chunk || '').toLowerCase();
+      if (/\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(text)) {
+        allProvidedAspects.add('rpl');
+      }
+      if (/\b(?:transfer\s+(?:sks|kredit)|perolehan\s+(?:sks|kredit)|konversi\s+(?:sks|nilai)|asesmen)\b/i.test(text)) {
+        allProvidedAspects.add('credit_transfer');
+        allProvidedAspects.add('assessment');
+        allProvidedAspects.add('work_experience');
+      }
+      if (/\b(?:formulir\s+aplikasi|f01|form\s+1|riwayat\s+pengalaman\s+kerja|evaluasi\s+diri)\b/i.test(text)) {
+        allProvidedAspects.add('rpl_form');
+        allProvidedAspects.add('form_procedure');
+        allProvidedAspects.add('form_filling');
+        allProvidedAspects.add('procedure');
+      }
+      if (/\b(?:v-?a-?t-?m|sahih|otentik|terkini|memadai|portofolio)\b/i.test(text)) {
+        allProvidedAspects.add('requirements');
+        allProvidedAspects.add('documents');
+        allProvidedAspects.add('portfolio');
+      }
+      if (/\b(?:alur\s+prosedur|tahapan|pendaftaran\s+online|pmb\.stikom-bali\.ac\.id)\b/i.test(text)) {
+        allProvidedAspects.add('admission_stages');
+        allProvidedAspects.add('procedure');
+        allProvidedAspects.add('registration');
+      }
+      if (/\b(?:3\.000\.000|4\.500\.000|5\.000\.000|7\.000\.000|dpp|dana\s+pendidikan\s+pokok)\b/i.test(text) && /\b(?:rpl|rekognisi|pengakuan\s+sks)\b/i.test(text)) {
+        allProvidedAspects.add('rpl_fee');
+        allProvidedAspects.add('fee');
+        allProvidedAspects.add('dpp');
+        allProvidedAspects.add('tuition');
+      }
       if (/\b(?:alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+pendaftaran|langkah(?:-langkah)?\s+pendaftaran|tata\s+cara\s+(?:daftar|mendaftar|pendaftaran)|mekanisme\s+pendaftaran)\b/i.test(text)) {
         allProvidedAspects.add('procedure');
         allProvidedAspects.add('admission');
@@ -463,6 +550,16 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       }
       if (/\b(?:syarat\s+pendaftaran|persyaratan\s+pendaftaran|berkas\s+pendaftaran|kelengkapan\s+dokumen|ijazah|fotokopi|dokumen\s+persyaratan)\b/i.test(text)) {
         allProvidedAspects.add('requirements');
+      }
+      if (/\b(?:kebijakan\s+mutu|standar\s+mutu|mutu\s+institusi)\b/i.test(text)) {
+        allProvidedAspects.add('quality_policy');
+        allProvidedAspects.add('institutional_quality');
+      }
+      if (/\b(?:manfaat|keuntungan|benefit|tujuan|kelebihan|peluang)\b/i.test(text)) {
+        allProvidedAspects.add('benefits');
+      }
+      if (/\b(?:gelar|sarjana|diploma|degree|s\.kom|s\.bns|s\.ds|s\.ti|m\.kom|a\.md)\b/i.test(text)) {
+        allProvidedAspects.add('degree_award');
       }
       if (/\b(?:jalan\s+raya\s+puputan|renon|kampus\s+renon|raya\s+kampus\s+udayana|kampus\s+jimbaran|abiansemal|kampus\s+abiansemal|dauh\s+yeh\s+cani)\b/i.test(text) && /(?:\bjl\.?|\bjalan\b|\balamat\b|\blokasi\b)/i.test(text)) {
         allProvidedAspects.add('location');

@@ -552,9 +552,14 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
 
     // Explicit Out-of-Domain Terminal Hand-off
     if (frame.domain === 'OUT_OF_DOMAIN' || frame.intent === 'OUT_OF_DOMAIN_INQUIRY') {
-      const oodReply = frame.language === 'en'
-        ? 'I apologize, but I currently specialize in providing information regarding academics, admissions (PMB), study programs, tuition fees, and facilities at ITB STIKOM Bali. Your question is outside our campus information service scope.'
-        : 'Mohon maaf, layanan ini khusus melayani informasi seputar akademik, PMB, program studi, biaya kuliah, dan fasilitas ITB STIKOM Bali. Pertanyaan Anda berada di luar cakupan layanan informasi kampus kami.';
+      const isGambling = frame.intent === 'OUT_OF_DOMAIN_GAMBLING';
+      const oodReply = isGambling
+        ? (frame.language === 'en'
+            ? 'I apologize, but as the virtual assistant of ITB STIKOM Bali, I do not provide lottery predictions or gambling-related content. I only provide official campus information regarding admissions, study programs, and academics.'
+            : 'Mohon maaf, saya adalah asisten virtual resmi ITB STIKOM Bali dan tidak melayani ramalan, prediksi angka togel, atau perjudian. Layanan ini khusus menyediakan informasi akademik, pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, dan fasilitas kampus ITB STIKOM Bali.')
+        : (frame.language === 'en'
+            ? 'I apologize, but I currently specialize in providing information regarding academics, admissions (PMB), study programs, tuition fees, and facilities at ITB STIKOM Bali. Your question is outside our campus information service scope.'
+            : 'Mohon maaf, layanan ini khusus melayani informasi seputar akademik, PMB, program studi, biaya kuliah, dan fasilitas ITB STIKOM Bali. Pertanyaan Anda berada di luar cakupan layanan informasi kampus kami.');
       subQueryResults.push({
         frame,
         semanticFrame: frame,
@@ -570,11 +575,11 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         answer: oodReply,
         verification: {
           pass: false,
-          outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+          outcome: isGambling ? 'OUT_OF_DOMAIN' : VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
           interceptedFrom: null,
           isInterception: false,
-          status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
-          reason: 'out_of_domain_terminal',
+          status: isGambling ? 'OUT_OF_DOMAIN' : VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+          reason: isGambling ? 'gambling_prohibited' : 'out_of_domain_terminal',
           isGrounded: false,
           handledSafely: true
         },
@@ -588,7 +593,46 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     if (frame.domain === 'CONVERSATIONAL' || frame.retrievalRequired === false) {
       let reply = '';
       const isEnglish = frame.language === 'en' || frame.detectedLanguage === 'en';
-      if (frame.intent === 'CONVERSATIONAL_GREETING') {
+      if (frame.intent === 'PRIVACY_DATA_REFUSAL') {
+        reply = isEnglish
+          ? 'I apologize, but to protect student privacy and confidentiality in accordance with institutional policy, I cannot display or disclose personal data (such as phone numbers, addresses, or profiles) of other students. Official data requests must follow authorized university procedures.'
+          : 'Mohon maaf, demi menjaga kerahasiaan dan privasi data pribadi mahasiswa sesuai kebijakan institusi dan ketentuan perlindungan data, saya tidak dapat menampilkan atau memberikan data pribadi (seperti nomor telepon, alamat, data akademik, atau profil) mahasiswa lain. Permohonan data resmi hanya dapat diproses oleh unit administrasi kampus yang berwenang melalui prosedur dan otorisasi yang sah.';
+      } else if (frame.intent === 'TRANSFER_ADMISSION_INQUIRY') {
+        reply = isEnglish
+          ? 'Regarding transfer admissions from other universities/colleges (alih bentuk or transfer students), the official detailed requirements, admission procedures, and course credit conversion guidelines are currently not detailed in the available PMB publication documents.\n\nProspective transfer students are advised to contact the Admissions Office (Panitia PMB) directly via hotline (0361) 244445, visit the PMB Service Room at Renon Campus, or check https://pmb.stikom-bali.ac.id for personalized credit evaluation and formal transfer procedures.'
+          : 'Mengenai penerimaan mahasiswa pindahan (alih bentuk atau transfer kuliah dari perguruan tinggi lain), ketentuan resmi, syarat administrasi, dan prosedur konversi/transfer kredit mata kuliah saat ini belum tercantum secara rinci pada dokumen informasi PMB yang tersedia.\n\nCalon mahasiswa pindahan disarankan untuk langsung berkonsultasi dengan Panitia PMB / Ruang Layanan PMB ITB STIKOM Bali (Kampus Renon) atau menghubungi kontak admisi di **(0361) 244445** serta mengunjungi portal **https://pmb.stikom-bali.ac.id** untuk verifikasi transkrip nilai dan prosedur perpindahan program studi secara resmi.';
+      } else if (frame.intent === 'OUT_OF_DOMAIN_GAMBLING') {
+        reply = isEnglish
+          ? 'I apologize, but as the virtual assistant of ITB STIKOM Bali, I do not provide lottery predictions or gambling-related content. I only provide official campus information regarding admissions, study programs, and academics.'
+          : 'Mohon maaf, saya adalah asisten virtual resmi ITB STIKOM Bali dan tidak melayani ramalan, prediksi angka togel, atau perjudian. Layanan ini khusus menyediakan informasi akademik, pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, dan fasilitas kampus ITB STIKOM Bali.';
+      } else if (frame.intent === 'PAYMENT_STATUS_ISSUE') {
+        reply = isEnglish
+          ? 'Regarding payment status verification issues where transfer succeeded but system status has not updated:\n\n1. Keep Official Transfer Receipt: Ensure your payment receipt (ATM receipt, mobile banking transfer proof, or reference number) is kept safely.\n2. Processing Window: Banking reconciliation may take up to 1x24 hours to update automatically on the PMB portal (https://pmb.stikom-bali.ac.id) or SION.\n3. Manual Verification: If the status remains pending after 1x24 hours, please contact Admissions / Finance Office directly at (0361) 244445 with your payment proof for manual verification.'
+          : 'Mengenai kendala status pembayaran pendaftaran atau biaya kuliah yang belum berubah setelah transfer berhasil:\n\n1. **Simpan Bukti Pembayaran**: Pastikan bukti transfer resmi (struk ATM, mutasi mobile banking, atau nomor referensi transaksi) disimpan dengan baik.\n2. **Waktu Rekonsiliasi**: Terkadang proses sinkronisasi perbankan membutuhkan waktu verifikasi berkala pada portal PMB (**https://pmb.stikom-bali.ac.id**) atau portal akademik SION.\n3. **Konfirmasi Manual ke Bagian Keuangan / Admisi**: Jika status belum terverifikasi otomatis dalam 1x24 jam, calon mahasiswa disarankan langsung mengonfirmasikan bukti transfer kepada Panitia PMB atau Bagian Keuangan ITB STIKOM Bali melalui hotline **(0361) 244445** atau datang ke Ruang Layanan PMB Kampus Renon agar dapat diverifikasi dan diperbarui secara manual oleh petugas.';
+      } else if (frame.intent === 'CONVERSATIONAL_REQUEST_TO_ASK') {
+        reply = isEnglish
+          ? 'Hello! Of course, please feel free to ask your question regarding ITB STIKOM Bali, such as admissions (PMB), study programs, tuition fees, scholarships, or campus facilities. I am ready to assist you!'
+          : 'Halo! Tentu, silakan sampaikan apa yang ingin Anda tanyakan seputar kampus ITB STIKOM Bali, seperti pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, atau fasilitas. Saya siap membantu!';
+      } else if (frame.intent === 'CONVERSATIONAL_GRATITUDE') {
+        reply = isEnglish
+          ? "You're very welcome! Glad I could help. If there is anything else you would like to know about ITB STIKOM Bali, feel free to ask anytime!"
+          : 'Sama-sama! Senang bisa membantu. Jika ada hal lain seputar ITB STIKOM Bali yang ingin Anda ketahui lebih lanjut, jangan ragu untuk bertanya ya!';
+      } else if (frame.intent === 'CONVERSATIONAL_DELIBERATION') {
+        const isContactLater = frame.aspects?.includes('will_contact_later');
+        if (isContactLater) {
+          reply = isEnglish
+            ? 'Sure, thank you for reaching out! Feel free to contact us again anytime whenever you need further information. Wishing you great success!'
+            : 'Baik, terima kasih sudah menghubungi kami. Silakan hubungi kembali kapan saja jika membutuhkan informasi lebih lanjut seputar ITB STIKOM Bali. Sukses selalu!';
+        } else {
+          reply = isEnglish
+            ? 'Certainly, please take your time to consider it. Whenever you are ready or have more questions about ITB STIKOM Bali, feel free to reach out again. Have a wonderful day!'
+            : 'Baik, silakan dipertimbangkan terlebih dahulu. Jika nanti ada hal yang ingin dipastikan atau ditanyakan kembali seputar ITB STIKOM Bali, jangan ragu untuk menghubungi kami lagi ya. Semoga harimu menyenangkan!';
+        }
+      } else if (frame.intent === 'ANSWER_REFINEMENT') {
+        reply = isEnglish
+          ? 'Sure! Please let me know which part of the previous information you would like me to summarize or refine to be more concise and informative.'
+          : 'Tentu! Silakan beri tahu bagian mana dari informasi sebelumnya yang ingin disesuaikan atau diringkas agar lebih singkat dan informatif, saya siap membantu menyempurnakannya.';
+      } else if (frame.intent === 'CONVERSATIONAL_GREETING') {
         if (frame.aspects?.includes('ping')) {
           reply = isEnglish
             ? 'Hello! Connection is active and stable. I am Tiko, the official virtual assistant of ITB STIKOM Bali. How can I assist you today?'
@@ -609,7 +653,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
               : 'Halo! Selamat datang di layanan informasi resmi ITB STIKOM Bali. Ada yang bisa kami bantu terkait pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, atau informasi akademik lainnya?';
           }
         }
-      } else if (frame.intent === 'AMBIGUOUS_CLARIFICATION') {
+      } else if (frame.intent === 'AMBIGUOUS_CLARIFICATION' || frame.intent === 'ALTERNATIVE_OPTIONS_INQUIRY') {
         reply = isEnglish
           ? 'Your question requires more context. Could you please clarify which study program, admission track, or campus topic you are inquiring about?'
           : 'Pertanyaan Anda memerlukan konteks lebih lanjut. Boleh diperjelas program studi, jalur pendaftaran, atau topik informasi kampus apa yang Anda maksud?';
@@ -655,8 +699,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
             : 'Jika informasi yang Anda tanyakan belum tercantum dalam dokumen resmi kami atau memerlukan konfirmasi khusus, saya akan menyampaikannya secara terbuka dan mengarahkan Anda langsung ke bagian admisi PMB atau unit layanan kampus resmi terkait.';
         } else if (isAskingAuthenticity) {
           reply = isEnglish
-            ? 'Yes, all information I provide is derived directly from verified official guides, academic regulations, and decree documents of ITB STIKOM Bali.'
-            : 'Ya, seluruh jawaban dan informasi yang saya sampaikan bersumber langsung dari dokumen resmi, pedoman akademik, dan surat keputusan pimpinan ITB STIKOM Bali yang terverifikasi.';
+            ? 'My answers are grounded in the verified official documents, academic guidelines, and regulations of ITB STIKOM Bali available in our database. However, this system has boundaries regarding real-time dynamic updates (such as live quota changes or spontaneous announcements). For the most current operational updates, please always verify via the official PMB portal at https://pmb.stikom-bali.ac.id or contact the admissions office directly.'
+            : 'Jawaban saya bersumber dari dokumen resmi, pedoman akademik, dan ketetapan ITB STIKOM Bali yang telah diindeks dalam sistem basis data kami. Namun, sistem kami memiliki batasan pembaruan real-time (seperti perubahan kuota pendaftaran atau pengumuman insidental sewaktu-waktu). Untuk memastikan informasi operasional terkini dan paling mutakhir, disarankan selalu memverifikasi langsung melalui portal pmb.stikom-bali.ac.id atau menghubungi Panitia PMB/layanan admisi kampus.';
         } else {
           reply = isEnglish
             ? 'Hello! I am Tiko, the official virtual assistant of ITB STIKOM Bali. I am here to help you with information regarding admissions, study programs, tuition fees, facilities, and campus details. How can I assist you today?'
@@ -670,6 +714,22 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
           reply = isEnglish
             ? 'I empathize with you and am truly sorry to hear that you are feeling down. While I am a virtual campus assistant focused on university information at ITB STIKOM Bali and not a professional psychologist or counselor, I am here and willing to listen if you would like to share or talk about what is on your mind. I hope you feel better and find comfort soon.'
             : 'Saya ikut berempati dan memahami jika Kakak sedang merasa sedih. Meskipun saya adalah asisten virtual yang berfokus pada informasi perkuliahan di ITB STIKOM Bali dan bukan seorang psikolog atau konselor profesional, saya tetap siap mendengarkan jika ada hal yang ingin Kakak ceritakan atau keluh kesah yang ingin dibagikan. Semoga perasaan Kakak lekas membaik dan merasa lebih tenang ya.';
+        } else if (frame.aspects?.includes('busy_check') || /\blagi\s+sibuk\b/i.test(queryText)) {
+          reply = isEnglish
+            ? 'Not busy! I am ready to assist you with inquiries regarding academics, study programs, tuition fees, or admissions at ITB STIKOM Bali. What would you like to ask?'
+            : 'Tidak, saya siap membantu menjawab pertanyaan Anda seputar informasi akademik, program studi, biaya kuliah, atau pendaftaran mahasiswa baru (PMB) ITB STIKOM Bali. Ada yang ingin Anda tanyakan?';
+        } else if (frame.aspects?.includes('activity_check') || /\b(?:kamu\s+sedang\s+apa|lagi\s+ngapain)\b/i.test(queryText)) {
+          reply = isEnglish
+            ? 'I am active and on duty to assist you with inquiries about ITB STIKOM Bali. Is there any campus information you would like to ask?'
+            : 'Saya sedang aktif bertugas dan siap menjawab pertanyaan Anda seputar kampus ITB STIKOM Bali. Ada informasi perkuliahan atau pendaftaran yang ingin Anda tanyakan?';
+        } else if (frame.aspects?.includes('crowd_comment') || /\bhari\s+ini\s+ramai\b/i.test(queryText)) {
+          reply = isEnglish
+            ? 'As a virtual assistant, I assist with inquiries regarding admissions and academics at ITB STIKOM Bali. How can I help you with campus information today?'
+            : 'Sebagai asisten virtual, saya bertugas melayani pertanyaan seputar perkuliahan dan penerimaan mahasiswa baru di ITB STIKOM Bali. Ada yang bisa saya bantu terkait informasi kampus hari ini?';
+        } else if (frame.aspects?.includes('chat_companion') || /\b(?:temani\s+ngobrol|teman\s+ngobrol)\b/i.test(queryText)) {
+          reply = isEnglish
+            ? 'Certainly! I am Tiko, the official virtual assistant of ITB STIKOM Bali. While I am an information bot, I would be glad to converse and discuss our study programs, admissions, or student activities. What would you like to explore?'
+            : 'Tentu! Saya Tiko, asisten virtual resmi ITB STIKOM Bali. Sebagai asisten informasi kampus, saya siap menemani dan mendiskusikan informasi seputar jurusan, perkuliahan, beasiswa, maupun pendaftaran di ITB STIKOM Bali. Ada topik yang ingin Kakak bahas?';
         } else {
           reply = isEnglish
             ? 'I am doing great, thank you! How can I assist you with information about ITB STIKOM Bali today?'
@@ -680,9 +740,16 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
           ? 'Goodbye! If you ever need further information regarding ITB STIKOM Bali, feel free to reach out anytime. Have a wonderful day!'
           : 'Sampai jumpa kembali! Jika ada hal lain seputar ITB STIKOM Bali yang ingin Anda tanyakan di kemudian hari, jangan ragu untuk menghubungi saya lagi ya. Semoga sukses dan sehat selalu!';
       } else if (frame.intent === 'CONVERSATIONAL_ACKNOWLEDGEMENT') {
-        reply = isEnglish
-          ? "You're very welcome! Glad I could help. Is there anything else you would like to know about ITB STIKOM Bali?"
-          : 'Sama-sama! Senang bisa membantu. Ada informasi lain seputar ITB STIKOM Bali yang ingin Anda ketahui?';
+        const isUnderstood = frame.aspects?.includes('understood') || /\b(?:paham|mengerti|noted|siap|sip)\b/i.test(frame.rawQuery || '');
+        if (isUnderstood) {
+          reply = isEnglish
+            ? 'Great to hear that! If you ever need further details or have more questions about ITB STIKOM Bali, I am always ready to help.'
+            : 'Baik, senang mendengarnya! Jika nanti ada pertanyaan lain atau memerlukan informasi lebih lanjut mengenai ITB STIKOM Bali, saya selalu siap membantu.';
+        } else {
+          reply = isEnglish
+            ? "You're very welcome! Glad I could help. Is there anything else you would like to know about ITB STIKOM Bali?"
+            : 'Sama-sama! Senang bisa membantu. Ada informasi lain seputar ITB STIKOM Bali yang ingin Anda ketahui?';
+        }
       } else if (frame.intent === 'ADVERSARIAL_INJECTION_DEFENSE') {
         reply = isEnglish
           ? 'I apologize, but as the official information assistant of ITB STIKOM Bali, I only assist with inquiries regarding campus information, admissions, academic programs, tuition fees, and university activities.'
@@ -703,9 +770,9 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         answer: reply,
         verification: {
           pass: true,
-          outcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
-          status: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
-          reason: 'conversational_verified',
+          outcome: frame.intent === 'PRIVACY_DATA_REFUSAL' ? 'PRIVACY_REFUSAL' : (frame.intent === 'TRANSFER_ADMISSION_INQUIRY' ? 'SAFE_UNKNOWN' : (frame.intent === 'OUT_OF_DOMAIN_GAMBLING' ? 'OUT_OF_DOMAIN' : (frame.intent === 'ALTERNATIVE_OPTIONS_INQUIRY' ? 'NEEDS_CONTEXT' : (frame.intent === 'AMBIGUOUS_CLARIFICATION' ? 'NEEDS_CLARIFICATION' : VERIFICATION_OUTCOME.VERIFIED_FACTUAL)))),
+          status: frame.intent === 'PRIVACY_DATA_REFUSAL' ? 'PRIVACY_REFUSAL' : (frame.intent === 'TRANSFER_ADMISSION_INQUIRY' ? 'SAFE_UNKNOWN' : (frame.intent === 'OUT_OF_DOMAIN_GAMBLING' ? 'OUT_OF_DOMAIN' : (frame.intent === 'ALTERNATIVE_OPTIONS_INQUIRY' ? 'NEEDS_CONTEXT' : (frame.intent === 'AMBIGUOUS_CLARIFICATION' ? 'NEEDS_CLARIFICATION' : VERIFICATION_OUTCOME.VERIFIED_FACTUAL)))),
+          reason: frame.intent === 'PRIVACY_DATA_REFUSAL' ? 'privacy_refusal_enforced' : (frame.intent === 'TRANSFER_ADMISSION_INQUIRY' ? 'transfer_admission_corpus_gap_handled_safely' : (frame.intent === 'OUT_OF_DOMAIN_GAMBLING' ? 'gambling_prohibited' : (frame.intent === 'ALTERNATIVE_OPTIONS_INQUIRY' ? 'follow_up_without_context' : (frame.intent === 'AMBIGUOUS_CLARIFICATION' ? 'clarification_required' : 'conversational_verified')))),
           isGrounded: true,
           handledSafely: true
         }
