@@ -946,7 +946,28 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
           !/\b(pendidikan per semester|uang pangkal|potongan dpp|rincian biaya)\b/i.test(text) &&
           (/\b(pmb|pendaftaran\s+mahasiswa\s+baru|alur\s+pendaftaran|prosedur\s+pendaftaran|cara\s+(?:daftar|mendaftar)|syarat\s+pendaftaran|pmb\.stikom-bali\.ac\.id)\b/i.test(text) || isGeneralPmbCalendarCompanion);
 
-        if (!isGeneralPmbProcedureCompanion && !isGeneralPmbCalendarCompanion) {
+        // Stage 3B.2 (ID 222): Faculty-level thesis guideline companion for S1 programs under FIK
+        // Pedoman TA S1 2019 legitimately covers S1 SI, S1 TI, and S1 SK under Fakultas Informatika dan Komputer (FIK)
+        const isFikAcademicProgram = primaryTargets.some(pt =>
+          /\b(?:sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer)\b/i.test(pt.ent) &&
+          !/\b(?:s2|magister|pascasarjana|bisnis\s+digital|manajemen\s+informatika)\b/i.test(pt.ent)
+        );
+        const isThesisInquiry = retrievalPlan.intent === 'THESIS_REQUIREMENTS' ||
+          retrievalPlan.intent === 'THESIS_GUIDANCE_PROCEDURE' ||
+          (Array.isArray(requiredAspects) && requiredAspects.some(a => ['thesis_requirements', 'guidelines', 'academic_requirements', 'guidance_procedure', 'pedoman_ta'].includes(a))) ||
+          /\b(?:tugas\s+akhir|skripsi|pedoman\s+ta)\b/i.test(queryText);
+        const isS1ThesisGuidelineDoc = candidateFile && /(?:pedoman\s+ta|pedoman\s+skripsi)/i.test(candidateFile) &&
+          !/(?:d3|diploma|pascasarjana|magister)/i.test(candidateFile);
+        const isFacultyThesisGuidelineCompanion = isFikAcademicProgram && isThesisInquiry && isS1ThesisGuidelineDoc && candidate.docCategory !== 'BIAYA';
+
+        if (isFacultyThesisGuidelineCompanion) {
+          const matchedTarget = primaryTargets.find(pt => /\b(?:sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer)\b/i.test(pt.ent));
+          if (matchedTarget && !supportedEntities.includes(matchedTarget.ent)) {
+            supportedEntities.push(matchedTarget.ent);
+          }
+        }
+
+        if (!isGeneralPmbProcedureCompanion && !isGeneralPmbCalendarCompanion && !isFacultyThesisGuidelineCompanion) {
           const missingFam = primaryTargets[0].fam;
           return {
             accepted: false,
@@ -1038,7 +1059,14 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     providedAspects.push('procedure', 'requirements', 'event_info', 'graduation', 'schedule');
   }
   if (isOrganizationChunk) providedAspects.push('student_organization', 'organization', 'general_organization', 'activities', 'ukm');
-  if (isPmbGeneralChunk) providedAspects.push('admission_overview', 'procedure', 'admission_pathways', 'requirements', 'documents', 'status', 'admission_status', 'academic_year');
+  if (isPmbGeneralChunk) {
+    providedAspects.push('admission_overview', 'admission_pathways', 'requirements', 'documents', 'status', 'admission_status', 'academic_year');
+    const hasSubstantiveProcedureInChunk = /\b(?:alur\s+(?:prosedur|pendaftaran)|prosedur\s+pendaftaran|tata\s+cara\s+(?:daftar|mendaftar|pendaftaran)|tahapan\s+(?:daftar|pendaftaran)|langkah(?:-langkah)?\s+(?:daftar|pendaftaran)|panduan\s+pendaftaran|mekanisme\s+pendaftaran)\b/i.test(text) ||
+      (/\b(?:pendaftaran|daftar)\b/i.test(text) && /\b(?:tahap\s*(?:1|2|3|i|ii|iii|pertama|kedua)|langkah\s*(?:1|2|3|pertama|kedua))\b/i.test(text));
+    if (hasSubstantiveProcedureInChunk) {
+      providedAspects.push('procedure');
+    }
+  }
   if (isProgramListChunk) providedAspects.push('program_list', 'degrees');
   if (isStudyModeChunk) providedAspects.push('class_schedule', 'working_students', 'evening_class');
   if (isDegreeChunk) providedAspects.push('degree_award');
@@ -1378,21 +1406,60 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
         retrievalPlan.intent === 'PROGRAM_PROCEDURE' ||
         retrievalPlan.intent === 'RPL_INQUIRY' ||
         (requiredAspects.includes('procedure') && !wantsFee && retrievalPlan.intent !== 'GENERAL_PMB_INQUIRY');
+      const isExplicitRplInquiry = retrievalPlan.intent === 'RPL_INQUIRY' ||
+        /\b(?:rpl|rekognisi)\b/i.test(retrievalPlan.rawQuery || '');
       const isRplChunk = candidate.category === 'RPL' ||
         (candidateFile && /rpl/i.test(candidateFile)) ||
         /\b(?:rpl|rekognisi\s+pembelajaran\s+lampau|asesmen\s+portofolio|kriteria\s+portofolio|perolehan\s+kredit|transfer\s+kredit)\b/i.test(text);
-      const hasRegistrationProcedureOrPathway = isPmbGeneralChunk || isRplChunk ||
-        /\b(?:alur\s+pendaftaran|prosedur\s+pendaftaran|cara\s+(?:daftar|mendaftar|pendaftaran)|tahapan\s+pendaftaran|syarat\s+(?:masuk|pendaftaran)|persyaratan\s+(?:masuk|pendaftaran)|jalur\s+pendaftaran|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
 
       if (isSpecificProcedureInquiry) {
-        const isPureFeeWithoutProcedure = isFeeChunk && !isPmbGeneralChunk && !isRplChunk &&
-          !/\b(?:alur\s+pendaftaran|prosedur\s+pendaftaran|cara\s+(?:daftar|mendaftar)|syarat\s+pendaftaran|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
-        if (isPureFeeWithoutProcedure || (!hasRegistrationProcedureOrPathway && !satisfiesForeign && !isRplChunk)) {
+        const isNonPmbOutreachDoc = /gosetoschool|go\s*to\s*school|calon\s+pengajar|asisten\s+pengajar/i.test(candidateFile + ' ' + text);
+        const isProspectiveStudentAdmission = /\b(?:pmb|mahasiswa\s+baru|calon\s+mahasiswa|pendaftaran\s+mahasiswa|kuliah\s+di\s+itb\s+stikom|daftar\s+kuliah|program\s+sarjana|diploma|double\s*degree|dual\s*degree)\b/i.test(text + ' ' + candidateFile);
+
+        // Substantive procedure requires actual sequential steps or procedural instructions,
+        // not informational referrals or mere announcements (e.g. "panduan pendaftaran tersedia di...", "penerimaan telah dibuka", "silakan menghubungi...")
+        const isInformationalReferralOnly = /^(?:informasi\s+)?(?:panduan|prosedur|alur|tata\s+cara)\s+pendaftaran\s+(?:dapat\s+diperoleh|tersedia|bisa\s+dilihat)\b/i.test(text.trim()) ||
+          /\b(?:untuk\s+informasi\s+pendaftaran\s+silakan\s+menghubungi)\b/i.test(text) ||
+          /^(?:penerimaan\s+mahasiswa\s+baru|pmb).*(?:telah|sudah)\s+dibuka\.?$/i.test(text.trim());
+
+        const hasNumberedOrSequentialSteps = /\b(?:1\.\s+|langkah\s*(?:1|pertama)|tahap\s*(?:1|pertama)|step\s*1)\b/i.test(text) &&
+          /\b(?:isi\s+formulir|akses|buka|login|unggah|upload|bayar|verifikasi|registrasi|kirim)\b/i.test(text);
+
+        const hasSubstantiveProcedure = !isNonPmbOutreachDoc && isProspectiveStudentAdmission && !isInformationalReferralOnly && (
+          hasNumberedOrSequentialSteps ||
+          (/\b(?:alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+pendaftaran|langkah\s+pendaftaran|tata\s+cara\s+pendaftaran)\b/i.test(text) &&
+           /\b(?:1\.|pertama|kemudian|selanjutnya|setelah\s+itu|tahap\s+2|langkah\s+2|2\.)\b/i.test(text) &&
+           /\b(?:isi|akses|buka|upload|unggah|bayar|biaya|formulir)\b/i.test(text))
+        );
+
+        // Strict guard: Fee table documents/chunks (even if mentioning RPL or registration fees) must never answer regular admission procedure
+        const isFeeTableDoc = (candidateFile && /rincian\s+biaya|biaya\s+kuliah|tabel\s+biaya/i.test(candidateFile)) ||
+          candidate.docCategory === 'BIAYA' ||
+          candidate.category === 'BIAYA' ||
+          (isFeeChunk && !hasSubstantiveProcedure);
+
+        // Even for RPL procedure inquiries, pure fee tables must NOT satisfy procedure
+        if (isFeeTableDoc && !hasSubstantiveProcedure) {
           return {
             accepted: false,
             disposition: 'REJECT_ASPECT_MISMATCH',
-            reason: isPureFeeWithoutProcedure
-              ? 'evidence_is_fee_table_not_registration_procedure'
+            reason: isExplicitRplInquiry
+              ? 'evidence_is_fee_table_not_rpl_procedure'
+              : 'evidence_is_fee_table_not_registration_procedure'
+          };
+        }
+
+        const satisfiesRplProcedure = isExplicitRplInquiry && isRplChunk && !isFeeTableDoc && (
+          hasSubstantiveProcedure ||
+          /\b(?:formulir\s+f01|asesmen\s+portofolio|penilaian\s+portofolio|uji\s+kompetensi|konversi\s+sks|pengakuan\s+kredit|tahapan\s+rpl|prosedur\s+rpl)\b/i.test(text)
+        );
+
+        if (!hasSubstantiveProcedure && !satisfiesForeign && !satisfiesRplProcedure) {
+          return {
+            accepted: false,
+            disposition: 'REJECT_ASPECT_MISMATCH',
+            reason: isFeeTableDoc
+              ? (isExplicitRplInquiry ? 'evidence_is_fee_table_not_rpl_procedure' : 'evidence_is_fee_table_not_registration_procedure')
               : 'evidence_does_not_contain_registration_procedure_aspect'
           };
         }
@@ -1835,31 +1902,39 @@ function detectSourceConflictsAndProvenance(accepted = [], retrievalPlan = {}) {
 
     // 3. Component-bound fee claims (fee:dpp vs fee:spp) bound to (entity, attribute, period, provenance)
     // Different components (e.g., DPP Rp 12.000.000 vs SPP Rp 5.100.000) are distinct attributes and NOT conflicts.
+    // Also wave discounts (e.g. 3jt on Gelombang Khusus) or RPL credit transfer brackets are not base DPP tariff conflicts.
     const dppClaims = [];
     const sppClaims = [];
     for (const c of chunks) {
       const txt = c.text || c.chunk || '';
-      const dppMatch = txt.match(/\b(?:dana\s+pendidikan\s+pokok|\bdpp\b)(?:\s*\(dpp\))?\s*(?:[:=-]|sebesar|adalah)?\s*rp\.?\s*([\d.]{5,15})/i);
-      if (dppMatch) {
-        dppClaims.push({
-          value: `Rp ${dppMatch[1].replace(/\.+$/, '')}`,
-          chunk: c,
-          source: c.sourceDocument,
-          tier: c.provenance?.authorityTier || 2
-        });
-      }
-      const sppMatch = txt.match(/\b(?:biaya\s+pendidikan\s+per\s+semester|biaya\s+per\s+semester|\bspp\b)(?:\s*\(spp\))?\s*(?:[:=-]|sebesar|adalah)?\s*rp\.?\s*([\d.]{5,15})/i);
-      if (sppMatch) {
-        sppClaims.push({
-          value: `Rp ${sppMatch[1].replace(/\.+$/, '')}`,
-          chunk: c,
-          source: c.sourceDocument,
-          tier: c.provenance?.authorityTier || 2
-        });
+      const lines = txt.split('\n');
+      for (const line of lines) {
+        if (/\b(?:beasiswa|potongan|diskon|keringanan|bantuan|alumni|pengakuan|rpl|antara|\bs\/?d\b|gelombang)\b/i.test(line)) {
+          continue;
+        }
+        const dppMatch = line.match(/\b(?:dana\s+pendidikan\s+pokok|\bdpp\b)(?:\s*\(dpp\))?\s*(?:[:=-]|sebesar|adalah)?\s*rp\.?\s*([\d.]{5,15})/i);
+        if (dppMatch) {
+          dppClaims.push({
+            value: `Rp ${dppMatch[1].replace(/\.+$/, '')}`,
+            chunk: c,
+            source: c.sourceDocument,
+            tier: c.provenance?.authorityTier || 2
+          });
+        }
+        const sppMatch = line.match(/\b(?:biaya\s+pendidikan\s+per\s+semester|biaya\s+per\s+semester|\bspp\b)(?:\s*\(spp\))?\s*(?:[:=-]|sebesar|adalah)?\s*rp\.?\s*([\d.]{5,15})/i);
+        if (sppMatch) {
+          sppClaims.push({
+            value: `Rp ${sppMatch[1].replace(/\.+$/, '')}`,
+            chunk: c,
+            source: c.sourceDocument,
+            tier: c.provenance?.authorityTier || 2
+          });
+        }
       }
     }
 
     for (const [compAttr, compClaims] of [['fee:dpp', dppClaims], ['fee:spp', sppClaims]]) {
+      if (new Set(compClaims.map(f => f.source)).size <= 1) continue;
       const distinctVals = Array.from(new Set(compClaims.map(f => f.value)));
       if (distinctVals.length > 1) {
         conflicts.push({

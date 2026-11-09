@@ -217,8 +217,17 @@ function buildRetrievalPlan(semanticFrame) {
     : (entities || []).map(e => e.canonical || e.name || String(e));
 
   // If the query is an institutional inquiry (e.g. scholarship, PMB, fees) and the only target entity
-  // is 'Kampus ITB STIKOM Bali', do not constrain targetEntities to a single physical campus location.
+  // is a campus location (e.g. 'Kampus ITB STIKOM Bali', 'Kampus Jimbaran', 'Kampus Abiansemal'),
+  // do not constrain targetEntities to a single physical campus location for general PMB.
+  const hasBranchInQuery = /\b(?:jimbaran|abiansemal|renon)\b/i.test(semanticFrame.rawQuery || normalizedQuery || '');
   if (
+    targetEntities.length === 1 &&
+    ['Kampus ITB STIKOM Bali', 'Kampus Jimbaran', 'Kampus Abiansemal', 'Kampus Denpasar (Renon)'].includes(targetEntities[0]) &&
+    (domain === 'PMB' && (intent === 'GENERAL_PMB_INQUIRY' || intent === 'ADMISSION_PROCEDURE')) &&
+    !hasBranchInQuery
+  ) {
+    targetEntities = [];
+  } else if (
     targetEntities.length === 1 &&
     targetEntities[0] === 'Kampus ITB STIKOM Bali' &&
     domain !== 'FACILITIES' &&
@@ -649,6 +658,8 @@ function buildRetrievalPlan(semanticFrame) {
     queryVariants.push('informasi pendaftaran mahasiswa baru PMB jalur reguler kelas karyawan');
     queryVariants.push('syarat pendaftaran dan prosedur alur PMB STIKOM Bali');
     queryVariants.push('alur pendaftaran mahasiswa baru pmb.stikom-bali.ac.id');
+    queryVariants.push('informasi penerimaan mahasiswa baru PMB ITB STIKOM Bali');
+    queryVariants.push('tata cara pendaftaran mahasiswa baru PMB online');
   }
 
   // PMB Schedule & Wave Calendar query variants

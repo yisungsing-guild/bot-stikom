@@ -181,7 +181,7 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       const entityPart = entityDesc ? ` untuk ${entityDesc}` : '';
       const rawQ = String(semanticFrame.rawQuery || '').toLowerCase();
 
-      if (/\b(?:kode\s+verifikasi|otp|salah\s+mengisi\s+data|ubah\s+pilihan|lupa\s+nomor\s+handphone|belum\s+mendapat\s+konfirmasi|error\s+saat\s+dikirim|formulir.*error|setelah\s+isi\s+formulir|kartu\s+peserta)\b/i.test(rawQ)) {
+      if (/\b(?:kode\s+verifikasi|otp|salah\s+(?:mengisi|isi)(?:\s+data|\s+formulir)?|kesalahan\s+(?:pengisian|data|formulir)|perbaikan\s+data|edit\s+data|ubah\s+(?:data|pilihan)|lupa\s+nomor(?:\s+handphone|\s+hp)?|belum\s+mendapat\s+konfirmasi|error\s+saat\s+dikirim|formulir.*error|setelah\s+isi\s+formulir|kartu\s+peserta|kendala\s+(?:teknis|pendaftaran))\b/i.test(rawQ)) {
         return {
           status: ANSWERABILITY_STATUS.UNKNOWN,
           reason: 'corpus_gap_pmb_technical_procedure',
@@ -193,7 +193,7 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         };
       }
 
-      if (/\b(?:ktp|kk|kartu\s+keluarga)\b/i.test(rawQ)) {
+      if (/\b(?:ktp|kk|kartu\s+keluarga|unggah\s+(?:berkas|dokumen|ktp|kk)|upload\s+(?:berkas|dokumen|ktp|kk)|verifikasi\s+berkas)\b/i.test(rawQ)) {
         return {
           status: ANSWERABILITY_STATUS.UNKNOWN,
           reason: 'corpus_gap_pmb_document_requirements',
@@ -205,7 +205,7 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         };
       }
 
-      if (/\b(?:tes\s+masuk|ujian\s+seleksi|seleksi\s+tambahan|tes\s+tulis)\b/i.test(rawQ)) {
+      if (/\b(?:tes\s+masuk|ujian\s+(?:masuk|seleksi)|seleksi\s+(?:tambahan|masuk)|tes\s+tulis|ujian\s+tulis)\b/i.test(rawQ)) {
         return {
           status: ANSWERABILITY_STATUS.UNKNOWN,
           reason: 'corpus_gap_pmb_entrance_test',
@@ -373,18 +373,24 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         };
       }
 
-      const isGeneralRegistrationProcedure = (
-        semanticFrame.intent === 'ADMISSION_PROCEDURE' ||
-        semanticFrame.intent === 'GENERAL_PMB_INQUIRY' ||
-        /\b(?:cara\s+daftar|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+daftar|(?:mau|mw|pengen|ingin|bisa)\s+daftar|mulai\s+dari\s+mana)\b/i.test(rawQ)
-      ) && !/\b(?:tes|ujian|otp|verifikasi|salah\s+mengisi|paket\s+c|ktp|kk)\b/i.test(rawQ);
+      const isTechnicalOrRequirementPmbInquiry = /\b(?:kode\s+verifikasi|otp|salah\s+(?:mengisi|isi)|kesalahan\s+(?:pengisian|data|formulir)|perbaikan\s+data|edit\s+data|ubah\s+(?:data|pilihan)|ktp|kk|kartu\s+keluarga|unggah|upload|verifikasi\s+berkas|tes\s+masuk|ujian\s+(?:masuk|seleksi)|seleksi\s+(?:masuk|tambahan)|tes\s+tulis|ujian\s+tulis|paket\s+c)\b/i.test(rawQ) ||
+        ['TECHNICAL_SUPPORT', 'ADMISSION_REQUIREMENTS', 'ENTRANCE_EXAM_INQUIRY', 'DOCUMENT_VERIFICATION_INQUIRY'].includes(semanticFrame.intent);
 
-      if (isGeneralRegistrationProcedure) {
+      const isProcedureQuery = !isTechnicalOrRequirementPmbInquiry && (
+        semanticFrame.intent === 'ADMISSION_PROCEDURE' ||
+        (semanticFrame.aspects && semanticFrame.aspects.includes('procedure')) ||
+        /\b(?:cara\s+daftar|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+daftar|(?:mau|mw|pengen|ingin|bisa)\s+daftar|mulai\s+dari\s+mana)\b/i.test(rawQ)
+      );
+
+      if (isProcedureQuery) {
         return {
-          status: ANSWERABILITY_STATUS.ANSWERABLE,
-          reason: 'general_pmb_registration_procedure_supported',
-          coveredAspects: ['procedure', 'registration_portal', 'admission_overview'],
-          missingAspects: []
+          status: ANSWERABILITY_STATUS.UNKNOWN,
+          reason: 'corpus_gap_admission_procedure',
+          coveredAspects: [],
+          missingAspects: ['procedure', 'registration_steps'],
+          guidance: isEn
+            ? `Official step-by-step registration procedures${entityPart} are currently not available in the campus documents in our knowledge base (SOURCE_GAP).`
+            : `Tahapan prosedur pendaftaran secara rinci${entityPart} saat ini belum tersedia dalam dokumen resmi pada basis pengetahuan kami (SOURCE_GAP).`
         };
       }
 
@@ -557,7 +563,7 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         allProvidedAspects.add('documents');
         allProvidedAspects.add('portfolio');
       }
-      if (/\b(?:alur\s+prosedur|tahapan|pendaftaran\s+online|pmb\.stikom-bali\.ac\.id)\b/i.test(text)) {
+      if (/\b(?:alur\s+prosedur|tahapan\s+(?:daftar|pendaftaran)|alur\s+pendaftaran|prosedur\s+pendaftaran|tata\s+cara\s+(?:daftar|mendaftar|pendaftaran)|langkah(?:-langkah)?\s+(?:daftar|pendaftaran))\b/i.test(text)) {
         allProvidedAspects.add('admission_stages');
         allProvidedAspects.add('procedure');
         allProvidedAspects.add('registration');

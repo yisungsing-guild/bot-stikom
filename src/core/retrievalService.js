@@ -296,9 +296,36 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
   const targetEntities = (retrievalPlan.targetEntities || []).map(e => String(e).toLowerCase());
   const excludedEntities = (retrievalPlan.excludedConflictingEntities || []).map(e => String(e).toLowerCase());
 
+  // UKM Intent Classification (Stage 3B.1 - ID 330)
+  const isUkmDomain = retrievalPlan?.domain === 'ORGANIZATION_UKM' ||
+    (retrievalPlan?.requiredAspects && retrievalPlan.requiredAspects.some(a => ['ukm', 'student_organization', 'activities', 'arts_culture', 'sports'].includes(a))) ||
+    /\b(?:ukm|ormawa|organisasi\s+kemahasiswaan|himaprodi|pembina\s+ormawa|sk\s+pembina)\b/i.test(query);
+
+  const isAdvisorOrLegalityQuery = isUkmDomain && (
+    retrievalPlan?.intent === 'ORGANIZATION_ADVISOR' ||
+    retrievalPlan?.intent === 'ORGANIZATION_LEGALITY' ||
+    (retrievalPlan?.requiredAspects && retrievalPlan.requiredAspects.some(a => ['advisor', 'pembina', 'legality', 'sk'].includes(a))) ||
+    /\b(?:dosen\s+pembina|pembina|nama\s+pembina|siapa\s+pembina|sk\s+pembina|surat\s+keputusan|legalitas|struktur\s+pembina|dasar\s+hukum|sk\s+rektor)\b/i.test(query)
+  );
+
+  const isUkmProfileOrActivityQuery = isUkmDomain && !isAdvisorOrLegalityQuery && (
+    retrievalPlan?.intent === 'ORGANIZATION_INQUIRY' ||
+    retrievalPlan?.intent === 'ORGANIZATION_PROFILE' ||
+    retrievalPlan?.intent === 'ORGANIZATION_ACTIVITIES' ||
+    (retrievalPlan?.requiredAspects && retrievalPlan.requiredAspects.some(a => ['activities', 'student_organization', 'arts_culture', 'sports'].includes(a))) ||
+    /\b(?:profil|kegiatan|aktivitas|fokus|latihan|tersedia|apakah\s+(?:ada|tersedia)|ada\s+ukm|seni|musik|vokal|suara|tari|olahraga|futsal|basket|teater|jurnalistik|fotografi)\b/i.test(query)
+  );
+
+  const isGeneralUkmListQuery = isUkmDomain && !isAdvisorOrLegalityQuery && !isUkmProfileOrActivityQuery && (
+    retrievalPlan?.intent === 'ORGANIZATION_CATEGORY_LIST' ||
+    retrievalPlan?.intent === 'ORGANIZATION_LIST' ||
+    retrievalPlan?.intent === 'DISCOVER_LIST' ||
+    /\b(?:kategori\s+ukm|daftar\s+ukm|apa\s+saja\s+ukm|semua\s+ukm|rekomendasi\s+ukm)\b/i.test(query)
+  );
+
   const scoredResults = bm25Results.map(r => {
     let score = r.score;
-    if (score <= 0 || targetEntities.length === 0) return r;
+    if (score <= 0) return r;
 
     const doc = corpus[r.index];
     const f = doc.sourceFile || doc.filename || '';
@@ -309,24 +336,26 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
     const normalizedRawText = rawText.replace(/\s+/g, ' ');
     const isMiD3Chunk = (/manajemen\s+informatika|men\s+informatika/i.test(normalizedRawText)) && /\(d3\)|diploma/i.test(normalizedRawText);
 
-    const matchesTarget = targetEntities.some(te => {
-      const base = te.replace(/^(s1|d3|s2)\s+/i, '');
-      return sectionProg.includes(te) ||
-        sectionProg.includes(base) ||
-        ctxEntities.some(ce => ce.includes(te) || ce.includes(base)) ||
-        rawText.includes(te) ||
-        (base.length >= 4 && rawText.includes(base));
-    });
+    if (targetEntities.length > 0) {
+      const matchesTarget = targetEntities.some(te => {
+        const base = te.replace(/^(s1|d3|s2)\s+/i, '');
+        return sectionProg.includes(te) ||
+          sectionProg.includes(base) ||
+          ctxEntities.some(ce => ce.includes(te) || ce.includes(base)) ||
+          rawText.includes(te) ||
+          (base.length >= 4 && rawText.includes(base));
+      });
 
-    const matchesExcluded = excludedEntities.some(ex => {
-      const base = ex.replace(/^(s1|d3|s2)\s+/i, '');
-      return (sectionProg.includes(ex) || sectionProg.includes(base)) && !matchesTarget;
-    });
+      const matchesExcluded = excludedEntities.some(ex => {
+        const base = ex.replace(/^(s1|d3|s2)\s+/i, '');
+        return (sectionProg.includes(ex) || sectionProg.includes(base)) && !matchesTarget;
+      });
 
-    if (matchesTarget) {
-      score *= 1.8;
-    } else if (matchesExcluded) {
-      score *= 0.5;
+      if (matchesTarget) {
+        score *= 1.8;
+      } else if (matchesExcluded) {
+        score *= 0.5;
+      }
     }
 
     // Degree-scoping alignment for Fee queries (S2 vs S1/D3)
@@ -537,16 +566,75 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       score *= 0.1;
     }
 
-    // SK Pembina Ormawa prioritization for general organization and category list inquiries
-    const isUkmCategoryList = (
-      retrievalPlan?.intent === 'ORGANIZATION_CATEGORY_LIST' ||
-      retrievalPlan?.intent === 'ORGANIZATION_LIST' ||
-      retrievalPlan?.intent === 'DISCOVER_LIST' ||
-      (retrievalPlan?.domain === 'ORGANIZATION_UKM' && (!retrievalPlan.targetEntities || retrievalPlan.targetEntities.length === 0)) ||
-      /\b(?:kategori|bidang\s+(?:seni|olahraga|teknologi|kerohanian)|apa\s+saja\s+ukm|daftar\s+ukm|ormawa\s+apa\s+saja|rekomendasi\s+ukm)\b/i.test(query)
-    );
-    if (isUkmCategoryList && /sk\s+pembina\s+ormawa/i.test(f)) {
-      score *= 2.5;
+    // Negative invariant: student exchange, thesis, or enrolled calendar should not dominate general domestic PMB inquiries
+    const isPmbInquiry = retrievalPlan.domain === 'PMB' ||
+      retrievalPlan.intent === 'GENERAL_PMB_INQUIRY' ||
+      retrievalPlan.intent === 'ADMISSION_PROCEDURE' ||
+      retrievalPlan.intent === 'ADMISSION_REQUIREMENTS' ||
+      retrievalPlan.intent === 'ADMISSION_SCHEDULE' ||
+      (retrievalPlan.requiredAspects && retrievalPlan.requiredAspects.some(a => ['procedure', 'admission_overview', 'admission_pathways', 'requirements'].includes(a)));
+
+    if (isPmbInquiry) {
+      const isStudentExchangeChunk = /student\s+exchange/i.test(f) || /\b(?:student\s+exchange|gccp|global\s+cross\s+cultural)\b/i.test(rawText);
+      const isExchangeQuery = /\b(?:student\s+exchange|pertukaran\s+mahasiswa|exchange|gccp|summer\s+program)\b/i.test(query);
+      if (isStudentExchangeChunk && !isExchangeQuery) {
+        score *= 0.1;
+      }
+
+      const isThesisOrYudisiumChunk = /(?:pedoman\s+ta|yudisium|wisuda)/i.test(f) || /\b(?:tugas\s+akhir|skripsi|yudisium|wisuda|ujian\s+proposal)\b/i.test(rawText);
+      const isThesisOrGradQuery = /\b(?:tugas\s+akhir|skripsi|pedoman\s+ta|yudisium|wisuda)\b/i.test(query);
+      if (isThesisOrYudisiumChunk && !isThesisOrGradQuery) {
+        score *= 0.1;
+      }
+
+      const isEnrolledAcademicCalendar = (/kalender\s+akademik/i.test(f) && !/kalender\s+pendaftaran/i.test(f)) || /\b(?:pendaftaran\s+remedial|remedial\s+smt|minggu\s+tenang|krs\s+online)\b/i.test(rawText);
+      if (isEnrolledAcademicCalendar) {
+        score *= 0.1;
+      }
+
+      const isS2Target = retrievalPlan.academicLevel === 'S2' || /\b(?:s2|magister|pascasarjana)\b/i.test(query);
+      if (!isS2Target && (/pascasarjana/i.test(f) || /pascasarjana\b/i.test(rawText))) {
+        score *= 0.2;
+      }
+
+      const isPmbProcedureOrOverviewQuery = (
+        retrievalPlan.intent === 'ADMISSION_PROCEDURE' ||
+        retrievalPlan.intent === 'GENERAL_PMB_INQUIRY' ||
+        retrievalPlan.intent === 'PROGRAM_PROCEDURE' ||
+        (retrievalPlan.requiredAspects && retrievalPlan.requiredAspects.some(a => ['procedure', 'admission_overview', 'requirements'].includes(a)))
+      );
+      if (isPmbProcedureOrOverviewQuery) {
+        if (/\b(?:informasi\s+penerimaan\s+mahasiswa\s+baru|penerimaan\s+mahasiswa\s+baru\s+\(pmb\))\b/i.test(rawText)) {
+          score *= 2.5;
+        }
+      }
+    }
+
+    // UKM Intent-Aware Document Ranking (Stage 3B.1 - ID 330)
+    if (isUkmDomain) {
+      const isAdministrativeSkDoc = /sk\s+pembina/i.test(f) || /surat\s+keputusan\s+rektor.*pembina/i.test(rawText);
+      const isUkmProfileDoc = (/profil.*ukm|profile.*ormawa|profiling\s+ukm|buku\s+ormawa|profile\s+organisasi|profil_ukm|company\s+profile/i.test(f) ||
+        /buku\s+ormawa/i.test(f)) && !isAdministrativeSkDoc;
+
+      if (isAdvisorOrLegalityQuery) {
+        if (isAdministrativeSkDoc) {
+          score *= 3.0;
+        } else if (isUkmProfileDoc) {
+          score *= 0.5;
+        }
+      } else if (isUkmProfileOrActivityQuery) {
+        if (isUkmProfileDoc) {
+          score *= 2.0;
+        } else if (isAdministrativeSkDoc) {
+          score *= 0.35;
+        }
+      } else if (isGeneralUkmListQuery) {
+        if (isAdministrativeSkDoc) {
+          score *= 1.2;
+        } else if (isUkmProfileDoc) {
+          score *= 1.2;
+        }
+      }
     }
 
     return { index: r.index, score };
@@ -563,13 +651,7 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
   const isOverviewQuery = !/\b(?:semester\s+(?:[1-8]|i{1,3}|iv|v|vi|vii|viii))\b/i.test(query) &&
     /\b(?:mata\s+kuliah|kurikulum|bidang\s+keahlian|kompetensi|fokus|profil|peluang\s+karir|prospek\s+kerja|double\s+degree|dual\s+degree|fasilitas|gelar|biaya|spp)\b/i.test(query);
 
-  const isUkmCategoryListQuery = (
-    retrievalPlan?.intent === 'ORGANIZATION_CATEGORY_LIST' ||
-    retrievalPlan?.intent === 'ORGANIZATION_LIST' ||
-    retrievalPlan?.intent === 'DISCOVER_LIST' ||
-    (retrievalPlan?.domain === 'ORGANIZATION_UKM' && (!retrievalPlan.targetEntities || retrievalPlan.targetEntities.length === 0)) ||
-    /\b(?:kategori|bidang\s+(?:seni|olahraga|teknologi|kerohanian)|apa\s+saja\s+ukm|daftar\s+ukm|ormawa\s+apa\s+saja|rekomendasi\s+ukm)\b/i.test(query)
-  );
+  const isUkmCategoryListQuery = isGeneralUkmListQuery || (!isAdvisorOrLegalityQuery && /\b(?:kategori|bidang\s+(?:seni|olahraga|teknologi|kerohanian)|apa\s+saja\s+ukm|daftar\s+ukm|ormawa\s+apa\s+saja)\b/i.test(query));
 
   let bm25Sorted = [];
   const syllabusCountPerProgram = new Map();
@@ -591,6 +673,11 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
         const c = ukmDocCountMap.get(src) || 0;
         if (c >= 1) continue; // Cap to 1 chunk per individual UKM profile so candidate pool is diverse
         ukmDocCountMap.set(src, c + 1);
+      }
+      if (/sk\s+pembina/i.test(src)) {
+        const c = ukmDocCountMap.get('sk_pembina') || 0;
+        if (c >= 2) continue; // Cap to 2 chunks for SK Pembina during category list queries
+        ukmDocCountMap.set('sk_pembina', c + 1);
       }
     }
     bm25Sorted.push(item);

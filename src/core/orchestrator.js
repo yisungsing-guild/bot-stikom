@@ -1080,7 +1080,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
 
     const isExplicitReset = Boolean(
       primaryFrame.explicitReset ||
-      /\b(?:lupakan(?:\s+pertanyaan)?(?:\s+yang)?\s+(?:tadi|sebelumnya)|abaikan(?:\s+pertanyaan)?(?:\s+yang)?\s+(?:tadi|sebelumnya)|ganti\s+topik|mulai\s+dari\s+awal)\b/i.test(rawQuery)
+      /\b(?:lupakan(?:\s+(?:pertanyaan|konteks|topik))?(?:\s+yang)?\s+(?:tadi|sebelumnya)|abaikan(?:\s+(?:pertanyaan|konteks|topik))?(?:\s+yang)?\s+(?:tadi|sebelumnya)|ganti\s+topik|mulai\s+dari\s+awal)\b/i.test(rawQuery)
     );
     const isGeneralPmbOrCatalog = ['CURRENT_ENROLLMENT_STATUS', 'ADMISSION_SCHEDULE', 'GENERAL_PMB_INQUIRY', 'AVAILABLE_PROGRAMS_LIST'].includes(primaryFrame.intent) || primaryFrame.topicContinuity === 'NEW_TOPIC' || isExplicitReset;
 

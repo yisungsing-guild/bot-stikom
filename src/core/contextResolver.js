@@ -94,6 +94,18 @@ function extractOrderedSessionEntities(sessionData = {}) {
  * Resolves ordinal references ("yang pertama", "yang kedua", "yang ketiga", "yang terakhir", "keduanya")
  * against the ordered entities active in the session.
  */
+function hasOrdinalReferenceMarker(rawQuery) {
+  if (!rawQuery || typeof rawQuery !== 'string') return false;
+  const q = rawQuery.trim().toLowerCase();
+  return /\b(?:keduanya|dua-?duanya|kedua\s+(?:prodi|jurusan|program)(?:\s+itu|\s+tersebut)?|semuanya)\b/i.test(q) ||
+    /\b(?:yang\s+(?:pertama|ke-?1|kesatu|awal)|(?:prodi|jurusan|program|pilihan|opsi)\s+(?:yang\s+)?(?:pertama|ke-?1|kesatu))\b/i.test(q) ||
+    /\b(?:yang\s+(?:kedua|ke-?2)|(?:prodi|jurusan|program|pilihan|opsi)\s+(?:yang\s+)?(?:kedua|ke-?2))\b/i.test(q) ||
+    /\b(?:yang\s+(?:ketiga|ke-?3)|(?:prodi|jurusan|program|pilihan|opsi)\s+(?:yang\s+)?(?:ketiga|ke-?3))\b/i.test(q) ||
+    /\b(?:yang\s+(?:terakhir|paling\s+akhir)|(?:prodi|jurusan|program|pilihan|opsi)\s+(?:yang\s+)?terakhir)\b/i.test(q) ||
+    (/\b(?:(?:program|prodi|jurusan|pilihan|opsi)\s+)?(?:satu(?:nya)?(?:\s+lagi)?|yang\s+satu(?:nya)?(?:\s+lagi)?|lain(?:nya)?)\b/i.test(q) &&
+      /\b(?:kalau|kalo|bagaimana|gimana|sedangkan|untuk|lalu|terus|dan)\b/i.test(q));
+}
+
 function resolveOrdinalReference(rawQuery, sessionData = {}) {
   if (!rawQuery || typeof rawQuery !== 'string') return null;
   const q = rawQuery.trim().toLowerCase();
@@ -103,8 +115,10 @@ function resolveOrdinalReference(rawQuery, sessionData = {}) {
   const isSecond = /\b(?:yang\s+(?:kedua|ke-?2)|(?:prodi|jurusan|program|pilihan|opsi)\s+(?:yang\s+)?(?:kedua|ke-?2))\b/i.test(q);
   const isThird = /\b(?:yang\s+(?:ketiga|ke-?3)|(?:prodi|jurusan|program|pilihan|opsi)\s+(?:yang\s+)?(?:ketiga|ke-?3))\b/i.test(q);
   const isLast = /\b(?:yang\s+(?:terakhir|paling\s+akhir)|(?:prodi|jurusan|program|pilihan|opsi)\s+(?:yang\s+)?terakhir)\b/i.test(q);
+  const isOther = /\b(?:(?:program|prodi|jurusan|pilihan|opsi)\s+)?(?:satu(?:nya)?(?:\s+lagi)?|yang\s+satu(?:nya)?(?:\s+lagi)?|lain(?:nya)?)\b/i.test(q) &&
+    /\b(?:kalau|kalo|bagaimana|gimana|sedangkan|untuk|lalu|terus|dan)\b/i.test(q);
 
-  if (!isBoth && !isFirst && !isSecond && !isThird && !isLast) return null;
+  if (!isBoth && !isFirst && !isSecond && !isThird && !isLast && !isOther) return null;
 
   const ordered = extractOrderedSessionEntities(sessionData);
   if (ordered.length === 0) return null;
@@ -143,6 +157,17 @@ function resolveOrdinalReference(rawQuery, sessionData = {}) {
       ordinalType: 'LAST',
       resolvedEntities: [lastEnt],
       primaryEntity: lastEnt
+    };
+  }
+  if (isOther && ordered.length >= 2) {
+    const activeCanon = sessionData.activeEntity ? (findCanonicalEntity(sessionData.activeEntity)?.canonical || String(sessionData.activeEntity)) : null;
+    const targetEntity = (activeCanon && activeCanon.toLowerCase() === ordered[0].toLowerCase())
+      ? ordered[1]
+      : (activeCanon && activeCanon.toLowerCase() === ordered[1].toLowerCase() ? ordered[0] : ordered[1]);
+    return {
+      ordinalType: 'OTHER',
+      resolvedEntities: [targetEntity],
+      primaryEntity: targetEntity
     };
   }
   return null;
@@ -311,8 +336,8 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
 
   const query = currentQuery.trim().toLowerCase();
 
-  // 0. Explicit Topic / Context Reset Marker (e.g., "Lupakan pertanyaan tadi", "Abaikan pertanyaan sebelumnya", "Ganti topik")
-  const hasExplicitContextReset = /\b(?:lupakan(?:\s+pertanyaan)?(?:\s+yang)?\s+(?:tadi|sebelumnya)|abaikan(?:\s+pertanyaan)?(?:\s+yang)?\s+(?:tadi|sebelumnya)|ganti\s+topik|mulai\s+dari\s+awal|pertanyaan\s+baru)\b/i.test(query);
+  // 0. Explicit Topic / Context Reset Marker (e.g., "Lupakan pertanyaan tadi", "Lupakan konteks sebelumnya", "Ganti topik")
+  const hasExplicitContextReset = /\b(?:lupakan(?:\s+(?:pertanyaan|konteks|topik))?(?:\s+yang)?\s+(?:tadi|sebelumnya)|abaikan(?:\s+(?:pertanyaan|konteks|topik))?(?:\s+yang)?\s+(?:tadi|sebelumnya)|ganti\s+topik|mulai\s+dari\s+awal|pertanyaan\s+baru)\b/i.test(query);
   if (hasExplicitContextReset) {
     return {
       shouldInherit: false,
@@ -323,6 +348,13 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
 
   // If session has no prior state, cannot inherit
   if (!sessionData || (!sessionData.activeDomain && !sessionData.activeEntity && !sessionData.preservedBackgroundEntity && !sessionData.lastAcademicProgramEntity && !sessionData.lastQuery)) {
+    if (hasOrdinalReferenceMarker(currentQuery)) {
+      return {
+        shouldInherit: false,
+        isAmbiguous: true,
+        reason: 'unresolved_ordinal_reference'
+      };
+    }
     return { shouldInherit: false, reason: 'no_session_history' };
   }
 
@@ -339,7 +371,7 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     }
   } catch (_) {}
 
-  // 0b. Ordinal Reference Resolution ("yang pertama", "yang kedua", "yang terakhir", "keduanya")
+  // 0b. Ordinal Reference Resolution ("yang pertama", "yang kedua", "yang terakhir", "keduanya", "program satunya")
   const ordinalResolution = resolveOrdinalReference(currentQuery, sessionData);
   if (ordinalResolution && ordinalResolution.resolvedEntities && ordinalResolution.resolvedEntities.length > 0) {
     return {
@@ -351,6 +383,13 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
       inheritedDomain: sessionData.activeDomain || 'ACADEMIC_PROGRAM',
       inheritedIntent: sessionData.activeIntent || null,
       inheritedAspects: sessionData.activeAspects || sessionData.requestedAspects || []
+    };
+  } else if (hasOrdinalReferenceMarker(currentQuery)) {
+    // Ordinal reference marker detected but antecedent entities are unavailable or ambiguous in session
+    return {
+      shouldInherit: false,
+      isAmbiguous: true,
+      reason: 'unresolved_ordinal_reference'
     };
   }
 
@@ -426,7 +465,7 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
 
   // Wave fee follow-up check (e.g. "Kalau gelombang 2 berapa?", "Kalau gelombang 2C berapa?", "Biaya gelombang 1 berapa?")
   const hasScheduleOrCalendarFocus = /\b(?:kapan|tanggal|jadwal|periode|kalender|buka|dibuka|ditutup|tutup|batas\s+(?:waktu|pendaftaran)|apa\s+saja|daftar\s+gelombang|pembagian\s+gelombang)\b/i.test(query);
-  const hasFeeFocus = /\b(?:biaya|potongan|diskon|total|dpp|spp|bayar|uang\s+kuliah|uang\s+gedung|angsuran|cicilan)\b/i.test(query);
+  const hasFeeFocus = /\b(?:biaya|potongan|diskon|total|dpp|spp|bayar|uang\s+kuliah|uang\s+gedung|biaya\s+gedung|angsuran|cicilan)\b/i.test(query);
   const isWaveFeeFollowup = Boolean(sessionData.activeEntity) && !hasScheduleOrCalendarFocus && (
     (/\b(?:kalau\s+|kalo\s+)?gelombang\s*(?:[1-4]|i{1,4}|[0-9]+[a-z]?|khusus|awal|sisipan)\s*(?:berapa|biaya(?:nya)?|potongan(?:nya)?|diskon(?:nya)?|dpp(?:nya)?|total(?:nya)?)\b/i.test(query)) ||
     (/\bgelombang\s*(?:[1-4]|i{1,4}|[0-9]+[a-z]?|khusus|awal|sisipan)\b/i.test(query) && hasFeeFocus) ||
@@ -440,6 +479,21 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
       reason: 'wave_fee_continuation',
       inheritedDomain: 'TUITION_FEE',
       inheritedEntity: sessionData.activeEntity
+    };
+  }
+
+  // Fee component continuation (e.g. "Kalau uang gedung?", "Berapa uang gedungnya?", "Biaya gedung berapa?")
+  const isUangGedungFollowup = isAcademicActiveEntity && !hasScheduleOrCalendarFocus && (
+    /\b(?:uang\s+gedung|biaya\s+gedung)\b/i.test(query)
+  );
+  if (isUangGedungFollowup) {
+    return {
+      shouldInherit: true,
+      reason: 'fee_continuation',
+      inheritedDomain: 'TUITION_FEE',
+      inheritedIntent: 'TUITION_FEE_INQUIRY',
+      inheritedEntity: sessionData.activeEntity,
+      inheritedAspects: ['fee', 'dpp', 'tuition']
     };
   }
 
@@ -525,7 +579,8 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     isInstitutionalCampusLocationQuery ||
     (/\b(?:ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi(?:\s+mahasiswa)?|ormawa|ekskul|ekstrakurikuler|student\s+clubs?|student\s+organizations?)\b/i.test(query) &&
      !/\b(?:hima\b|himaprodi|himpunan)\b/i.test(query)) ||
-    /\b(?:fasilitas|laboratorium|lab\b|perpustakaan|asrama|gedung|kantin|parkir|parking|lapangan)\b/i.test(query) ||
+    (/\b(?:fasilitas|laboratorium|lab\b|perpustakaan|asrama|gedung|kantin|parkir|parking|lapangan)\b/i.test(query) &&
+     !/\b(?:uang\s+gedung|biaya\s+gedung)\b/i.test(query)) ||
     /\b(?:beasiswa|kip\s*kuliah|kip-?k|bantuan\s+dana|keringanan\s+biaya)\b/i.test(query) ||
     /\b(?:inkubator|inbis|career\s+center|cdc\b|layanan\s+kampus|bimbingan\s+karir)\b/i.test(query);
 
@@ -593,6 +648,7 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
 
   // Guard 1: Mentions a different academic program explicitly -> current turn switches to new program
   // Exception: If the query is a genuine ellipsis (e.g., "Kalau yang S1 Bisnis Digital?", "Bagaimana dengan D3 MI?"),
+  // or an explicit entity correction ("Maaf, maksud saya Sistem Informasi"),
   // it switches the target entity while inheriting the active domain/intent/attribute from the prior turn!
   const explicitProgramMatches = (matchCanonicalEntities(query) || []).filter(m =>
     m.family === 'academic_program' || m.family === 'international_program'
@@ -601,6 +657,55 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   const mentionsDifferentProgram = explicitProgramMatches.some(m =>
     m.canonical?.toLowerCase() !== activeCanon
   );
+
+  // Explicit entity correction check (e.g. "Maaf, maksud saya Sistem Informasi", "Maksud saya Kampus Jimbaran")
+  const isCorrection = /^(?:maaf|sorry|bukan|salah|ralat|koreksi|eh|keliru)(?:[\s,]+(?:maaf|sorry|bukan|salah|ralat|koreksi|eh|keliru))*[\s,]+(?:maksud(?:nya|ku|saya)?|tapi|melainkan|yang\s+benar|maksud(?:nya|ku|saya)?\s+(?:adalah|bukan|tapi))?\s+(.+)$/i.test(query) ||
+    /^(?:maksud(?:nya|ku|saya)?|yang\s+(?:saya\s+)?maksud|ralat|koreksi)(?:\s+(?:adalah|itu|bukan))?\s+(.+)$/i.test(query);
+
+  if (isCorrection) {
+    if (explicitProgramMatches.length > 0) {
+      const withoutCorrectionLead = query
+        .replace(/^(?:maaf|sorry|bukan|salah|ralat|koreksi|eh|keliru|maksud(?:nya|ku|saya)?|yang\s+(?:saya\s+)?maksud|adalah|tapi|melainkan|prodi|jurusan|program\s+studi)+/gi, '')
+        .trim();
+      const hasNewSubstantiveTopic = /\b(?:syarat|persyaratan|kurikulum|mata\s*kuliah|matkul|lokasi|alamat|prospek|peluang\s*kerja|akreditasi|fasilitas|pendaftaran|pmb|biaya|spp|dpp|uang\s+kuliah|tarif|cicil|angsur|uang\s+gedung)\b/i.test(withoutCorrectionLead);
+
+      if (!hasNewSubstantiveTopic && (sessionData.activeDomain || sessionData.activeIntent)) {
+        return {
+          shouldInherit: true,
+          isEntityCorrection: true,
+          reason: 'explicit_entity_correction',
+          inheritedEntity: explicitProgramMatches[0].canonical,
+          inheritedDomain: sessionData.activeDomain || 'ACADEMIC_PROGRAM',
+          inheritedIntent: sessionData.activeIntent || 'PROGRAM_OVERVIEW',
+          inheritedAspects: sessionData.requestedAttributes || sessionData.activeAspects || [],
+          replacedEntity: sessionData.activeEntity
+        };
+      }
+    }
+
+    const explicitCampusMatches = (matchCanonicalEntities(query) || []).filter(m =>
+      m.family === 'campus_location' || m.type === 'campus'
+    );
+    if (explicitCampusMatches.length > 0 && isCampusLocationActiveEntity) {
+      const withoutCorrectionLead = query
+        .replace(/^(?:maaf|sorry|bukan|salah|ralat|koreksi|eh|keliru|maksud(?:nya|ku|saya)?|yang\s+(?:saya\s+)?maksud|adalah|tapi|melainkan|kampus|cabang)+/gi, '')
+        .trim();
+      const hasNewSubstantiveTopic = /\b(?:syarat|kurikulum|biaya|spp|dpp|pmb|prospek)\b/i.test(withoutCorrectionLead);
+      if (!hasNewSubstantiveTopic) {
+        return {
+          shouldInherit: true,
+          isEntityCorrection: true,
+          reason: 'explicit_entity_correction',
+          inheritedEntity: explicitCampusMatches[0].canonical,
+          inheritedDomain: 'FACILITIES',
+          inheritedIntent: sessionData.activeIntent || 'CAMPUS_LOCATION',
+          inheritedAspects: sessionData.requestedAttributes || sessionData.activeAspects || ['location', 'address'],
+          replacedEntity: sessionData.activeEntity
+        };
+      }
+    }
+  }
+
   if (mentionsDifferentProgram && !isGenuineEllipsis(query)) {
     return {
       shouldInherit: false,
@@ -635,6 +740,33 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   );
 
   if (isCurriculumOrCompetencyInquiry) {
+    const isUmbrellaOrInternational = /\b(?:international\s+(?:dual|double)\s+degree|double\s+degree|dual\s+degree|student\s+exchange|exchange)\b/i.test(sessionData.activeEntity || '');
+    const isGeneralReadiness = /\b(?:harus|perlu|wajib|kudu|bisa|jago|mahir|punya\s+skill|syarat\s+kemampuan)\b/i.test(query) &&
+      /\b(?:coding|koding|ngoding|pemrograman|programming|matematika|hitung-?hitungan|it\b|komputer)\b/i.test(query);
+
+    if (isUmbrellaOrInternational && isGeneralReadiness) {
+      const fallbackUndergrad = [
+        sessionData.lastAcademicProgramEntity,
+        sessionData.preservedBackgroundEntity,
+        sessionData.previousUndergradEntity
+      ].find(e => e && /^(?:s1|d3)\s+/i.test(e) && !/dual|double/i.test(e));
+
+      if (fallbackUndergrad) {
+        return {
+          shouldInherit: true,
+          reason: 'curriculum_continuation_restored_undergrad',
+          inheritedDomain: 'ACADEMIC_CURRICULUM',
+          inheritedIntent: 'CURRICULUM_INQUIRY',
+          inheritedEntity: fallbackUndergrad
+        };
+      }
+
+      return {
+        shouldInherit: false,
+        reason: 'general_prerequisite_readiness'
+      };
+    }
+
     return {
       shouldInherit: true,
       reason: 'curriculum_continuation',
@@ -669,6 +801,30 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
 
   // Check 2: Explicit Pronoun/Reference (includes enclitic -nya like "studinya" and "the program")
   if (hasExplicitPronounReference(query)) {
+    if (isCampusLocationActiveEntity) {
+      // Branch campus in active context:
+      // General PMB procedure ("Bagaimana cara pendaftarannya?", "Syarat pendaftarannya apa?") is institutional, not branch-specific!
+      const isPmbProcedural = /\b(?:cara\s+(?:daftar|mendaftar|pendaftaran)|alur\s+pendaftaran|prosedur\s+pendaftaran|tahap(?:an)?\s+pendaftaran|pendaftarannya|daftarnya|jadwal\s+pmb|info\s+pmb)\b/i.test(query);
+      if (isPmbProcedural) {
+        return {
+          shouldInherit: true,
+          reason: 'general_pmb_procedural_continuation',
+          inheritedDomain: 'PMB',
+          inheritedIntent: 'GENERAL_PMB_INQUIRY',
+          inheritedEntity: null,
+          inheritedAcademicYear: sessionData.academicYear || null
+        };
+      }
+      // Academic program inquiry when active entity is campus location: do NOT inherit campus location
+      const isAcademicTopic = /\b(?:kurikulum|matkul|mata\s*kuliah|prospek|karir|karier|peluang\s*kerja|gelar|sks|biaya|spp|dpp)\b/i.test(query);
+      if (isAcademicTopic) {
+        return {
+          shouldInherit: false,
+          reason: 'cross_domain_campus_to_academic_isolation'
+        };
+      }
+    }
+
     return {
       shouldInherit: true,
       reason: 'pronoun_reference',
@@ -754,6 +910,7 @@ module.exports = {
   hasExplicitPronounReference,
   isGenuineEllipsis,
   extractOrderedSessionEntities,
+  hasOrdinalReferenceMarker,
   resolveOrdinalReference,
   resolvePartialEntityInContext,
   evaluateContextDependency

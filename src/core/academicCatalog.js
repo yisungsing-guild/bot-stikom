@@ -188,6 +188,51 @@ function normalizeAcademicScope(rawScope) {
 }
 
 /**
+ * Institutional Catalog Fact Provenance Categories (Stage 3B.4.3).
+ * Distinguishes the grounding authority and validity status of academic catalog claims.
+ */
+const CATALOG_FACT_PROVENANCE_STATUS = Object.freeze({
+  VERIFIED_CURRENT: 'VERIFIED_CURRENT',
+  VERIFIED_HISTORICAL: 'VERIFIED_HISTORICAL',
+  UNVERIFIED_CURRENT: 'UNVERIFIED_CURRENT',
+  ROUTING_REFERENCE: 'ROUTING_REFERENCE'
+});
+
+const S1_CATALOG_CLAIM_PROVENANCE = Object.freeze({
+  programs: Object.freeze({
+    status: CATALOG_FACT_PROVENANCE_STATUS.VERIFIED_CURRENT,
+    sourceDocument: 'ISIAN WEBSITE (1).pdf',
+    chunkId: '7b6e77d6',
+    authorityTier: 1,
+    description: 'Daftar 4 program studi Sarjana (S1): Sistem Informasi, Sistem Komputer, Teknologi Informasi, Bisnis Digital.'
+  }),
+  curriculumSksAndDuration: Object.freeze({
+    status: CATALOG_FACT_PROVENANCE_STATUS.VERIFIED_CURRENT,
+    sourceDocument: 'canonical_academic_facts_registry.json',
+    authorityTier: 1,
+    description: 'Beban studi normal 144 SKS dan 8 semester untuk seluruh program S1.'
+  }),
+  eveningOrWorkerClass: Object.freeze({
+    status: CATALOG_FACT_PROVENANCE_STATUS.UNVERIFIED_CURRENT,
+    historicalStatus: CATALOG_FACT_PROVENANCE_STATUS.VERIFIED_HISTORICAL,
+    sourceDocument: 'FORMULIR APLIKAN / PENDAFTARAN (24 April 2026)',
+    authorityTier: 3,
+    activeChunkCount: 0,
+    description: 'Opsi kelas sore/karyawan tercatat pada arsip formulir pendaftaran historis, belum terkonfirmasi aktif pada dokumen resmi TA 2026/2027.'
+  }),
+  pmbPortalUrl: Object.freeze({
+    status: CATALOG_FACT_PROVENANCE_STATUS.ROUTING_REFERENCE,
+    source: 'https://pmb.stikom-bali.ac.id',
+    authorityTier: 1,
+    description: 'Rujukan navigasi resmi pendaftaran mahasiswa baru.'
+  })
+});
+
+function getCatalogClaimProvenance(claimKey) {
+  return S1_CATALOG_CLAIM_PROVENANCE[claimKey] || null;
+}
+
+/**
  * Verified institutional catalog representation with degree metadata.
  * Grounded in official institutional curriculum guides and verified against CANONICAL_ENTITIES.
  */
@@ -341,10 +386,10 @@ function generateGroundedCatalogSummary(canonicalScope, userLang = 'id') {
   if (effectiveScope === 'S1') {
     if (isEn) {
       const items = entries.map((e, idx) => `${idx + 1}. **${e.nameEn}**\n   ${e.focusEn}`).join('\n');
-      return `At ITB STIKOM Bali, there are 4 **Undergraduate (Bachelor/S1)** study programs available:\n\n${items}\n\nAll undergraduate (S1) programs consist of 144 credits (8 semesters). Both regular and evening/worker classes are available. Registration can be completed online at https://pmb.stikom-bali.ac.id. Are you interested in any of these programs?`;
+      return `At ITB STIKOM Bali, there are 4 **Undergraduate (Bachelor/S1)** study programs available:\n\n${items}\n\nAll undergraduate (S1) programs consist of 144 credits (8 semesters). Registration can be completed online at https://pmb.stikom-bali.ac.id. (Note: For evening/worker class availability in the current academic year, please confirm directly with PMB admissions). Are you interested in any of these programs?`;
     }
     const items = entries.map((e, idx) => `${idx + 1}. **${e.canonical}**\n   ${e.focusId}`).join('\n');
-    return `Di ITB STIKOM Bali, ada 4 pilihan **Program Sarjana (S1)** yang bisa Kakak pilih:\n\n${items}\n\nSemua program S1 berbeban studi 144 SKS (8 semester). Tersedia kelas reguler maupun kelas sore/karyawan bagi yang kuliah sambil bekerja. Pendaftaran dapat diakses di https://pmb.stikom-bali.ac.id. Tertarik dengan salah satu prodi di atas?`;
+    return `Di ITB STIKOM Bali, ada 4 pilihan **Program Sarjana (S1)** yang bisa Kakak pilih:\n\n${items}\n\nSemua program S1 berbeban studi 144 SKS (8 semester). Pendaftaran dapat diakses di https://pmb.stikom-bali.ac.id. (Catatan: Mengenai ketersediaan kelas sore/karyawan pada tahun akademik berjalan, silakan konfirmasi langsung ke layanan PMB). Tertarik dengan salah satu prodi di atas?`;
   }
 
   if (effectiveScope === 'D3') {
@@ -691,5 +736,8 @@ module.exports = {
   generateGroundedFacultySummary,
   generateGroundedCampusLocationSummary,
   generateGroundedContactSummary,
-  getCanonicalProgramFacts
+  getCanonicalProgramFacts,
+  CATALOG_FACT_PROVENANCE_STATUS,
+  S1_CATALOG_CLAIM_PROVENANCE,
+  getCatalogClaimProvenance
 };

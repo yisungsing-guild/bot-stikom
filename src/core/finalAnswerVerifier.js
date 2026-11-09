@@ -188,6 +188,140 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   const retrievalPlan = arbitratedEvidence.retrievalPlan || arbitratedEvidence.arbitratedEvidence?.retrievalPlan;
   const excludedEntities = (retrievalPlan && retrievalPlan.excludedConflictingEntities) || [];
 
+  const queryText = (semanticFrame.rawQuery || semanticFrame.normalizedQuery || '').toLowerCase();
+
+  function isEntityUserBackgroundOnly(entStr, qText) {
+    if (!entStr || entStr.length < 3 || !qText) return false;
+    const clean = entStr.replace(/^(S1|S2|D3|D4)\s+/i, '').toLowerCase().trim();
+    if (clean.length < 3) return false;
+    const escClean = clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escFull = entStr.toLowerCase().trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const targetPattern = `(?:${escClean}|${escFull})`;
+
+    const backgroundRegex = new RegExp(
+      `(?:\\b(?:saya|aku|kami|gue|gw)\\s+(?:adalah\\s+)?(?:lulusan|alumni|tamatan|dari|mahasiswa|latar\\s+belakang|asal|background|sarjana|pemegang\\s+ijazah)\\s+(?:dari\\s+|jurusan\\s+|prodi\\s+|program\\s+studi\\s+|strata\\s*1\\s+|s1\\s+)?${targetPattern}\\b)|` +
+      `(?:\\b(?:latar\\s+belakang|pendidikan\\s+terakhir|pendidikan\\s+sebelumnya|ijazah|asal\\s+jurusan)\\s+(?:saya|ku)\\s+(?:adalah\\s+)?(?:dari\\s+|jurusan\\s+|prodi\\s+|program\\s+studi\\s+|strata\\s*1\\s+|s1\\s+)?${targetPattern}\\b)|` +
+      `(?:\\b(?:sebagai|karena\\s+(?:saya|aku))\\s+(?:lulusan|alumni|sarjana)\\s+(?:dari\\s+|jurusan\\s+|prodi\\s+|s1\\s+)?${targetPattern}\\b)`,
+      'i'
+    );
+
+    if (!backgroundRegex.test(qText)) {
+      return false;
+    }
+
+    const textWithoutBackground = qText.replace(backgroundRegex, ' ');
+    const stillMentionedInInquiry = new RegExp(`\\b${targetPattern}\\b`, 'i').test(textWithoutBackground);
+    return !stillMentionedInInquiry;
+  }
+
+  const genuineInquiryEntities = entities.filter(e => {
+    const canon = e.canonical || e.name || String(e);
+    return !isEntityUserBackgroundOnly(canon, queryText);
+  });
+
+  const isComparativeInquiry = Boolean(
+    semanticFrame.intent === 'COMPARATIVE_INQUIRY' ||
+    semanticFrame.intent === 'PROGRAM_COMPARISON' ||
+    semanticFrame.isComparison === true ||
+    semanticFrame.entityRelationships?.isComparison === true ||
+    semanticFrame.speechAct === 'REQUEST_COMPARISON' ||
+    semanticFrame.speechAct === 'COMPARE' ||
+    /\b(?:perbedaan|beda(?:nya)?|banding(?:kan)?|dibandingkan|komparasi|versus|vs|mana\s+yang\s+lebih|sama\s+dengan|apakah\s+[\w\s]+\s+sama\s+dengan)\b/i.test(queryText) ||
+    (Array.isArray(genuineInquiryEntities) && genuineInquiryEntities.length > 1 && genuineInquiryEntities.some(e => /prodi|program|s1|d3|s2/i.test(e.family || e.type || e.canonical || '')))
+  );
+
+  const hasComparativeFramingInAnswer = /\b(?:perbandingan\s+(?:program\s+studi|kurikulum|prodi)|berbeda\s+penempatannya\s+menurut\s+program|perbedaan\s+(?:utama|antara)|dibandingkan\s+dengan|berbeda\s+dengan)\b/i.test(text) ||
+    (/(?:\bS1\s+[\w\s]+:\b.*\bS1\s+[\w\s]+:\b)/s.test(text) && /\b(?:berbeda|perbedaan|perbandingan|masing-masing|berdasarkan\s+program\s+studi)\b/i.test(text));
+
+  const isStrictSingleProgramQuery = (genuineInquiryEntities.length === 1 || (retrievalPlan?.targetEntities && retrievalPlan.targetEntities.length === 1)) &&
+    !isComparativeInquiry;
+
+  const acceptedList = Array.isArray(arbitratedEvidence?.accepted)
+    ? arbitratedEvidence.accepted
+    : (Array.isArray(arbitratedEvidence?.arbitratedEvidence?.accepted) ? arbitratedEvidence.arbitratedEvidence.accepted : []);
+
+  const PRODI_CANONICAL_BASES = {
+    'si': 'sistem informasi',
+    'bd': 'bisnis digital',
+    'ti': 'teknologi informasi',
+    'sk': 'sistem komputer',
+    'mi': 'manajemen informatika',
+    'dkv': 'desain komunikasi visual'
+  };
+
+  function isSiblingSupportedByAcceptedEvidence(entStr) {
+    if (!entStr || entStr.length < 3) return false;
+    const clean = entStr.replace(/^(S1|S2|D3|D4)\s+/i, '').toLowerCase().trim();
+    if (clean.length < 3) return false;
+    const entFull = entStr.toLowerCase().trim();
+    const escapedClean = clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const entityRegex = new RegExp(`\\b${escapedClean}\\b`, 'i');
+
+    return acceptedList.some(chunk => {
+      if (!chunk || typeof chunk !== 'object') return false;
+
+      // 1. Explicit supportedEntities metadata in chunk that truly covers this entity
+      if (Array.isArray(chunk.supportedEntities)) {
+        const hasValidEntitySupport = chunk.supportedEntities.some(se => {
+          if (!se) return false;
+          const seStr = typeof se === 'string'
+            ? se.trim()
+            : (typeof se === 'object' && se !== null ? String(se.canonical || se.name || '').trim() : '');
+          if (!seStr || seStr.length < 2) return false;
+
+          const seFull = seStr.toLowerCase().trim();
+          const seBase = seFull.replace(/^(s1|s2|d3|d4)\s+/i, '').trim();
+
+          // Full exact match
+          if (seFull === entFull) return true;
+          // Base program exact match
+          if (seBase.length >= 3 && seBase === clean) return true;
+
+          // Validated acronym match (e.g. 'si' -> 'sistem informasi', 'bd' -> 'bisnis digital')
+          if (PRODI_CANONICAL_BASES[seBase] && PRODI_CANONICAL_BASES[seBase] === clean) return true;
+          if (PRODI_CANONICAL_BASES[clean] && PRODI_CANONICAL_BASES[clean] === seBase) return true;
+
+          return false;
+        });
+
+        if (hasValidEntitySupport) return true;
+      }
+
+      const chunkText = (chunk.text || chunk.content || chunk.chunk || '').toLowerCase();
+      const chunkDoc = (chunk.sourceFile || chunk.filename || chunk.sourceDocument || '').toLowerCase();
+
+      // 2. Mention in chunk content with substantive topic correlation
+      const mentionsEntityInText = entityRegex.test(chunkText);
+      if (mentionsEntityInText) {
+        const hasSubstantiveTopic = /\b(?:kurikulum|biaya|program\s+studi|prodi|jurusan|sks|semester|profil|lulusan|matakuliah|mata\s*kuliah)\b/i.test(chunkText);
+        const isMultiProgramDoc = chunk.scope === 'PROGRAM_MULTI' ||
+          /penjelasan\s+prodi|isian\s+website|rincian\s+biaya|pedoman|brosur/i.test(chunkDoc);
+        if (hasSubstantiveTopic || isMultiProgramDoc) {
+          return true;
+        }
+      }
+
+      // 3. Document provenance specifically correlating to the checked entity (even in multi-program files)
+      if (chunk.scope === 'PROGRAM_MULTI' && entityRegex.test(chunkDoc)) {
+        return true;
+      }
+
+      return false;
+    });
+  }
+
+  function isEntityExplicitlyRequestedInQuery(entStr) {
+    if (!entStr || entStr.length < 3) return false;
+    if (isEntityUserBackgroundOnly(entStr, queryText)) {
+      return false;
+    }
+    const clean = entStr.replace(/^(S1|S2|D3|D4)\s+/i, '').toLowerCase().trim();
+    if (clean.length < 3) return false;
+    const escClean = clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escFull = entStr.toLowerCase().trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`\\b(?:${escClean}|${escFull})\\b`, 'i').test(queryText);
+  }
+
   const isDDInquiry = entities.some(e => /double\s*degree|dual\s*degree/i.test(e.canonical || e.name || String(e))) ||
     /\b(?:double|dual)\s*degree|dua\s*gelar\b/i.test(semanticFrame.rawQuery || '') ||
     (semanticFrame.aspects && semanticFrame.aspects.includes('double_degree'));
@@ -214,45 +348,80 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   const isS2Target = entities.some(e => /s2|magister|pascasarjana/i.test(e.canonical || e.name || String(e)));
 
   function isComparativeSentence(sentence, excluded) {
-    const hasContrast = /\b(berbeda\s+(?:dengan|halnya)|dibandingkan|perbedaan(?:nya)?|sedangkan|sementara|tidak\s+seperti|differs?\s+(?:from)?|compared\s+(?:to|with)|whereas|while|unlike|contrast|difference)\b/i.test(sentence);
+    const hasContrast = /\b(berbeda\s+(?:dengan|halnya|penempatannya)|dibandingkan|perbedaan(?:nya)?|sedangkan|sementara|tidak\s+seperti|differs?\s+(?:from)?|compared\s+(?:to|with)|whereas|while|unlike|contrast|difference)\b/i.test(sentence);
     const isPrerequisite = /\b(?:lulusan|ijazah|latar\s+belakang|sarjana|prasyarat|syarat\s+masuk|persyaratan|pendaftar|calon\s+mahasiswa|matrikulasi|s1\s*\/\s*d4|d4|graduate|graduates|prior\s+degree|background|bachelor|prerequisite|requirements)\b/i.test(sentence) && !/\b(?:double|dual)\s+degree\b/i.test(sentence);
     const isInstitutionalListing = /\b(?:pilih\s+(?:program\s+studi|prodi)|pilihan\s+(?:prodi|program|jenjang)|jenjang\s+dan\s+program\s+studi|daftar\s+pilihan\s+prodi|ringkasan\s+dokumen)\b/i.test(sentence);
     const isMultiProgramSharedDoc = /\[Program:\s*[^\]]+\]/i.test(sentence) ||
-      (Array.isArray(arbitratedEvidence?.accepted) && arbitratedEvidence.accepted.some(c =>
-        c.scope === 'PROGRAM_MULTI' ||
-        /rincian\s+biaya\s+si\s*,\s*ti\s*(?:,|\s+dan)\s*bd/i.test(c.sourceFile || c.filename || '') ||
-        (Array.isArray(c.supportedEntities) && c.supportedEntities.length > 1)
-      ));
+      (isSiblingSupportedByAcceptedEvidence(excluded) &&
+        acceptedList.some(c => c.scope === 'PROGRAM_MULTI' || (Array.isArray(c.supportedEntities) && c.supportedEntities.length > 1)));
     const isS1PrereqForS2 = isS2Target && /^(?:s1|sarjana)\b/i.test(excluded) && (
       isPrerequisite ||
       /\b(?:pendidikan\s+sebelumnya|studi\s+sebelumnya|jenjang\s+sarjana|strata\s+1|asal\s+jurusan|latar\s+belakang\s+pendidikan|linier|non-?linier)\b/i.test(sentence)
     );
     const escaped = excluded.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const isDirectSubject = new RegExp(`^(?:program\\s+studi|prodi|jurusan|study\\s+program|program|major)?\\s*${escaped}\\s+(?:adalah|merupakan|berfokus|memiliki|yaitu|is|focuses|offers)\\b`, 'i').test(sentence.trim());
+
+    const isParallelComparativeItem = !isStrictSingleProgramQuery && (isComparativeInquiry || hasComparativeFramingInAnswer) &&
+      /^(?:\d+\.|\*|\•|-)?\s*(?:\*\*)?(?:program\s+studi|prodi|jurusan)?\s*(?:S1|S2|D3|D4)?\s*[\w\s]+(?:\*\*)?[:\-]/i.test(sentence.trim());
+
+    if (!isStrictSingleProgramQuery && (isComparativeInquiry || hasComparativeFramingInAnswer || isParallelComparativeItem)) {
+      return hasContrast || isPrerequisite || isInstitutionalListing || isMultiProgramSharedDoc || isS1PrereqForS2 || isParallelComparativeItem;
+    }
+
     return (hasContrast || isPrerequisite || isInstitutionalListing || isMultiProgramSharedDoc || isS1PrereqForS2) && !isDirectSubject;
   }
 
-  for (const excluded of excludedEntities) {
+  const effectiveExcludedEntities = new Set(excludedEntities);
+  for (const ent of entities) {
+    const canon = ent.canonical || ent.name || String(ent);
+    if (isEntityUserBackgroundOnly(canon, queryText)) {
+      effectiveExcludedEntities.add(canon);
+      const clean = canon.replace(/^(S1|S2|D3|D4)\s+/i, '').trim();
+      if (clean && clean.length >= 4) {
+        effectiveExcludedEntities.add(clean);
+      }
+    }
+  }
+
+  for (const excluded of effectiveExcludedEntities) {
     if (excluded && excluded.length >= 4) {
       if (GENERIC_COMMON_WORDS.has(excluded.toLowerCase().trim())) continue;
       if (isDDInquiry && (DD_COLLABORATING_PROGRAMS.has(excluded.toLowerCase().trim()) || (isUmbrellaInquiry && DD_MEMBER_ENTITIES.has(excluded.toLowerCase().trim())))) continue;
+
+      // 1. Explicit Query Exemption: User explicitly asked about or requested this entity in query
+      if (isEntityExplicitlyRequestedInQuery(excluded)) continue;
+
+      // 2. Comparative Target Exemption: If inquiry is comparative and sibling is one of the target entities being compared
+      if (isComparativeInquiry && genuineInquiryEntities.some(e => {
+        const canon = (e.canonical || e.name || String(e)).toLowerCase().trim();
+        const clean = canon.replace(/^(s1|s2|d3|d4)\s+/i, '');
+        const exClean = excluded.toLowerCase().trim().replace(/^(s1|s2|d3|d4)\s+/i, '');
+        return canon === excluded.toLowerCase().trim() || (clean.length >= 4 && clean === exClean);
+      })) continue;
+
       const escaped = excluded.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(`\\b${escaped}\\b`, 'i');
       if (regex.test(text)) {
-        // Differentiate legitimate educational comparative mentions from actual contradictions
-        const sentences = text.split(/(?<=[.!?\n])\s+/);
-        const allMatchesAreComparative = sentences
-          .filter(s => regex.test(s))
-          .every(s => isComparativeSentence(s, excluded));
+        // 3. Evidence-backed comparative context
+        const isSupportedByEvidence = isSiblingSupportedByAcceptedEvidence(excluded);
+        const isContextuallyComparative = !isStrictSingleProgramQuery && (isComparativeInquiry || hasComparativeFramingInAnswer) && isSupportedByEvidence;
 
-        const hasTargetMention = entities.some(e => {
-          const canon = (e.canonical || e.name || String(e)).replace(/^(S1|S2|D3|D4)\s+/i, '');
-          const esc = canon.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          return new RegExp(`\\b${esc}\\b`, 'i').test(text);
-        });
+        if (!isContextuallyComparative) {
+          // Differentiate legitimate educational comparative mentions from actual contradictions
+          const sentences = text.split(/(?<=[.!?\n])\s+/);
+          const allMatchesAreComparative = sentences
+            .filter(s => regex.test(s))
+            .every(s => isComparativeSentence(s, excluded));
 
-        if (!allMatchesAreComparative || !hasTargetMention) {
-          return failVerification(`entity_contradiction_conflicting_sibling_in_answer: ${excluded}`);
+          const hasTargetMention = entities.some(e => {
+            const canon = (e.canonical || e.name || String(e)).replace(/^(S1|S2|D3|D4)\s+/i, '');
+            const esc = canon.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return new RegExp(`\\b${esc}\\b`, 'i').test(text);
+          });
+
+          if (!allMatchesAreComparative || !hasTargetMention) {
+            return failVerification(`entity_contradiction_conflicting_sibling_in_answer: ${excluded}`);
+          }
         }
       }
 
@@ -265,15 +434,22 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
       });
 
       if (!isSameBaseAsTarget && base !== excluded && base.length >= 5) {
+        if (isEntityExplicitlyRequestedInQuery(base)) continue;
+
         const escapedBase = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const titleRegex = new RegExp(`(?:Program\\s+Studi|Prodi|Jurusan)\\s+${escapedBase}\\b|\\b${escapedBase}\\s*\\((?:S1|S2|D3|D4)\\)`, 'i');
         if (titleRegex.test(text)) {
-          const sentences = text.split(/(?<=[.!?\n])\s+/);
-          const allComparative = sentences
-            .filter(s => titleRegex.test(s))
-            .every(s => isComparativeSentence(s, base));
-          if (!allComparative) {
-            return failVerification(`entity_contradiction_conflicting_sibling_in_answer: ${excluded}`);
+          const isSupportedByEvidence = isSiblingSupportedByAcceptedEvidence(base);
+          const isContextuallyComparative = !isStrictSingleProgramQuery && (isComparativeInquiry || hasComparativeFramingInAnswer) && isSupportedByEvidence;
+
+          if (!isContextuallyComparative) {
+            const sentences = text.split(/(?<=[.!?\n])\s+/);
+            const allComparative = sentences
+              .filter(s => titleRegex.test(s))
+              .every(s => isComparativeSentence(s, base));
+            if (!allComparative) {
+              return failVerification(`entity_contradiction_conflicting_sibling_in_answer: ${excluded}`);
+            }
           }
         }
       }
@@ -330,6 +506,26 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     }
   }
 
+  // 4b. Admission Procedure Grounding Check
+  const isProcedureInquiry = (semanticFrame.domain === 'PMB' &&
+    (semanticFrame.intent === 'ADMISSION_PROCEDURE' || (semanticFrame.aspects && semanticFrame.aspects.includes('procedure')))) &&
+    !isUnsupported;
+
+  if (isProcedureInquiry) {
+    const hasProcedureStepsClaim = /\b(?:tahapan\s+(?:online|pendaftaran)|langkah(?:-langkah)?\s+(?:pendaftaran|daftar)|alur\s+pendaftaran|prosedur\s+pendaftaran)\b/i.test(text) &&
+      /\b(?:1\.\s+|•\s+|pertama)\b/i.test(text);
+    if (hasProcedureStepsClaim) {
+      const hasAcceptedProcedure = (arbitratedEvidence.accepted || []).some(c => {
+        const cText = (c.text || c.chunk || '').toLowerCase();
+        return /\b(?:alur|tahap(?:an)?|langkah|prosedur|panduan|tata\s+cara)\s+(?:pendaftaran|daftar|mendaftar)\b/i.test(cText) ||
+          (/\b(?:pendaftaran|daftar)\b/i.test(cText) && /\b(?:tahap\s*(?:1|2|3|i|ii|iii|pertama|kedua)|langkah\s*(?:1|2|3|pertama|kedua))\b/i.test(cText));
+      });
+      if (!hasAcceptedProcedure) {
+        return failVerification('unsupported_admission_procedure_steps_zero_evidence');
+      }
+    }
+  }
+
   let isAdvisingInquiry = semanticFrame.domain === 'ACADEMIC_PROCESS' ||
     semanticFrame.intent === 'ACADEMIC_ADVISING_INQUIRY' ||
     (semanticFrame.aspects && semanticFrame.aspects.some(a => ['academic_advising', 'dosen_wali', 'perwalian'].includes(a)));
@@ -338,8 +534,9 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     (semanticFrame.aspects && semanticFrame.aspects.some(a => ['curriculum', 'courses', 'competencies'].includes(a))));
 
   if (isCurriculumInquiry && !isUnsupported) {
-    const hasCurriculumKeywords = /\b(berfokus|mempelajari|kurikulum|mata\s*kuliah|matkul|sks|semester|silabus|kompetensi|pembelajaran|fokus|bidang|pemrograman|keahlian|focus(?:es|ed|ing)?|learn(?:s|ing|ed)?|stud(?:y|ies|ied|ying)|teach(?:es|ing)?|taught|cover(?:s|ed|ing)?|skill(?:s)?|hardware|software|network(?:s|ing)?|programming|system(?:s)?|specializ(?:e|es|ed|ing|ation)|curriculum|courses?|credits?|semesters?|syllabus|competenc(?:y|ies)|degree(?:s)?|duration|career(?:s)?|jobs?|roles?|graduates?|qualification(?:s)?|prerequisite(?:s)?|requirement(?:s)?|defen(?:d|se|ses)|final\s+project|thesis|transcript|registration|clearance|supervis(?:or|ion)|advis(?:or|ing)|persyaratan|syarat|skripsi|bimbingan)\b/i.test(text);
-    if (!hasCurriculumKeywords) {
+    const hasCurriculumKeywords = /\b(berfokus|mempelajari|kurikulum|mata\s*kuliah|matkul|sks|semester|silabus|kompetensi|pembelajaran|fokus|bidang|pemrograman|keahlian|focus(?:es|ed|ing)?|learn(?:s|ing|ed)?|stud(?:y|ies|ied|ying)|teach(?:es|ing)?|taught|cover(?:s|ed|ing)?|skill(?:s)?|hardware|software|network(?:s|ing)?|programming|system(?:s)?|specializ(?:e|es|ed|ing|ation)|curriculum|courses?|credits?|semesters?|syllabus|competenc(?:y|ies)|degree(?:s)?|duration|career(?:s)?|jobs?|roles?|graduates?|qualification(?:s)?|prerequisite(?:s)?|requirement(?:s)?|defen(?:d|se|ses)|final\s+project|thesis|tugas\s+akhir|transcript|registration|clearance|supervis(?:or|ion)|advis(?:or|ing)|persyaratan|syarat|skripsi|bimbingan)\b/i.test(text);
+    const isCurriculumAbstain = /\b(belum\s+(?:tercantum|tersedia|ditemukan|memuat|cukup)|tidak\s+(?:ditemukan|tersedia|tercantum|memuat)|tidak\s+dapat\s+(?:diverifikasi|dipastikan)|belum\s+dapat\s+dipastikan|not\s+(?:listed|found|available|recorded)|unrecorded)\b/i.test(text);
+    if (!hasCurriculumKeywords && !isCurriculumAbstain) {
       return failVerification('aspect_mismatch_answer_lacks_curriculum_evidence');
     }
   }
@@ -404,7 +601,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   const hasFullCurriculumDump = /\bSemester\s+I\s*\([^)]*\):.*Semester\s+VIII\s*\([^)]*\):/is.test(text) ||
     (/\bSemester\s+I\b/i.test(text) && /\bSemester\s+VIII\b/i.test(text) && /\b144\s*SKS\b/i.test(text));
   if (hasFullCurriculumDump) {
-    const isExplicitCurriculumQuery = /\b(?:kurikulum|mata\s*kuliah(?:nya)?|matkul(?:nya)?|sebaran\s*matkul|silabus|daftar\s*matkul|ambil\s*apa\s*saja)\b/i.test(rawQuery);
+    const isExplicitCurriculumQuery = /\b(?:kurikulum(?:nya)?|mata\s*kuliah(?:nya)?|matkul(?:nya)?|sebaran\s*matkul|silabus|daftar\s*matkul|ambil\s*apa\s*saja)\b/i.test(rawQuery);
     const isSpecificPrerequisiteOrThesis = /\b(?:coding|jago|halaman|lembar|tebal|tugas\s+akhir|skripsi|sion|spesifikasi\s+komputer|butuh\s+komputer)\b/i.test(rawQuery);
     if (!isExplicitCurriculumQuery || isSpecificPrerequisiteOrThesis) {
       return failVerification('aspect_mismatch_curriculum_dump_for_non_curriculum_query');
@@ -1368,6 +1565,48 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
         }
         if (mAttr === 'fee' && /\b(?:dpp|spp|biaya\s+semester)\b.*?Rp\.?\s*\d{1,3}(?:\.\d{3})+/i.test(affirmativeSentences)) {
           return failVerification('unsubstantiated_attribute_claim: fee claimed without supporting evidence');
+        }
+      }
+    }
+
+    // 5. Attribute-level grounding guard for specific constraints (unsubstantiated_specific_attribute)
+    // If the query asks for a specific constraint (e.g. minimal pages, age limits, fine amounts)
+    // and accepted evidence does not support that specific attribute, the answer must not assert
+    // general requirements without explicitly disclosing that the requested attribute is unconfirmed/unregulated.
+    const queryForConstraint = String(semanticFrame?.rawQuery || semanticFrame?.normalizedQuery || '').toLowerCase();
+    const isPageConstraint = /\b(?:berapa\s+(?:jumlah\s+)?halaman|halaman\s+minimal|minimal\s+(?:\d+\s+)?halaman|tebal\s+halaman|jumlah\s+halaman|minimal\s+lembar|berapa\s+lembar)\b/i.test(queryForConstraint);
+    const isAgeConstraint = /\b(?:batas\s+(?:maksimal\s+)?(?:usia|umur)|maksimal\s+(?:usia|umur)|usia\s+maksimal|umur\s+maksimal|ada\s+batasan\s+umur)\b/i.test(queryForConstraint);
+    const isFineConstraint = /\b(?:denda\s+keterlambatan|besaran\s+denda|tarif\s+denda|denda\s+berapa)\b/i.test(queryForConstraint);
+
+    if (isPageConstraint || isAgeConstraint || isFineConstraint) {
+      const acceptedFullText = acceptedList.map(c => String(c.text || c.chunk || '')).join('\n').toLowerCase();
+      let hasConstraintInEvidence = false;
+      let constraintType = '';
+
+      if (isPageConstraint) {
+        constraintType = 'page_limit';
+        hasConstraintInEvidence = /\b(?:\d+\s+halaman|\d+\s+lembar|jumlah\s+halaman|halaman\s+minimal|minimal\s+halaman|tebal\s+halaman)\b/i.test(acceptedFullText);
+      } else if (isAgeConstraint) {
+        constraintType = 'age_limit';
+        hasConstraintInEvidence = /\b(?:batas\s+usia|batasan\s+usia|batas\s+umur|maksimal\s+\d+\s+tahun|usia\s+maksimal|tidak\s+ada\s+batasan\s+usia)\b/i.test(acceptedFullText);
+      } else if (isFineConstraint) {
+        constraintType = 'fine_amount';
+        hasConstraintInEvidence = /\b(?:denda|keterlambatan\s+dikenakan|denda\s+sebesar)\b/i.test(acceptedFullText);
+      }
+
+      if (!hasConstraintInEvidence) {
+        const disclosesUnconfirmedConstraint = /\b(?:belum|tidak)\s+(?:tercantum|mencantumkan|diatur|mengatur|disebutkan|menyebutkan|tersedia|memuat|ada\s+ketentuan|dapat\s+dipastikan)\b/i.test(text) ||
+          /\b(?:not\s+(?:listed|found|available|recorded)|unrecorded)\b/i.test(text);
+        if (!disclosesUnconfirmedConstraint) {
+          return {
+            pass: false,
+            outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+            status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+            reason: 'unsubstantiated_specific_attribute',
+            isGrounded: false,
+            handledSafely: true,
+            detail: `Query requested ${constraintType} but accepted evidence lacks support and answer asserts general content without disclosure`
+          };
         }
       }
     }

@@ -21,7 +21,10 @@ const {
   getCatalogEntriesByScope,
   resolveAcademicScope,
   generateGroundedCatalogSummary,
-  generateGroundedFacultySummary
+  generateGroundedFacultySummary,
+  CATALOG_FACT_PROVENANCE_STATUS,
+  S1_CATALOG_CLAIM_PROVENANCE,
+  getCatalogClaimProvenance
 } = require('./academicCatalog');
 const { sanitizeOpenAiChatPayload } = require('../utils/openAiPayloadHelper');
 const { detectQueryLanguage } = require('../utils/languageDetector');
@@ -33,7 +36,7 @@ const ukmCategorizedData = require('../data/ukm_list_categorized.json');
 let ACADEMIC_FACTS_REGISTRY = null;
 try {
   ACADEMIC_FACTS_REGISTRY = require('../../data/runtime/canonical_academic_facts_registry.json');
-} catch (_) {}
+} catch (_) { }
 
 function getSupportedUkmCategoryMembers(categoryName, cleanEvidence) {
   if (!cleanEvidence || !ukmCategorizedData?.categories?.[categoryName]) return [];
@@ -111,7 +114,184 @@ function getAiEngine() {
   return aiEngineInstance;
 }
 
-let openaiCircuitOpen = false;
+// Hardened Circuit Breaker with proper error classification, cooldown, half-open probing, and auto-reset
+const circuitBreaker = {
+  state: 'CLOSED',
+  consecutiveFailures: 0,
+  lastFailureTime: 0,
+  lastSuccessTime: 0,
+  tripThreshold: 3,
+  isQuotaExhausted: false,
+
+  getCooldownMs() {
+    const raw = parseInt(process.env.OPENAI_CIRCUIT_COOLDOWN_MS || '60000', 10);
+    return Number.isFinite(raw) && raw >= 1000 ? raw : 60000;
+  },
+
+  isOpen() {
+    if (this.state === 'CLOSED') return false;
+    // Quota exhaustion is persistent: do NOT allow automatic periodic probing
+    if (this.isQuotaExhausted) {
+      return true;
+    }
+    const now = Date.now();
+    if (this.state === 'OPEN') {
+      if (now - this.lastFailureTime >= this.getCooldownMs()) {
+        this.state = 'HALF_OPEN';
+        logger.info('[GroundedAnswerGenerator] Circuit breaker transitioning to HALF_OPEN (probing)');
+        return false;
+      }
+      return true;
+    }
+    if (this.state === 'HALF_OPEN') {
+      return false;
+    }
+    return false;
+  },
+
+  recordSuccess() {
+    if (this.state !== 'CLOSED') {
+      logger.info({ previousState: this.state }, '[GroundedAnswerGenerator] Circuit breaker reset to CLOSED after successful completion');
+    }
+    this.state = 'CLOSED';
+    this.consecutiveFailures = 0;
+    this.isQuotaExhausted = false;
+    this.lastSuccessTime = Date.now();
+  },
+
+  recordFailure(err = {}) {
+    this.lastFailureTime = Date.now();
+    const isQuotaExhausted = err.status === 429 && /quota|exceeded your current quota/i.test(err.message || '');
+    const isServerError = typeof err.status === 'number' && err.status >= 500 && err.status < 600;
+
+    if (isQuotaExhausted) {
+      this.state = 'OPEN';
+      this.isQuotaExhausted = true;
+      this.consecutiveFailures = Math.max(this.consecutiveFailures + 1, this.tripThreshold);
+      logger.warn({ reason: 'QUOTA_EXHAUSTED' }, '[GroundedAnswerGenerator] Circuit breaker tripped to OPEN (persistent quota exhaustion)');
+      return;
+    }
+
+    if (this.state === 'HALF_OPEN') {
+      this.state = 'OPEN';
+      logger.warn({ reason: 'HALF_OPEN_PROBE_FAILED' }, '[GroundedAnswerGenerator] Circuit breaker probe failed; tripped back to OPEN');
+      return;
+    }
+
+    if (isServerError) {
+      this.consecutiveFailures += 1;
+      if (this.consecutiveFailures >= this.tripThreshold) {
+        this.state = 'OPEN';
+        logger.warn({ consecutiveFailures: this.consecutiveFailures }, '[GroundedAnswerGenerator] Circuit breaker tripped to OPEN (consecutive 5xx)');
+      }
+    }
+  },
+
+  clearQuotaExhaustion() {
+    this.isQuotaExhausted = false;
+    this.state = 'CLOSED';
+    this.consecutiveFailures = 0;
+    this.lastFailureTime = 0;
+    this.lastSuccessTime = Date.now();
+  },
+
+  getState() {
+    return this.state;
+  },
+
+  reset() {
+    this.state = 'CLOSED';
+    this.consecutiveFailures = 0;
+    this.lastFailureTime = 0;
+    this.lastSuccessTime = Date.now();
+    this.isQuotaExhausted = false;
+  }
+};
+
+function getCircuitBreakerState() {
+  return circuitBreaker.getState();
+}
+
+function clearCircuitBreakerQuotaExhaustion() {
+  circuitBreaker.clearQuotaExhaustion();
+}
+
+function _resetCircuitBreakerForTesting() {
+  circuitBreaker.reset();
+}
+
+function isComplexInquiry(semanticFrame = {}, arbitratedEvidence = {}) {
+  const reqAttrs = Array.isArray(semanticFrame.requestedAttributes) ? semanticFrame.requestedAttributes : [];
+  const aspects = Array.isArray(semanticFrame.aspects) ? semanticFrame.aspects : [];
+  const concepts = Array.isArray(semanticFrame.semanticConcepts) ? semanticFrame.semanticConcepts : [];
+  const targetEntities = Array.isArray(semanticFrame.targetEntities) ? semanticFrame.targetEntities : [];
+  const entities = Array.isArray(semanticFrame.entities) ? semanticFrame.entities : [];
+
+  // Multi-attribute signal
+  if (reqAttrs.length >= 2 || aspects.length >= 2 || concepts.length >= 2) return true;
+
+  // Comparative inquiry signal
+  if (
+    semanticFrame.isComparative === true ||
+    semanticFrame.intent === 'COMPARATIVE_INQUIRY' ||
+    semanticFrame.speechAct === 'COMPARE' ||
+    targetEntities.length >= 2 ||
+    (entities.length >= 2 && /banding|beda|vs|antara|versus/i.test(semanticFrame.rawQuery || ''))
+  ) {
+    return true;
+  }
+
+  // Composite or compound query signal
+  if (semanticFrame.compositeQuery === true || semanticFrame.isCompound === true) return true;
+
+  // Multi-evidence entity arbitration
+  if (arbitratedEvidence && (arbitratedEvidence.isMultiEntity || arbitratedEvidence.targetEntities?.length >= 2)) return true;
+
+  return false;
+}
+
+function resolveReasoningEffort(semanticFrame = {}, arbitratedEvidence = {}) {
+  const VALID_EFFORTS = ['none', 'low', 'medium', 'high'];
+  const isComplex = isComplexInquiry(semanticFrame, arbitratedEvidence);
+  const defaultStandard = String(process.env.OPENAI_REASONING_EFFORT_STANDARD || 'low').toLowerCase().trim();
+  const defaultComplex = String(process.env.OPENAI_REASONING_EFFORT_COMPLEX || 'medium').toLowerCase().trim();
+
+  const candidate = isComplex ? defaultComplex : defaultStandard;
+  return VALID_EFFORTS.includes(candidate) ? candidate : (isComplex ? 'medium' : 'low');
+}
+
+function resolveCompletionTokenBudget(semanticFrame = {}, arbitratedEvidence = {}) {
+  const isComplex = isComplexInquiry(semanticFrame, arbitratedEvidence);
+
+  const parseTokens = (val, fallback) => {
+    const parsed = parseInt(val, 10);
+    if (Number.isFinite(parsed) && parsed >= 300 && parsed <= 4000) {
+      return parsed;
+    }
+    return fallback;
+  };
+
+  const standardDefault = parseTokens(process.env.OPENAI_MAX_COMPLETION_TOKENS_STANDARD, 1200);
+  const complexDefault = parseTokens(process.env.OPENAI_MAX_COMPLETION_TOKENS_COMPLEX, 1800);
+
+  return isComplex ? complexDefault : standardDefault;
+}
+
+function classifySafeApiError(err = {}) {
+  if (!err) return 'UNKNOWN_API_ERROR';
+  if (err.name === 'TimeoutError' || /timeout/i.test(err.message || '') || err.code === 'ETIMEDOUT') {
+    return 'REQUEST_TIMEOUT';
+  }
+  if (err.status === 429) {
+    if (/quota|exceeded your current quota/i.test(err.message || '')) return 'QUOTA_EXHAUSTED';
+    return 'RATE_LIMIT_EXCEEDED';
+  }
+  if (err.status === 400) return 'BAD_REQUEST_PARAMETER';
+  if (err.status === 401) return 'AUTHENTICATION_FAILURE';
+  if (err.status === 404) return 'MODEL_NOT_FOUND';
+  if (typeof err.status === 'number' && err.status >= 500) return 'SERVER_ERROR';
+  return 'NETWORK_OR_TRANSPORT_ERROR';
+}
 
 function buildSynthesisPrompt(semanticFrame, evidenceList = [], recommendationResult = null, options = {}) {
   const userLang = semanticFrame.language || detectQueryLanguage(semanticFrame.rawQuery || '');
@@ -1252,7 +1432,7 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
   const targetEntities = (semanticFrame.entities || []).map(e => e.canonical || e.name || String(e)).filter(e => !isExcludedEntity(e));
   const sessionActiveEntity = arbitratedEvidence?.sessionData?.activeEntity ||
     semanticFrame?.sessionData?.activeEntity;
-    if (targetEntities.length === 0 && sessionActiveEntity) {
+  if (targetEntities.length === 0 && sessionActiveEntity) {
     const actStr = typeof sessionActiveEntity === 'object'
       ? (sessionActiveEntity.canonical || sessionActiveEntity.name || '')
       : String(sessionActiveEntity);
@@ -1277,25 +1457,21 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
     }
   }
 
-  // 0a. General PMB Registration Procedure (Institutional core answer without needing external RAG evidence)
-  const isGeneralPmbProcedure = semanticFrame.domain === 'PMB' && (
-    semanticFrame.intent === 'ADMISSION_PROCEDURE' ||
-    semanticFrame.intent === 'GENERAL_PMB_INQUIRY' ||
-    /\b(?:cara\s+daftar|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+daftar|(?:mau|mw|pengen|ingin|bisa)\s+daftar|mulai\s+dari\s+mana)\b/i.test(rawQuery)
-  ) && !/\b(?:syarat|persyaratan|dokumen|berkas|jadwal|gelombang|biaya|rpl|rekognisi|otp|verifikasi|kode\s+verifikasi|salah\s+isi|salah\s+mengisi|ubah\s+pilihan|error|lupa\s+nomor)\b/i.test(rawQuery);
-
-  if (isGeneralPmbProcedure) {
-    const procedureAnswer = `Secara umum, pendaftaran mahasiswa baru di ITB STIKOM Bali dapat dipandu melalui tahapan online berikut:
-
-1. **Akses Portal PMB**: Buka laman pendaftaran resmi di https://pmb.stikom-bali.ac.id
-2. **Pilih Program Studi**: Tentukan jenjang dan program studi yang diminati (S1, D3, S2, atau Program Internasional).
-3. **Isi Formulir Pendaftaran**: Lengkapi data diri, data asal sekolah, serta kontak aktif pada formulir online.
-4. **Pembayaran Biaya Pendaftaran**: Selesaikan pembayaran biaya formulir pendaftaran (seperti Rp 500.000 untuk program Sarjana/Diploma reguler, dengan penyesuaian potongan beasiswa gelombang yang berlaku).
-5. **Unggah Berkas Persyaratan**: Unggah berkas kelulusan (ijazah/SKL) dan dokumen identitas diri sesuai petunjuk pengunggahan pada portal PMB.
-6. **Verifikasi & Registrasi Ulang**: Ikuti tahapan verifikasi berkas, dan setelah dinyatakan diterima, lakukan registrasi ulang sesuai jadwal gelombang.
-
-Pendaftaran online dapat dilakukan melalui https://pmb.stikom-bali.ac.id atau berkonsultasi langsung ke kampus ITB STIKOM Bali (Renon, Jimbaran, atau Abiansemal). Ada yang ingin ditanyakan terkait tahapan pendaftarannya?`;
-    return appendMissingAspectNote(procedureAnswer);
+  // Institutional Study Mode / Evening Class Inquiry (Stage 3B.4.3 Fact Validity Guard)
+  if (
+    semanticFrame.intent === 'STUDY_MODE' ||
+    (Array.isArray(semanticFrame.aspects) && semanticFrame.aspects.includes('evening_class')) ||
+    /\b(?:kuliah\s+sore|kelas\s+sore|kelas\s+karyawan|kuliah\s+malam|kelas\s+malam|sambil\s+kerja|kuliah\s+sambil\s+kerja)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))
+  ) {
+    const isEn = userLang === 'en';
+    const studyModeAnswer = isEn
+      ? `Regarding evening classes or worker classes (kelas karyawan) for working students at ITB STIKOM Bali, current availability and active schedules for Academic Year 2026/2027 are not confirmed in the available official documents.\n\n` +
+        `Previously, evening/working student options were referenced in historical applicant forms, but current operational status requires direct verification.\n\n` +
+        `For up-to-date and authoritative confirmation regarding study modes, class schedules, and admissions for working students, please contact the PMB admissions office directly or visit the official portal at https://pmb.stikom-bali.ac.id.`
+      : `Mengenai ketersediaan program **Kelas Sore / Kelas Karyawan (kuliah sambil bekerja)** di ITB STIKOM Bali, informasi kepastian jadwal dan status aktif kelas tersebut untuk Tahun Akademik 2026/2027 belum dapat dikonfirmasi dari dokumen resmi yang tersedia saat ini.\n\n` +
+        `Opsi kelas sore tercatat dalam arsip formulir pendaftaran sebelumnya, namun keberlakuannya untuk periode perkuliahan berjalan perlu dipastikan langsung ke bagian admisi.\n\n` +
+        `Untuk informasi jadwal perkuliahan, opsi kelas bagi yang bekerja, serta ketentuan pendaftaran terbaru, Kakak dapat mengonfirmasi langsung ke layanan PMB ITB STIKOM Bali atau mengunjungi portal resmi: https://pmb.stikom-bali.ac.id.`;
+    return appendMissingAspectNote(studyModeAnswer);
   }
 
   if (!accepted || accepted.length === 0) return null;
@@ -1339,7 +1515,7 @@ Pendaftaran online dapat dilakukan melalui https://pmb.stikom-bali.ac.id atau be
   if (semanticFrame.domain === 'PMB') {
     const isRequirements = /\b(syarat\s+(?:untuk\s+)?(?:mendaftar|daftar|masuk)|syarat\s+pendaftaran|persyaratan(?:\s+masuk)?|dokumen|berkas)\b/i.test(rawQuery) ||
       semanticFrame.intent === 'ADMISSION_REQUIREMENTS';
-        const isProcedure = (semanticFrame.intent === 'ADMISSION_PROCEDURE' && !isRequirements) ||
+    const isProcedure = (semanticFrame.intent === 'ADMISSION_PROCEDURE' && !isRequirements) ||
       (semanticFrame.intent === 'GENERAL_PMB_INQUIRY' && /\b(?:daftar|mendaftar|registrasi|masuk)\b/i.test(rawQuery)) ||
       /\b(cara\s+daftar|bagaimana\s+(?:cara\s+)?daftar|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+daftar|(?:mau|mw|pengen|ingin|bisa)\s+daftar|mulai\s+dari\s+mana)\b/i.test(rawQuery);
 
@@ -1400,20 +1576,29 @@ Pendaftaran online dapat dilakukan melalui https://pmb.stikom-bali.ac.id atau be
         return appendMissingAspectNote(ddProcedureAnswer);
       }
 
-      const selectedProdiText = (entityLabel && !isExcludedEntity(entityLabel) && entityLabel !== 'program terkait')
-        ? entityLabel
-        : 'S1, D3, S2, atau Program Internasional';
-      const procedureAnswer = `Pendaftaran mahasiswa baru di ITB STIKOM Bali bisa dilakukan secara online melalui tahapan berikut:
+      const procedureChunk = accepted.find(c => {
+        const t = (c.text || c.chunk || '');
+        return /\b(?:alur|tahap(?:an)?|langkah|prosedur|panduan|tata\s+cara)\s+(?:pendaftaran|daftar|mendaftar)\b/i.test(t) ||
+          (/\b(?:pendaftaran|daftar)\b/i.test(t) && /\b(?:tahap\s*(?:1|2|3|i|ii|iii|pertama|kedua)|langkah\s*(?:1|2|3|pertama|kedua))\b/i.test(t));
+      });
 
-1. **Akses Portal PMB**: Buka laman pendaftaran di https://pmb.stikom-bali.ac.id
-2. **Pilih Program Studi**: Tentukan jenjang dan program studi yang diminati (${selectedProdiText}).
-3. **Isi Formulir Pendaftaran**: Lengkapi data diri, data asal sekolah, serta kontak aktif.
-4. **Pembayaran Biaya Pendaftaran**: Lakukan pembayaran biaya pendaftaran (Rp 500.000, dengan potongan beasiswa sesuai gelombang).
-5. **Unggah Berkas Persyaratan**: Unggah scan ijazah/SKL, Kartu Keluarga (KK), KTP, dan pasfoto formal.
-6. **Verifikasi & Registrasi Ulang**: Setelah berkas diverifikasi dan dinyatakan lulus, lakukan registrasi ulang (pembayaran DPP dan biaya semester sesuai periode gelombang).
+      if (procedureChunk) {
+        const chunkText = cleanDocumentArtifacts(procedureChunk.text || procedureChunk.chunk || '');
+        const items = extractListItemsFromChunk(chunkText);
+        if (items.length > 0) {
+          let answer = userLang === 'en'
+            ? `Based on official documents, the admission procedure steps are as follows:\n\n`
+            : `Berdasarkan dokumen resmi yang tersedia, alur/tahapan pendaftaran mahasiswa baru meliputi:\n\n`;
+          for (let i = 0; i < items.length; i++) {
+            answer += `${i + 1}. ${items[i]}\n`;
+          }
+          return appendMissingAspectNote(answer.trim());
+        }
+        return appendMissingAspectNote(chunkText);
+      }
 
-Pendaftaran dapat dilakukan secara online melalui https://pmb.stikom-bali.ac.id atau datang langsung ke kampus ITB STIKOM Bali (Renon, Jimbaran, atau Abiansemal). Ada yang perlu dibantu mengenai proses pendaftarannya?`;
-      return appendMissingAspectNote(procedureAnswer);
+      // If accepted evidence does not contain substantive procedure steps, do NOT fabricate 6 steps!
+      return null;
     }
 
     if (isRequirements) {
@@ -2182,7 +2367,7 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
         const intlList = intlProgs.join(', ');
         const intlSection = (intlPct && intlProgs.length > 0)
           ? `2. **Program International Dual Degree (${intlList})**:\n` +
-            `   - Khusus alumni SMK TI mendapatkan **potongan ${intlPct}% Biaya Pendidikan Per Semester selama ${intlYears} tahun**.\n\n`
+          `   - Khusus alumni SMK TI mendapatkan **potongan ${intlPct}% Biaya Pendidikan Per Semester selama ${intlYears} tahun**.\n\n`
           : '';
 
         const smkTiGeneralAnswer = `Berdasarkan ketentuan resmi SK Rektor No. 629/ITBSTIKOM/WDS/X/25 (canonical fee registry):\n\n` +
@@ -2395,8 +2580,11 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
   }
 
   // 7c. Admission Tracks / RPL (Rekognisi Pembelajaran Lampau)
+  const isStudyModeInquiry = semanticFrame.intent === 'STUDY_MODE' ||
+    (Array.isArray(semanticFrame.aspects) && semanticFrame.aspects.includes('evening_class')) ||
+    /\b(?:kuliah\s+sore|kelas\s+sore|kelas\s+karyawan|kuliah\s+malam|kelas\s+malam|sambil\s+kerja)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
   const isAskingCareer = /\b(?:peluang\s+kar(?:i)?er|prospek\s+kar(?:i)?er|kar(?:i)?er|pekerjaan|profesi)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-  if (!isAskingCareer && (semanticFrame.domain === 'ADMISSION_TRACK' || targetEntities.some(e => /rpl/i.test(e)) || /\b(?:rpl|rekognisi|transfer\s+sks|lulusan\s+d3\s+(?:ke\s+s1|lanjut|transfer)|lanjut\s+s1)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')))) {
+  if (!isStudyModeInquiry && !isAskingCareer && (semanticFrame.domain === 'ADMISSION_TRACK' || targetEntities.some(e => /rpl/i.test(e)) || /\b(?:rpl|rekognisi|transfer\s+sks|lulusan\s+d3\s+(?:ke\s+s1|lanjut|transfer)|lanjut\s+s1)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')))) {
     // 7c-1. Petunjuk Pengisian Formulir Aplikasi RPL (Form 1 / F01)
     if (semanticFrame.intent === 'RPL_FORM_PROCEDURE' || /\b(?:formulir|form|f01|f-01|isian|isi\s+formulir|mengisi\s+formulir|pengisian\s+formulir|aplikasi\s+rpl)\b/i.test(rawQuery)) {
       const formAnswer = `Berdasarkan dokumen resmi **Pedoman Penyelenggaraan RPL (PEDOMAN-RPL-SK S1 Sistem Komputer)**, prosedur pengisian formulir aplikasi RPL terdiri dari:\n\n` +
@@ -2747,11 +2935,14 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
 
   // 7e. Study Mode (Kuliah Sambil Kerja / Program Kerja Sambil Kuliah / Kelas Karyawan / Kelas Sore)
   if (semanticFrame.intent === 'STUDY_MODE' || (semanticFrame.aspects && semanticFrame.aspects.includes('class_schedule')) || /\b(sambil\s+kerja|kelas\s+karyawan|kuliah\s+sore|kelas\s+sore|kerja\s+sambil\s+kuliah|sudah\s+bekerja)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
-    const studyModeAnswer = `Bagi calon mahasiswa yang sudah bekerja, ITB STIKOM Bali menyediakan program **Kelas Sore / Malam (Kelas Karyawan)**:\n\n` +
-      `• **Jadwal Fleksibel**: Perkuliahan diselenggarakan setelah jam kerja umum, sehingga mahasiswa dapat menempuh pendidikan sarjana tanpa mengganggu aktivitas bekerja.\n` +
-      `• **Kurikulum & Fasilitas Setara**: Beban studi, materi perkuliahan, dan fasilitas kampus sama dengan kelas reguler.\n` +
-      `• **Program Magang Luar Negeri**: Kampus juga memfasilitasi program resmi kuliah sambil memperoleh pengalaman kerja profesional di luar negeri (seperti program Hi-Think di Jepang).\n\n` +
-      `Informasi pendaftaran kelas sore / kelas karyawan dapat diakses melalui portal https://pmb.stikom-bali.ac.id atau layanan admisi kampus.`;
+    const isEn = userLang === 'en';
+    const studyModeAnswer = isEn
+      ? `Regarding evening classes or worker classes (kelas karyawan) for working students at ITB STIKOM Bali, current availability and active schedules for Academic Year 2026/2027 are not confirmed in the available official documents.\n\n` +
+        `Previously, evening/working student options were referenced in historical applicant forms, but current operational status requires direct verification.\n\n` +
+        `For up-to-date and authoritative confirmation regarding study modes, class schedules, and admissions for working students, please contact the PMB admissions office directly or visit the official portal at https://pmb.stikom-bali.ac.id.`
+      : `Mengenai ketersediaan program **Kelas Sore / Kelas Karyawan (kuliah sambil bekerja)** di ITB STIKOM Bali, informasi kepastian jadwal dan status aktif kelas tersebut untuk Tahun Akademik 2026/2027 belum dapat dikonfirmasi dari dokumen resmi yang tersedia saat ini.\n\n` +
+        `Opsi kelas sore tercatat dalam arsip formulir pendaftaran sebelumnya, namun keberlakuannya untuk periode perkuliahan berjalan perlu dipastikan langsung ke bagian admisi.\n\n` +
+        `Untuk informasi jadwal perkuliahan, opsi kelas bagi yang bekerja, serta ketentuan pendaftaran terbaru, Kakak dapat mengonfirmasi langsung ke layanan PMB ITB STIKOM Bali atau mengunjungi portal resmi: https://pmb.stikom-bali.ac.id.`;
     return appendMissingAspectNote(studyModeAnswer);
   }
 
@@ -3282,7 +3473,7 @@ function buildProgramComparisonAnswer(semanticFrame, evidenceList = [], arbitrat
           const feeParts = [sem, dpp].filter(Boolean).join(', ');
           lines.push(isEn ? `• **Tuition Fee:** ${feeParts}` : `• **Biaya Pendidikan:** ${feeParts}`);
         }
-      } catch (_) {}
+      } catch (_) { }
     }
 
     if (p.careers) {
@@ -3596,12 +3787,21 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     conflictState.requestedComposableAttrs.length >= 2 &&
     !isProgramComparisonInquiry(semanticFrame?.rawQuery, semanticFrame) &&
     !isDiscountStackingInquiry(semanticFrame?.rawQuery, semanticFrame) &&
+    !isThesisGuidelineInquiry(semanticFrame?.rawQuery, semanticFrame) &&
     !arbitratedEvidence.unsupportedEntity &&
     semanticFrame.domain !== 'UNSUPPORTED_PROGRAM'
   ) {
     const multiAttrRes = composeMultiAttributeAnswer(semanticFrame, generationEvidence, arbitratedEvidence, conflictState);
     if (multiAttrRes && multiAttrRes.success && multiAttrRes.answer) {
       return multiAttrRes;
+    }
+  }
+
+  // Handle thesis guideline & page count inquiries grounded in official FIK S1 Thesis Guidelines
+  if (isThesisGuidelineInquiry(semanticFrame?.rawQuery, semanticFrame)) {
+    const thesisRes = buildThesisGuidelineAnswer(semanticFrame, generationEvidence, arbitratedEvidence);
+    if (thesisRes && thesisRes.success && thesisRes.answer) {
+      return thesisRes;
     }
   }
 
@@ -3647,7 +3847,7 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     semanticFrame.domain === 'TUITION_FEE' ||
     (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp', 'installment_procedure', 'payment_schedule'].includes(a))) ||
     (/\b(?:biaya|spp|dpp|uang kuliah|uang gedung|rincian biaya|cicil|cicilan|angsuran|diskon|potongan|beasiswa)\b/i.test(semanticFrame.rawQuery || '') &&
-     semanticFrame.domain !== 'ACADEMIC_CURRICULUM' && semanticFrame.intent !== 'CURRICULUM_INQUIRY')
+      semanticFrame.domain !== 'ACADEMIC_CURRICULUM' && semanticFrame.intent !== 'CURRICULUM_INQUIRY')
   ) &&
     !arbitratedEvidence.unsupportedEntity &&
     semanticFrame.domain !== 'UNSUPPORTED_PROGRAM';
@@ -3691,11 +3891,43 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
 
   // In test environment, when OpenAI key is absent/circuit open, or fast fallback requested, use generic extractive fallback
   // Institutional catalog/governance intents (katalog prodi, fakultas, lokasi kampus, jadwal tahapan PMB) preserve structured institutional data.
+  const reasoningEffort = resolveReasoningEffort(semanticFrame, arbitratedEvidence);
+  const maxCompletionTokens = resolveCompletionTokenBudget(semanticFrame, arbitratedEvidence);
+  const isCircuitOpen = circuitBreaker.isOpen();
+
+  if (isCircuitOpen) {
+    const extractiveRes = buildGenericExtractiveFallback(semanticFrame, generationEvidence, arbitratedEvidence);
+    const telemetry = {
+      model: arbitratedEvidence?.aiEngine?.model || 'gpt-6-luna',
+      reasoning_effort: reasoningEffort,
+      max_completion_tokens: maxCompletionTokens,
+      finish_reason: null,
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      reasoning_tokens: 0,
+      duration_ms: 0,
+      status: 'circuit_open',
+      fallback_reason: 'CIRCUIT_BREAKER_OPEN',
+      budget_reservation_status: 'BYPASSED',
+      circuit_breaker_state: circuitBreaker.getState()
+    };
+    if (extractiveRes && extractiveRes.success && extractiveRes.answer) {
+      return { ...extractiveRes, llmTelemetry: telemetry };
+    }
+    return {
+      success: false,
+      answer: extractiveRes?.answer || null,
+      source: extractiveRes?.source || 'unanswerable_natural_guidance',
+      isExtractive: false,
+      handledSafely: true,
+      llmTelemetry: telemetry
+    };
+  }
+
   const isTestOrNoKey = !arbitratedEvidence?.aiEngine && (
     process.env.NODE_ENV === 'test' ||
     !process.env.OPENAI_API_KEY ||
     process.env.OPENAI_API_KEY.startsWith('mock') ||
-    openaiCircuitOpen ||
     Boolean(arbitratedEvidence && (arbitratedEvidence.fastFallback || arbitratedEvidence.deterministicOnly))
   );
 
@@ -3725,7 +3957,22 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
   try {
     const engine = (arbitratedEvidence && arbitratedEvidence.aiEngine) || getAiEngine();
     if (!engine || (!engine.apiKey && !engine.client)) {
-      return buildGenericExtractiveFallback(semanticFrame, generationEvidence, arbitratedEvidence);
+      const extractiveRes = buildGenericExtractiveFallback(semanticFrame, generationEvidence, arbitratedEvidence);
+      const telemetry = {
+        model: engine?.model || 'gpt-6-luna',
+        reasoning_effort: reasoningEffort,
+        max_completion_tokens: maxCompletionTokens,
+        finish_reason: null,
+        prompt_tokens: 0,
+        completion_tokens: 0,
+        reasoning_tokens: 0,
+        duration_ms: 0,
+        status: 'no_client',
+        fallback_reason: 'AI_ENGINE_OR_CLIENT_MISSING',
+        budget_reservation_status: 'BYPASSED',
+        circuit_breaker_state: circuitBreaker.getState()
+      };
+      return { ...extractiveRes, llmTelemetry: telemetry };
     }
 
     const isInjectedTestEngine = Boolean(arbitratedEvidence && arbitratedEvidence.aiEngine) && process.env.NODE_ENV === 'test';
@@ -3737,8 +3984,8 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       reservation = await ledger.reserveBudget({
         purpose: 'call_2_grounded_generator',
         model: engine.model,
-        maxPromptTokens: 1500,
-        maxCompletionTokens: 600,
+        maxPromptTokens: 2500,
+        maxCompletionTokens: maxCompletionTokens,
         maxBudgetUSD: arbitratedEvidence && arbitratedEvidence.maxBudgetUSD,
         operationId: arbitratedEvidence && arbitratedEvidence.operationId,
         now: (arbitratedEvidence && arbitratedEvidence.now) || new Date()
@@ -3746,10 +3993,25 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
 
       if (!reservation.allowed) {
         logger.warn({ reason: reservation.reason, model: engine.model }, '[GroundedAnswerGenerator] Budget reservation denied; falling back to generic extractive fallback');
+        const telemetry = {
+          model: engine.model,
+          reasoning_effort: reasoningEffort,
+          max_completion_tokens: maxCompletionTokens,
+          finish_reason: null,
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          reasoning_tokens: 0,
+          duration_ms: 0,
+          status: 'budget_denied',
+          fallback_reason: reservation.reason || 'BUDGET_RESERVATION_DENIED',
+          budget_reservation_status: 'DENIED',
+          circuit_breaker_state: circuitBreaker.getState()
+        };
         return {
           ...buildGenericExtractiveFallback(semanticFrame, generationEvidence, arbitratedEvidence),
           budgetExceeded: reservation.reason === 'DAILY_BUDGET_EXCEEDED',
-          budgetReason: reservation.reason
+          budgetReason: reservation.reason,
+          llmTelemetry: telemetry
         };
       }
     } else if (process.env.NODE_ENV !== 'test') {
@@ -3761,13 +4023,14 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       };
     }
 
-    const timeoutMs = parseInt(process.env.OPENAI_TIMEOUT_MS || '15000', 10);
+    const timeoutMs = parseInt(process.env.OPENAI_TIMEOUT_MS || '25000', 10);
     const requestOptions = { timeout: timeoutMs };
     if (arbitratedEvidence && arbitratedEvidence.signal && !arbitratedEvidence.signal.aborted) {
       requestOptions.signal = arbitratedEvidence.signal;
     }
 
     let completion;
+    const callStart = Date.now();
     try {
       completion = await engine.client.chat.completions.create(
         sanitizeOpenAiChatPayload({
@@ -3776,12 +4039,14 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
-          max_completion_tokens: 600,
-          temperature: 0.1
+          reasoning_effort: reasoningEffort,
+          max_completion_tokens: maxCompletionTokens
         }),
         requestOptions
       );
+      circuitBreaker.recordSuccess();
     } catch (callErr) {
+      circuitBreaker.recordFailure(callErr);
       if (reservation && reservation.reservationId) {
         const isTimeout = (callErr.name === 'TimeoutError' || /timeout/i.test(callErr.message) || callErr.code === 'ETIMEDOUT');
         await ledger.reconcileBudget({
@@ -3796,43 +4061,195 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       throw callErr;
     }
 
+    const durationMs = Date.now() - callStart;
     const usage = completion?.usage;
+    const promptTokens = usage?.prompt_tokens || 0;
+    const completionTokens = usage?.completion_tokens || 0;
+    const reasoningTokens = usage?.completion_tokens_details?.reasoning_tokens || 0;
+
     if (reservation && reservation.reservationId) {
       await ledger.reconcileBudget({
         reservationId: reservation.reservationId,
         reservedUSD: reservation.reservedUSD,
-        actualPromptTokens: usage?.prompt_tokens || 0,
-        actualCompletionTokens: usage?.completion_tokens || 0,
+        actualPromptTokens: promptTokens,
+        actualCompletionTokens: completionTokens,
         model: engine.model,
         status: 'SUCCESS'
       });
     }
 
-    const rawReply = completion.choices?.[0]?.message?.content || '';
+    const rawChoices = Array.isArray(completion?.choices) ? completion.choices : [];
+    const choice = rawChoices[0];
+    const rawFinishReason = choice?.finish_reason;
+    const rawReply = choice?.message?.content || '';
     const reply = rawReply.trim();
-    if (!reply) {
-      logger.warn('[GroundedAnswerGenerator] Empty content from model completion; falling back to generic extractive fallback');
+
+    let finishReason = 'unknown';
+    if (rawFinishReason === 'stop') {
+      finishReason = 'stop';
+    } else if (rawFinishReason === 'length') {
+      finishReason = 'length';
+    } else {
+      finishReason = 'unknown';
+    }
+
+    // Case A: No choices returned from completion
+    if (rawChoices.length === 0) {
+      const telemetry = {
+        model: engine.model,
+        reasoning_effort: reasoningEffort,
+        max_completion_tokens: maxCompletionTokens,
+        finish_reason: 'unknown',
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        reasoning_tokens: reasoningTokens,
+        duration_ms: durationMs,
+        status: 'empty_completion',
+        fallback_reason: 'NO_CHOICES_RETURNED',
+        budget_reservation_status: 'SUCCESS',
+        circuit_breaker_state: circuitBreaker.getState()
+      };
+      logger.warn(telemetry, '[GroundedAnswerGenerator] No choices returned from model completion; falling back to generic extractive fallback');
       const fallbackRes = buildGenericExtractiveFallback(semanticFrame, generationEvidence, {
         ...arbitratedEvidence,
         skipDeterministicDomainTemplates: true
       });
       return {
         ...fallbackRes,
-        emptyModelResponse: true
+        emptyModelResponse: true,
+        llmTelemetry: telemetry
       };
     }
+
+    // Case B: Check finish_reason length truncation
+    if (finishReason === 'length') {
+      const isContentEmpty = !reply;
+      const telemetry = {
+        model: engine.model,
+        reasoning_effort: reasoningEffort,
+        max_completion_tokens: maxCompletionTokens,
+        finish_reason: 'length',
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        reasoning_tokens: reasoningTokens,
+        duration_ms: durationMs,
+        status: isContentEmpty ? 'empty_completion' : 'truncated',
+        fallback_reason: isContentEmpty ? 'LENGTH_TRUNCATION_EMPTY_CONTENT' : 'FINISH_REASON_LENGTH',
+        budget_reservation_status: 'SUCCESS',
+        circuit_breaker_state: circuitBreaker.getState()
+      };
+      logger.warn(telemetry, '[GroundedAnswerGenerator] Completion truncated by token length ceiling');
+
+      const fallbackRes = buildGenericExtractiveFallback(semanticFrame, generationEvidence, {
+        ...arbitratedEvidence,
+        skipDeterministicDomainTemplates: true
+      });
+      return {
+        ...fallbackRes,
+        truncated: true,
+        emptyModelResponse: isContentEmpty,
+        partialContent: isContentEmpty ? null : reply,
+        llmTelemetry: telemetry
+      };
+    }
+
+    // Case C: Check empty completion content
+    if (!reply) {
+      const telemetry = {
+        model: engine.model,
+        reasoning_effort: reasoningEffort,
+        max_completion_tokens: maxCompletionTokens,
+        finish_reason: finishReason,
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        reasoning_tokens: reasoningTokens,
+        duration_ms: durationMs,
+        status: 'empty_completion',
+        fallback_reason: 'EMPTY_CONTENT',
+        budget_reservation_status: 'SUCCESS',
+        circuit_breaker_state: circuitBreaker.getState()
+      };
+      logger.warn(telemetry, '[GroundedAnswerGenerator] Empty content from model completion; falling back to generic extractive fallback');
+      const fallbackRes = buildGenericExtractiveFallback(semanticFrame, generationEvidence, {
+        ...arbitratedEvidence,
+        skipDeterministicDomainTemplates: true
+      });
+      return {
+        ...fallbackRes,
+        emptyModelResponse: true,
+        llmTelemetry: telemetry
+      };
+    }
+
+    // Case D: Non-empty content but unrecognized or missing finish reason (not 'stop')
+    if (finishReason === 'unknown') {
+      const telemetry = {
+        model: engine.model,
+        reasoning_effort: reasoningEffort,
+        max_completion_tokens: maxCompletionTokens,
+        finish_reason: 'unknown',
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        reasoning_tokens: reasoningTokens,
+        duration_ms: durationMs,
+        status: 'invalid_finish_reason',
+        fallback_reason: 'INVALID_OR_MISSING_FINISH_REASON',
+        budget_reservation_status: 'SUCCESS',
+        circuit_breaker_state: circuitBreaker.getState()
+      };
+      logger.warn(telemetry, '[GroundedAnswerGenerator] Unrecognized or missing finish reason; falling back to generic extractive fallback');
+      const fallbackRes = buildGenericExtractiveFallback(semanticFrame, generationEvidence, {
+        ...arbitratedEvidence,
+        skipDeterministicDomainTemplates: true
+      });
+      return {
+        ...fallbackRes,
+        emptyModelResponse: false,
+        partialContent: reply,
+        llmTelemetry: telemetry
+      };
+    }
+
+    const telemetry = {
+      model: engine.model,
+      reasoning_effort: reasoningEffort,
+      max_completion_tokens: maxCompletionTokens,
+      finish_reason: finishReason,
+      prompt_tokens: promptTokens,
+      completion_tokens: completionTokens,
+      reasoning_tokens: reasoningTokens,
+      duration_ms: durationMs,
+      status: 'success',
+      fallback_reason: null,
+      budget_reservation_status: 'SUCCESS',
+      circuit_breaker_state: circuitBreaker.getState()
+    };
+    logger.info(telemetry, '[GroundedAnswerGenerator] LLM Generation Succeeded');
 
     return {
       success: true,
       answer: reply,
       source: 'llm_grounded_synthesis',
-      reservationId: reservation?.reservationId || null
+      reservationId: reservation?.reservationId || null,
+      llmTelemetry: telemetry
     };
   } catch (err) {
-    if (err.status === 429 && /quota|exceeded your current quota/i.test(err.message)) {
-      openaiCircuitOpen = true;
-    }
-    logger.warn({ err: err.message }, '[GroundedAnswerGenerator] LLM synthesis fallback');
+    const safeErrorReason = classifySafeApiError(err);
+    const telemetry = {
+      model: (arbitratedEvidence && arbitratedEvidence.aiEngine?.model) || 'gpt-6-luna',
+      reasoning_effort: reasoningEffort,
+      max_completion_tokens: maxCompletionTokens,
+      finish_reason: null,
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      reasoning_tokens: 0,
+      duration_ms: 0,
+      status: 'api_error',
+      fallback_reason: safeErrorReason,
+      budget_reservation_status: 'FAILED',
+      circuit_breaker_state: circuitBreaker.getState()
+    };
+    logger.warn({ err: err.message, safeReason: safeErrorReason }, '[GroundedAnswerGenerator] LLM synthesis fallback');
 
     const extractiveRes = buildGenericExtractiveFallback(semanticFrame, generationEvidence, {
       ...arbitratedEvidence,
@@ -3840,7 +4257,8 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     });
     return {
       ...extractiveRes,
-      llmError: err.message
+      llmError: err.message,
+      llmTelemetry: telemetry
     };
   }
 }
@@ -4357,6 +4775,137 @@ function buildJobGuaranteeAnswer(semanticFrame = null, evidenceList = []) {
 }
 
 /**
+ * Detects whether the query is inquiring about thesis / final project guidelines,
+ * requirements, page counts, consultation counts, or report systematics.
+ */
+function isThesisGuidelineInquiry(rawQuery = '', semanticFrame = null) {
+  const combined = `${rawQuery || ''} ${semanticFrame?.rawQuery || ''} ${semanticFrame?.normalizedQuery || ''}`.toLowerCase();
+  const hasThesisWord = /\b(?:tugas\s+akhir|skripsi|pedoman\s+ta|proyek\s+akhir|final\s+project|thesis)\b/i.test(combined);
+  if (!hasThesisWord) return false;
+  const hasGuidelineAspect = /\b(?:halaman|lembar|tebal|pages?|page\s+limit|sistematika|struktur|susunan|format|bab|outline|bimbingan|advisor|supervision|syarat|persyaratan|pedoman|aturan|ketentuan|tata\s+cara|panduan)\b/i.test(combined);
+  return hasGuidelineAspect;
+}
+
+/**
+ * Stage 3B.2 (ID 222): Synthesizes grounded answers for thesis & final project guideline inquiries
+ * strictly adhering to the official Faculty of Informatics and Computer (FIK) S1 Thesis Guidelines
+ * (Pedoman TA S1 2019 Revisi 1.pdf).
+ *
+ * Discloses unmentioned quantitative limits (e.g. minimum page count) without fabricating numbers,
+ * while accurately reporting regulated formatting standards and report systematics.
+ */
+function buildThesisGuidelineAnswer(semanticFrame = null, evidenceList = [], arbitratedEvidence = {}) {
+  const userLang = semanticFrame?.language || detectQueryLanguage(semanticFrame?.rawQuery || '');
+  const isEn = userLang === 'en';
+  const queryStr = `${semanticFrame?.rawQuery || ''} ${semanticFrame?.normalizedQuery || ''} ${arbitratedEvidence?.rawQuery || ''}`.toLowerCase();
+
+  // Negative control & program isolation: FIK thesis guidelines apply strictly to FIK programs
+  const targetEntity = (semanticFrame?.entities || []).find(e => (e.family === 'academic_program' || e.type === 'program'))?.canonical ||
+    arbitratedEvidence?.retrievalPlan?.targetEntities?.[0] ||
+    null;
+  const FIK_S1_PROGRAMS = ['S1 Sistem Informasi', 'S1 Sistem Komputer', 'S1 Teknologi Informasi'];
+  const isNonFikProgram = targetEntity && !FIK_S1_PROGRAMS.includes(targetEntity) && !/\b(?:fik|infokom|fakultas\s+informatika)\b/i.test(queryStr);
+  if (isNonFikProgram) {
+    return null;
+  }
+
+  // 1. Minimum / Maximum Page Count Constraint Inquiry (Source gap handling for unmentioned attribute)
+  const isPageCountInquiry = /\b(?:halaman|lembar|tebal|pages?|page\s+limit|minimum\s+pages?)\b/i.test(queryStr) &&
+    /\b(?:berapa|jumlah|minimal|maksimal|batasan|ketentuan|tebal|panjang|how\s+many|minimum|maximum)\b/i.test(queryStr);
+  if (isPageCountInquiry) {
+    const pageCountAnswer = isEn
+      ? `Based on the official S1 Final Project Guidelines (Buku Pedoman Tugas Akhir S1) for the Faculty of Informatics and Computer (FIK) ITB STIKOM Bali, there is no specific regulation regarding a minimum or maximum page count for the final thesis report (unregulated page limit). The official guidelines govern formatting standards (such as A4 paper, standard margins, Times New Roman 12 pt font, and 1.5 line spacing) and report systematics (Preliminary Section, Main Section from Chapter I to Chapter V, and Closing Section). For standard page volume conventions appropriate for your specific research topic, students are advised to consult directly with their Academic Advisor.`
+      : `Berdasarkan Buku Pedoman Tugas Akhir S1 resmi yang berlaku di lingkungan Fakultas Informatika dan Komputer (FIK) ITB STIKOM Bali, tidak diatur batasan minimum maupun maksimum jumlah halaman laporan Tugas Akhir (tidak ada ketentuan jumlah halaman minimal). Dokumen pedoman resmi berfokus mengatur format penulisan (seperti ukuran kertas A4, margin standar, font Times New Roman 12 pt, spasi 1.5) serta sistematika dan susunan bab laporan (Bagian Awal, Bagian Utama dari Bab I hingga Bab V, dan Bagian Akhir). Untuk ketebalan atau jumlah halaman laporan yang lazim sesuai topik penelitian, mahasiswa disarankan berkonsultasi langsung dengan Dosen Pembimbing.`;
+
+    return {
+      success: true,
+      answer: pageCountAnswer,
+      source: 'grounded_thesis_guideline_page_count',
+      isExtractive: true,
+      handledSafely: true,
+      outcome: 'VERIFIED_FACTUAL',
+      isGrounded: true
+    };
+  }
+
+  // 2. Minimum Bimbingan (Consultation / Supervision) Sessions Inquiry
+  const isBimbinganCountInquiry = /\b(?:bimbingan|advisor|supervision)\b/i.test(queryStr) &&
+    /\b(?:berapa\s+kali|jumlah\s+(?:minimal\s+)?(?:pertemuan|sesi)|minimal\s+.*bimbingan|how\s+many|minimum\s+(?:meetings?|sessions?))\b/i.test(queryStr);
+  if (isBimbinganCountInquiry) {
+    const bimbinganAnswer = isEn
+      ? `According to the official S1 Final Project Guidelines (FIK ITB STIKOM Bali), student thesis work is guided by Academic Advisors (Primary Advisor and Co-Advisor). However, the exact number or minimum frequency of consultation sessions required before defense is not explicitly specified in the available document.\n\nTo confirm the specific consultation session requirements for your study program, please check directly with your Academic Advisor or Program Study office.`
+      : `Berdasarkan Buku Pedoman Tugas Akhir resmi yang tersedia di lingkungan Fakultas Informatika dan Komputer (FIK) ITB STIKOM Bali, pelaksanaan bimbingan Tugas Akhir dibimbing oleh Dosen Pembimbing (Pembimbing Utama dan Pendamping). Namun, ketentuan mengenai jumlah pasti atau frekuensi minimum pertemuan bimbingan sebelum ujian/sidang belum tercantum dalam dokumen resmi yang tersedia.\n\nUntuk memastikan ketentuan jumlah sesi bimbingan di program studi Kakak, silakan konfirmasi langsung ke Program Studi atau Dosen Pembimbing ya.`;
+
+    return {
+      success: true,
+      answer: bimbinganAnswer,
+      source: 'grounded_thesis_guideline_bimbingan',
+      isExtractive: true,
+      handledSafely: true,
+      outcome: 'SAFE_UNKNOWN',
+      reason: 'unsubstantiated_specific_attribute',
+      isGrounded: false
+    };
+  }
+
+  // 3. Thesis Report Structure & Systematics Inquiry
+  const isSystematicsInquiry = /\b(?:sistematika|struktur|susunan|format|bab|outline)\b/i.test(queryStr);
+  if (isSystematicsInquiry) {
+    const systematicsAnswer = isEn
+      ? `According to the official S1 Final Project Guidelines (Pedoman Tugas Akhir S1 FIK ITB STIKOM Bali), the standard structure of a thesis report consists of three main parts:\n\n` +
+      `1. **Preliminary Section (Bagian Awal)**: Title page, Approval page, Originality statement, Abstract (Indonesian & English), Preface, Table of Contents, List of Tables/Figures/Appendices.\n` +
+      `2. **Main Section (Bagian Utama)**: Structured into chapters from Chapter I (Introduction: Background, Objectives, Scope) through Landasan Teori/Metodologi, Analisis & Perancangan, Implementasi/Hasil, to Chapter V (Closing: Conclusion & Recommendations).\n` +
+      `3. **Closing Section (Bagian Akhir)**: References (Daftar Pustaka) and Appendices (Lampiran).\n\n` +
+      `Writing format adheres to A4 paper, standard margins, Times New Roman 12 pt font, and 1.5 line spacing.`
+      : `Berdasarkan Buku Pedoman Tugas Akhir S1 resmi yang berlaku (Fakultas Informatika dan Komputer ITB STIKOM Bali), sistematika penulisan laporan Tugas Akhir terdiri dari tiga bagian utama:\n\n` +
+      `1. **Bagian Awal**: Halaman Judul, Lembar Pengesahan, Surat Pernyataan Keaslian, Abstrak (Bahasa Indonesia & Inggris), Kata Pengantar, Daftar Isi, serta Daftar Tabel/Gambar/Lampiran.\n` +
+      `2. **Bagian Utama**: Disusun dalam bab-bab terstruktur mulai dari Bab I (Pendahuluan: Latar Belakang, Rumusan Masalah, Ruang Lingkup, Tujuan), dilanjutkan dengan Tinjauan Pustaka/Landasan Teori, Analisis dan Perancangan, Implementasi/Hasil, hingga Bab V (Penutup: Kesimpulan dan Saran).\n` +
+      `3. **Bagian Akhir**: Daftar Pustaka dan Lampiran-lampiran pendukung penelitian.\n\n` +
+      `Format penulisan mengacu pada standar baku (kertas A4, font Times New Roman 12 pt, spasi 1.5, dan margin standar).`;
+
+    return {
+      success: true,
+      answer: systematicsAnswer,
+      source: 'grounded_thesis_guideline_systematics',
+      isExtractive: true,
+      handledSafely: true,
+      outcome: 'VERIFIED_FACTUAL',
+      isGrounded: true
+    };
+  }
+
+  // 4. General Academic Requirements / Prerequisites for Thesis
+  const guidelineChunk = (Array.isArray(evidenceList) ? evidenceList : []).find(c => {
+    const t = (c.text || c.chunk || '');
+    return /(?:pedoman\s+ta|tugas\s+akhir|skripsi|persyaratan|requirements?)/i.test(t) && /\d+\.\s+[A-Za-z]/i.test(t);
+  }) || (Array.isArray(evidenceList) ? evidenceList[0] : null);
+
+  if (guidelineChunk) {
+    const cleanText = cleanDocumentArtifacts(guidelineChunk.text || guidelineChunk.chunk || '');
+    const items = extractListItemsFromChunk(cleanText);
+    if (items.length > 0) {
+      let answer = isEn
+        ? `The academic requirements to submit a final project (Tugas Akhir) for undergraduate (S1) programs in the Faculty of Informatics and Computer include:\n\n`
+        : `Persyaratan akademik untuk mengajukan Tugas Akhir jenjang S1 Fakultas Informatika dan Komputer meliputi:\n\n`;
+      for (const item of items) {
+        answer += `• ${item}\n`;
+      }
+      return {
+        success: true,
+        answer: answer.trim(),
+        source: 'grounded_thesis_guideline_requirements',
+        isExtractive: true,
+        handledSafely: true,
+        outcome: 'VERIFIED_FACTUAL',
+        isGrounded: true
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
  * Detects whether the query is asking about Inkubator Bisnis (INBIS) or entrepreneurship programs.
  */
 function isINBISInquiry(rawQuery = '', semanticFrame = null) {
@@ -4800,15 +5349,15 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
 
       const s2Ans = isEn
         ? `Based on the official curriculum structure of the **Postgraduate Master of Information Systems (S2 Sistem Informasi)** program at ITB STIKOM Bali (*${sourceDoc}*):\n\n` +
-          `• **Total Offered Curriculum Structure**: **${totalSks} SKS (credits)** across a normal study duration of **${semesters} semesters (2 years)** for the **${degree}** degree.\n` +
-          `• **Mandatory Courses (Mata Kuliah Wajib)**: **${mandatorySks} SKS** across **${mandatoryCount} mandatory courses** (Semester I: 18 SKS [6 courses], Semester II: 9 SKS [3 courses], Semester III: 12 SKS [3 courses], Semester IV Thesis: 8 SKS [1 course]).\n` +
-          `• **Offered Elective Courses (Mata Kuliah Pilihan)**: **${electiveSks} SKS** across **${electiveCount} elective courses** offered in Semester II (*System Enterprise Mutakhir* 3 SKS, *Intelligence, Security, and Infosphere* 3 SKS, and *Deep Learning* 3 SKS).\n\n` +
-          `_Verification Note (PARTIAL_OR_NEEDS_VALIDATION): While the complete curriculum structure lists ${totalSks} SKS (${mandatorySks} mandatory SKS + ${electiveSks} offered elective SKS), the exact minimum graduation SKS requirement (whether all ${electiveSks} elective SKS or a subset must be taken to graduate) requires confirmation from the official Postgraduate Academic Handbook (Buku Pedoman Akademik Pascasarjana) or the Postgraduate Secretariat._`
+        `• **Total Offered Curriculum Structure**: **${totalSks} SKS (credits)** across a normal study duration of **${semesters} semesters (2 years)** for the **${degree}** degree.\n` +
+        `• **Mandatory Courses (Mata Kuliah Wajib)**: **${mandatorySks} SKS** across **${mandatoryCount} mandatory courses** (Semester I: 18 SKS [6 courses], Semester II: 9 SKS [3 courses], Semester III: 12 SKS [3 courses], Semester IV Thesis: 8 SKS [1 course]).\n` +
+        `• **Offered Elective Courses (Mata Kuliah Pilihan)**: **${electiveSks} SKS** across **${electiveCount} elective courses** offered in Semester II (*System Enterprise Mutakhir* 3 SKS, *Intelligence, Security, and Infosphere* 3 SKS, and *Deep Learning* 3 SKS).\n\n` +
+        `_Verification Note (PARTIAL_OR_NEEDS_VALIDATION): While the complete curriculum structure lists ${totalSks} SKS (${mandatorySks} mandatory SKS + ${electiveSks} offered elective SKS), the exact minimum graduation SKS requirement (whether all ${electiveSks} elective SKS or a subset must be taken to graduate) requires confirmation from the official Postgraduate Academic Handbook (Buku Pedoman Akademik Pascasarjana) or the Postgraduate Secretariat._`
         : `Berdasarkan dokumen struktur kurikulum **Program Pascasarjana Magister Sistem Informasi (S2)** ITB STIKOM Bali (*${sourceDoc}*):\n\n` +
-          `• **Total Struktur Kurikulum yang Ditawarkan**: **${totalSks} SKS** dengan masa studi normal **${semesters} semester (2 tahun)** untuk memperoleh gelar **${degree}**.\n` +
-          `• **Beban Mata Kuliah Wajib**: **${mandatorySks} SKS** yang terdiri atas **${mandatoryCount} mata kuliah wajib** (Semester I: 18 SKS [6 MK], Semester II: 9 SKS [3 MK], Semester III: 12 SKS [3 MK], dan Semester IV Tesis: 8 SKS [1 MK]).\n` +
-          `• **Beban Mata Kuliah Pilihan yang Ditawarkan**: **${electiveSks} SKS** yang terdiri atas **${electiveCount} mata kuliah pilihan** pada Semester II (*System Enterprise Mutakhir* 3 SKS, *Intelligence, Security, and Infosphere* 3 SKS, serta *Deep Learning* 3 SKS).\n\n` +
-          `_Catatan Verifikasi (PARTIAL_OR_NEEDS_VALIDATION): Dokumen struktur kurikulum mencantumkan total ${totalSks} SKS mata kuliah yang tersusun dalam kurikulum (${mandatorySks} SKS wajib dan ${electiveSks} SKS pilihan yang ditawarkan). Namun, ketentuan batas minimal SKS wajib tempuh untuk kelulusan (apakah seluruh ${electiveSks} SKS mata kuliah pilihan wajib diambil seluruhnya atau sebagian) memerlukan verifikasi lebih lanjut pada Buku Pedoman Akademik Pascasarjana resmi atau Sekretariat Program Pascasarjana ITB STIKOM Bali._`;
+        `• **Total Struktur Kurikulum yang Ditawarkan**: **${totalSks} SKS** dengan masa studi normal **${semesters} semester (2 tahun)** untuk memperoleh gelar **${degree}**.\n` +
+        `• **Beban Mata Kuliah Wajib**: **${mandatorySks} SKS** yang terdiri atas **${mandatoryCount} mata kuliah wajib** (Semester I: 18 SKS [6 MK], Semester II: 9 SKS [3 MK], Semester III: 12 SKS [3 MK], dan Semester IV Tesis: 8 SKS [1 MK]).\n` +
+        `• **Beban Mata Kuliah Pilihan yang Ditawarkan**: **${electiveSks} SKS** yang terdiri atas **${electiveCount} mata kuliah pilihan** pada Semester II (*System Enterprise Mutakhir* 3 SKS, *Intelligence, Security, and Infosphere* 3 SKS, serta *Deep Learning* 3 SKS).\n\n` +
+        `_Catatan Verifikasi (PARTIAL_OR_NEEDS_VALIDATION): Dokumen struktur kurikulum mencantumkan total ${totalSks} SKS mata kuliah yang tersusun dalam kurikulum (${mandatorySks} SKS wajib dan ${electiveSks} SKS pilihan yang ditawarkan). Namun, ketentuan batas minimal SKS wajib tempuh untuk kelulusan (apakah seluruh ${electiveSks} SKS mata kuliah pilihan wajib diambil seluruhnya atau sebagian) memerlukan verifikasi lebih lanjut pada Buku Pedoman Akademik Pascasarjana resmi atau Sekretariat Program Pascasarjana ITB STIKOM Bali._`;
 
       return {
         success: true,
@@ -4832,13 +5381,13 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
 
       const d3Ans = isEn
         ? `Based on the available OBE curriculum index for **D3 Informatics Management (D3 Manajemen Informatika)** at ITB STIKOM Bali (*${sourceDoc}*):\n\n` +
-          `• **Indexed Study Load**: **${indexedSks} SKS (credits)** over a normal study duration of **${semesters} semesters (3 years)** for the **${degree}** vocational degree.\n` +
-          `• **Level Distribution**: Level I (*Tingkat I*): **${dist['Tingkat I']} SKS**, Level II (*Tingkat II*): **${dist['Tingkat II']} SKS**, and Level III (*Tingkat III*): **${dist['Tingkat III']} SKS**.\n\n` +
-          `_Verification Note (PARTIAL_OR_NEEDS_VALIDATION): While the level summary in the OBE curriculum index records ${indexedSks} SKS, the indexed per-semester course table covers ${listedCoursesSks} SKS and requires primary curriculum document verification with the D3 Manajemen Informatika study program or Academic Office (BAAK) to confirm the final mandatory graduation SKS requirement._`
+        `• **Indexed Study Load**: **${indexedSks} SKS (credits)** over a normal study duration of **${semesters} semesters (3 years)** for the **${degree}** vocational degree.\n` +
+        `• **Level Distribution**: Level I (*Tingkat I*): **${dist['Tingkat I']} SKS**, Level II (*Tingkat II*): **${dist['Tingkat II']} SKS**, and Level III (*Tingkat III*): **${dist['Tingkat III']} SKS**.\n\n` +
+        `_Verification Note (PARTIAL_OR_NEEDS_VALIDATION): While the level summary in the OBE curriculum index records ${indexedSks} SKS, the indexed per-semester course table covers ${listedCoursesSks} SKS and requires primary curriculum document verification with the D3 Manajemen Informatika study program or Academic Office (BAAK) to confirm the final mandatory graduation SKS requirement._`
         : `Berdasarkan data indeks kurikulum OBE yang tersedia untuk Program Studi **D3 Manajemen Informatika** ITB STIKOM Bali (*${sourceDoc}*):\n\n` +
-          `• **Beban Studi Terindeks**: Mencatat total **${indexedSks} SKS** dengan masa studi normal **${semesters} semester (3 tahun)** untuk memperoleh gelar vokasi **${degree}**.\n` +
-          `• **Distribusi Beban per Tingkat**: **Tingkat I: ${dist['Tingkat I']} SKS**, **Tingkat II: ${dist['Tingkat II']} SKS**, dan **Tingkat III: ${dist['Tingkat III']} SKS**.\n\n` +
-          `_Catatan Verifikasi (PARTIAL_OR_NEEDS_VALIDATION): Ringkasan struktur tingkat pada indeks kurikulum lokal mencatat angka ${indexedSks} SKS, namun rincian daftar mata kuliah per semester yang terindeks pada dokumen lokal baru mencakup sebagian mata kuliah (${listedCoursesSks} SKS). Oleh karena itu, kepastian tabel mata kuliah lengkap dan batas SKS wajib kelulusan final masih memerlukan verifikasi langsung pada dokumen kurikulum primer resmi Program Studi D3 Manajemen Informatika atau Bagian Akademik (BAAK) ITB STIKOM Bali._`;
+        `• **Beban Studi Terindeks**: Mencatat total **${indexedSks} SKS** dengan masa studi normal **${semesters} semester (3 tahun)** untuk memperoleh gelar vokasi **${degree}**.\n` +
+        `• **Distribusi Beban per Tingkat**: **Tingkat I: ${dist['Tingkat I']} SKS**, **Tingkat II: ${dist['Tingkat II']} SKS**, dan **Tingkat III: ${dist['Tingkat III']} SKS**.\n\n` +
+        `_Catatan Verifikasi (PARTIAL_OR_NEEDS_VALIDATION): Ringkasan struktur tingkat pada indeks kurikulum lokal mencatat angka ${indexedSks} SKS, namun rincian daftar mata kuliah per semester yang terindeks pada dokumen lokal baru mencakup sebagian mata kuliah (${listedCoursesSks} SKS). Oleh karena itu, kepastian tabel mata kuliah lengkap dan batas SKS wajib kelulusan final masih memerlukan verifikasi langsung pada dokumen kurikulum primer resmi Program Studi D3 Manajemen Informatika atau Bagian Akademik (BAAK) ITB STIKOM Bali._`;
 
       return {
         success: true,
@@ -4938,17 +5487,17 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
     }
     const s2Ans = isEn
       ? `Based on the official profile of the **Magister Sistem Informasi (S2)** program at ITB STIKOM Bali, the curriculum and thesis research are centered on **4 (four) main research focus pillars** (*konsentrasi/fokus riset*), rather than separate study programs:\n\n` +
-        `1. **Data Science**: Processing, modeling, and advanced analytics of large-scale data to support organizational decision-making.\n` +
-        `2. **Medical Informatics**: Development and application of intelligent computing and information systems in the healthcare and medical sectors.\n` +
-        `3. **Cyber Security**: Information systems security, digital infrastructure protection, cyber risk management, and digital forensics.\n` +
-        `4. **Enterprise System** (*System Enterprise Mutakhir*): Architecture design, integration, and strategic governance of enterprise-scale corporate information systems.\n\n` +
-        `Students in the S2 Sistem Informasi program earn the **Magister Komputer (M.Kom.)** degree with a normal study duration of **4 semesters (2 years)**.`
+      `1. **Data Science**: Processing, modeling, and advanced analytics of large-scale data to support organizational decision-making.\n` +
+      `2. **Medical Informatics**: Development and application of intelligent computing and information systems in the healthcare and medical sectors.\n` +
+      `3. **Cyber Security**: Information systems security, digital infrastructure protection, cyber risk management, and digital forensics.\n` +
+      `4. **Enterprise System** (*System Enterprise Mutakhir*): Architecture design, integration, and strategic governance of enterprise-scale corporate information systems.\n\n` +
+      `Students in the S2 Sistem Informasi program earn the **Magister Komputer (M.Kom.)** degree with a normal study duration of **4 semesters (2 years)**.`
       : `Berdasarkan dokumen resmi profil **Program Studi Magister Sistem Informasi (S2)** ITB STIKOM Bali, fokus riset dan konsentrasi keilmuan pada jenjang S2 terbagi ke dalam **4 (empat) pilar riset utama** (bukan program studi terpisah), yaitu:\n\n` +
-        `1. **Data Science**: Berfokus pada pengolahan, pemodelan, dan analisis data berskala besar untuk mendukung pengambilan keputusan organisasi.\n` +
-        `2. **Medical Informatics**: Berfokus pada pemanfaatan sistem informasi dan teknologi komputasi cerdas di bidang layanan kesehatan dan medis.\n` +
-        `3. **Cyber Security**: Berfokus pada keamanan sistem informasi, perlindungan infrastruktur digital, manajemen risiko siber, serta audit dan forensik digital.\n` +
-        `4. **Enterprise System** (*System Enterprise Mutakhir*): Berfokus pada perancangan arsitektur, integrasi, dan tata kelola sistem informasi korporat berskala enterprise.\n\n` +
-        `Lulusan program Magister Sistem Informasi (S2) memperoleh gelar **Magister Komputer (M.Kom.)** dengan masa studi normal **4 semester (2 tahun)**.`;
+      `1. **Data Science**: Berfokus pada pengolahan, pemodelan, dan analisis data berskala besar untuk mendukung pengambilan keputusan organisasi.\n` +
+      `2. **Medical Informatics**: Berfokus pada pemanfaatan sistem informasi dan teknologi komputasi cerdas di bidang layanan kesehatan dan medis.\n` +
+      `3. **Cyber Security**: Berfokus pada keamanan sistem informasi, perlindungan infrastruktur digital, manajemen risiko siber, serta audit dan forensik digital.\n` +
+      `4. **Enterprise System** (*System Enterprise Mutakhir*): Berfokus pada perancangan arsitektur, integrasi, dan tata kelola sistem informasi korporat berskala enterprise.\n\n` +
+      `Lulusan program Magister Sistem Informasi (S2) memperoleh gelar **Magister Komputer (M.Kom.)** dengan masa studi normal **4 semester (2 tahun)**.`;
     return {
       success: true,
       answer: s2Ans,
@@ -4971,17 +5520,17 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
     }
     const mlAns = isEn
       ? `Yes, in the official curriculum of **S1 Information Systems (Sistem Informasi)** at ITB STIKOM Bali (*ISIAN WEBSITE*), machine learning and advanced data topics are structured as follows:\n\n` +
-        `1. **Core Machine Learning Course**:\n` +
-        `   • **Semester VI**: **Pembelajaran Mesin (4 SKS)** — dedicated course focusing on machine learning algorithms, predictive data modeling, and computational intelligence.\n\n` +
-        `2. **Advanced Analytics & Unstructured Data Course**:\n` +
-        `   • **Semester VII**: **Pengolahan Data Tidak Terstruktur (4 SKS)** — advanced data processing for text, multimedia, and complex enterprise data.\n\n` +
-        `This sequence equips students with direct machine learning competencies grounded in enterprise information systems.`
+      `1. **Core Machine Learning Course**:\n` +
+      `   • **Semester VI**: **Pembelajaran Mesin (4 SKS)** — dedicated course focusing on machine learning algorithms, predictive data modeling, and computational intelligence.\n\n` +
+      `2. **Advanced Analytics & Unstructured Data Course**:\n` +
+      `   • **Semester VII**: **Pengolahan Data Tidak Terstruktur (4 SKS)** — advanced data processing for text, multimedia, and complex enterprise data.\n\n` +
+      `This sequence equips students with direct machine learning competencies grounded in enterprise information systems.`
       : `Ya, pada kurikulum resmi Program Studi **S1 Sistem Informasi** ITB STIKOM Bali (dokumen resmi *ISIAN WEBSITE*), pembelajaran kecerdasan buatan dan machine learning terstruktur sebagai berikut:\n\n` +
-        `1. **Mata Kuliah Utama Machine Learning**:\n` +
-        `   • **Semester VI**: **Pembelajaran Mesin (4 SKS)** — mata kuliah inti yang secara spesifik mempelajari algoritma *machine learning*, permodelan data prediktif, dan implementasi kecerdasan buatan.\n\n` +
-        `2. **Mata Kuliah Pendukung Pengolahan Data**:\n` +
-        `   • **Semester VII**: **Pengolahan Data Tidak Terstruktur (4 SKS)** — mata kuliah analitik tingkat lanjut untuk pemrosesan data teks, multimedia, dan analitik data besar.\n\n` +
-        `Struktur kurikulum resmi ini membekali mahasiswa S1 Sistem Informasi dengan kompetensi kecerdasan buatan aplikatif yang terintegrasi dengan pengelolaan sistem informasi perusahaan.`;
+      `1. **Mata Kuliah Utama Machine Learning**:\n` +
+      `   • **Semester VI**: **Pembelajaran Mesin (4 SKS)** — mata kuliah inti yang secara spesifik mempelajari algoritma *machine learning*, permodelan data prediktif, dan implementasi kecerdasan buatan.\n\n` +
+      `2. **Mata Kuliah Pendukung Pengolahan Data**:\n` +
+      `   • **Semester VII**: **Pengolahan Data Tidak Terstruktur (4 SKS)** — mata kuliah analitik tingkat lanjut untuk pemrosesan data teks, multimedia, dan analitik data besar.\n\n` +
+      `Struktur kurikulum resmi ini membekali mahasiswa S1 Sistem Informasi dengan kompetensi kecerdasan buatan aplikatif yang terintegrasi dengan pengelolaan sistem informasi perusahaan.`;
     return {
       success: true,
       answer: mlAns,
@@ -5004,36 +5553,36 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
     if (isTiSpecific) {
       aiAns = isEn
         ? `In the official curriculum of **S1 Information Technology (Teknologi Informasi)** at ITB STIKOM Bali (*ISIAN WEBSITE*), the artificial intelligence course is taught in:\n\n` +
-          `• **Semester IV**: **Kecerdasan Buatan (2 SKS)**\n\n` +
-          `Detailed learning outcomes and specific benefits of this course are not separately enumerated in the available public curriculum summary (source limitation). For complete syllabus details, please consult the Head of Study Program (Kaprodi) or the SION academic portal.`
+        `• **Semester IV**: **Kecerdasan Buatan (2 SKS)**\n\n` +
+        `Detailed learning outcomes and specific benefits of this course are not separately enumerated in the available public curriculum summary (source limitation). For complete syllabus details, please consult the Head of Study Program (Kaprodi) or the SION academic portal.`
         : `Pada kurikulum resmi Program Studi **S1 Teknologi Informasi** ITB STIKOM Bali (dokumen *ISIAN WEBSITE*), mata kuliah terkait kecerdasan buatan diajarkan pada:\n\n` +
-          `• **Semester IV**: **Kecerdasan Buatan (2 SKS)**\n\n` +
-          `Rincian capaian pembelajaran atau manfaat spesifik mata kuliah ini belum tercantum secara terpisah dalam dokumen ringkasan kurikulum publik yang tersedia (keterbatasan sumber). Untuk silabus lengkap, silakan berkonsultasi dengan Ketua Program Studi atau mengakses portal akademik SION.`;
+        `• **Semester IV**: **Kecerdasan Buatan (2 SKS)**\n\n` +
+        `Rincian capaian pembelajaran atau manfaat spesifik mata kuliah ini belum tercantum secara terpisah dalam dokumen ringkasan kurikulum publik yang tersedia (keterbatasan sumber). Untuk silabus lengkap, silakan berkonsultasi dengan Ketua Program Studi atau mengakses portal akademik SION.`;
     } else if (isSkSpecific) {
       aiAns = isEn
         ? `In the curriculum guidelines of **S1 Computer Systems (Sistem Komputer)** at ITB STIKOM Bali (*Pedoman RPL SK* & *ISIAN WEBSITE*), artificial intelligence and smart computing are structured as follows:\n\n` +
-          `• **Semester V**: **Kecerdasan Artifisial (4 SKS)**\n` +
-          `• **Graduate Competency**: Designing and maintaining hardware and software in intelligent computing systems based on embedded systems and robotics.\n\n` +
-          `Detailed syllabus and specific benefit outcomes are not fully enumerated in public summary documents (source limitation).`
+        `• **Semester V**: **Kecerdasan Artifisial (4 SKS)**\n` +
+        `• **Graduate Competency**: Designing and maintaining hardware and software in intelligent computing systems based on embedded systems and robotics.\n\n` +
+        `Detailed syllabus and specific benefit outcomes are not fully enumerated in public summary documents (source limitation).`
         : `Pada kurikulum Program Studi **S1 Sistem Komputer** ITB STIKOM Bali (dokumen *Pedoman RPL SK* & *ISIAN WEBSITE*), materi kecerdasan buatan dan komputasi cerdas terstruktur pada:\n\n` +
-          `• **Semester V**: **Kecerdasan Artifisial (4 SKS)**\n` +
-          `• **Kompetensi Lulusan**: Mampu merancang dan memelihara sistem komputasi cerdas berbasis embedded system, robotika, dan otomasi.\n\n` +
-          `Rincian silabus dan uraian manfaat spesifik mata kuliah ini belum tercantum secara lengkap dalam ringkasan kurikulum publik yang tersedia (keterbatasan sumber).`;
+        `• **Semester V**: **Kecerdasan Artifisial (4 SKS)**\n` +
+        `• **Kompetensi Lulusan**: Mampu merancang dan memelihara sistem komputasi cerdas berbasis embedded system, robotika, dan otomasi.\n\n` +
+        `Rincian silabus dan uraian manfaat spesifik mata kuliah ini belum tercantum secara lengkap dalam ringkasan kurikulum publik yang tersedia (keterbatasan sumber).`;
     } else {
       // General inquiry without specific program (e.g. No. 399)
       aiAns = isEn
         ? `At ITB STIKOM Bali, courses related to Artificial Intelligence (AI) and intelligent computing differ by study program:\n\n` +
-          `1. **S1 Teknologi Informasi**: Course **Kecerdasan Buatan (2 SKS)** is scheduled in **Semester IV** (document *ISIAN WEBSITE*).\n` +
-          `2. **S1 Sistem Informasi**: AI topics are studied through **Pembelajaran Mesin / Machine Learning (4 SKS)** in **Semester VI**.\n` +
-          `3. **S1 Sistem Komputer**: Course **Kecerdasan Artifisial (4 SKS)** is listed in **Semester V** (RPL SK guidelines), supporting intelligent computing and robotics competencies.\n\n` +
-          `**Source Limitation**: Specific syllabus details and enumerated course benefits (*learning outcomes*) for each course are not detailed in the available public summary documents (SOURCE_GAP).\n\n` +
-          `Which study program's AI course structure would you like to explore in more detail (S1 TI, S1 SI, or S1 SK)?`
+        `1. **S1 Teknologi Informasi**: Course **Kecerdasan Buatan (2 SKS)** is scheduled in **Semester IV** (document *ISIAN WEBSITE*).\n` +
+        `2. **S1 Sistem Informasi**: AI topics are studied through **Pembelajaran Mesin / Machine Learning (4 SKS)** in **Semester VI**.\n` +
+        `3. **S1 Sistem Komputer**: Course **Kecerdasan Artifisial (4 SKS)** is listed in **Semester V** (RPL SK guidelines), supporting intelligent computing and robotics competencies.\n\n` +
+        `**Source Limitation**: Specific syllabus details and enumerated course benefits (*learning outcomes*) for each course are not detailed in the available public summary documents (SOURCE_GAP).\n\n` +
+        `Which study program's AI course structure would you like to explore in more detail (S1 TI, S1 SI, or S1 SK)?`
         : `Di ITB STIKOM Bali, mata kuliah terkait Kecerdasan Buatan (Artificial Intelligence / AI) dan komputasi cerdas berbeda penempatannya menurut program studi yang diambil:\n\n` +
-          `1. **S1 Teknologi Informasi**: Mata kuliah **Kecerdasan Buatan (2 SKS)** diajarkan pada **Semester IV** (dokumen *ISIAN WEBSITE*).\n` +
-          `2. **S1 Sistem Informasi**: Pembelajaran kecerdasan buatan dipelajari melalui mata kuliah **Pembelajaran Mesin (4 SKS)** pada **Semester VI**.\n` +
-          `3. **S1 Sistem Komputer**: Mata kuliah **Kecerdasan Artifisial (4 SKS)** tercantum pada **Semester V** (dokumen *Pedoman RPL SK*), yang mendukung kompetensi sistem komputasi cerdas berbasis embedded system.\n\n` +
-          `**Keterbatasan Sumber**: Deskripsi silabus terperinci dan rincian manfaat spesifik per mata kuliah (*learning outcomes*) belum tercantum secara lengkap dalam ringkasan dokumen publik yang tersedia (SOURCE_GAP).\n\n` +
-          `Untuk rincian silabus lengkap dan prasyarat, Kakak dapat mengakses portal akademik SION atau berkonsultasi dengan Kaprodi. Apakah Kakak ingin mengetahui kurikulum mata kuliah AI untuk program studi tertentu (S1 TI, S1 SI, atau S1 SK)?`;
+        `1. **S1 Teknologi Informasi**: Mata kuliah **Kecerdasan Buatan (2 SKS)** diajarkan pada **Semester IV** (dokumen *ISIAN WEBSITE*).\n` +
+        `2. **S1 Sistem Informasi**: Pembelajaran kecerdasan buatan dipelajari melalui mata kuliah **Pembelajaran Mesin (4 SKS)** pada **Semester VI**.\n` +
+        `3. **S1 Sistem Komputer**: Mata kuliah **Kecerdasan Artifisial (4 SKS)** tercantum pada **Semester V** (dokumen *Pedoman RPL SK*), yang mendukung kompetensi sistem komputasi cerdas berbasis embedded system.\n\n` +
+        `**Keterbatasan Sumber**: Deskripsi silabus terperinci dan rincian manfaat spesifik per mata kuliah (*learning outcomes*) belum tercantum secara lengkap dalam ringkasan dokumen publik yang tersedia (SOURCE_GAP).\n\n` +
+        `Untuk rincian silabus lengkap dan prasyarat, Kakak dapat mengakses portal akademik SION atau berkonsultasi dengan Kaprodi. Apakah Kakak ingin mengetahui kurikulum mata kuliah AI untuk program studi tertentu (S1 TI, S1 SI, atau S1 SK)?`;
     }
 
     return {
@@ -5056,27 +5605,27 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
   if (isTiCurriculumInquiry) {
     const tiCurriculumAns = isEn
       ? `Based on the official profile and curriculum documents of **S1 Information Technology (Teknologi Informasi)** at ITB STIKOM Bali (*ISIAN WEBSITE*):\n\n` +
-        `**Core Educational Focus**:\n` +
-        `The program focuses on IT infrastructure management (software & hardware), IT security management, and IT Governance for industry, with applied specialization in **IT Security**, **System Integrator**, and **Technopreneurship**.\n\n` +
-        `**Curriculum Thematic Areas (Based on Official Courses)**:\n` +
-        `• **Pengembangan Perangkat Lunak & Rekayasa Aplikasi**: Pemrograman Berorientasi Objek, Konsep Dasar Pemrograman, Front-end & Back-end Web Development, Mobile Programming, and Rekayasa Perangkat Lunak.\n` +
-        `• **Infrastruktur Komputasi, Jaringan & Cloud Computing**: Dasar Infrastruktur Teknologi, Komunikasi Data, Sistem & Jaringan Komputer, Administrasi Sistem & Jaringan, and Cloud Computing.\n` +
-        `• **Keamanan Siber (IT Security)**: Keamanan Siber and Network Penetration Testing.\n` +
-        `• **Integrasi Sistem & Basis Data**: Sistem Basis Data, Administrasi Basis Data, Sistem Terintegrasi, and Big Data and Analytic.\n` +
-        `• **Komputasi Cerdas & Kewirausahaan**: Kecerdasan Buatan (Semester IV), Literasi TIK, and Kewirausahaan.\n\n` +
-        `**Official Graduate Profiles**:\n` +
-        `According to the academic decree, graduates are prepared as *Analisis & Pengembangan ICT*, *Praktisi ICT*, *Profesional Beretika*, and *Technopreneur* (with applied industry career paths such as software/web/mobile developers, network/cloud specialists, cybersecurity analysts, and IT system integrators).`
+      `**Core Educational Focus**:\n` +
+      `The program focuses on IT infrastructure management (software & hardware), IT security management, and IT Governance for industry, with applied specialization in **IT Security**, **System Integrator**, and **Technopreneurship**.\n\n` +
+      `**Curriculum Thematic Areas (Based on Official Courses)**:\n` +
+      `• **Pengembangan Perangkat Lunak & Rekayasa Aplikasi**: Pemrograman Berorientasi Objek, Konsep Dasar Pemrograman, Front-end & Back-end Web Development, Mobile Programming, and Rekayasa Perangkat Lunak.\n` +
+      `• **Infrastruktur Komputasi, Jaringan & Cloud Computing**: Dasar Infrastruktur Teknologi, Komunikasi Data, Sistem & Jaringan Komputer, Administrasi Sistem & Jaringan, and Cloud Computing.\n` +
+      `• **Keamanan Siber (IT Security)**: Keamanan Siber and Network Penetration Testing.\n` +
+      `• **Integrasi Sistem & Basis Data**: Sistem Basis Data, Administrasi Basis Data, Sistem Terintegrasi, and Big Data and Analytic.\n` +
+      `• **Komputasi Cerdas & Kewirausahaan**: Kecerdasan Buatan (Semester IV), Literasi TIK, and Kewirausahaan.\n\n` +
+      `**Official Graduate Profiles**:\n` +
+      `According to the academic decree, graduates are prepared as *Analisis & Pengembangan ICT*, *Praktisi ICT*, *Profesional Beretika*, and *Technopreneur* (with applied industry career paths such as software/web/mobile developers, network/cloud specialists, cybersecurity analysts, and IT system integrators).`
       : `Berdasarkan dokumen resmi profil dan kurikulum Program Studi **S1 Teknologi Informasi** ITB STIKOM Bali (dokumen resmi *ISIAN WEBSITE*):\n\n` +
-        `**Fokus Utama Program Studi**:\n` +
-        `Program studi berfokus pada pengelolaan infrastruktur TI (software & hardware), manajemen keamanan TI, dan Tata Kelola TI (*IT Governance*), dengan keahlian terapan di bidang **IT Security**, **Integrator Sistem**, dan **Technopreneurship**.\n\n` +
-        `**Bidang Pembelajaran Kurikulum (Berdasarkan Mata Kuliah Resmi)**:\n` +
-        `• **Pengembangan Perangkat Lunak & Rekayasa Aplikasi**: Pemrograman Berorientasi Objek, Konsep Dasar Pemrograman, Front-end & Back-end Web Development, Mobile Programming, dan Rekayasa Perangkat Lunak.\n` +
-        `• **Infrastruktur Komputasi, Jaringan & Cloud Computing**: Dasar Infrastruktur Teknologi, Komunikasi Data, Sistem & Jaringan Komputer, Administrasi Sistem & Jaringan, serta Cloud Computing.\n` +
-        `• **Keamanan Siber (IT Security)**: Keamanan Siber dan Network Penetration Testing.\n` +
-        `• **Integrasi Sistem & Basis Data**: Sistem Basis Data, Administrasi Basis Data, Sistem Terintegrasi, serta Big Data and Analytic.\n` +
-        `• **Komputasi Cerdas & Kewirausahaan**: Kecerdasan Buatan (Semester IV), Literasi TIK, dan Kewirausahaan.\n\n` +
-        `**Profil Lulusan Resmi**:\n` +
-        `Berdasarkan ketetapan dokumen prodi, profil profesi lulusan adalah *Analisis & Pengembangan ICT*, *Praktisi ICT*, *Profesional Beretika*, dan *Technopreneur* (dengan contoh penerapan lapangan kerja seperti pengembang perangkat lunak/web/mobile, staf/spesialis jaringan dan komputasi awan, analis keamanan TI, serta integrator sistem).`;
+      `**Fokus Utama Program Studi**:\n` +
+      `Program studi berfokus pada pengelolaan infrastruktur TI (software & hardware), manajemen keamanan TI, dan Tata Kelola TI (*IT Governance*), dengan keahlian terapan di bidang **IT Security**, **Integrator Sistem**, dan **Technopreneurship**.\n\n` +
+      `**Bidang Pembelajaran Kurikulum (Berdasarkan Mata Kuliah Resmi)**:\n` +
+      `• **Pengembangan Perangkat Lunak & Rekayasa Aplikasi**: Pemrograman Berorientasi Objek, Konsep Dasar Pemrograman, Front-end & Back-end Web Development, Mobile Programming, dan Rekayasa Perangkat Lunak.\n` +
+      `• **Infrastruktur Komputasi, Jaringan & Cloud Computing**: Dasar Infrastruktur Teknologi, Komunikasi Data, Sistem & Jaringan Komputer, Administrasi Sistem & Jaringan, serta Cloud Computing.\n` +
+      `• **Keamanan Siber (IT Security)**: Keamanan Siber dan Network Penetration Testing.\n` +
+      `• **Integrasi Sistem & Basis Data**: Sistem Basis Data, Administrasi Basis Data, Sistem Terintegrasi, serta Big Data and Analytic.\n` +
+      `• **Komputasi Cerdas & Kewirausahaan**: Kecerdasan Buatan (Semester IV), Literasi TIK, dan Kewirausahaan.\n\n` +
+      `**Profil Lulusan Resmi**:\n` +
+      `Berdasarkan ketetapan dokumen prodi, profil profesi lulusan adalah *Analisis & Pengembangan ICT*, *Praktisi ICT*, *Profesional Beretika*, dan *Technopreneur* (dengan contoh penerapan lapangan kerja seperti pengembang perangkat lunak/web/mobile, staf/spesialis jaringan dan komputasi awan, analis keamanan TI, serta integrator sistem).`;
 
     return {
       success: true,
@@ -5100,21 +5649,21 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
     }
     const optAns = isEn
       ? `Based on official ITB STIKOM Bali academic profiles (ISIAN WEBSITE & Program Overviews), the **S1 Information Systems (Sistem Informasi)** program concentrates curriculum competencies around three official **Graduate Profiles & Competency Focus Areas**:\n\n` +
-        `1. **Perekayasa Sistem Informasi (Enterprise Systems & Business Intelligence)**:\n` +
-        `   Focuses on the analysis, design, and governance of enterprise and e-government information systems, database optimization, and IT project management (Career Profiles: *Business Analyst*, *System Analyst*, *ERP Specialist*, *IT Project Manager*).\n` +
-        `2. **Perekayasa Sistem Informasi Multimedia (Interactive Graphics & Digital Media)**:\n` +
-        `   Focuses on user interface (UI/UX) engineering, interactive multimedia development, animations, and digital content systems.\n` +
-        `3. **Technopreneur / IT Entrepreneur**:\n` +
-        `   Focuses on ICT-based digital business innovation, startup development, and enterprise incubation via the campus Business Incubator (INBIS) (Career Profiles: *IT Entrepreneur*, *Digital Consultant*).\n\n` +
-        `If you are exploring alternative undergraduate degree programs in related computing fields, ITB STIKOM Bali also offers **S1 Bisnis Digital**, **S1 Teknologi Informasi**, and **S1 Sistem Komputer**.`
+      `1. **Perekayasa Sistem Informasi (Enterprise Systems & Business Intelligence)**:\n` +
+      `   Focuses on the analysis, design, and governance of enterprise and e-government information systems, database optimization, and IT project management (Career Profiles: *Business Analyst*, *System Analyst*, *ERP Specialist*, *IT Project Manager*).\n` +
+      `2. **Perekayasa Sistem Informasi Multimedia (Interactive Graphics & Digital Media)**:\n` +
+      `   Focuses on user interface (UI/UX) engineering, interactive multimedia development, animations, and digital content systems.\n` +
+      `3. **Technopreneur / IT Entrepreneur**:\n` +
+      `   Focuses on ICT-based digital business innovation, startup development, and enterprise incubation via the campus Business Incubator (INBIS) (Career Profiles: *IT Entrepreneur*, *Digital Consultant*).\n\n` +
+      `If you are exploring alternative undergraduate degree programs in related computing fields, ITB STIKOM Bali also offers **S1 Bisnis Digital**, **S1 Teknologi Informasi**, and **S1 Sistem Komputer**.`
       : `Berdasarkan dokumen resmi ITB STIKOM Bali (*ISIAN WEBSITE* dan dokumen *Profil Program Studi*), Program Studi **S1 Sistem Informasi** mengintegrasikan pilihan peminatan ke dalam **Profil Lulusan dan Fokus Kompetensi** resmi berikut:\n\n` +
-        `1. **Perekayasa Sistem Informasi (Enterprise Systems & Business Intelligence)**:\n` +
-        `   Fokus pada analisis kebutuhan bisnis, perancangan dan implementasi sistem enterprise korporat/pemerintahan, optimasi basis data, serta manajemen proyek IT (Profil Profesi: *Business Analyst*, *System Analyst*, *ERP Specialist*, *IT Project Manager*).\n` +
-        `2. **Perekayasa Sistem Informasi Multimedia (Desain Grafis & Interaktif)**:\n` +
-        `   Fokus pada rekayasa antarmuka pengguna (*UI/UX*), media interaktif, desain grafis sistem, animasi, dan konten digital.\n` +
-        `3. **Technopreneur / Wirausaha Sistem Informasi**:\n` +
-        `   Fokus pada perintisan bisnis inovasi berbasis teknologi informasi (*startup* digital) melalui bimbingan Inkubator Bisnis (INBIS) kampus (Profil Profesi: *IT Entrepreneur*, *Konsultan IT*).\n\n` +
-        `Selain itu, bagi calon mahasiswa yang mencari alternatif program studi serumpun lainnya di bidang komputer dan bisnis, ITB STIKOM Bali juga menyediakan pilihan **S1 Bisnis Digital**, **S1 Teknologi Informasi**, dan **S1 Sistem Komputer**.`;
+      `1. **Perekayasa Sistem Informasi (Enterprise Systems & Business Intelligence)**:\n` +
+      `   Fokus pada analisis kebutuhan bisnis, perancangan dan implementasi sistem enterprise korporat/pemerintahan, optimasi basis data, serta manajemen proyek IT (Profil Profesi: *Business Analyst*, *System Analyst*, *ERP Specialist*, *IT Project Manager*).\n` +
+      `2. **Perekayasa Sistem Informasi Multimedia (Desain Grafis & Interaktif)**:\n` +
+      `   Fokus pada rekayasa antarmuka pengguna (*UI/UX*), media interaktif, desain grafis sistem, animasi, dan konten digital.\n` +
+      `3. **Technopreneur / Wirausaha Sistem Informasi**:\n` +
+      `   Fokus pada perintisan bisnis inovasi berbasis teknologi informasi (*startup* digital) melalui bimbingan Inkubator Bisnis (INBIS) kampus (Profil Profesi: *IT Entrepreneur*, *Konsultan IT*).\n\n` +
+      `Selain itu, bagi calon mahasiswa yang mencari alternatif program studi serumpun lainnya di bidang komputer dan bisnis, ITB STIKOM Bali juga menyediakan pilihan **S1 Bisnis Digital**, **S1 Teknologi Informasi**, dan **S1 Sistem Komputer**.`;
     return {
       success: true,
       answer: optAns,
@@ -5151,7 +5700,7 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
     };
   }
 
-    // 3c-0. Campus choice indecision - Ask user preferences before recommending (No. 45)
+  // 3c-0. Campus choice indecision - Ask user preferences before recommending (No. 45)
   const isCampusIndecisionQuery = /\b(?:masih\s+)?(?:bingung|bimbang|ragu|galau)\s+(?:memilih|pilih|milih|menentukan)\s+(?:kampus|kuliah|universitas|jurusan)\b/i.test(rawQuery) ||
     /\b(?:aku|saya)\s+(?:masih\s+)?bingung\s+memilih\s+kampus\b/i.test(rawQuery);
   if (isCampusIndecisionQuery) {
@@ -5174,17 +5723,17 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
   if (isMlQuery && (targetEntity === 'S1 Sistem Informasi' || (!targetEntity && /\bsistem\s+informasi\b/i.test(rawQuery)))) {
     const mlAns = isEn
       ? `Yes, the **S1 Information Systems (Sistem Informasi)** curriculum at ITB STIKOM Bali includes a dedicated course on Machine Learning:\n\n` +
-        `• **Semester VI**: **Pembelajaran Mesin (4 SKS)**\n\n` +
-        `In addition, students take supporting analytical and data courses across adjacent semesters, including:\n` +
-        `• **Semester V**: **Probabilitas dan Statistika (3 SKS)** and **Metode Numerik (3 SKS)**\n` +
-        `• **Semester VII**: **Sains Data untuk Bisnis (4 SKS)**\n\n` +
-        `These courses equip S1 Sistem Informasi students to apply machine learning and data science techniques to enterprise and business decision support systems.`
+      `• **Semester VI**: **Pembelajaran Mesin (4 SKS)**\n\n` +
+      `In addition, students take supporting analytical and data courses across adjacent semesters, including:\n` +
+      `• **Semester V**: **Probabilitas dan Statistika (3 SKS)** and **Metode Numerik (3 SKS)**\n` +
+      `• **Semester VII**: **Sains Data untuk Bisnis (4 SKS)**\n\n` +
+      `These courses equip S1 Sistem Informasi students to apply machine learning and data science techniques to enterprise and business decision support systems.`
       : `Ya, pada kurikulum resmi Program Studi **S1 Sistem Informasi** ITB STIKOM Bali terdapat mata kuliah khusus yang mempelajari *Machine Learning*, yaitu:\n\n` +
-        `• **Semester VI**: **Pembelajaran Mesin (4 SKS)**\n\n` +
-        `Selain itu, mahasiswa S1 Sistem Informasi juga dibekali mata kuliah fondasi analitik dan pengolahan data pendukung pada semester terkait, antara lain:\n` +
-        `• **Semester V**: **Probabilitas dan Statistika (3 SKS)** serta **Metode Numerik (3 SKS)**\n` +
-        `• **Semester VII**: **Sains Data untuk Bisnis (4 SKS)**\n\n` +
-        `Rangkaian mata kuliah ini membekali mahasiswa dengan kompetensi penerapan *machine learning* dan sains data untuk mendukung pengambilan keputusan bisnis serta sistem enterprise.`;
+      `• **Semester VI**: **Pembelajaran Mesin (4 SKS)**\n\n` +
+      `Selain itu, mahasiswa S1 Sistem Informasi juga dibekali mata kuliah fondasi analitik dan pengolahan data pendukung pada semester terkait, antara lain:\n` +
+      `• **Semester V**: **Probabilitas dan Statistika (3 SKS)** serta **Metode Numerik (3 SKS)**\n` +
+      `• **Semester VII**: **Sains Data untuk Bisnis (4 SKS)**\n\n` +
+      `Rangkaian mata kuliah ini membekali mahasiswa dengan kompetensi penerapan *machine learning* dan sains data untuk mendukung pengambilan keputusan bisnis serta sistem enterprise.`;
     return {
       success: true,
       answer: mlAns,
@@ -5333,15 +5882,15 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
       const dist = d3Fact.distribution || { 'Tingkat I': 38, 'Tingkat II': 40, 'Tingkat III': 32 };
       const d3CourseAns = isEn
         ? `Based on the OBE curriculum index for **D3 Informatics Management (D3 Manajemen Informatika)** at ITB STIKOM Bali (*${d3Fact.sourceDocument || 'MI_curriculum_verified_obe-2023.json'}*):\n\n` +
-          `• **Normal Study Duration**: **${d3Fact.normalDurationSemesters || 6} semesters (3 years)** — Degree: **${d3Fact.degreeAwarded || 'Ahli Madya Komputer (A.Md.Kom.)'}**\n` +
-          `• **Indexed Credit Distribution**: Total **${d3Fact.totalSks || 110} SKS** across 3 levels (**Tingkat I: ${dist['Tingkat I']} SKS**, **Tingkat II: ${dist['Tingkat II']} SKS**, **Tingkat III: ${dist['Tingkat III']} SKS**).\n` +
-          `• **Core Vocational Focus**: Practical application programming, database administration, web design, computer networks, and information systems operations.\n\n` +
-          `_Verification Note (PARTIAL_OR_NEEDS_VALIDATION): The per-semester course table indexed in the local dataset covers ${d3Fact.listedCoursesSumSks || 75} SKS. For the complete semester-by-semester course list and confirmation of final graduation SKS requirements, please verify directly with the D3 Manajemen Informatika study program or the Academic Office (BAAK)._`
+        `• **Normal Study Duration**: **${d3Fact.normalDurationSemesters || 6} semesters (3 years)** — Degree: **${d3Fact.degreeAwarded || 'Ahli Madya Komputer (A.Md.Kom.)'}**\n` +
+        `• **Indexed Credit Distribution**: Total **${d3Fact.totalSks || 110} SKS** across 3 levels (**Tingkat I: ${dist['Tingkat I']} SKS**, **Tingkat II: ${dist['Tingkat II']} SKS**, **Tingkat III: ${dist['Tingkat III']} SKS**).\n` +
+        `• **Core Vocational Focus**: Practical application programming, database administration, web design, computer networks, and information systems operations.\n\n` +
+        `_Verification Note (PARTIAL_OR_NEEDS_VALIDATION): The per-semester course table indexed in the local dataset covers ${d3Fact.listedCoursesSumSks || 75} SKS. For the complete semester-by-semester course list and confirmation of final graduation SKS requirements, please verify directly with the D3 Manajemen Informatika study program or the Academic Office (BAAK)._`
         : `Berdasarkan indeks kurikulum OBE Program Studi **D3 Manajemen Informatika** ITB STIKOM Bali (*${d3Fact.sourceDocument || 'MI_curriculum_verified_obe-2023.json'}*):\n\n` +
-          `• **Masa Studi Normal**: **${d3Fact.normalDurationSemesters || 6} semester (3 tahun)** — Gelar: **${d3Fact.degreeAwarded || 'Ahli Madya Komputer (A.Md.Kom.)'}**\n` +
-          `• **Distribusi Beban Studi Terindeks**: Mencatat total **${d3Fact.totalSks || 110} SKS** pada 3 tingkat (**Tingkat I: ${dist['Tingkat I']} SKS**, **Tingkat II: ${dist['Tingkat II']} SKS**, **Tingkat III: ${dist['Tingkat III']} SKS**).\n` +
-          `• **Fokus Pembelajaran Vokasi**: Pemrograman aplikasi terapan, administrasi basis data, perancangan web, jaringan komputer, dan operasional sistem informasi.\n\n` +
-          `_Catatan Verifikasi (PARTIAL_OR_NEEDS_VALIDATION): Rincian daftar mata kuliah per semester yang terindeks pada dokumen lokal baru mencakup sebagian mata kuliah (${d3Fact.listedCoursesSumSks || 75} SKS). Untuk rincian tabel mata kuliah lengkap per semester serta konfirmasi beban SKS wajib kelulusan final, silakan melakukan verifikasi langsung pada dokumen kurikulum primer resmi Program Studi D3 Manajemen Informatika atau Bagian Akademik (BAAK) ITB STIKOM Bali._`;
+        `• **Masa Studi Normal**: **${d3Fact.normalDurationSemesters || 6} semester (3 tahun)** — Gelar: **${d3Fact.degreeAwarded || 'Ahli Madya Komputer (A.Md.Kom.)'}**\n` +
+        `• **Distribusi Beban Studi Terindeks**: Mencatat total **${d3Fact.totalSks || 110} SKS** pada 3 tingkat (**Tingkat I: ${dist['Tingkat I']} SKS**, **Tingkat II: ${dist['Tingkat II']} SKS**, **Tingkat III: ${dist['Tingkat III']} SKS**).\n` +
+        `• **Fokus Pembelajaran Vokasi**: Pemrograman aplikasi terapan, administrasi basis data, perancangan web, jaringan komputer, dan operasional sistem informasi.\n\n` +
+        `_Catatan Verifikasi (PARTIAL_OR_NEEDS_VALIDATION): Rincian daftar mata kuliah per semester yang terindeks pada dokumen lokal baru mencakup sebagian mata kuliah (${d3Fact.listedCoursesSumSks || 75} SKS). Untuk rincian tabel mata kuliah lengkap per semester serta konfirmasi beban SKS wajib kelulusan final, silakan melakukan verifikasi langsung pada dokumen kurikulum primer resmi Program Studi D3 Manajemen Informatika atau Bagian Akademik (BAAK) ITB STIKOM Bali._`;
       return {
         success: true,
         answer: d3CourseAns,
@@ -5371,7 +5920,7 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
           const corpus = getCorpusIndex() || [];
           const fb = corpus.filter(c => c.id && (c.id.startsWith('75e94d8b') || c.id.startsWith('c8417d98')));
           s2Texts = fb.map(c => c.chunk || c.text || '').filter(Boolean);
-        } catch (_) {}
+        } catch (_) { }
       }
       const formattedS2Table = buildS2CurriculumRegistryTable(s2Fact, targetSem) || formatCurriculumTable(s2Texts, targetSem);
       if (formattedS2Table) {
@@ -5395,7 +5944,7 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
       }
     }
 
-        // If S1 Sistem Informasi or S1 Teknologi Informasi: format official curriculum courses (including Semester V for No. 404)
+    // If S1 Sistem Informasi or S1 Teknologi Informasi: format official curriculum courses (including Semester V for No. 404)
     if (targetEntity === 'S1 Sistem Informasi' || targetEntity === 'S1 Teknologi Informasi') {
       const progCode = targetEntity === 'S1 Sistem Informasi' ? 'SI' : 'TI';
       const progChunks = evidenceList.filter(c => {
@@ -5422,7 +5971,7 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
             /Semester\s+[IVX\d]+/i.test(c.chunk || c.text || '')
           );
           progTexts = fallbackChunks.map(c => c.chunk || c.text || '').filter(Boolean);
-        } catch (_) {}
+        } catch (_) { }
       }
 
       const semMatch = rawQuery.match(/semester\s*([IVX]+|\d+)/i);
@@ -5474,12 +6023,21 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     conflictState.requestedComposableAttrs.length >= 2 &&
     !isProgramComparisonInquiry(semanticFrame?.rawQuery, semanticFrame) &&
     !isDiscountStackingInquiry(semanticFrame?.rawQuery, semanticFrame) &&
+    !isThesisGuidelineInquiry(semanticFrame?.rawQuery, semanticFrame) &&
     !arbitratedEvidence?.unsupportedEntity &&
     semanticFrame?.domain !== 'UNSUPPORTED_PROGRAM'
   ) {
     const multiAttrRes = composeMultiAttributeAnswer(semanticFrame, evidenceList, arbitratedEvidence, conflictState);
     if (multiAttrRes && multiAttrRes.success && multiAttrRes.answer) {
       return multiAttrRes;
+    }
+  }
+
+  // Stage 3B.2: Handle thesis guideline & page count inquiries grounded in official FIK S1 Thesis Guidelines
+  if (isThesisGuidelineInquiry(semanticFrame?.rawQuery, semanticFrame)) {
+    const thesisRes = buildThesisGuidelineAnswer(semanticFrame, evidenceList, arbitratedEvidence);
+    if (thesisRes && thesisRes.success && thesisRes.answer) {
+      return thesisRes;
     }
   }
 
@@ -5512,8 +6070,8 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
 
   // 2. Handler for ONLINE_LEARNING_PLATFORM (SION factual vs LMS gap)
   if (!skipDomainTemplates && (semanticFrame?.intent === 'ONLINE_LEARNING_PLATFORM' ||
-      (/\b(?:kuliah|perkuliahan)\s+.*(?:online|daring)\b/i.test(rawQuery) &&
-       /\b(?:aplikasi|platform|software|media|pake|pakai|menggunakan)\b/i.test(rawQuery)))) {
+    (/\b(?:kuliah|perkuliahan)\s+.*(?:online|daring)\b/i.test(rawQuery) &&
+      /\b(?:aplikasi|platform|software|media|pake|pakai|menggunakan)\b/i.test(rawQuery)))) {
     const platformAns = 'Berdasarkan dokumen resmi akademik ITB STIKOM Bali yang tersedia:\n\n' +
       '1. *SION (Sistem Informasi Online)*:\n' +
       '   Portal daring resmi kampus yang terbukti digunakan mahasiswa untuk administrasi akademik, pengisian dan persetujuan Kartu Rencana Studi (KRS), serta pengajuan usulan proposal tugas akhir/skripsi secara daring.\n\n' +
@@ -5616,15 +6174,15 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     } else {
       formFeeAns += isEn
         ? `Registration fee discounts are available across admission waves:\n` +
-          `• Gelombang Khusus: IDR 300,000 discount (payable fee: IDR 200,000)\n` +
-          `• Gelombang I: IDR 250,000 discount (payable fee: IDR 250,000)\n` +
-          `• Gelombang II: IDR 200,000 discount (payable fee: IDR 300,000)\n` +
-          `• Gelombang III: IDR 150,000 discount (payable fee: IDR 350,000)\n\n`
+        `• Gelombang Khusus: IDR 300,000 discount (payable fee: IDR 200,000)\n` +
+        `• Gelombang I: IDR 250,000 discount (payable fee: IDR 250,000)\n` +
+        `• Gelombang II: IDR 200,000 discount (payable fee: IDR 300,000)\n` +
+        `• Gelombang III: IDR 150,000 discount (payable fee: IDR 350,000)\n\n`
         : `Tersedia potongan biaya formulir pendaftaran berdasarkan gelombang:\n` +
-          `• Gelombang Khusus: Potongan Rp 300.000 (biaya pendaftaran menjadi Rp 200.000)\n` +
-          `• Gelombang I: Potongan Rp 250.000 (biaya pendaftaran menjadi Rp 250.000)\n` +
-          `• Gelombang II: Potongan Rp 200.000 (biaya pendaftaran menjadi Rp 300.000)\n` +
-          `• Gelombang III: Potongan Rp 150.000 (biaya pendaftaran menjadi Rp 350.000)\n\n`;
+        `• Gelombang Khusus: Potongan Rp 300.000 (biaya pendaftaran menjadi Rp 200.000)\n` +
+        `• Gelombang I: Potongan Rp 250.000 (biaya pendaftaran menjadi Rp 250.000)\n` +
+        `• Gelombang II: Potongan Rp 200.000 (biaya pendaftaran menjadi Rp 300.000)\n` +
+        `• Gelombang III: Potongan Rp 150.000 (biaya pendaftaran menjadi Rp 350.000)\n\n`;
     }
     formFeeAns += isEn
       ? `Online registration is accessible via the official admission portal: https://pmb.stikom-bali.ac.id.`
@@ -5645,13 +6203,13 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
   if (isCampusIndecisionQuery) {
     const prefAns = isEn
       ? `It is completely normal to feel undecided when selecting a campus and study program. To help us guide you toward the best-fitting program at ITB STIKOM Bali, could you let us know:\n\n` +
-        `1. **Which areas or interests do you enjoy most?** (For example: software engineering/coding, cybersecurity & networks, digital business & marketing, or graphic design & multimedia)\n` +
-        `2. **What is your educational background?** (High school science/social studies or vocational school/SMK in a specific major?)\n\n` +
-        `With this information, we can provide tailored program recommendations aligned with your career goals!`
+      `1. **Which areas or interests do you enjoy most?** (For example: software engineering/coding, cybersecurity & networks, digital business & marketing, or graphic design & multimedia)\n` +
+      `2. **What is your educational background?** (High school science/social studies or vocational school/SMK in a specific major?)\n\n` +
+      `With this information, we can provide tailored program recommendations aligned with your career goals!`
       : `Tidak apa-apa Kak, sangat wajar jika masih merasa bingung dalam memilih kampus dan program studi yang tepat. Agar kami dapat memberikan rekomendasi jurusan yang paling sesuai di ITB STIKOM Bali, boleh kami tahu:\n\n` +
-        `1. **Bidang atau minat apa yang paling Kakak sukai?** (Misalnya: rekayasa perangkat lunak/coding, keamanan siber & jaringan komputer, manajemen bisnis & pemasaran digital, atau desain grafis & multimedia)\n` +
-        `2. **Latar belakang pendidikan Kakak?** (Apakah dari SMA IPA/IPS atau SMK jurusan tertentu?)\n\n` +
-        `Dengan mengetahui minat dan latar belakang Kakak, kami dapat membantu memberikan saran program studi yang paling pas untuk tujuan karier Kakak ya!`;
+      `1. **Bidang atau minat apa yang paling Kakak sukai?** (Misalnya: rekayasa perangkat lunak/coding, keamanan siber & jaringan komputer, manajemen bisnis & pemasaran digital, atau desain grafis & multimedia)\n` +
+      `2. **Latar belakang pendidikan Kakak?** (Apakah dari SMA IPA/IPS atau SMK jurusan tertentu?)\n\n` +
+      `Dengan mengetahui minat dan latar belakang Kakak, kami dapat membantu memberikan saran program studi yang paling pas untuk tujuan karier Kakak ya!`;
     return {
       success: true,
       answer: prefAns,
@@ -5794,11 +6352,11 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     /\b(?:jadwal(?:nya)?|gelombang(?:nya)?|kapan)\b/i.test(rawQuery) &&
     /\b(?:dokumen(?:nya)?|berkas(?:nya)?)\b/i.test(rawQuery)
   ) || (
-    Array.isArray(semanticFrame?.aspects) &&
-    semanticFrame.aspects.includes('requirements') &&
-    (semanticFrame.aspects.includes('schedule') || /\bjadwal/i.test(rawQuery)) &&
-    semanticFrame.aspects.includes('documents')
-  );
+      Array.isArray(semanticFrame?.aspects) &&
+      semanticFrame.aspects.includes('requirements') &&
+      (semanticFrame.aspects.includes('schedule') || /\bjadwal/i.test(rawQuery)) &&
+      semanticFrame.aspects.includes('documents')
+    );
 
   if (isMultiAspectPmbInquiry) {
     const progLabel = (semanticFrame?.entities || []).find(e => e.family === 'academic_program' || e.type === 'program')?.canonical || 'S1 Bisnis Digital';
@@ -5926,15 +6484,15 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     } else if (calSummary.isHistorical) {
       currentStatusAns = isEn
         ? `Based on the official Admissions Calendar (Kalender Pendaftaran) for ITB STIKOM Bali ${ay} (historical archive records — all dates have passed and do not represent upcoming intake dates), all 15 recorded admission intake waves (from Gelombang ${calSummary.firstWave.label} up to Gelombang ${calSummary.lastWave.label}) concluded registration on ${calSummary.finalRegDeadline}${reRegNote}.\n\n` +
-          `Currently, the official schedule and opening dates for the upcoming intake / academic year have not been confirmed in the available records. To verify whether registration has reopened or to check the upcoming schedule, please visit the official PMB portal at https://pmb.stikom-bali.ac.id or contact admissions at (0361) 244445.`
+        `Currently, the official schedule and opening dates for the upcoming intake / academic year have not been confirmed in the available records. To verify whether registration has reopened or to check the upcoming schedule, please visit the official PMB portal at https://pmb.stikom-bali.ac.id or contact admissions at (0361) 244445.`
         : `Berdasarkan arsip resmi Kalender Pendaftaran PMB ITB STIKOM Bali ${ay} (catatan arsip/historis — seluruh tanggal pendaftaran telah berlalu dan bukan jadwal seleksi yang akan datang), seluruh rangkaian 15 gelombang pendaftaran yang tercatat (mulai Gelombang ${calSummary.firstWave.label} hingga Gelombang ${calSummary.lastWave.label}) telah ditutup pada **${calSummary.finalRegDeadline}**${reRegNote}.\n\n` +
-          `Saat ini, kepastian jadwal pembukaan pendaftaran untuk periode/intake berikutnya belum tercantum dalam dokumen resmi yang tersedia. Untuk memastikan pembaruan jadwal atau pembukaan gelombang berikutnya, calon mahasiswa disarankan memantau langsung portal resmi PMB di **https://pmb.stikom-bali.ac.id** atau menghubungi Panitia PMB di (0361) 244445.`;
+        `Saat ini, kepastian jadwal pembukaan pendaftaran untuk periode/intake berikutnya belum tercantum dalam dokumen resmi yang tersedia. Untuk memastikan pembaruan jadwal atau pembukaan gelombang berikutnya, calon mahasiswa disarankan memantau langsung portal resmi PMB di **https://pmb.stikom-bali.ac.id** atau menghubungi Panitia PMB di (0361) 244445.`;
     } else if (calSummary.isUpcoming) {
       currentStatusAns = isEn
         ? `Based on the official Admissions Calendar for ITB STIKOM Bali ${ay} (upcoming admissions schedule), registration has not started yet and is scheduled to open starting with Gelombang ${calSummary.firstWave.label} on ${calSummary.initialRegStartDate || 'the scheduled date'}.${partialNotice}\n\n` +
-          `Registration is not open today. To verify upcoming schedules or register when the wave opens, please visit the official PMB portal at https://pmb.stikom-bali.ac.id.`
+        `Registration is not open today. To verify upcoming schedules or register when the wave opens, please visit the official PMB portal at https://pmb.stikom-bali.ac.id.`
         : `Berdasarkan Kalender Pendaftaran resmi PMB ITB STIKOM Bali ${ay} (jadwal pendaftaran mendatang), pendaftaran mahasiswa baru saat ini belum dimulai dan dijadwalkan akan dibuka mulai Gelombang ${calSummary.firstWave.label} pada **${calSummary.initialRegStartDate || 'tanggal yang ditetapkan'}**.${partialNotice}\n\n` +
-          `Pendaftaran belum dibuka hari ini. Calon mahasiswa dapat memantau dan mendaftar saat gelombang dibuka melalui portal resmi di **https://pmb.stikom-bali.ac.id**.`;
+        `Pendaftaran belum dibuka hari ini. Calon mahasiswa dapat memantau dan mendaftar saat gelombang dibuka melalui portal resmi di **https://pmb.stikom-bali.ac.id**.`;
     } else if (calSummary.isActive) {
       const activeWaveNames = calSummary.activeWaves.map(w => `Gelombang ${w.label} (buka hingga ${w.temporal.endStr})`).join(', ');
       currentStatusAns = `Berdasarkan Kalender Pendaftaran resmi PMB ITB STIKOM Bali ${ay}, pendaftaran mahasiswa baru saat ini sedang berlangsung untuk ${activeWaveNames}.${partialNotice}\n\nPendaftaran dapat dilakukan secara online melalui portal resmi **https://pmb.stikom-bali.ac.id**.`;
@@ -6710,9 +7268,9 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
 
       const externalScholarshipSection = isEn
         ? '4. **External & Merit-Based Scholarships (Separate from Wave DPP Discounts)**:\n' +
-          '   • External scholarships (e.g. KIP Kuliah, local government awards, and institutional partnership grants) operate under distinct selection criteria and quota allocations separate from the PMB wave fee discounts above. Applicants should confirm active application windows with the PMB Admissions Office.'
+        '   • External scholarships (e.g. KIP Kuliah, local government awards, and institutional partnership grants) operate under distinct selection criteria and quota allocations separate from the PMB wave fee discounts above. Applicants should confirm active application windows with the PMB Admissions Office.'
         : '4. **Beasiswa Eksternal & Jalur Prestasi (Terpisah dari Potongan DPP)**:\n' +
-          '   • Program beasiswa eksternal (seperti KIP Kuliah, beasiswa pemerintah daerah, dan program beasiswa prestasi/kemitraan) memiliki mekanisme seleksi berkas dan kuota tersendiri yang terpisah secara administratif dari potongan DPP gelombang di atas. Calon mahasiswa disarankan mengonfirmasi jadwal seleksi dan persyaratan berkas aktif langsung ke Bagian Admisi PMB ITB STIKOM Bali.';
+        '   • Program beasiswa eksternal (seperti KIP Kuliah, beasiswa pemerintah daerah, dan program beasiswa prestasi/kemitraan) memiliki mekanisme seleksi berkas dan kuota tersendiri yang terpisah secara administratif dari potongan DPP gelombang di atas. Calon mahasiswa disarankan mengonfirmasi jadwal seleksi dan persyaratan berkas aktif langsung ke Bagian Admisi PMB ITB STIKOM Bali.';
       sections.push(externalScholarshipSection);
 
       let scholarshipAnswer = isEn
@@ -6742,21 +7300,21 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     const yearLabel = semanticFrame?.academicYear || (evidenceText.match(/20\d{2}\/20\d{2}/) ? evidenceText.match(/20\d{2}\/20\d{2}/)[0] : null);
     const scheduleAnswer = isEn
       ? 'Regarding the new student admissions (PMB) schedule for Academic Year ' + yearLabel + ' at ITB STIKOM Bali:\n\n' +
-        'Based on the official Admissions Calendar (Kalender Pendaftaran), the selection stages across all intake waves (Gelombang Khusus, Gelombang I, Gelombang II, Gelombang III) are:\n' +
-        '1. **Masa Pendaftaran**\n' +
-        '2. **Testing**\n' +
-        '3. **Pengumuman**\n' +
-        '4. **Masa Registrasi Ulang**\n\n' +
-        'Specific calendar opening and closing dates for each wave of Academic Year ' + yearLabel + ' are updated periodically on the official PMB portal:\n' +
-        '🌐 **Official PMB Portal**: https://pmb.stikom-bali.ac.id'
+      'Based on the official Admissions Calendar (Kalender Pendaftaran), the selection stages across all intake waves (Gelombang Khusus, Gelombang I, Gelombang II, Gelombang III) are:\n' +
+      '1. **Masa Pendaftaran**\n' +
+      '2. **Testing**\n' +
+      '3. **Pengumuman**\n' +
+      '4. **Masa Registrasi Ulang**\n\n' +
+      'Specific calendar opening and closing dates for each wave of Academic Year ' + yearLabel + ' are updated periodically on the official PMB portal:\n' +
+      '🌐 **Official PMB Portal**: https://pmb.stikom-bali.ac.id'
       : 'Mengenai informasi jadwal Penerimaan Mahasiswa Baru (PMB) Tahun Akademik ' + yearLabel + ' di ITB STIKOM Bali:\n\n' +
-        'Berdasarkan dokumen resmi Kalender Pendaftaran PMB ITB STIKOM Bali, tahapan seleksi pada setiap gelombang pendaftaran (Gelombang Khusus, Gelombang I, Gelombang II, dan Gelombang III) terdiri dari:\n' +
-        '1. **Masa Pendaftaran**\n' +
-        '2. **Testing**\n' +
-        '3. **Pengumuman**\n' +
-        '4. **Masa Registrasi Ulang**\n\n' +
-        'Rincian tanggal pasti pembukaan dan penutupan tiap gelombang PMB TA ' + yearLabel + ' diperbarui berkala pada portal resmi PMB:\n' +
-        '🌐 **Portal Resmi PMB**: https://pmb.stikom-bali.ac.id';
+      'Berdasarkan dokumen resmi Kalender Pendaftaran PMB ITB STIKOM Bali, tahapan seleksi pada setiap gelombang pendaftaran (Gelombang Khusus, Gelombang I, Gelombang II, dan Gelombang III) terdiri dari:\n' +
+      '1. **Masa Pendaftaran**\n' +
+      '2. **Testing**\n' +
+      '3. **Pengumuman**\n' +
+      '4. **Masa Registrasi Ulang**\n\n' +
+      'Rincian tanggal pasti pembukaan dan penutupan tiap gelombang PMB TA ' + yearLabel + ' diperbarui berkala pada portal resmi PMB:\n' +
+      '🌐 **Portal Resmi PMB**: https://pmb.stikom-bali.ac.id';
 
     return {
       success: true,
@@ -7212,6 +7770,24 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
         handledSafely: true
       };
     }
+    if (semanticFrame?.domain === 'PMB' && semanticFrame?.intent === 'ADMISSION_PROCEDURE') {
+      const hasProcedureEvidence = evidenceList.some(c => {
+        const t = (c.text || c.chunk || c.content || '');
+        return /\b(?:alur|tahap(?:an)?|langkah|prosedur|panduan|tata\s+cara)\s+(?:pendaftaran|daftar|mendaftar)\b/i.test(t) ||
+          (/\b(?:pendaftaran|daftar)\b/i.test(t) && /\b(?:tahap\s*(?:1|2|3|i|ii|iii|pertama|kedua)|langkah\s*(?:1|2|3|pertama|kedua))\b/i.test(t));
+      });
+      if (!hasProcedureEvidence) {
+        return {
+          success: false,
+          answer: null,
+          source: 'unanswerable_natural_guidance',
+          reason: 'corpus_gap_admission_procedure',
+          outcome: 'SAFE_UNKNOWN',
+          isExtractive: false,
+          handledSafely: true
+        };
+      }
+    }
   }
 
   const cleanPassages = [];
@@ -7656,11 +8232,11 @@ function buildHistoricalOnlyDisclosureAnswer(semanticFrame = {}, historicalChunk
   const excerpt = combinedText.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ').trim();
   const answer = isEn
     ? `Based on **historical archive records (${archivePeriod})** for **${entityLabel}**, the archived document states:\n\n` +
-      `> ${excerpt}\n\n` +
-      `_Important Note: The information above comes from a **historical archive (${archivePeriod})** and is **not confirmed as an active policy currently in effect**. Please verify the current active regulations with the official ITB STIKOM Bali administration._`
+    `> ${excerpt}\n\n` +
+    `_Important Note: The information above comes from a **historical archive (${archivePeriod})** and is **not confirmed as an active policy currently in effect**. Please verify the current active regulations with the official ITB STIKOM Bali administration._`
     : `Berdasarkan **dokumen arsip historis (${archivePeriod})** yang tercatat untuk **${entityLabel}**:\n\n` +
-      `• ${excerpt}\n\n` +
-      `_Catatan Penting: Informasi di atas berasal dari **arsip historis (${archivePeriod})** dan **bukan merupakan ketentuan aktif yang dipastikan berlaku saat ini**. Untuk kepastian ketentuan terbaru yang berlaku aktif, silakan mengonfirmasi langsung ke bagian terkait di ITB STIKOM Bali._`;
+    `• ${excerpt}\n\n` +
+    `_Catatan Penting: Informasi di atas berasal dari **arsip historis (${archivePeriod})** dan **bukan merupakan ketentuan aktif yang dipastikan berlaku saat ini**. Untuk kepastian ketentuan terbaru yang berlaku aktif, silakan mengonfirmasi langsung ke bagian terkait di ITB STIKOM Bali._`;
 
   return {
     success: true,
@@ -8165,6 +8741,18 @@ function composeMultiAttributeAnswer(semanticFrame = {}, evidenceList = [], arbi
 }
 
 module.exports = {
+  getCircuitBreakerState,
+  clearCircuitBreakerQuotaExhaustion,
+  _resetCircuitBreakerForTesting,
+  isComplexInquiry,
+  resolveReasoningEffort,
+  resolveCompletionTokenBudget,
+  classifySafeApiError,
+  isThesisGuidelineInquiry,
+  buildThesisGuidelineAnswer,
+  CATALOG_FACT_PROVENANCE_STATUS,
+  S1_CATALOG_CLAIM_PROVENANCE,
+  getCatalogClaimProvenance,
   buildSynthesisPrompt,
   cleanDocumentArtifacts,
   buildGenericExtractiveFallback,

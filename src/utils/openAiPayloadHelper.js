@@ -35,6 +35,17 @@ function sanitizeOpenAiChatPayload(payload = {}) {
     p.reasoning_effort = 'none';
   }
 
+  // 1c. Validate explicit reasoning_effort if present
+  if (p.reasoning_effort !== undefined) {
+    const validEfforts = ['none', 'low', 'medium', 'high'];
+    const normEffort = String(p.reasoning_effort).toLowerCase().trim();
+    if (validEfforts.includes(normEffort)) {
+      p.reasoning_effort = normEffort;
+    } else {
+      delete p.reasoning_effort;
+    }
+  }
+
   // 2. For GPT-6 Luna and reasoning models (or active reasoning_effort),
   // strip temperature and top_p completely to avoid 400 Bad Request
   // ("Unsupported value: 'temperature' does not support 0 with this model. Only the default (1) value is supported.")

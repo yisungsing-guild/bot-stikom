@@ -26,13 +26,78 @@ const DEFAULT_SESSION_DATA = Object.freeze({
 // Test-only memory store for fast, isolated test execution without external DB latency
 const testMemorySessionStore = new Map();
 
+function getConversationContextTtlMs() {
+  const envHours = parseFloat(process.env.CONVERSATION_CONTEXT_TTL_HOURS);
+  const hours = (Number.isFinite(envHours) && envHours > 0) ? envHours : 24;
+  return hours * 60 * 60 * 1000;
+}
+
+function applyContextTtlPolicy(data, currentTime = Date.now()) {
+  if (!data || typeof data !== 'object') return { ...DEFAULT_SESSION_DATA };
+
+  const lastTurnTs = Number(data.lastTurnTs || (data.updatedAt ? new Date(data.updatedAt).getTime() : 0));
+  // Fallback safety: if active context exists without valid timestamp, clean stale context to avoid reviving zombie state
+  if (!lastTurnTs || Number.isNaN(lastTurnTs) || lastTurnTs <= 0) {
+    if (data.activeEntity || data.activeDomain || data.preservedBackgroundEntity) {
+      return {
+        ...data,
+        activeDomain: null,
+        activeIntent: null,
+        activeEntity: null,
+        activeEntities: [],
+        activeProgram: null,
+        activeAspects: [],
+        requestedAspects: [],
+        requestedAttributes: [],
+        preservedBackgroundEntity: null,
+        lastAcademicProgramEntity: null,
+        lastActiveWave: null,
+        academicYear: null,
+        isProximityComparison: false,
+        isContextExpired: true
+      };
+    }
+    return data;
+  }
+
+  const ttlMs = getConversationContextTtlMs();
+  const elapsed = currentTime - lastTurnTs;
+
+  if (elapsed >= ttlMs) {
+    // TTL expired: Clear active conversation context, but preserve historical background (conversationHistory, turnCount, userOrigin)
+    return {
+      ...data,
+      activeDomain: null,
+      activeIntent: null,
+      activeEntity: null,
+      activeEntities: [],
+      activeProgram: null,
+      activeAspects: [],
+      requestedAspects: [],
+      requestedAttributes: [],
+      preservedBackgroundEntity: null,
+      lastAcademicProgramEntity: null,
+      lastActiveWave: null,
+      academicYear: null,
+      isProximityComparison: false,
+      isContextExpired: true
+    };
+  }
+
+  return data;
+}
+
 async function getSession(chatId) {
   if (!chatId) return { chatId: null, state: 'root', data: { ...DEFAULT_SESSION_DATA } };
 
   // Strict isolation: only use in-memory store in test environment
   if (process.env.NODE_ENV === 'test') {
     if (testMemorySessionStore.has(String(chatId))) {
-      return testMemorySessionStore.get(String(chatId));
+      const stored = testMemorySessionStore.get(String(chatId));
+      return {
+        ...stored,
+        data: applyContextTtlPolicy(stored.data)
+      };
     }
     return {
       chatId: String(chatId),
@@ -48,10 +113,11 @@ async function getSession(chatId) {
     });
 
     if (session) {
+      const rawData = session.data && typeof session.data === 'object' ? session.data : { ...DEFAULT_SESSION_DATA };
       return {
         chatId: session.chatId,
         state: session.state || 'root',
-        data: session.data && typeof session.data === 'object' ? session.data : { ...DEFAULT_SESSION_DATA }
+        data: applyContextTtlPolicy(rawData)
       };
     }
   } catch (err) {
@@ -124,5 +190,7 @@ async function resetSession(chatId) {
 module.exports = {
   getSession,
   updateSession,
-  resetSession
+  resetSession,
+  getConversationContextTtlMs,
+  applyContextTtlPolicy
 };

@@ -17,6 +17,16 @@ function sanitizeWhatsAppMarkdown(text) {
   if (!text || typeof text !== 'string') return '';
 
   let out = text.replace(/\u00A0/g, ' '); // Clean non-breaking spaces
+  // Normalize Cyrillic homoglyphs (e.g. U+0418 'И' -> 'I', U+043D 'н' -> 'n')
+  out = out
+    .replace(/\u0418/g, 'I')
+    .replace(/\u043D/g, 'n')
+    .replace(/\u0441/g, 'c')
+    .replace(/\u0430/g, 'a')
+    .replace(/\u043E/g, 'o')
+    .replace(/\u0435/g, 'e')
+    .replace(/\u0440/g, 'p')
+    .replace(/\u0422/g, 'T');
   
   // Convert standard markdown headers (# Header) to WhatsApp bold (*Header*)
   out = out.replace(/^#{1,6}\s*(.+)$/gm, '*$1*');

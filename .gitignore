@@ -189,6 +189,10 @@ tests/*
 !tests/stage3SemanticAndContextGeneralization.test.js
 !tests/stage4RetrievalAndEvidenceReasoning.test.js
 !tests/stage5MultiAttributeAndConflictComposition.test.js
+!tests/groundedGenerationReliability.test.js
+!tests/semanticUnderstandingGeneralization.test.js
+!tests/contextEntityReasoning.test.js
+!tests/retrievalEvidenceIntelligence.test.js
 
 tools/
 quarantined_backups/
