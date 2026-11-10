@@ -18,7 +18,8 @@
  * -> OutboundRenderer & Dispatcher
  */
 
-const { getSession, updateSession } = require('./conversationState');
+const { getSession, updateSession, applyContextTtlPolicy } = require('./conversationState');
+const { isValidPendingClarification } = require('./contextResolver');
 const { decomposeQuery, decomposeQueryAsync, hasMultipleIntents, hasAnaphoricReference } = require('./multiIntentResolver');
 const { buildRetrievalPlan } = require('./retrievalPlanner');
 const { retrieveCandidates } = require('./retrievalService');
@@ -47,6 +48,161 @@ function appendConciseTurnHistory(existingHistory = [], userQuery = '', assistan
     next.push({ role: 'assistant', content: String(assistantAnswer).trim().slice(0, 150) });
   }
   return next.slice(-4);
+}
+
+/**
+ * Determines domain, intent, and required slot for clarification questions
+ * based on the substantive context of the query being clarified.
+ * Guarantees no hallucinated domain/intent fallback (e.g. no arbitrary PMB/ADMISSION_PROCEDURE).
+ */
+function determineClarificationContext(frame = {}, rawQuery = '', sessionData = {}) {
+  const q = String(rawQuery || '').toLowerCase();
+
+  // Helper to extract substantive intent and slot from query semantic markers
+  const extractMarkerContext = (queryStr) => {
+    if (/\b(?:kurikulum(?:nya)?|mata\s*kuliah(?:nya)?|matkul(?:nya)?|silabus(?:nya)?|yang\s+dipelajari|belajar\s+apa)\b/i.test(queryStr)) {
+      return { domain: 'ACADEMIC_CURRICULUM', intent: 'CURRICULUM_INQUIRY', requiredSlot: 'program' };
+    }
+    if (/\b(?:biaya(?:nya)?|tarif(?:nya)?|spp(?:nya)?|dpp(?:nya)?|uang\s+kuliah|bayar\s+kuliah)\b/i.test(queryStr)) {
+      return { domain: 'TUITION_FEE', intent: 'TUITION_FEE_INQUIRY', requiredSlot: 'program' };
+    }
+    if (/\b(?:beasiswa(?:nya)?|kip\s*kuliah|keringanan\s+biaya|potongan\s+dpp)\b/i.test(queryStr)) {
+      return { domain: 'SCHOLARSHIP', intent: 'SCHOLARSHIP_INQUIRY', requiredSlot: 'scholarship_type' };
+    }
+    if (/\b(?:akreditasi(?:nya)?|terakreditasi|peringkat\s+akreditasi)\b/i.test(queryStr)) {
+      return { domain: 'ACADEMIC_PROGRAM', intent: 'PROGRAM_ACCREDITATION', requiredSlot: 'program' };
+    }
+    if (/\b(?:prospek(?:nya)?|peluang\s+kerja|karir(?:nya)?|karier(?:nya)?|lulusan\s+jadi\s+apa)\b/i.test(queryStr)) {
+      return { domain: 'ACADEMIC_PROGRAM', intent: 'CAREER_OPPORTUNITIES', requiredSlot: 'program' };
+    }
+    if (/\b(?:fasilitas(?:nya)?|laboratorium(?:nya)?|lab\b|perpustakaan(?:nya)?|gedung(?:nya)?)\b/i.test(queryStr)) {
+      return { domain: 'FACILITIES', intent: 'FACILITY_INQUIRY', requiredSlot: 'facility' };
+    }
+    if (/\b(?:alur(?:nya)?|cara\s+(?:daftar|mendaftar)|syarat(?:nya)?|persyaratan(?:nya)?|daftar(?:nya)?|pendaftaran(?:nya)?|pmb|tahap(?:an)?(?:nya)?|proses(?:nya)?)\b/i.test(queryStr)) {
+      return { domain: 'PMB', intent: 'ADMISSION_PROCEDURE', requiredSlot: 'program' };
+    }
+    return null;
+  };
+
+  const marker = extractMarkerContext(q);
+
+  const hasSpecificFrameDomain = Boolean(
+    frame.domain && !['GENERAL', 'OUT_OF_DOMAIN', 'CONVERSATIONAL'].includes(frame.domain)
+  );
+
+  const pending = sessionData?.pendingClarification;
+  const hasValidPending = isValidPendingClarification(pending);
+
+  // Check if current query targets a DIFFERENT domain than existing pending clarification
+  const isDomainSwitch = hasValidPending && (
+    (hasSpecificFrameDomain && frame.domain !== pending.originalDomain) ||
+    (marker && marker.domain !== pending.originalDomain)
+  );
+
+  // 1. If frame already has a specific known domain (not GENERAL, OUT_OF_DOMAIN, CONVERSATIONAL)
+  if (hasSpecificFrameDomain) {
+    let resolvedIntent = frame.intent;
+    if (!resolvedIntent || resolvedIntent === 'AMBIGUOUS_CLARIFICATION') {
+      if (marker && marker.domain === frame.domain) {
+        resolvedIntent = marker.intent;
+      } else {
+        const DOMAIN_SUBSTANTIVE_INTENTS = {
+          ACADEMIC_CURRICULUM: 'CURRICULUM_INQUIRY',
+          TUITION_FEE: 'TUITION_FEE_INQUIRY',
+          SCHOLARSHIP: 'SCHOLARSHIP_INQUIRY',
+          FACILITIES: 'FACILITY_INQUIRY',
+          ACADEMIC_PROGRAM: 'PROGRAM_OVERVIEW',
+          CAMPUS_SERVICE: 'CAMPUS_SERVICE_INQUIRY',
+          ACADEMIC_EVENT: 'GRADUATION_INQUIRY',
+          PMB: 'ADMISSION_PROCEDURE'
+        };
+        resolvedIntent = DOMAIN_SUBSTANTIVE_INTENTS[frame.domain] || (marker ? marker.intent : 'GENERAL_INQUIRY');
+      }
+    }
+
+    const defaultSlot = frame.domain === 'FACILITIES' ? 'facility' : (frame.domain === 'SCHOLARSHIP' ? 'scholarship_type' : 'program');
+    const requiredSlot = marker ? marker.requiredSlot : defaultSlot;
+
+    // If this is a domain switch, it is a brand-new clarification (no old createdAt)
+    if (isDomainSwitch) {
+      return {
+        originalDomain: frame.domain,
+        originalIntent: resolvedIntent,
+        requiredSlot
+      };
+    }
+
+    // Same domain: preserve existing valid pending clarification createdAt
+    return {
+      originalDomain: frame.domain,
+      originalIntent: resolvedIntent,
+      requiredSlot,
+      createdAt: hasValidPending ? pending.createdAt : undefined
+    };
+  }
+
+  // 2. Specific domain & intent semantic markers from query (when frame was GENERAL)
+  if (marker) {
+    if (isDomainSwitch || !hasValidPending) {
+      return {
+        originalDomain: marker.domain,
+        originalIntent: marker.intent,
+        requiredSlot: marker.requiredSlot
+      };
+    }
+  }
+
+  // 3. Incomplete / referential turn within an active valid pending clarification
+  // (no conflicting domain or marker: e.g. "Yang itu berapa?", "Gimana alurnya?", "Maksudnya?"):
+  // Preserve the original clarification context and original createdAt!
+  if (hasValidPending && !isDomainSwitch) {
+    return {
+      originalDomain: pending.originalDomain,
+      originalIntent: pending.originalIntent,
+      requiredSlot: pending.requiredSlot,
+      createdAt: pending.createdAt
+    };
+  }
+
+  // 4. Specific domain & intent semantic markers (when matching or without pending)
+  if (marker) {
+    return {
+      originalDomain: marker.domain,
+      originalIntent: marker.intent,
+      requiredSlot: marker.requiredSlot
+    };
+  }
+
+  // 5. If session has an active specific domain and current query is an ellipsis/continuation
+  if (sessionData && sessionData.activeDomain && !['GENERAL', 'OUT_OF_DOMAIN', 'CONVERSATIONAL'].includes(sessionData.activeDomain)) {
+    const sessionDomain = sessionData.activeDomain;
+    let sessionIntent = sessionData.activeIntent;
+    if (!sessionIntent || sessionIntent === 'AMBIGUOUS_CLARIFICATION') {
+      const DOMAIN_SUBSTANTIVE_INTENTS = {
+        ACADEMIC_CURRICULUM: 'CURRICULUM_INQUIRY',
+        TUITION_FEE: 'TUITION_FEE_INQUIRY',
+        SCHOLARSHIP: 'SCHOLARSHIP_INQUIRY',
+        FACILITIES: 'FACILITY_INQUIRY',
+        ACADEMIC_PROGRAM: 'PROGRAM_OVERVIEW',
+        CAMPUS_SERVICE: 'CAMPUS_SERVICE_INQUIRY',
+        ACADEMIC_EVENT: 'GRADUATION_INQUIRY',
+        PMB: 'ADMISSION_PROCEDURE'
+      };
+      sessionIntent = DOMAIN_SUBSTANTIVE_INTENTS[sessionDomain] || 'GENERAL_INQUIRY';
+    }
+    return {
+      originalDomain: sessionDomain,
+      originalIntent: sessionIntent,
+      requiredSlot: sessionDomain === 'FACILITIES' ? 'facility' : (sessionDomain === 'SCHOLARSHIP' ? 'scholarship_type' : 'program')
+    };
+  }
+
+  // 6. Safe general fallback: DO NOT invent PMB or ADMISSION_PROCEDURE!
+  return {
+    originalDomain: 'GENERAL',
+    originalIntent: 'GENERAL_INQUIRY',
+    requiredSlot: 'topic'
+  };
 }
 
 /**
@@ -472,9 +628,16 @@ function isSemanticFrameMatchingQuery(frame, rawQuery) {
 async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
   const { executeDispatch = false, executionMode, sessionSnapshot, turnControl, fastFallback, signal } = options;
   const isShadowMode = executionMode === 'SHADOW';
-  const session = sessionSnapshot
+  let session = sessionSnapshot
     ? JSON.parse(JSON.stringify(sessionSnapshot))
     : await getSession(chatId);
+  if (sessionSnapshot) {
+    if (session && session.data) {
+      session.data = applyContextTtlPolicy(session.data);
+    } else if (session) {
+      session = { ...session, data: applyContextTtlPolicy(session) };
+    }
+  }
   const sessionData = session ? (session.data || {}) : {};
 
   // 1. Decompose Query into SemanticFrames
@@ -1162,6 +1325,38 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       : null;
     const historicalAcademicYear = currentAcademicYear || sessionData.academicYear || sessionData.historicalAcademicYear || null;
 
+    // Pending clarification state lifecycle:
+    // 1. If explicit context reset, clarification was resolved this turn, OR user switched to an independent inquiry / topic:
+    //    clear to null (prevents abandoned clarification from lingering as a zombie state)
+    // 2. If current turn genuinely requests clarification (output outcome is strictly NEEDS_CLARIFICATION):
+    //    populate pendingClarification with context-derived originalDomain & originalIntent.
+    //    Note: Frame intent alone (e.g. AMBIGUOUS_CLARIFICATION) must not create pending unless outcome is NEEDS_CLARIFICATION.
+    let newPendingClarification = null;
+    if (isExplicitReset || primaryFrame.clarificationResolved || primaryFrame.contextDep?.clarificationResolved) {
+      newPendingClarification = null;
+    } else if (
+      subQueryResults[0]?.verification?.outcome === 'NEEDS_CLARIFICATION'
+    ) {
+      const clarifContext = determineClarificationContext(primaryFrame, rawQuery, sessionData);
+      // Guard: Only create pendingClarification for slots supported for continuation by contextResolver (currently 'program').
+      // Unsupported slots (facility, scholarship_type, topic) must not create uncontinuable pendingClarification.
+      if (clarifContext.requiredSlot === 'program') {
+        newPendingClarification = {
+          originalDomain: clarifContext.originalDomain,
+          originalIntent: clarifContext.originalIntent,
+          clarificationQuestion: finalAnswer,
+          requiredSlot: clarifContext.requiredSlot,
+          status: 'PENDING',
+          createdAt: clarifContext.createdAt || Date.now()
+        };
+      } else {
+        newPendingClarification = null;
+      }
+    } else {
+      // Independent query, implicit topic switch, or normal turn -> abandoned clarification is purged
+      newPendingClarification = null;
+    }
+
     await updateSession(chatId, {
       dataPatch: {
         activeDomain: primaryFrame.domain,
@@ -1173,6 +1368,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         activeEntities: subFrames.flatMap(sf => (sf.entities || []).map(e => e?.canonical || e?.name || (typeof e === 'string' ? e : null)).filter(Boolean)),
         preservedBackgroundEntity: newPreservedEntity,
         lastAcademicProgramEntity: newLastAcademicProgram,
+        pendingClarification: newPendingClarification,
         isProximityComparison: Boolean(primaryFrame.isProximityComparison || primaryFrame.aspects?.includes('proximity_comparison')),
         userOrigin: primaryFrame.userOrigin || sessionData.userOrigin || null,
         lastActiveWave: currentWave || sessionData.lastActiveWave || null,

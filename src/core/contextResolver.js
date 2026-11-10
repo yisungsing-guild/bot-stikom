@@ -325,6 +325,21 @@ function isGenuineEllipsis(query) {
   return false;
 }
 
+function isValidPendingClarification(pending, currentTime = Date.now()) {
+  if (!pending || typeof pending !== 'object' || Array.isArray(pending)) return false;
+  if (pending.status !== 'PENDING') return false;
+  if (!pending.originalDomain || typeof pending.originalDomain !== 'string' || !pending.originalDomain.trim()) return false;
+  if (!pending.originalIntent || typeof pending.originalIntent !== 'string' || !pending.originalIntent.trim()) return false;
+  if (!pending.requiredSlot || typeof pending.requiredSlot !== 'string' || !pending.requiredSlot.trim()) return false;
+  const createdAt = Number(pending.createdAt);
+  if (!Number.isFinite(createdAt) || createdAt <= 0) return false;
+  const now = Number(currentTime) || Date.now();
+  if (createdAt > now) return false;
+  const ttlMs = 24 * 60 * 60 * 1000;
+  if ((now - createdAt) >= ttlMs) return false;
+  return true;
+}
+
 /**
  * Determines whether the current query should inherit context from prior session turns.
  * Returns { shouldInherit: boolean, reason: string }
@@ -347,7 +362,7 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   }
 
   // If session has no prior state, cannot inherit
-  if (!sessionData || (!sessionData.activeDomain && !sessionData.activeEntity && !sessionData.preservedBackgroundEntity && !sessionData.lastAcademicProgramEntity && !sessionData.lastQuery)) {
+  if (!sessionData || (!sessionData.activeDomain && !sessionData.activeEntity && !sessionData.preservedBackgroundEntity && !sessionData.lastAcademicProgramEntity && !sessionData.lastQuery && !sessionData.pendingClarification)) {
     if (hasOrdinalReferenceMarker(currentQuery)) {
       return {
         shouldInherit: false,
@@ -646,6 +661,53 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     };
   }
 
+  // Check: Bare Academic Program Query Continuation Guard
+  // When the query consists solely of an academic program name (e.g. "S2 Sistem Informasi.", "S1 Sistem Informasi")
+  const bareProgramMatches = (matchCanonicalEntities(query) || []).filter(m =>
+    m.family === 'academic_program' || m.family === 'international_program'
+  );
+  const strippedBare = query
+    .replace(/^(?:prodi|jurusan|program(?:\s+studi)?)\s+/i, '')
+    .replace(/[.?!,]+/g, '')
+    .trim()
+    .toLowerCase();
+  const isBareProgramQuery = bareProgramMatches.length === 1 &&
+    strippedBare === bareProgramMatches[0].canonical.toLowerCase();
+
+  if (isBareProgramQuery) {
+    const matchedCanonical = bareProgramMatches[0].canonical;
+
+    // CASE 1: Genuine Clarification Resume
+    // Resume only if session has a strictly valid pendingClarification object matching 'program' slot within 24h TTL
+    const pending = sessionData.pendingClarification;
+    const hasValidProgramClarification = isValidPendingClarification(pending) && pending.requiredSlot === 'program';
+
+    if (hasValidProgramClarification) {
+      return {
+        shouldInherit: true,
+        reason: 'clarification_entity_response',
+        inheritedDomain: pending.originalDomain,
+        inheritedIntent: pending.originalIntent,
+        inheritedEntity: matchedCanonical,
+        clarificationResolved: true,
+        inheritedAspects: sessionData.requestedAspects || ['procedure', 'requirements']
+      };
+    }
+
+    // CASE 2: Entity Echo continuation (e.g. after SAFE_UNKNOWN discussing the exact same entity)
+    const isSameEntityEcho = sessionData.activeEntity === matchedCanonical && sessionData.activeDomain;
+    if (isSameEntityEcho) {
+      return {
+        shouldInherit: true,
+        reason: 'entity_echo_continuation',
+        inheritedDomain: sessionData.activeDomain,
+        inheritedIntent: sessionData.activeIntent,
+        inheritedEntity: matchedCanonical,
+        inheritedAspects: sessionData.requestedAspects || sessionData.activeAspects || []
+      };
+    }
+  }
+
   // Guard 1: Mentions a different academic program explicitly -> current turn switches to new program
   // Exception: If the query is a genuine ellipsis (e.g., "Kalau yang S1 Bisnis Digital?", "Bagaimana dengan D3 MI?"),
   // or an explicit entity correction ("Maaf, maksud saya Sistem Informasi"),
@@ -913,5 +975,6 @@ module.exports = {
   hasOrdinalReferenceMarker,
   resolveOrdinalReference,
   resolvePartialEntityInContext,
-  evaluateContextDependency
+  evaluateContextDependency,
+  isValidPendingClarification
 };

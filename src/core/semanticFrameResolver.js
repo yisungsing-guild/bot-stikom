@@ -1162,6 +1162,20 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   );
 
   if (isCurriculumQuery) {
+    const isAmbiguousCurriculumProc = /^(?:(?:bagaimana|gimana)\s+(?:cara|proses|alur|langkah|tahapan)(?:nya)?\s+(?:memperoleh|mendapatkan|melihat|mengetahui|cek|akses)?\s*(?:informasi\s+)?(?:kurikulum|silabus|matkul|mata\s*kuliah)|(?:cara|proses|alur|langkah|tahapan)(?:nya)?\s+(?:memperoleh|mendapatkan|melihat|mengetahui|cek|akses)?\s*(?:informasi\s+)?(?:kurikulum|silabus|matkul|mata\s*kuliah))\??$/i.test(normalized);
+    const hasProgramEntity = (entities || []).some(e => e && (e.family === 'academic_program' || e.family === 'international_program'));
+    if (isAmbiguousCurriculumProc && !hasProgramEntity && !sessionData.activeEntity) {
+      return {
+        domain: 'ACADEMIC_CURRICULUM',
+        intent: 'AMBIGUOUS_CLARIFICATION',
+        retrievalRequired: false,
+        userState: 'INQUIRING',
+        desiredAction: 'ASK_CLARIFICATION',
+        aspects: ['curriculum', 'ambiguous_clarification'],
+        relation: 'AMBIGUOUS'
+      };
+    }
+
     return {
       domain: 'ACADEMIC_CURRICULUM',
       intent: 'CURRICULUM_INQUIRY',
@@ -1830,7 +1844,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     const isAmbiguousComparison = /^(?:(?:pilih|mending|bagusan?|bagus|unggul|cocok|tepat|baik|enak|recomended|direkomendasikan)\s+(?:yang\s+)?mana|(?:yang\s+mana|mana\s+yang)\s+(?:lebih\s+)?(?:bagus|baik|cocok|tepat|unggul|recomended|direkomendasikan|bagusan|oke|pas|enak)|lebih\s+(?:bagus|baik|cocok|unggul|oke)\s+mana|apa\s+(?:per)?bedaan(?:nya)?|(?:per)?bedaa?n(?:nya)?\s+apa)\??$/i.test(normalized) ||
       (/\b(?:yang\s+mana|mana\s+yang)\s+(?:lebih\s+)?(?:bagus|baik|cocok|tepat|unggul|bagusan)\b/i.test(normalized));
 
-    const isAmbiguousProcedure = /^(?:(?:bagaimana|gimana)\s+(?:cara|proses|alur|langkah|tahapan)(?:nya)?|(?:cara|proses|alur|langkah|tahapan)(?:nya)?\s+(?:bagaimana|gimana)|bagaimana\s+caranya|gimana\s+caranya)\??$/i.test(normalized);
+    const isAmbiguousProcedure = /^(?:(?:bagaimana|gimana)\s+(?:cara|proses|alur|langkah|tahapan)(?:nya)?(?:\s+(?:daftar|pendaftaran))?|(?:cara|proses|alur|langkah|tahapan)(?:nya)?\s+(?:bagaimana|gimana)|bagaimana\s+caranya|gimana\s+caranya)\??$/i.test(normalized);
 
     const isAmbiguousEllipsis = /^(?:(?:kalau|kalo|bagaimana(?:\s+dengan)?|gimana(?:\s+dengan)?)\s+(?:program\s+)?(?:satu(?:nya)?|lain(?:nya)?)|program\s+satu(?:nya)?)\??$/i.test(normalized);
 
@@ -1857,6 +1871,32 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       aspects: ['general'],
       relation: 'OUT_OF_DOMAIN'
     };
+  }
+
+  // Cold-start bare academic entity check:
+  // If the query is solely an academic program name without prior context or action keywords,
+  // route to ACADEMIC_PROGRAM / PROGRAM_OVERVIEW instead of falling through to GENERAL_INQUIRY!
+  const bareMatches = (entities || []).filter(e =>
+    e && (e.family === 'academic_program' || e.family === 'international_program')
+  );
+  if (bareMatches.length === 1) {
+    const stripped = normalized
+      .replace(/^(?:prodi|jurusan|program(?:\s+studi)?)\s+/i, '')
+      .replace(/[.?!,]+/g, '')
+      .trim()
+      .toLowerCase();
+    const canonLower = (bareMatches[0].canonical || '').toLowerCase();
+    if (stripped === canonLower) {
+      return {
+        domain: 'ACADEMIC_PROGRAM',
+        intent: 'PROGRAM_OVERVIEW',
+        retrievalRequired: true,
+        userState: 'INQUIRING',
+        desiredAction: 'PROVIDE_PROGRAM_OVERVIEW',
+        aspects: ['overview', 'profile', 'accreditation'],
+        relation: 'PROGRAM_OVERVIEW'
+      };
+    }
   }
 
   // Default General Ingestion
@@ -2069,7 +2109,7 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   const isDefaultEntityOverviewIntent = intent === 'PROGRAM_OVERVIEW' || intent === 'GENERAL_INQUIRY' || intent === 'INTERNATIONAL_PROGRAM_INFO';
   const isEntitySwitchEllipsis = Boolean(
     contextDep.shouldInherit &&
-    (contextDep.reason === 'genuine_ellipsis' || contextDep.isEntityCorrection || contextDep.reason === 'ordinal_entity_reference') &&
+    (contextDep.reason === 'genuine_ellipsis' || contextDep.isEntityCorrection || contextDep.reason === 'ordinal_entity_reference' || contextDep.reason === 'clarification_entity_response' || contextDep.reason === 'entity_echo_continuation') &&
     effectiveTargetEntities.length > 0 &&
     isDefaultEntityOverviewIntent
   );
@@ -2091,7 +2131,7 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     } else if (contextDep.inheritedDomain === 'SCHOLARSHIP') {
       domain = 'SCHOLARSHIP';
       intent = 'SCHOLARSHIP_INQUIRY';
-    } else if (contextDep.inheritedDomain === 'ACADEMIC_CURRICULUM' && (domain === 'GENERAL' || domain === 'OUT_OF_DOMAIN' || isEntitySwitchEllipsis || contextDep.reason === 'curriculum_continuation')) {
+    } else if (contextDep.inheritedDomain === 'ACADEMIC_CURRICULUM' && (domain === 'GENERAL' || domain === 'OUT_OF_DOMAIN' || isEntitySwitchEllipsis || contextDep.reason === 'curriculum_continuation' || contextDep.reason === 'clarification_entity_response')) {
       domain = 'ACADEMIC_CURRICULUM';
       intent = contextDep.inheritedIntent || 'CURRICULUM_INQUIRY';
       inferred.desiredAction = 'PROVIDE_CURRICULUM_INFO';
@@ -2357,6 +2397,8 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     desiredAction: inferred.desiredAction,
     language: detectQueryLanguage(raw),
     subQueries: [],
+    contextDep,
+    clarificationResolved: Boolean(contextDep.clarificationResolved),
     contextDependencies: contextDep.shouldInherit ? [contextDep] : [],
     activeEntity: contextDep.shouldInherit ? (contextDep.inheritedEntity || sessionData.activeEntity || null) : null,
     explicitReset: Boolean(contextDep.explicitReset),

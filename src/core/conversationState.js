@@ -12,11 +12,13 @@
 
 const prisma = require('../db');
 const logger = require('../logger');
+const { isValidPendingClarification } = require('./contextResolver');
 
 const DEFAULT_SESSION_DATA = Object.freeze({
   activeDomain: null,
   activeEntity: null,
   activeProgram: null,
+  pendingClarification: null,
   lastQuery: null,
   lastAnswer: null,
   lastTurnTs: null,
@@ -38,7 +40,7 @@ function applyContextTtlPolicy(data, currentTime = Date.now()) {
   const lastTurnTs = Number(data.lastTurnTs || (data.updatedAt ? new Date(data.updatedAt).getTime() : 0));
   // Fallback safety: if active context exists without valid timestamp, clean stale context to avoid reviving zombie state
   if (!lastTurnTs || Number.isNaN(lastTurnTs) || lastTurnTs <= 0) {
-    if (data.activeEntity || data.activeDomain || data.preservedBackgroundEntity) {
+    if (data.activeEntity || data.activeDomain || data.preservedBackgroundEntity || data.pendingClarification) {
       return {
         ...data,
         activeDomain: null,
@@ -49,6 +51,7 @@ function applyContextTtlPolicy(data, currentTime = Date.now()) {
         activeAspects: [],
         requestedAspects: [],
         requestedAttributes: [],
+        pendingClarification: null,
         preservedBackgroundEntity: null,
         lastAcademicProgramEntity: null,
         lastActiveWave: null,
@@ -75,12 +78,22 @@ function applyContextTtlPolicy(data, currentTime = Date.now()) {
       activeAspects: [],
       requestedAspects: [],
       requestedAttributes: [],
+      pendingClarification: null,
       preservedBackgroundEntity: null,
       lastAcademicProgramEntity: null,
       lastActiveWave: null,
       academicYear: null,
       isProximityComparison: false,
       isContextExpired: true
+    };
+  }
+
+  // Pending clarification TTL & validity check:
+  // Stale, expired, future, or malformed pending clarifications must be purged even if lastTurnTs is recent
+  if (data.pendingClarification && !isValidPendingClarification(data.pendingClarification, currentTime)) {
+    return {
+      ...data,
+      pendingClarification: null
     };
   }
 
