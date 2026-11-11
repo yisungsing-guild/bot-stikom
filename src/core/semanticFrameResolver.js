@@ -3027,6 +3027,11 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
         /\b(?:double\s+degree|dual\s+degree|utb|dnui|help\s+university|student\s+exchange|gccp|hi-?think)\b/i.test(e.canonical || e.name || '')
     );
 
+    const hasValidDirectProgramEntity = resolvedEntities.some(
+      e => !e.inherited && (e.family === 'academic_program' || e.family === 'international_program' || e.type === 'program')
+    );
+    const hasUnsupportedDirectProgram = Boolean(detectedUnsupportedMention);
+
     let domain = null;
     let intent = null;
 
@@ -3053,8 +3058,10 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       domain = 'GENERAL';
       intent = 'BROAD_CAMPUS_OVERVIEW';
     } else if (syncFrame.intent === 'AMBIGUOUS_CLARIFICATION') {
-      domain = 'GENERAL';
-      intent = 'AMBIGUOUS_CLARIFICATION';
+      domain = (syncFrame.domain && syncFrame.domain !== 'GENERAL') ? syncFrame.domain : 'GENERAL';
+      intent = (domain === 'ACADEMIC_CURRICULUM' && hasValidDirectProgramEntity && !hasUnsupportedDirectProgram)
+        ? 'CURRICULUM_INQUIRY'
+        : 'AMBIGUOUS_CLARIFICATION';
     } else if ((modelPrimaryIntent === 'PROGRAM_RECOMMENDATION' || syncFrame.intent === 'PROGRAM_RECOMMENDATION' || (!modelPrimaryIntent && speechAct === 'SEEK_ADVICE')) &&
       !['SCHOLARSHIP', 'ORGANIZATION_UKM', 'CAMPUS_SERVICE'].includes(syncFrame.domain)) {
       domain = 'ACADEMIC_RECOMMENDATION';
@@ -3071,6 +3078,9 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
         intent = 'PROGRAM_PROCEDURE';
         if (!aspects.includes('procedure')) aspects.push('procedure');
         if (!aspects.includes('requirements')) aspects.push('requirements');
+      } else if (syncFrame.domain === 'ACADEMIC_CURRICULUM' || aspects.includes('curriculum') || /\b(?:kurikulum|matkul|mata\s*kuliah|silabus)\b/i.test(rawQuery)) {
+        domain = 'ACADEMIC_CURRICULUM';
+        intent = (hasValidDirectProgramEntity && !hasUnsupportedDirectProgram) ? 'CURRICULUM_INQUIRY' : 'AMBIGUOUS_CLARIFICATION';
       } else {
         domain = 'PMB';
         intent = 'ADMISSION_PROCEDURE';
@@ -3081,6 +3091,9 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
         intent = 'PROGRAM_PROCEDURE';
         if (!aspects.includes('requirements')) aspects.push('requirements');
         if (!aspects.includes('procedure')) aspects.push('procedure');
+      } else if (syncFrame.domain === 'ACADEMIC_CURRICULUM' || aspects.includes('curriculum') || /\b(?:kurikulum|matkul|mata\s*kuliah|silabus)\b/i.test(rawQuery)) {
+        domain = 'ACADEMIC_CURRICULUM';
+        intent = (hasValidDirectProgramEntity && !hasUnsupportedDirectProgram) ? 'CURRICULUM_INQUIRY' : 'AMBIGUOUS_CLARIFICATION';
       } else {
         domain = 'PMB';
         intent = 'ADMISSION_REQUIREMENTS';
@@ -3089,6 +3102,9 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       if (hasInternationalProgramEntity && !aspects.includes('fee')) {
         domain = 'INTERNATIONAL';
         intent = syncFrame.intent === 'PROGRAM_PROCEDURE' ? 'PROGRAM_PROCEDURE' : 'INTERNATIONAL_PROGRAM_INFO';
+      } else if (syncFrame.domain === 'ACADEMIC_CURRICULUM' || aspects.includes('curriculum') || /\b(?:kurikulum|matkul|mata\s*kuliah|silabus)\b/i.test(rawQuery)) {
+        domain = 'ACADEMIC_CURRICULUM';
+        intent = (hasValidDirectProgramEntity && !hasUnsupportedDirectProgram) ? 'CURRICULUM_INQUIRY' : 'AMBIGUOUS_CLARIFICATION';
       } else {
         domain = 'PMB';
         intent = 'GENERAL_PMB_INQUIRY';
@@ -3261,7 +3277,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
         intent = 'AVAILABLE_PROGRAMS_LIST';
         domain = 'ACADEMIC_PROGRAM';
       }
-    } else if (speechAct === 'EXPLAIN_PROCEDURE' || speechAct === 'INQUIRE_PROPERTY' || speechAct === 'VERIFY_STATUS') {
+    } else if (intent !== 'AMBIGUOUS_CLARIFICATION' && (speechAct === 'EXPLAIN_PROCEDURE' || speechAct === 'INQUIRE_PROPERTY' || speechAct === 'VERIFY_STATUS')) {
       if (domain === 'SCHOLARSHIP' || syncFrame.domain === 'SCHOLARSHIP' || /\b(?:beasiswa|kip\s*kuliah|kip-?k)\b/i.test(rawQuery)) {
         domain = 'SCHOLARSHIP';
         intent = 'SCHOLARSHIP_INQUIRY';
@@ -3298,6 +3314,9 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
         if (aspects.includes('fee') || domain === 'TUITION_FEE' || primaryConcept === 'FINANCIAL_COST') {
           intent = 'PAYMENT_CONFIRMATION_PROCEDURE';
           domain = 'TUITION_FEE';
+        } else if (aspects.includes('curriculum') || syncFrame.domain === 'ACADEMIC_CURRICULUM' || /\b(?:kurikulum|matkul|mata\s*kuliah|silabus)\b/i.test(rawQuery)) {
+          domain = 'ACADEMIC_CURRICULUM';
+          intent = (hasValidDirectProgramEntity && !hasUnsupportedDirectProgram) ? 'CURRICULUM_INQUIRY' : 'AMBIGUOUS_CLARIFICATION';
         } else {
           intent = 'ADMISSION_PROCEDURE';
           domain = 'PMB';
@@ -3317,7 +3336,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
           domain = 'PMB';
         }
       } else if (aspects.includes('curriculum')) {
-        intent = 'CURRICULUM_INQUIRY';
+        intent = (hasValidDirectProgramEntity && !hasUnsupportedDirectProgram) ? 'CURRICULUM_INQUIRY' : 'AMBIGUOUS_CLARIFICATION';
         domain = 'ACADEMIC_CURRICULUM';
       } else if (aspects.includes('accreditation')) {
         intent = 'ACCREDITATION_INQUIRY';
@@ -3329,7 +3348,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       }
     }
 
-    if (isCurriculumInquiry && resolvedEntities.some(e => e.family === 'academic_program' || e.type === 'program')) {
+    if ((isCurriculumInquiry || (domain === 'ACADEMIC_CURRICULUM' && hasValidDirectProgramEntity && !hasUnsupportedDirectProgram)) && resolvedEntities.some(e => e.family === 'academic_program' || e.type === 'program')) {
       domain = 'ACADEMIC_CURRICULUM';
       intent = 'CURRICULUM_INQUIRY';
       if (!aspects.includes('curriculum')) aspects.push('curriculum');
@@ -3422,7 +3441,13 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       scopeLevel: effectiveScopeLevel,
       domain: isUnsupported ? 'UNSUPPORTED_PROGRAM' : domain,
       intent: isUnsupported ? 'UNSUPPORTED_PROGRAM_INQUIRY' : intent,
-      retrievalRequired: speechAct !== 'GENERAL_GREETING' && speechAct !== 'SOCIAL_INQUIRY' && domain !== 'CONVERSATIONAL' && !isUnsupported && !isOOD,
+      retrievalRequired: speechAct !== 'GENERAL_GREETING' &&
+        speechAct !== 'SOCIAL_INQUIRY' &&
+        domain !== 'CONVERSATIONAL' &&
+        !isUnsupported &&
+        !isOOD &&
+        intent !== 'AMBIGUOUS_CLARIFICATION' &&
+        (syncFrame.retrievalRequired !== false || (domain === 'ACADEMIC_CURRICULUM' && intent === 'CURRICULUM_INQUIRY' && hasValidDirectProgramEntity && !isUnsupported)),
       entities: resolvedEntities,
       candidateEntities: validated.candidateEntities || syncFrame.candidateEntities || [],
       modifiers: syncFrame.modifiers || [],
@@ -3440,7 +3465,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       aspects: finalAspects,
       temporal: syncFrame.temporal,
       userState: syncFrame.userState,
-      desiredAction: isUnsupported ? 'REFUSE_UNSUPPORTED_PROGRAM' : (isOOD ? 'REFUSE_OUT_OF_DOMAIN' : (intent === 'CURRICULUM_INQUIRY' ? 'PROVIDE_CURRICULUM_INFO' : syncFrame.desiredAction)),
+      desiredAction: isUnsupported ? 'REFUSE_UNSUPPORTED_PROGRAM' : (isOOD ? 'REFUSE_OUT_OF_DOMAIN' : (intent === 'CURRICULUM_INQUIRY' ? 'PROVIDE_CURRICULUM_INFO' : (intent === 'AMBIGUOUS_CLARIFICATION' ? 'ASK_CLARIFICATION' : syncFrame.desiredAction))),
       language: detectQueryLanguage(rawQuery),
       subQueries: [],
       contextDependencies: validated.contextDependency?.isFollowUp
