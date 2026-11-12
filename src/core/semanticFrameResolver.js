@@ -36,6 +36,16 @@ const { filterNegatedSemanticAspects, filterNegatedCanonicalEntities, getNegated
 // Temporal markers for NOW / current status
 const TEMPORAL_NOW_REGEX = /\b(masih|sekarang|hari ini|saat ini|tahun ini|terbaru|gelombang ini|saat sekarang)\b/i;
 
+const NON_CURRICULUM_SEMESTER_TOPIC_REGEX = /\b(?:uts|uas|ujian\s+(?:tengah|akhir)\s+semester|jadwal\s+(?:ujian|kuliah|perkuliahan|krs|uts|uas|wisuda|yudisium)|kalender\s+akademik|pengisian\s+krs|krs\b|perwalian|cuti(?:\s+kuliah|\s+akademik)?|baak|dosen\s+wali)\b/i;
+
+function hasNonCurriculumSemesterTopic(normalizedText = '', entities = []) {
+  const hasNonCurriculumEntity = Array.isArray(entities) && entities.some(
+    e => e && (e.type === 'academic_event' || e.family === 'campus_service')
+  );
+  if (hasNonCurriculumEntity) return true;
+  return NON_CURRICULUM_SEMESTER_TOPIC_REGEX.test(String(normalizedText || ''));
+}
+
 function levenshteinDistance(a, b) {
   const m = a.length, n = b.length;
   const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
@@ -67,7 +77,7 @@ const CANONICAL_DOMAIN_LEXICON = [
   'kontak', 'telepon', 'whatsapp', 'alamat', 'narahubung', 'softskill', 'soft'
 ];
 
-const INSTITUTIONAL_ANCHOR_REGEX = /\b(?:stikom|kampus|kuliah|perkuliahan|akademik|pmb|mahasiswa|dosen|prodi|jurusan|fakultas|sarjana|diploma|magister|pascasarjana|s1|s2|d3|biaya|spp|dpp|uang\s+kuliah|uang\s+gedung|beasiswa|pendaftaran|daftar|syarat|persyaratan|berkas|dokumen|gelombang|jadwal|kurikulum|matkul|mata\s+kuliah|sks|akreditasi|ban-?pt|lam-?infokom|fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|wisuda|yudisium|rpl|magang|lulus|lulusan|kelulusan|karir|karier|alumni|universitas|institut|sekolah\s+tinggi|dual\s+degree|double\s+degree|degree|gelar|ijazah|sebutan|durasi|program\s+studi|studi|masa\s+studi|lama\s+studi|waktu\s+studi|university|college|campus|student|students|lecturer|professor|tuition|fee|fees|scholarship|admission|admissions|register|registration|curriculum|course|courses|credit|credits|accreditation|facility|facilities|laboratory|laboratories|library|dormitory|dorm|graduation|graduate|graduating|thesis|final\s+project|defense|internship|career|careers|degree|duration|study\s+duration|student\s+exchange|parking|undergraduate|bachelor|master|postgraduate|study\s+programs?|academic\s+programs?|degree\s+programs?|majors?|soft\s*skills?|pengembangan\s+(?:soft\s*skills?|karakter|mahasiswa)|pelatihan\s+soft\s*skills?|career\s+center|pusat\s+karier|cdc|kontak|telepon|whatsapp|narahubung|ktp|kk|kartu\s+keluarga|akta|formulir|registrasi|konfirmasi|verifikasi|kode\s+verifikasi|otp|tes\s+masuk|seleksi|ujian\s+seleksi|kartu\s+peserta|bukti\s+bayar|bukti\s+transfer|bukti\s+pembayaran|panitia|panitia\s+pmb|sion|portal\s+akademik|kemahasiswaan|bagian\s+kemahasiswaan|layanan\s+kemahasiswaan|coding|pemrograman|programming|bahasa\s+inggris|english|vokasi|pendidikan\s+vokasi|program\s+vokasi|fokus\s+riset|topik\s+riset|data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics|pengalaman\s+industri|sertifikasi(?:\s+industri)?|digital\s+marketing|seo|baak|ipk|dosen\s+wali|perwalian|cuti(?:\s+kuliah)?|online|daring|aplikasi\s+(?:kuliah|perkuliahan|belajar)|murah|mahal|tarif|harga|terjangkau|teknologi|komputer|hardware|software)\b/i;
+const INSTITUTIONAL_ANCHOR_REGEX = /\b(?:stikom|kampus|kuliah|perkuliahan|akademik|pmb|mahasiswa|dosen|prodi|jurusan|fakultas|sarjana|diploma|magister|pascasarjana|s1|s2|d3|biaya|spp|dpp|uang\s+kuliah|uang\s+gedung|beasiswa|pendaftaran|daftar|syarat|persyaratan|berkas|dokumen|gelombang|jadwal|kurikulum|matkul|mata\s+kuliah|semester|smstr|sks|akreditasi|ban-?pt|lam-?infokom|fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|wisuda|yudisium|rpl|magang|lulus|lulusan|kelulusan|karir|karier|alumni|universitas|institut|sekolah\s+tinggi|dual\s+degree|double\s+degree|degree|gelar|ijazah|sebutan|durasi|program\s+studi|studi|masa\s+studi|lama\s+studi|waktu\s+studi|university|college|campus|student|students|lecturer|professor|tuition|fee|fees|scholarship|admission|admissions|register|registration|curriculum|course|courses|credit|credits|accreditation|facility|facilities|laboratory|laboratories|library|dormitory|dorm|graduation|graduate|graduating|thesis|final\s+project|defense|internship|career|careers|degree|duration|study\s+duration|student\s+exchange|parking|undergraduate|bachelor|master|postgraduate|study\s+programs?|academic\s+programs?|degree\s+programs?|majors?|soft\s*skills?|pengembangan\s+(?:soft\s*skills?|karakter|mahasiswa)|pelatihan\s+soft\s*skills?|career\s+center|pusat\s+karier|cdc|kontak|telepon|whatsapp|narahubung|ktp|kk|kartu\s+keluarga|akta|formulir|registrasi|konfirmasi|verifikasi|kode\s+verifikasi|otp|tes\s+masuk|seleksi|ujian\s+seleksi|kartu\s+peserta|bukti\s+bayar|bukti\s+transfer|bukti\s+pembayaran|panitia|panitia\s+pmb|sion|portal\s+akademik|kemahasiswaan|bagian\s+kemahasiswaan|layanan\s+kemahasiswaan|coding|pemrograman|programming|bahasa\s+inggris|english|vokasi|pendidikan\s+vokasi|program\s+vokasi|fokus\s+riset|topik\s+riset|data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics|pengalaman\s+industri|sertifikasi(?:\s+industri)?|digital\s+marketing|seo|baak|ipk|dosen\s+wali|perwalian|cuti(?:\s+kuliah)?|online|daring|aplikasi\s+(?:kuliah|perkuliahan|belajar)|murah|mahal|tarif|harga|terjangkau|teknologi|komputer|hardware|software)\b/i;
 
 const PROTECTED_CANONICAL_WORDS = new Set([
   'dan', 'atau', 'ke', 'di', 'dari', 'pada', 'untuk', 'dengan', 'ada', 'bisa', 'boleh', 'mau', 'ingin', 'saya', 'kami', 'kita', 'dia', 'ini', 'itu', 'apa', 'siapa', 'mana', 'kapan', 'sudah', 'belum', 'tidak', 'bukan'
@@ -288,11 +298,13 @@ function normalizeQueryText(text) {
 
   // Morphological & conversational normalization
   norm = norm
-    .replace(/\bkalo\b/g, 'kalau')
-    .replace(/\bklu\b/g, 'kalau')
-    .replace(/\bgimana\b/g, 'bagaimana')
+    .replace(/\b(?:kalo|klo|klu)\b/g, 'kalau')
+    .replace(/\b(?:gimana|gmn)\b/g, 'bagaimana')
     .replace(/\b(?:gak|ga|nggak|nda)\b/g, 'tidak')
     .replace(/\byg\b/g, 'yang')
+    .replace(/\b(?:smstr|smst)\b/g, 'semester')
+    .replace(/\btrakhir\b/g, 'terakhir')
+    .replace(/\btnya\b/g, 'tanya')
     .replace(/\bdftr\b/g, 'daftar')
     .replace(/\b(?:aja|sj)\b/g, 'saja')
     .replace(/\bad\b/g, 'ada')
@@ -844,6 +856,19 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     };
   }
 
+  if (/\bcuti(?:\s+kuliah|\s+akademik)?\b/i.test(normalized) &&
+    !/\b(?:biaya|bayar|tarif|spp|dpp|pembayaran|ukt)\b/i.test(normalized)) {
+    return {
+      domain: 'CAMPUS_SERVICE',
+      intent: 'CAMPUS_SERVICE_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_SERVICE_INFO',
+      aspects: ['academic_service', 'cuti_kuliah', 'procedure'],
+      relation: 'CAMPUS_SERVICE'
+    };
+  }
+
   if (/\b(?:fokus\s+riset|topik\s+riset|riset|konsentrasi|pilar\s+riset|bidang\s+kajian)\b/i.test(normalized) &&
     /\b(?:data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics?|s2|magister|pascasarjana)\b/i.test(normalized)) {
     const s2Entity = findCanonicalEntity('S2 Sistem Informasi');
@@ -1152,8 +1177,9 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   ));
 
   const hasExplicitFeeWord = /\b(?:biaya|spp|dpp|uang|dana\s+(?:kuliah|pendidikan|didik)|ukt|bayar|tarif|cicil(?:an)?|angsur(?:an)?)\b/i.test(normalized + ' ' + raw);
-  const isCurriculumQuery = !hasExplicitFeeWord && (
-    /\b(kurikulum(?:nya)?|mata\s*kuliah(?:nya)?|matkul(?:nya)?|sebaran\s*mata\s*kuliah|silabus|daftar\s*matkul|belajar\s+mata\s*kuliah|semester\s*(?:[1-8]|[ivx]+)|(?:apa\s+yang\s+)?dipelajari|pembelajaran|materi\s+kuliah|pelajaran|fokus\s+keilmuan|fokus\s+pembelajaran|bidang\s+keilmuan)\b/i.test(normalized) ||
+  const isNonCurriculumSemester = hasNonCurriculumSemesterTopic(normalized, entities);
+  const isCurriculumQuery = !hasExplicitFeeWord && !isNonCurriculumSemester && (
+    /\b(kurikulum(?:nya)?|mata\s*kuliah(?:nya)?|matkul(?:nya)?|sebaran\s*mata\s*kuliah|silabus|daftar\s*matkul|belajar\s+mata\s*kuliah|semester\s*(?:[1-8]|[ivx]+|akhir|terakhir|awal|pertama|lanjut(?:an)?)|(?:apa\s+yang\s+)?dipelajari|pembelajaran|materi\s+kuliah|pelajaran|fokus\s+keilmuan|fokus\s+pembelajaran|bidang\s+keilmuan)\b/i.test(normalized) ||
     (hasAcademicProgramInContext && !/\b(?:biaya|uang|bayar|daftar|pendaftaran|jadwal|gelombang|lokasi|alamat|ukm)\b/i.test(normalized) && (
       /\b(?:belajar|mempelajari|diajarkan|diajarin|materi)\s+(?:tentang\s+)?(?:coding|koding|ngoding|pemrograman|programming|digital\s+marketing|marketing|pemasaran|ai\b|artificial\s+intelligence|kecerdasan\s+buatan|machine\s+learning|data\s+science|cyber|jaringan|web|mobile|android|game|multimedia|desain|iot|robotik|cloud|blockchain|akuntansi|bisnis|manajemen|komputer|software|hardware)\b/i.test(normalized) ||
       /\b(?:harus|perlu|wajib|kudu|bisa|jago|mahir|pintar|paham|menguasai)\s+(?:bisa\s+)?(?:coding|koding|ngoding|pemrograman|programming|it\b|komputer|hitung-?hitungan|matematika|desain|design|marketing)\b/i.test(normalized) ||
@@ -1164,7 +1190,13 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   if (isCurriculumQuery) {
     const isAmbiguousCurriculumProc = /^(?:(?:bagaimana|gimana)\s+(?:cara|proses|alur|langkah|tahapan)(?:nya)?\s+(?:memperoleh|mendapatkan|melihat|mengetahui|cek|akses)?\s*(?:informasi\s+)?(?:kurikulum|silabus|matkul|mata\s*kuliah)|(?:cara|proses|alur|langkah|tahapan)(?:nya)?\s+(?:memperoleh|mendapatkan|melihat|mengetahui|cek|akses)?\s*(?:informasi\s+)?(?:kurikulum|silabus|matkul|mata\s*kuliah))\??$/i.test(normalized);
     const hasProgramEntity = (entities || []).some(e => e && (e.family === 'academic_program' || e.family === 'international_program'));
-    if (isAmbiguousCurriculumProc && !hasProgramEntity && !sessionData.activeEntity) {
+    const isGenericCampusSemesterPolicy = /\b(?:kampus|paket\s*sks|wajib\s+paket|sks\s+di\s+stikom)\b/i.test(normalized);
+    const isAmbiguousSemesterEllipsis = /\bsemester\s*(?:akhir|terakhir|awal|pertama|lanjut(?:an)?|[1-8]|[ivx]+)\b/i.test(normalized) &&
+      !isNonCurriculumSemester &&
+      !isGenericCampusSemesterPolicy &&
+      !hasProgramEntity;
+
+    if ((isAmbiguousCurriculumProc && !hasProgramEntity && !sessionData.activeEntity) || isAmbiguousSemesterEllipsis) {
       return {
         domain: 'ACADEMIC_CURRICULUM',
         intent: 'AMBIGUOUS_CLARIFICATION',
@@ -2004,6 +2036,11 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   const isContactQuery = /\b(?:kontak(?:nya)?|nomor(?:\s+telepon|\s+wa|\s+whatsapp|\s+hp|\s+kontak)?(?:nya)?|telepon(?:nya)?|telp(?:nya)?|whatsapp(?:nya)?|wa(?:nya)?|call\s*center|hotline|narahubung(?:nya)?)\b/i.test(positiveRawQuery);
   const isConversationalQuery = /^(?:halo|hai|pagi|siang|sore|malam|terima\s+kasih|makasih|oke|siap)\b/i.test(normalized);
 
+  const isCurriculumSemesterEllipsis = effectiveTargetEntities.length === 0 &&
+    !isCampusWideQuery && !isContactQuery && !isConversationalQuery &&
+    !hasNonCurriculumSemesterTopic(positiveNormalizedQuery, effectiveTargetEntities) &&
+    /\bsemester\s*(?:akhir|terakhir|awal|pertama|lanjut(?:an)?|[1-8]|[ivx]+)\b/i.test(positiveNormalizedQuery);
+
   if (contextDep.isEntityCorrection && contextDep.inheritedEntity) {
     const correctedCanon = findCanonicalEntity(contextDep.inheritedEntity);
     if (correctedCanon) {
@@ -2013,6 +2050,29 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
         family: correctedCanon.family,
         corrected: true
       }];
+    }
+  } else if (isCurriculumSemesterEllipsis) {
+    // Curriculum semester ellipsis (e.g. "saya mau tanya yg semester akhir") may ONLY inherit
+    // an active program entity when the current active domain is ACADEMIC_CURRICULUM.
+    // Never inherit unrelated active domains (e.g. PMB) or background-only entities.
+    const activeDom = String(sessionData.activeDomain || '').toUpperCase();
+    const activeEntName = typeof sessionData.activeEntity === 'string'
+      ? sessionData.activeEntity
+      : (sessionData.activeEntity?.canonical || sessionData.activeEntity?.name || null);
+    if (activeDom === 'ACADEMIC_CURRICULUM' && activeEntName) {
+      const inheritedCanon = findCanonicalEntity(activeEntName);
+      if (inheritedCanon && (inheritedCanon.family === 'academic_program' || inheritedCanon.family === 'international_program')) {
+        effectiveTargetEntities.push({
+          canonical: inheritedCanon.canonical,
+          type: inheritedCanon.type,
+          family: inheritedCanon.family,
+          inherited: true
+        });
+        contextDep.shouldInherit = true;
+        contextDep.reason = 'curriculum_semester_continuation';
+        contextDep.inheritedDomain = 'ACADEMIC_CURRICULUM';
+        contextDep.inheritedIntent = sessionData.activeIntent || 'CURRICULUM_INQUIRY';
+      }
     }
   } else if (effectiveTargetEntities.length === 0 && contextDep.shouldInherit && !isCampusWideQuery && !isContactQuery && !isConversationalQuery) {
     if (Array.isArray(contextDep.inheritedEntities) && contextDep.inheritedEntities.length > 0) {

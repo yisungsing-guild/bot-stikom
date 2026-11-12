@@ -96,6 +96,18 @@ function splitCompoundQueryParts(rawQuery) {
     }
   }
 
+  // Guard against false splitting of coordinated noun phrases that share a trailing domain qualifier
+  // e.g. "Bagaimana alur dan syarat pendaftaran mahasiswa baru ITB STIKOM Bali?"
+  // where parts[0] ("Bagaimana alur") loses its shared object and would misclassify as OUT_OF_DOMAIN.
+  if (parts.length >= 2 && (query.match(/\?/g) || []).length <= 1) {
+    const firstFrame = resolveSemanticFrame(parts[0], {});
+    const lastFrame = resolveSemanticFrame(parts[parts.length - 1], {});
+    const secondStartsWithInterrogative = /^(?:apa|bagaimana|gimana|berapa|apakah|kapan|di\s*mana|dimana|adakah|siapa|boleh|bisa|kalau|kalo|terus|lalu)\b/i.test(parts[1].trim());
+    if (firstFrame.domain === 'OUT_OF_DOMAIN' && lastFrame.domain !== 'OUT_OF_DOMAIN' && !secondStartsWithInterrogative) {
+      parts = [query];
+    }
+  }
+
   return parts;
 }
 
@@ -248,6 +260,57 @@ function buildSubQuerySessionData(sessionData = {}, compatibleAntecedent = null)
   return isolated;
 }
 
+function propagateTrailingProgramEntity(subFrames, parts) {
+  if (!Array.isArray(subFrames) || subFrames.length < 2) return;
+  const lastFrame = subFrames[subFrames.length - 1];
+  const trailingPrograms = (lastFrame?.entities || []).filter(
+    e => e && (e.family === 'academic_program' || e.family === 'international_program' || e.type === 'program')
+  );
+  if (trailingPrograms.length !== 1) return;
+
+  const prog = trailingPrograms[0];
+  const SCOPED_DOMAINS = new Set(['TUITION_FEE', 'ACADEMIC_CURRICULUM', 'ACADEMIC_PROGRAM']);
+
+  for (let i = 0; i < subFrames.length - 1; i++) {
+    const f = subFrames[i];
+    if (!f || !SCOPED_DOMAINS.has(f.domain)) continue;
+    if (Array.isArray(f.entities) && f.entities.length > 0) continue;
+    if (Array.isArray(f.targetEntities) && f.targetEntities.some(
+      te => te && (typeof te === 'string' ? te : (te.canonical || te.name)) !== prog.canonical
+    )) continue;
+    if (Array.isArray(f.excludedEntities) && f.excludedEntities.includes(prog.canonical)) continue;
+    if (/\b(?:semua|seluruh|umum)\b/i.test(parts[i] || f.rawQuery || '')) continue;
+
+    const entityObj = {
+      canonical: prog.canonical,
+      type: prog.type || 'program',
+      family: prog.family || 'academic_program'
+    };
+    f.entities = [entityObj];
+    f.targetEntities = [entityObj];
+    f.academicLevel = f.academicLevel || lastFrame.academicLevel || null;
+    if (f.constraints && !f.constraints.academicLevel && f.academicLevel) {
+      f.constraints = { ...f.constraints, academicLevel: f.academicLevel };
+    }
+    if (!f.entityResolutionStatus || f.entityResolutionStatus === 'UNRESOLVED') {
+      f.entityResolutionStatus = 'RESOLVED';
+    }
+    if (Array.isArray(f.structuredInformationNeeds)) {
+      f.structuredInformationNeeds = f.structuredInformationNeeds.map(need => {
+        if (!need || need.entity) return need;
+        const needDomain = need.domain || f.domain;
+        if (!SCOPED_DOMAINS.has(needDomain)) return need;
+        return {
+          ...need,
+          id: `${prog.canonical}::${need.attribute || 'general'}`,
+          entity: prog.canonical,
+          academicLevel: need.academicLevel || f.academicLevel || null
+        };
+      });
+    }
+  }
+}
+
 /**
  * Synchronous query decomposition (for deterministic tests and baseline compatibility)
  */
@@ -279,6 +342,7 @@ function decomposeQuery(rawQuery, sessionData = {}) {
     subFrames.push(frame);
   }
 
+  propagateTrailingProgramEntity(subFrames, parts);
   return subFrames;
 }
 
@@ -317,6 +381,7 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
     subFrames.push(frame);
   }
 
+  propagateTrailingProgramEntity(subFrames, parts);
   return subFrames;
 }
 

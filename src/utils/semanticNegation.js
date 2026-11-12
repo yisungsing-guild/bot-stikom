@@ -46,8 +46,42 @@ const NEGATABLE_ASPECT_TERMS = Object.freeze({
 });
 
 const NEGATION_CUE = /\b(?:bukan|tidak|tak|enggak|nggak|gak|ga|jangan|tanpa|kurang|belum|not|without)\b/ig;
-const NEGATION_SCOPE_END = /\b(?:tetapi|tapi|melainkan|namun|sebaliknya|but|however|instead)\b|[;.!?]/i;
+const STRONG_NEGATION_SCOPE_END = /\b(?:tetapi|tapi|melainkan|namun|sebaliknya|but|however|instead)\b|[;.!?]/i;
+const CORRECTIVE_CLAUSE_STARTER = /^(?:yang|saya|aku|kami|kita|tolong|mohon|berapa|apa(?:kah)?|bagaimana|gimana|kapan|dimana|di\s*mana|siapa|mana|fokus|kalau|kalo|coba|maksud(?:nya)?|untuk|soal|tentang|mengenai|terkait|mau|ingin|perlu|butuh|jelaskan|sebutkan|info(?:rmasi)?|biaya|kurikulum|syarat|prosedur|alur|jadwal|akreditasi)\b/i;
 const ADDITIVE_NEGATION = /^\s*(?:hanya|saja|cuma|sekadar|sekedar|only|just|merely)\b/i;
+
+/**
+ * Finds the end index of a negated clause within the slice following a negation cue.
+ * Terminates at strong contrastive/sentence boundaries, and also at commas that introduce
+ * a corrective or new positive clause while preserving multi-item negated lists ("A, B, atau C").
+ */
+function findNegationScopeEnd(afterCue) {
+  const strongBoundary = afterCue.search(STRONG_NEGATION_SCOPE_END);
+  const maxEnd = strongBoundary >= 0 ? strongBoundary : afterCue.length;
+  const segment = afterCue.slice(0, maxEnd);
+
+  let searchFrom = 0;
+  while (searchFrom < segment.length) {
+    const commaIdx = segment.indexOf(',', searchFrom);
+    if (commaIdx < 0) break;
+
+    const afterComma = afterCue.slice(commaIdx + 1).trimStart();
+    if (CORRECTIVE_CLAUSE_STARTER.test(afterComma)) {
+      return commaIdx;
+    }
+
+    const isDirectListConjunction = /^(?:atau|maupun|dan|serta|or|nor|and)\b/i.test(afterComma) &&
+      !/^(?:dan|and)\s+(?:yang|saya|aku|kami|kita|tolong|mohon|berapa|apa|bagaimana|gimana|kapan|dimana|di\s*mana|siapa|kalau|kalo)\b/i.test(afterComma);
+    const isOngoingListEnumeration = /^[^,;.!?]{1,50},\s*(?:atau|maupun|dan|serta|or|nor|and)\b/i.test(afterComma);
+
+    if (!isDirectListConjunction && !isOngoingListEnumeration) {
+      return commaIdx;
+    }
+    searchFrom = commaIdx + 1;
+  }
+
+  return strongBoundary;
+}
 
 function collectNegatedAspectScopes(rawQuery) {
   const text = String(rawQuery || '').toLowerCase();
@@ -61,7 +95,7 @@ function collectNegatedAspectScopes(rawQuery) {
     // "bukan hanya X, tetapi juga Y" / "not only X but Y" is additive.
     if (ADDITIVE_NEGATION.test(afterCue)) continue;
 
-    const boundary = afterCue.search(NEGATION_SCOPE_END);
+    const boundary = findNegationScopeEnd(afterCue);
     const scope = boundary >= 0 ? afterCue.slice(0, boundary) : afterCue;
     let lastTermEnd = -1;
     const aspects = new Set();
@@ -97,7 +131,7 @@ function collectNegatedClauseScopes(rawQuery) {
     const contentStart = cue.index + cue[0].length;
     const afterCue = text.slice(contentStart);
     if (ADDITIVE_NEGATION.test(afterCue)) continue;
-    const boundary = afterCue.search(NEGATION_SCOPE_END);
+    const boundary = findNegationScopeEnd(afterCue);
     const contentEnd = boundary >= 0 ? contentStart + boundary : text.length;
     const content = text.slice(contentStart, contentEnd).trim();
     if (content) scopes.push({ start: cue.index, end: contentEnd, content });
