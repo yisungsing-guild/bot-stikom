@@ -2052,14 +2052,14 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
       }];
     }
   } else if (isCurriculumSemesterEllipsis) {
-    // Curriculum semester ellipsis (e.g. "saya mau tanya yg semester akhir") may ONLY inherit
-    // an active program entity when the current active domain is ACADEMIC_CURRICULUM.
-    // Never inherit unrelated active domains (e.g. PMB) or background-only entities.
+    // Curriculum semester ellipsis (e.g. "saya mau tanya yg semester akhir", "kalau semester 5 bagaimana?")
+    // may inherit an active program entity only when the current active domain is ACADEMIC_CURRICULUM
+    // or ACADEMIC_PROGRAM. Never inherit unrelated active domains (e.g. PMB, CAMPUS_SERVICE) or background-only entities.
     const activeDom = String(sessionData.activeDomain || '').toUpperCase();
     const activeEntName = typeof sessionData.activeEntity === 'string'
       ? sessionData.activeEntity
       : (sessionData.activeEntity?.canonical || sessionData.activeEntity?.name || null);
-    if (activeDom === 'ACADEMIC_CURRICULUM' && activeEntName) {
+    if ((activeDom === 'ACADEMIC_CURRICULUM' || activeDom === 'ACADEMIC_PROGRAM') && activeEntName) {
       const inheritedCanon = findCanonicalEntity(activeEntName);
       if (inheritedCanon && (inheritedCanon.family === 'academic_program' || inheritedCanon.family === 'international_program')) {
         effectiveTargetEntities.push({
@@ -2071,7 +2071,9 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
         contextDep.shouldInherit = true;
         contextDep.reason = 'curriculum_semester_continuation';
         contextDep.inheritedDomain = 'ACADEMIC_CURRICULUM';
-        contextDep.inheritedIntent = sessionData.activeIntent || 'CURRICULUM_INQUIRY';
+        contextDep.inheritedIntent = activeDom === 'ACADEMIC_CURRICULUM'
+          ? (sessionData.activeIntent || 'CURRICULUM_INQUIRY')
+          : 'CURRICULUM_INQUIRY';
       }
     }
   } else if (effectiveTargetEntities.length === 0 && contextDep.shouldInherit && !isCampusWideQuery && !isContactQuery && !isConversationalQuery) {
