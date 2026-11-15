@@ -671,8 +671,12 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     .replace(/[.?!,]+/g, '')
     .trim()
     .toLowerCase();
-  const isBareProgramQuery = bareProgramMatches.length === 1 &&
-    strippedBare === bareProgramMatches[0].canonical.toLowerCase();
+  const isBareProgramQuery = bareProgramMatches.length === 1 && (
+    strippedBare === bareProgramMatches[0].canonical.toLowerCase() ||
+    strippedBare === bareProgramMatches[0].matchedAlias?.toLowerCase() ||
+    strippedBare === bareProgramMatches[0].canonical.toLowerCase().replace(/^(?:s[12]|d3)\s+/i, '') ||
+    (Boolean(findCanonicalEntity(strippedBare)) && findCanonicalEntity(strippedBare).canonical === bareProgramMatches[0].canonical)
+  );
 
   if (isBareProgramQuery) {
     const matchedCanonical = bareProgramMatches[0].canonical;
@@ -690,7 +694,7 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
         inheritedIntent: pending.originalIntent,
         inheritedEntity: matchedCanonical,
         clarificationResolved: true,
-        inheritedAspects: sessionData.requestedAspects || ['procedure', 'requirements']
+        inheritedAspects: sessionData.requestedAspects || sessionData.activeAspects || (pending.originalIntent === 'PROGRAM_OVERVIEW' ? ['general', 'curriculum'] : ['procedure', 'requirements'])
       };
     }
 

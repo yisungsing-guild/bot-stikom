@@ -107,6 +107,244 @@ function areAcademicLevelsCompatible(levelA, levelB) {
 }
 
 /**
+ * Official degree eligibility mapping for admission tracks at ITB STIKOM Bali.
+ * Sourced directly from official PMB policies and canonicalEntityRegistry.
+ */
+const TRACK_DEGREE_COMPATIBILITY = Object.freeze({
+  'Jalur Reguler': ['S1', 'D3'],
+  'Jalur Eksekutif (Karyawan)': ['S1'],
+  'RPL (Rekognisi Pembelajaran Lampau)': ['S1'],
+  'Jalur Internasional': ['S1'],
+  'Mahasiswa Pindahan / Transfer': ['S1', 'D3']
+});
+
+/**
+ * Resolves the official parent academic program for an international program record.
+ * Uses explicit parentProgram field or verified credentials metadata in canonicalEntityRegistry.
+ *
+ * @param {Object} intlRecord - Canonical entity registry record
+ * @returns {string|null} Canonical name of parent program or null
+ */
+function resolveInternationalParentProgram(intlRecord) {
+  if (!intlRecord || typeof intlRecord !== 'object') return null;
+  if (intlRecord.parentProgram) {
+    const matched = findCanonicalEntity(intlRecord.parentProgram);
+    return matched ? matched.canonical : null;
+  }
+  if (Array.isArray(intlRecord.credentials)) {
+    const credText = intlRecord.credentials.join(' ');
+    // Match explicit academic programs or unambiguous program degree in ITB STIKOM Bali
+    if (/\b(?:program\s+studi\s+)?bisnis\s+digital\b/i.test(credText) || /\bsarjana\s+bisnis\b/i.test(credText)) {
+      return 'S1 Bisnis Digital';
+    }
+    if (/\b(?:program\s+studi\s+)?sistem\s+informasi\b/i.test(credText)) {
+      return 'S1 Sistem Informasi';
+    }
+    if (/\b(?:program\s+studi\s+)?teknologi\s+informasi\b/i.test(credText)) {
+      return 'S1 Teknologi Informasi';
+    }
+    if (/\b(?:program\s+studi\s+)?sistem\s+komputer\b/i.test(credText)) {
+      return 'S1 Sistem Komputer';
+    }
+    // Note: Do NOT infer S1 Sistem Informasi from bare S.Kom because S.Kom is shared across SI, TI, and SK.
+  }
+  return null;
+}
+
+/**
+ * Determines whether candidate entities contain genuine competing alternatives
+ * rather than compatible or contextual entity pairs (e.g. host institution + academic_program).
+ *
+ * Invariants:
+ * 1. Candidates referring to the same canonical entity (e.g. duplicate extractions or alias variants)
+ *    are deduplicated and must NEVER be treated as competing.
+ * 2. Only the official host institution (ITB STIKOM Bali and its verified aliases) qualifies as an
+ *    enclosing parent organization context for internal programs, tracks, facilities, or services.
+ *    Any substantive entity paired with the host institution MUST be verified in the canonical registry.
+ * 3. External institutions (e.g. Universitas Udayana, UGM) do NOT have an unproven parent-child relation
+ *    with internal programs and MUST be treated as competing alternatives.
+ * 4. Academic program + admission track requires both entities to be verified in canonical registry
+ *    and matching degree eligibility (TRACK_DEGREE_COMPATIBILITY).
+ * 5. Academic program + international program requires both entities to be verified in canonical registry
+ *    and an exact match with the international program's canonical parentProgram.
+ * 6. SAFE DEFAULT: All other combinations without proven relationship compete without explicit COMPARE.
+ */
+function hasMultipleCompetingEntities(candidates, speechAct) {
+  if (!Array.isArray(candidates) || candidates.length <= 1) return false;
+  if (speechAct === 'COMPARE') return false;
+
+  // 1. Resolve canonical identity and deduplicate candidates
+  const uniqueEntities = [];
+  const seenKeys = new Set();
+
+  for (const cand of candidates) {
+    if (!cand) continue;
+    const rawStr = typeof cand === 'string' ? cand : (cand.canonical || cand.rawMention || cand.mention || cand.name || '');
+    const declaredCat = typeof cand === 'object' ? (cand.inferredCategory || cand.category || 'unknown') : 'unknown';
+    if (!rawStr || !rawStr.trim()) continue;
+
+    const registryMatch = findCanonicalEntity(rawStr);
+    let canonicalName = registryMatch ? registryMatch.canonical : rawStr.trim();
+
+    const isHost = Boolean(
+      canonicalName === 'Kampus ITB STIKOM Bali' ||
+      canonicalName === 'ITB STIKOM Bali' ||
+      /^(?:(?:itb\s+)?stikom(?:\s+bali)?|institut\s+teknologi\s+dan\s+bisnis\s+stikom\s+bali)$/i.test(rawStr.trim()) ||
+      /^(?:(?:itb\s+)?stikom(?:\s+bali)?|institut\s+teknologi\s+dan\s+bisnis\s+stikom\s+bali)$/i.test(canonicalName)
+    );
+
+    if (isHost) {
+      canonicalName = 'ITB STIKOM Bali';
+    }
+
+    const effectiveCat = isHost
+      ? 'institution'
+      : (registryMatch?.type || registryMatch?.family || declaredCat);
+
+    const normKey = (registryMatch ? 'reg::' + registryMatch.canonical : 'raw::' + effectiveCat + '::' + canonicalName)
+      .toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+
+    if (!seenKeys.has(normKey)) {
+      seenKeys.add(normKey);
+      uniqueEntities.push({
+        canonical: canonicalName,
+        category: effectiveCat,
+        isHostInstitution: isHost,
+        isRegistered: Boolean(registryMatch || isHost),
+        registryRecord: registryMatch || (isHost ? { canonical: 'ITB STIKOM Bali', type: 'institution', family: 'institution' } : null),
+        rawCandidate: cand
+      });
+    }
+  }
+
+  // If after canonical deduplication only 1 or 0 unique entities remain, not competing!
+  if (uniqueEntities.length <= 1) {
+    return false;
+  }
+
+  // 2. Separate into official host institution vs other candidates
+  const hostInstitutions = [];
+  const otherCandidates = [];
+
+  for (const ent of uniqueEntities) {
+    if (ent.isHostInstitution) {
+      hostInstitutions.push(ent);
+    } else {
+      otherCandidates.push(ent);
+    }
+  }
+
+  // Multiple distinct host institutions (already deduped, but safety check)
+  if (hostInstitutions.length > 1) {
+    return true;
+  }
+
+  // Exactly 1 host institution + at most 1 substantive candidate:
+  // Complementary context: host institution enclosing internal academic program, facility, service, track, or organization
+  // Substantive entity MUST be genuinely registered in CANONICAL_ENTITIES
+  if (hostInstitutions.length === 1 && otherCandidates.length === 1) {
+    const substantive = otherCandidates[0];
+    if (!substantive.isRegistered || !substantive.registryRecord) {
+      return true; // Unregistered entity -> COMPETING (triggers clarification)
+    }
+
+    const permittedSubstantiveCategories = new Set([
+      'program',
+      'academic_program',
+      'facility',
+      'campus_facility',
+      'campus_service',
+      'admission_track',
+      'student_organization',
+      'student_association',
+      'student_activity_unit',
+      'organization',
+      'scholarship',
+      'academic_event',
+      'international_program',
+      'special_program',
+      'campus'
+    ]);
+
+    const regType = substantive.registryRecord.type;
+    const regFamily = substantive.registryRecord.family;
+    if (permittedSubstantiveCategories.has(regType) || permittedSubstantiveCategories.has(regFamily)) {
+      return false; // Proven official internal entity of ITB STIKOM Bali
+    }
+
+    return true; // Registered but not an internal campus component -> COMPETING
+  }
+
+  // If host institution is present alongside multiple non-host candidates, compete
+  if (hostInstitutions.length === 1 && otherCandidates.length > 1) {
+    return true;
+  }
+
+  // Count candidates per category
+  const categoryCounts = new Map();
+  for (const ent of otherCandidates) {
+    categoryCounts.set(ent.category, (categoryCounts.get(ent.category) || 0) + 1);
+  }
+
+  // Multiple distinct entities within the same category (e.g. 2 different academic_programs) compete!
+  for (const [, count] of categoryCounts) {
+    if (count > 1) return true;
+  }
+
+  // If an external institution (not host) is present, it competes with academic programs or other institutions!
+  if (otherCandidates.some(e => e.category === 'institution')) {
+    return true;
+  }
+
+  // Relationship check: academic_program + admission_track
+  const progCandidate = otherCandidates.find(e =>
+    e.category === 'academic_program' ||
+    e.registryRecord?.family === 'academic_program' ||
+    e.registryRecord?.type === 'program'
+  );
+  const trackCandidate = otherCandidates.find(e =>
+    e.category === 'admission_track' ||
+    e.registryRecord?.family === 'admission_track' ||
+    e.registryRecord?.type === 'admission_track'
+  );
+
+  if (progCandidate && trackCandidate && otherCandidates.length === 2) {
+    if (!progCandidate.isRegistered || !trackCandidate.isRegistered || !progCandidate.registryRecord || !trackCandidate.registryRecord) {
+      return true; // Unregistered entity -> COMPETING
+    }
+    const trackCanonical = trackCandidate.registryRecord.canonical;
+    const allowedDegrees = TRACK_DEGREE_COMPATIBILITY[trackCanonical];
+    const progDegree = progCandidate.registryRecord.degree;
+    if (allowedDegrees && progDegree && allowedDegrees.includes(progDegree)) {
+      return false; // Proven relationship: admission track officially covers program degree
+    }
+    return true; // Incompatible track/degree -> COMPETING
+  }
+
+  // Relationship check: academic_program + international_program
+  const intlCandidate = otherCandidates.find(e =>
+    e.category === 'international_program' ||
+    e.category === 'external_partner' ||
+    e.registryRecord?.family === 'international_program' ||
+    e.registryRecord?.type === 'international_program'
+  );
+
+  if (progCandidate && intlCandidate && otherCandidates.length === 2) {
+    if (!progCandidate.isRegistered || !intlCandidate.isRegistered || !progCandidate.registryRecord || !intlCandidate.registryRecord) {
+      return true; // Unregistered entity -> COMPETING
+    }
+    const parentProgCanonical = resolveInternationalParentProgram(intlCandidate.registryRecord);
+    if (parentProgCanonical && parentProgCanonical === progCandidate.registryRecord.canonical) {
+      return false; // Proven exact parent program relationship
+    }
+    return true; // Mismatched or unproven parent program -> COMPETING
+  }
+
+  // SAFE DEFAULT: All other combinations without proven relationship compete without explicit COMPARE
+  return true;
+}
+
+/**
  * Normalizes prior context input from various shapes (sessionData, previous frame, array).
  * Strictly operates on structured metadata, NEVER regex on raw queries.
  */
@@ -441,9 +679,10 @@ function validateSemanticInterpretation(interpretation, priorContext = null, opt
   let clarificationReason = null;
 
   // Multi-entity safety invariant:
-  // If multiple candidate entities exist and speechAct is NOT explicit COMPARE,
+  // If multiple competing candidate entities exist and speechAct is NOT explicit COMPARE,
   // ambiguity MUST NOT be LOW. We preserve all candidates and never pick one!
-  if (explicitCandidates.length > 1 && interpretation.speechAct !== 'COMPARE') {
+  // Compatible pairs (e.g. academic_program + institution) do not force HIGH ambiguity.
+  if (hasMultipleCompetingEntities(explicitCandidates, interpretation.speechAct)) {
     finalAmbiguityLevel = 'HIGH';
     requiresClarification = true;
     clarificationReason = 'MULTIPLE_COMPETING_ENTITIES';
@@ -754,6 +993,8 @@ module.exports = {
   FAILURE_TYPES,
   CATEGORY_ASPECT_COMPATIBILITY,
   areAcademicLevelsCompatible,
+  hasMultipleCompetingEntities,
+  resolveInternationalParentProgram,
   extractNormalizedPriorContext,
   validateSchemaAndEnums,
   validateSemanticInterpretation,

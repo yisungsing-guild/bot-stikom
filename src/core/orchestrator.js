@@ -990,6 +990,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     arbitrated.answerabilityStatus = answerability.status;
 
     let answer = null;
+    let synthesisResult = null;
     let verification = {
       pass: false,
       outcome: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
@@ -1017,7 +1018,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       if (options && options.fastFallback) synthOpts.fastFallback = true;
       if (options && options.signal) synthOpts.signal = options.signal;
       const synthFn = groundedAnswerGenerator.synthesizeAnswer || synthesizeAnswer;
-      const synthesis = await synthFn(frame, synthOpts, null, recResult);
+      synthesisResult = await synthFn(frame, synthOpts, null, recResult);
+      const synthesis = synthesisResult;
       if (synthesis && synthesis.success && synthesis.answer) {
         // 7. Universal Final Verification
         const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
@@ -1183,6 +1185,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       },
       status: subStatus,
       answer,
+      synthesis: synthesisResult,
       verification,
       arbitrated,
       arbitratedEvidence: arbitrated
@@ -1328,15 +1331,27 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     // Pending clarification state lifecycle:
     // 1. If explicit context reset, clarification was resolved this turn, OR user switched to an independent inquiry / topic:
     //    clear to null (prevents abandoned clarification from lingering as a zombie state)
-    // 2. If current turn genuinely requests clarification (output outcome is strictly NEEDS_CLARIFICATION):
+    // 2. If current turn genuinely requests clarification (output outcome is strictly NEEDS_CLARIFICATION or safe clarification prompt):
     //    populate pendingClarification with context-derived originalDomain & originalIntent.
-    //    Note: Frame intent alone (e.g. AMBIGUOUS_CLARIFICATION) must not create pending unless outcome is NEEDS_CLARIFICATION.
     let newPendingClarification = null;
+    const finalOutcome = subQueryResults[0]?.verification?.outcome;
+    const finalReason = subQueryResults[0]?.verification?.reason;
+    const synthesisSource = subQueryResults[0]?.synthesis?.source;
+    const synthesisReason = subQueryResults[0]?.synthesis?.reason;
+    const isTerminalNonClarification = finalOutcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN ||
+      finalOutcome === VERIFICATION_OUTCOME.VERIFICATION_FAILED;
+
+    const isClarificationResponse = !isTerminalNonClarification && Boolean(
+      finalOutcome === 'NEEDS_CLARIFICATION' ||
+      (finalOutcome === 'ESCALATION_GUIDANCE' && finalReason === 'clarification_prompt') ||
+      ((synthesisSource === 'ambiguous_clarification_synthesis' || synthesisReason === 'ambiguous_program_faculty_clarification') &&
+        finalOutcome !== VERIFICATION_OUTCOME.ESCALATION_GUIDANCE) ||
+      (subQueryResults[0]?.answerability === ANSWERABILITY_STATUS.CLARIFY && finalReason === 'clarification_prompt')
+    );
+
     if (isExplicitReset || primaryFrame.clarificationResolved || primaryFrame.contextDep?.clarificationResolved) {
       newPendingClarification = null;
-    } else if (
-      subQueryResults[0]?.verification?.outcome === 'NEEDS_CLARIFICATION'
-    ) {
+    } else if (isClarificationResponse) {
       const clarifContext = determineClarificationContext(primaryFrame, rawQuery, sessionData);
       // Guard: Only create pendingClarification for slots supported for continuation by contextResolver (currently 'program').
       // Unsupported slots (facility, scholarship_type, topic) must not create uncontinuable pendingClarification.
@@ -1516,5 +1531,6 @@ module.exports = {
   processTurn,
   handleInboundMessage,
   runPhase1DeterministicPipeline,
-  selectBalancedEvidenceByEntity
+  selectBalancedEvidenceByEntity,
+  determineClarificationContext
 };
