@@ -32,7 +32,8 @@ const { findCanonicalEntity } = require('../src/engine/canonicalEntityRegistry')
 const { evaluateContextDependency } = require('../src/core/contextResolver');
 const {
   processTurn,
-  determineClarificationContext
+  determineClarificationContext,
+  isClarificationResponsePredicate
 } = require('../src/core/orchestrator');
 const { VERIFICATION_OUTCOME } = require('../src/reasoning/contracts');
 const { ANSWERABILITY_STATUS } = require('../src/core/answerabilityGate');
@@ -362,7 +363,7 @@ describe('Program Profile Resolution & Pending Clarification Regression Suite', 
       expect(facQuery.originalDomain).toBe('FACILITIES');
     });
 
-    // Helper to evaluate orchestrator pending clarification decision logic
+    // Helper to evaluate orchestrator pending clarification decision logic using production predicate
     function evaluatePendingCreation({
       finalOutcome,
       finalReason = null,
@@ -373,16 +374,13 @@ describe('Program Profile Resolution & Pending Clarification Regression Suite', 
       requiredSlot = 'program',
       isExplicitReset = false
     }) {
-      const isTerminalNonClarification = finalOutcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN ||
-        finalOutcome === VERIFICATION_OUTCOME.VERIFICATION_FAILED;
-
-      const isClarificationResponse = !isTerminalNonClarification && Boolean(
-        finalOutcome === 'NEEDS_CLARIFICATION' ||
-        (finalOutcome === 'ESCALATION_GUIDANCE' && finalReason === 'clarification_prompt') ||
-        ((synthesisSource === 'ambiguous_clarification_synthesis' || synthesisReason === 'ambiguous_program_faculty_clarification') &&
-          finalOutcome !== VERIFICATION_OUTCOME.ESCALATION_GUIDANCE) ||
-        (answerability === ANSWERABILITY_STATUS.CLARIFY && finalReason === 'clarification_prompt')
-      );
+      const isClarificationResponse = isClarificationResponsePredicate({
+        finalOutcome,
+        finalReason,
+        synthesisSource,
+        synthesisReason,
+        answerability
+      });
 
       let newPendingClarification = null;
       if (isExplicitReset || primaryFrame.clarificationResolved || primaryFrame.contextDep?.clarificationResolved) {
@@ -515,6 +513,174 @@ describe('Program Profile Resolution & Pending Clarification Regression Suite', 
         requiredSlot: 'program'
       });
       expect(pending).toBeNull();
+    });
+
+    // --- 11 Targeted Edge-Case Scenarios on isClarificationResponsePredicate & Lifecycle ---
+    describe('11 Targeted Edge Cases for isClarificationResponsePredicate', () => {
+      test('1. VERIFIED_FACTUAL + synthesisSource ambiguous_clarification_synthesis -> false (no pending)', () => {
+        const isClarif = isClarificationResponsePredicate({
+          finalOutcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+          synthesisSource: 'ambiguous_clarification_synthesis'
+        });
+        expect(isClarif).toBe(false);
+        const pending = evaluatePendingCreation({
+          finalOutcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+          synthesisSource: 'ambiguous_clarification_synthesis'
+        });
+        expect(pending).toBeNull();
+      });
+
+      test('2. PARTIAL + synthesisSource ambiguous_clarification_synthesis -> false (no pending)', () => {
+        const isClarif = isClarificationResponsePredicate({
+          finalOutcome: 'PARTIAL',
+          synthesisSource: 'ambiguous_clarification_synthesis'
+        });
+        expect(isClarif).toBe(false);
+        const pending = evaluatePendingCreation({
+          finalOutcome: 'PARTIAL',
+          synthesisSource: 'ambiguous_clarification_synthesis'
+        });
+        expect(pending).toBeNull();
+      });
+
+      test('3. VERIFIED_FACTUAL + synthesisReason ambiguous_program_faculty_clarification -> false (no pending)', () => {
+        const isClarif = isClarificationResponsePredicate({
+          finalOutcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+          synthesisReason: 'ambiguous_program_faculty_clarification'
+        });
+        expect(isClarif).toBe(false);
+        const pending = evaluatePendingCreation({
+          finalOutcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+          synthesisReason: 'ambiguous_program_faculty_clarification'
+        });
+        expect(pending).toBeNull();
+      });
+
+      test('4. PARTIAL + synthesisReason ambiguous_program_faculty_clarification -> false (no pending)', () => {
+        const isClarif = isClarificationResponsePredicate({
+          finalOutcome: 'PARTIAL',
+          synthesisReason: 'ambiguous_program_faculty_clarification'
+        });
+        expect(isClarif).toBe(false);
+        const pending = evaluatePendingCreation({
+          finalOutcome: 'PARTIAL',
+          synthesisReason: 'ambiguous_program_faculty_clarification'
+        });
+        expect(pending).toBeNull();
+      });
+
+      test('5. VERIFIED_FACTUAL + answerability CLARIFY + finalReason clarification_prompt -> false (no pending)', () => {
+        const isClarif = isClarificationResponsePredicate({
+          finalOutcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+          finalReason: 'clarification_prompt',
+          answerability: ANSWERABILITY_STATUS.CLARIFY
+        });
+        expect(isClarif).toBe(false);
+        const pending = evaluatePendingCreation({
+          finalOutcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+          finalReason: 'clarification_prompt',
+          answerability: ANSWERABILITY_STATUS.CLARIFY
+        });
+        expect(pending).toBeNull();
+      });
+
+      test('6. PARTIAL + answerability CLARIFY + finalReason clarification_prompt -> false (no pending)', () => {
+        const isClarif = isClarificationResponsePredicate({
+          finalOutcome: 'PARTIAL',
+          finalReason: 'clarification_prompt',
+          answerability: ANSWERABILITY_STATUS.CLARIFY
+        });
+        expect(isClarif).toBe(false);
+        const pending = evaluatePendingCreation({
+          finalOutcome: 'PARTIAL',
+          finalReason: 'clarification_prompt',
+          answerability: ANSWERABILITY_STATUS.CLARIFY
+        });
+        expect(pending).toBeNull();
+      });
+
+      test('7. NEEDS_CLARIFICATION + synthesisSource ambiguous_clarification_synthesis -> true (creates pending)', () => {
+        const isClarif = isClarificationResponsePredicate({
+          finalOutcome: 'NEEDS_CLARIFICATION',
+          synthesisSource: 'ambiguous_clarification_synthesis'
+        });
+        expect(isClarif).toBe(true);
+        const pending = evaluatePendingCreation({
+          finalOutcome: 'NEEDS_CLARIFICATION',
+          synthesisSource: 'ambiguous_clarification_synthesis'
+        });
+        expect(pending).not.toBeNull();
+        expect(pending?.status).toBe('PENDING');
+      });
+
+      test('8. ESCALATION_GUIDANCE + finalReason clarification_prompt -> true (creates pending)', () => {
+        const isClarif = isClarificationResponsePredicate({
+          finalOutcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+          finalReason: 'clarification_prompt'
+        });
+        expect(isClarif).toBe(true);
+        const pending = evaluatePendingCreation({
+          finalOutcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+          finalReason: 'clarification_prompt'
+        });
+        expect(pending).not.toBeNull();
+        expect(pending?.status).toBe('PENDING');
+      });
+
+      test('9. ESCALATION_GUIDANCE + generic non-clarification reason -> false (no pending)', () => {
+        const isClarif = isClarificationResponsePredicate({
+          finalOutcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+          finalReason: 'unsupported_complex_query'
+        });
+        expect(isClarif).toBe(false);
+        const pending = evaluatePendingCreation({
+          finalOutcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+          finalReason: 'unsupported_complex_query'
+        });
+        expect(pending).toBeNull();
+      });
+
+      test('10. SAFE_UNKNOWN + synthesisSource ambiguous_clarification_synthesis -> false (no pending)', () => {
+        const isClarif = isClarificationResponsePredicate({
+          finalOutcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+          synthesisSource: 'ambiguous_clarification_synthesis'
+        });
+        expect(isClarif).toBe(false);
+        const pending = evaluatePendingCreation({
+          finalOutcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+          synthesisSource: 'ambiguous_clarification_synthesis'
+        });
+        expect(pending).toBeNull();
+      });
+
+      test('11. VERIFICATION_FAILED + synthesisSource ambiguous_clarification_synthesis -> false (no pending)', () => {
+        const isClarif = isClarificationResponsePredicate({
+          finalOutcome: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
+          synthesisSource: 'ambiguous_clarification_synthesis'
+        });
+        expect(isClarif).toBe(false);
+        const pending = evaluatePendingCreation({
+          finalOutcome: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
+          synthesisSource: 'ambiguous_clarification_synthesis'
+        });
+        expect(pending).toBeNull();
+      });
+
+      test('12. Lifecycle: Explicit reset clears pending even on valid clarification', () => {
+        const pending = evaluatePendingCreation({
+          finalOutcome: 'NEEDS_CLARIFICATION',
+          isExplicitReset: true
+        });
+        expect(pending).toBeNull();
+      });
+
+      test('13. Lifecycle: clarificationResolved clears pending even on valid clarification', () => {
+        const pending = evaluatePendingCreation({
+          finalOutcome: 'NEEDS_CLARIFICATION',
+          primaryFrame: { clarificationResolved: true }
+        });
+        expect(pending).toBeNull();
+      });
     });
   });
 

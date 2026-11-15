@@ -206,6 +206,36 @@ function determineClarificationContext(frame = {}, rawQuery = '', sessionData = 
 }
 
 /**
+ * Evaluates whether a turn result constitutes a genuine clarification response.
+ * Strictly requires the final verification outcome to be either 'NEEDS_CLARIFICATION'
+ * or ESCALATION_GUIDANCE with reason 'clarification_prompt'.
+ * Metadata synthesis, answerability CLARIFY, or frame intent are NEVER allowed
+ * to activate pending clarification independently when final outcome is factual, partial, or terminal failure.
+ */
+function isClarificationResponsePredicate({
+  finalOutcome,
+  finalReason = null,
+  synthesisSource = null,
+  synthesisReason = null,
+  answerability = null
+} = {}) {
+  const isClarificationOutcome =
+    finalOutcome === 'NEEDS_CLARIFICATION' ||
+    (finalOutcome === VERIFICATION_OUTCOME.ESCALATION_GUIDANCE && finalReason === 'clarification_prompt');
+
+  return Boolean(
+    isClarificationOutcome &&
+    (
+      synthesisSource === 'ambiguous_clarification_synthesis' ||
+      synthesisReason === 'ambiguous_program_faculty_clarification' ||
+      answerability === ANSWERABILITY_STATUS.CLARIFY ||
+      finalOutcome === 'NEEDS_CLARIFICATION' ||
+      finalReason === 'clarification_prompt'
+    )
+  );
+}
+
+/**
  * Selects up to maxCount chunks from accepted evidence while preserving
  * balanced representation across all targetEntities.
  */
@@ -1338,16 +1368,15 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     const finalReason = subQueryResults[0]?.verification?.reason;
     const synthesisSource = subQueryResults[0]?.synthesis?.source;
     const synthesisReason = subQueryResults[0]?.synthesis?.reason;
-    const isTerminalNonClarification = finalOutcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN ||
-      finalOutcome === VERIFICATION_OUTCOME.VERIFICATION_FAILED;
+    const answerability = subQueryResults[0]?.answerability;
 
-    const isClarificationResponse = !isTerminalNonClarification && Boolean(
-      finalOutcome === 'NEEDS_CLARIFICATION' ||
-      (finalOutcome === 'ESCALATION_GUIDANCE' && finalReason === 'clarification_prompt') ||
-      ((synthesisSource === 'ambiguous_clarification_synthesis' || synthesisReason === 'ambiguous_program_faculty_clarification') &&
-        finalOutcome !== VERIFICATION_OUTCOME.ESCALATION_GUIDANCE) ||
-      (subQueryResults[0]?.answerability === ANSWERABILITY_STATUS.CLARIFY && finalReason === 'clarification_prompt')
-    );
+    const isClarificationResponse = isClarificationResponsePredicate({
+      finalOutcome,
+      finalReason,
+      synthesisSource,
+      synthesisReason,
+      answerability
+    });
 
     if (isExplicitReset || primaryFrame.clarificationResolved || primaryFrame.contextDep?.clarificationResolved) {
       newPendingClarification = null;
@@ -1532,5 +1561,6 @@ module.exports = {
   handleInboundMessage,
   runPhase1DeterministicPipeline,
   selectBalancedEvidenceByEntity,
-  determineClarificationContext
+  determineClarificationContext,
+  isClarificationResponsePredicate
 };
