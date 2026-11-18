@@ -20,6 +20,12 @@ const MULTI_SPLIT_REGEX = /(?:\s*\?+\s*|,\s*(?:terus|lalu|kemudian|kalau|kalo|ba
 
 // Shared Predicate Helpers for Multi-Intent & Safety Guardrails (imported from semanticFrameResolver)
 
+function isSalutationOnly(text) {
+  if (!text) return false;
+  const s = String(text).trim().toLowerCase().replace(/[.,!?:;]+$/, '').trim();
+  return /^(?:halo|hai|hey|hei|assalamu(?:'|’)?alaikum|selamat\s+(?:pagi|siang|sore|malam)|pagi|siang|sore|malam|permisi|tes|test|ping)(?:\s+(?:tiko|kak|kakak|min|admin|stikom|bot|sahabat|bro|sis))?$/i.test(s);
+}
+
 function isCompoundCourseBenefitQuery(rawQuery) {
   if (!rawQuery) return false;
   return /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|ai\b|artificial\s+intelligence|kecerdasan\s+buatan)\b.*\b(?:semester\s+berapa\s+dan\s+apa|dan\s+apa\s+manfaat(?:nya)?)\b/i.test(rawQuery);
@@ -65,8 +71,19 @@ function splitCompoundQueryParts(rawQuery) {
     parts = query.split(MULTI_SPLIT_REGEX).map(p => p.trim()).filter(Boolean);
   }
 
+  // Guard against treating a leading conversational salutation/greeting as an independent subquery
+  // e.g. "Halo Tiko, kalau aku belum bisa coding, cocoknya masuk jurusan apa?"
+  // or "Halo kak, berapa biaya kuliah S1 Sistem Informasi?"
+  if (parts.length >= 2 && isSalutationOnly(parts[0])) {
+    if (parts.length === 2) {
+      parts = [query];
+    } else {
+      parts = parts.slice(1);
+    }
+  }
+
   // Guard against splitting compound noun phrases
-  if (parts.length >= 2 && parts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|gimana|kapan|apakah|ada|di\s*mana|dimana|halo|hai)\b/i.test(parts[0])) {
+  if (parts.length >= 2 && parts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|gimana|kapan|apakah|ada|di\s*mana|dimana)\b/i.test(parts[0])) {
     parts = [query];
   }
 

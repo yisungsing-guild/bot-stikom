@@ -3546,9 +3546,9 @@ function buildProgramComparisonAnswer(semanticFrame, evidenceList = [], arbitrat
   const isAskingCoding = /\b(?:coding|ngoding|pemrograman|program|pusing)\b/i.test(semanticFrame?.rawQuery || '');
   if (isAskingCoding) {
     if (isEn) {
-      diffLines.push('• **Regarding Programming:** In the examined admissions documents, there is no stated requirement to possess coding skills or submit a programming portfolio prior to enrolling in either program. S1 Information Systems introduces foundational computing logic via Dasar Algoritma in Semester I, while S1 Digital Business focuses primarily on digital business strategy with applied AI in Semester III. For the latest admission policies, please consult PMB directly.');
+      diffLines.push('• **Regarding Programming:** In the available official PMB documents, I did not find any requirement for a coding test or programming portfolio. To confirm the latest requirements, you may confirm directly with the PMB committee. S1 Information Systems combines technology, business processes, analysis, and information system design with Dasar Algoritma in Semester I, while S1 Digital Business is oriented toward digital business, e-commerce, marketing strategy, and business management with foundational business and data courses in Semester I and Teknik Pembuatan Prompt untuk Model AI in Semester III. Study program selection should be tailored to your interests and career plans, without concluding that one is definitely easier.');
     } else {
-      diffLines.push('• **Terkait Pemrograman:** Dalam dokumen persyaratan PMB yang diperiksa, tidak tercantum kewajiban tes coding atau portofolio pemrograman sebelum mendaftar ke kedua program studi ini. Pada S1 Sistem Informasi, fondasi komputasi diperkenalkan melalui mata kuliah Dasar Algoritma di Semester I, sedangkan S1 Bisnis Digital berfokus pada strategi bisnis digital dan pemasaran dengan materi AI terapan pada Semester III. Untuk kepastian persyaratan terbaru, silakan mengonfirmasi langsung kepada Panitia PMB.');
+      diffLines.push('• **Terkait Pemrograman:** Dalam dokumen persyaratan PMB yang tersedia, saya tidak menemukan kewajiban tes coding atau portofolio pemrograman. Untuk memastikan persyaratan terbaru, Kakak dapat mengonfirmasi langsung kepada bagian PMB. S1 Sistem Informasi memadukan teknologi, proses bisnis, analisis dan perancangan sistem informasi dengan mata kuliah Dasar Algoritma pada Semester I, sedangkan S1 Bisnis Digital berorientasi pada bisnis digital, e-commerce, strategi pemasaran digital dan pengelolaan bisnis dengan mata kuliah fondasi bisnis dan data pada Semester I serta Teknik Pembuatan Prompt untuk Model AI pada Semester III. Pemilihan program studi sebaiknya disesuaikan dengan minat dan rencana karier Kakak, karena setiap prodi memiliki fokus keilmuan yang terstruktur tanpa menyimpulkan salah satu lebih mudah.');
     }
   }
 
@@ -5463,24 +5463,24 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
     if (isRecommendationInquiry) {
       const { sanitizeWhatsAppMarkdown } = require('./outboundRenderer');
       const recAns = isEn
-        ? 'For prospective students who *cannot code yet or do not have a programming background*, the examined official admissions documents do not list any requirement for a coding test or programming portfolio. To confirm the latest admissions policies and selection criteria, please consult the ITB STIKOM Bali PMB committee directly.\n\n' +
-          'Based on official study program profiles and curriculum structures (*ISIAN WEBSITE*), prospective students can choose according to their interests and career goals:\n\n' +
-          '1. *S1 Bisnis Digital (Digital Business)*\n' +
-          'Focused on technology-driven business management, e-commerce, digital marketing, data analytics, and digital business models. In Semester III, applied AI is studied through *Teknik Pembuatan Prompt untuk Model AI*.\n\n' +
-          '2. *S1 Sistem Informasi (Information Systems)*\n' +
-          'Focused on enterprise system architecture, IT governance, business process analysis, and database management, with foundational computing and logic introduced in Semester I (*Dasar Algoritma*).\n\n' +
+        ? 'In the available official PMB documents, I did not find any requirement for a coding test or programming portfolio. To confirm the latest requirements, you may confirm directly with the admissions committee (admisi PMB).\n\n' +
+          'Based on official study program profiles and curriculum structures (*ISIAN WEBSITE*), you may consider study program options aligned with your interests and career plans:\n\n' +
+          '1. *S1 Sistem Informasi*\n' +
+          'Combines technology, business processes, analysis, and information system design. In the official Semester I curriculum, foundational computing logic is introduced through the course *Dasar Algoritma*.\n\n' +
+          '2. *S1 Bisnis Digital*\n' +
+          'Oriented toward digital business, e-commerce, digital marketing strategy, and business management. Semester I includes foundational business and data courses, and in Semester III includes *Teknik Pembuatan Prompt untuk Model AI*.\n\n' +
           '3. *S1 Teknologi Informasi & S1 Sistem Komputer*\n' +
-          'Ideal for students pursuing technical mastery in software engineering, cloud infrastructure, cybersecurity, IoT, microcontrollers, and intelligent computing, with foundational programming starting in Semester I (*Algoritma dan Pemrograman*).\n\n' +
-          'For admissions consultation regarding official requirements (ketentuan resmi admisi PMB), please contact the ITB STIKOM Bali admissions service at https://pmb.stikom-bali.ac.id ya!'
-        : 'Bagi calon mahasiswa yang *belum bisa coding atau belum memiliki latar belakang pemrograman*, dalam dokumen persyaratan PMB yang diperiksa, tidak tercantum kewajiban tes coding atau portofolio pemrograman bagi pendaftar baru. Untuk kepastian persyaratan dan kebijakan seleksi terbaru, silakan mengonfirmasi langsung kepada Panitia PMB ITB STIKOM Bali.\n\n' +
-          'Berdasarkan profil program studi dan sebaran kurikulum resmi (*ISIAN WEBSITE*), calon mahasiswa dapat mempertimbangkan pilihan program studi sesuai minat dan rencana karier:\n\n' +
-          '1. *S1 Bisnis Digital*\n' +
-          'Berfokus pada pemanfaatan teknologi dalam bisnis, inovasi digital, e-commerce, digital marketing, analitika data, dan model bisnis digital. Materi penerapan kecerdasan buatan diajarkan pada Semester III melalui mata kuliah *Teknik Pembuatan Prompt untuk Model AI*.\n\n' +
-          '2. *S1 Sistem Informasi*\n' +
-          'Berfokus pada perancangan sistem enterprise, tata kelola TI, analisis proses bisnis, dan manajemen basis data, dengan fondasi logika dan komputasi yang diajarkan pada Semester I melalui mata kuliah *Dasar Algoritma*.\n\n' +
+          'For students pursuing technical depth in software engineering, networking infrastructure, microcontrollers, hardware, IoT, and robotics, with introductory programming starting in Semester I (*Algoritma dan Pemrograman*).\n\n' +
+          'Study program selection is best guided by your personal interests and career aspirations, without assuming any single program is inherently easier. For admissions consultation regarding official requirements (ketentuan resmi admisi PMB), please contact the ITB STIKOM Bali admissions service at https://pmb.stikom-bali.ac.id ya!'
+        : 'Dalam dokumen persyaratan PMB yang tersedia, saya tidak menemukan kewajiban tes coding atau portofolio pemrograman. Untuk memastikan persyaratan terbaru, Kakak dapat mengonfirmasi langsung kepada bagian PMB.\n\n' +
+          'Berdasarkan profil program studi dan sebaran kurikulum resmi (*ISIAN WEBSITE*), Kakak dapat mempertimbangkan pilihan program studi sesuai minat dan rencana karier:\n\n' +
+          '1. *S1 Sistem Informasi*\n' +
+          'Memadukan teknologi, proses bisnis, analisis dan perancangan sistem informasi. Kurikulum Semester I mencantumkan mata kuliah fondasi logika komputasi melalui *Dasar Algoritma*.\n\n' +
+          '2. *S1 Bisnis Digital*\n' +
+          'Berorientasi pada bisnis digital, e-commerce, strategi pemasaran digital, dan pengelolaan bisnis. Pada Semester I, kurikulum memuat mata kuliah fondasi bisnis dan data, serta pada Semester III terdapat mata kuliah *Teknik Pembuatan Prompt untuk Model AI*.\n\n' +
           '3. *S1 Teknologi Informasi & S1 Sistem Komputer*\n' +
-          'Bagi yang berminat mendalami rekayasa perangkat lunak, infrastruktur jaringan, komputasi awan, mikrokontroler, hardware, IoT, dan robotika, dengan mata kuliah dasar pemrograman pada Semester I (*Algoritma dan Pemrograman*).\n\n' +
-          'Untuk konsultasi pemilihan jurusan dan verifikasi persyaratan pendaftaran resmi, Kakak dapat menghubungi layanan admisi PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id ya!';
+          'Bagi yang berminat mendalami rekayasa perangkat lunak, infrastruktur jaringan, hardware, IoT, maupun robotika, dengan pembelajaran dasar pemrograman pada Semester I (*Algoritma dan Pemrograman*).\n\n' +
+          'Pemilihan program studi sebaiknya disesuaikan dengan minat dan rencana karier Kakak, karena setiap prodi memiliki fokus keilmuan yang terstruktur tanpa menyimpulkan salah satu lebih mudah. Untuk konsultasi pemilihan jurusan dan verifikasi ketentuan resmi admisi PMB, Kakak dapat menghubungi layanan admisi PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id ya!';
 
       const sanitizedRecAns = sanitizeWhatsAppMarkdown(recAns);
       return {

@@ -1225,7 +1225,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
   // Combine answers if multiple subqueries with deduplication
   const hasSuccessfulCampusAnswer = subQueryResults.some(r =>
     r.answer && (r.answerability === ANSWERABILITY_STATUS.ANSWERABLE || r.verification?.pass || r.verification?.isGrounded) &&
-    r.frame && r.frame.domain !== 'OUT_OF_DOMAIN'
+    r.frame && r.frame.domain !== 'OUT_OF_DOMAIN' && r.frame.domain !== 'CONVERSATIONAL' && r.frame.intent !== 'CONVERSATIONAL_GREETING'
   );
 
   const seenAnswerNorms = new Set();
@@ -1249,6 +1249,12 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         ? `_Note: Regarding your non-campus inquiry ("${q}"), I apologize that I cannot answer as this service specifically provides official information about ITB STIKOM Bali._`
         : `_Catatan: Mengenai pertanyaan di luar informasi kampus ("${q}"), mohon maaf kami tidak dapat menjawab karena layanan ini khusus menyediakan informasi resmi seputar ITB STIKOM Bali._`;
       uniqueAnswers.push(targetedOodNote);
+      continue;
+    }
+
+    // Suppress redundant conversational greeting / welcome prompt if another substantive campus subquery
+    // was successfully answered in the same turn (prevent "Halo kembali! Ada yang bisa kami bantu lagi...?" before answering)
+    if (r.frame && (r.frame.intent === 'CONVERSATIONAL_GREETING' || r.frame.domain === 'CONVERSATIONAL') && hasSuccessfulCampusAnswer) {
       continue;
     }
 

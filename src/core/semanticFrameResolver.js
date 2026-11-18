@@ -518,12 +518,13 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     };
   }
 
-  // 0.0215 Academic Recommendation Inquiries
-  if (
+  // 0.0215 Academic Recommendation Inquiries (unless explicitly comparing specific entities)
+  const isMultiEntityComparison = entities.length >= 2 && /\b(?:atau|vs|versus|dibandingkan|bandingkan)\b/i.test(normalized);
+  if (!isMultiEntityComparison && (
     /\b(?:bingung|bimbang|ragu|belum tahu|galau)\s+(?:pilih|memilih|menentukan)?\s*(?:kampus|kuliah|jurusan|prodi|bidang)\b/i.test(normalized) ||
     (/\b(?:suka|minat|tertarik|hobi|bakat|passion)\b/i.test(normalized) && /\b(?:teknologi|komputer|coding|pemrograman|it|bisnis|desain)\b/i.test(normalized)) ||
     /\b(?:kurang|tidak|belum|bukan)\s+(?:bisa|cakap|mahir|mengerti|paham|mampu|ahli|bakat)?\s*(?:di\s+bidang\s+)?(?:ti|teknologi\s+informasi|it|coding|pemrograman)\b/i.test(normalized)
-  ) {
+  )) {
     return {
       domain: 'ACADEMIC_RECOMMENDATION',
       intent: 'PROGRAM_RECOMMENDATION',

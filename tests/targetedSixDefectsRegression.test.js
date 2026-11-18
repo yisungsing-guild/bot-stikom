@@ -17,7 +17,7 @@ describe('Targeted Six Defects Regression Suite (ce0b3dc + Targeted Fixes)', () 
     const answer = res.answer || res.text || '';
 
     expect(outcome).toBe('VERIFIED_FACTUAL');
-    expect(answer).toMatch(/belum bisa coding/i);
+    expect(answer).toMatch(/kewajiban tes coding|portofolio pemrograman/i);
     expect(answer).toMatch(/S1 Bisnis Digital/i);
     expect(answer).toMatch(/S1 Sistem Informasi/i);
     expect(answer).toMatch(/pmb\.stikom-bali\.ac\.id/i);
@@ -122,5 +122,45 @@ describe('Targeted Six Defects Regression Suite (ce0b3dc + Targeted Fixes)', () 
 
     expect(outcome).toBe('SAFE_UNKNOWN');
     expect(answer).toMatch(/belum tercantum|panduan yang tersedia/i);
+  });
+
+  test('LANG-01-REGRESS: Salutation prefix with coding recommendation inquiry does not produce redundant greeting', async () => {
+    const q = 'Halo Tiko, kalau aku belum bisa coding, cocoknya masuk jurusan apa?';
+    const sessionSnapshot = {
+      data: {
+        turns: 2,
+        lastActive: Date.now() - 60000,
+        domain: 'CAMPUS_LIFE'
+      }
+    };
+    const res = await runPhase1DeterministicPipeline('LANG-01-REGRESS', q, { sessionSnapshot });
+    const outcome = res.verification?.outcome || res.subQueryResults?.[0]?.verification?.outcome;
+    const answer = res.answer || res.text || '';
+
+    expect(outcome).toBe('VERIFIED_FACTUAL');
+    expect(answer).not.toMatch(/Halo kembali/i);
+    expect(answer).not.toMatch(/Ada yang bisa kami bantu lagi/i);
+    expect(answer).toMatch(/Dalam dokumen persyaratan PMB yang tersedia, saya tidak menemukan kewajiban tes coding atau portofolio pemrograman/i);
+    expect(answer).toMatch(/S1 Sistem Informasi/i);
+    expect(answer).toMatch(/Dasar Algoritma/i);
+    expect(answer).toMatch(/S1 Bisnis Digital/i);
+    expect(answer).toMatch(/Teknik Pembuatan Prompt untuk Model AI/i);
+    expect(answer).toMatch(/tanpa menyimpulkan salah satu lebih mudah/i);
+    expect(answer).toMatch(/pmb\.stikom-bali\.ac\.id/i);
+  });
+
+  test('LANG-06-REGRESS: SI vs BD recommendation comparison does not claim difficulty level or complete lack of coding', async () => {
+    const q = 'Enaknya pilih Sistem Informasi atau Bisnis Digital ya kalau nggak mau pusing ngoding?';
+    const res = await runPhase1DeterministicPipeline('LANG-06-REGRESS', q);
+    const outcome = res.verification?.outcome || res.subQueryResults?.[0]?.verification?.outcome;
+    const answer = res.answer || res.text || '';
+
+    expect(outcome).toBe('VERIFIED_FACTUAL');
+    expect(answer).toMatch(/S1 Sistem Informasi/i);
+    expect(answer).toMatch(/Dasar Algoritma/i);
+    expect(answer).toMatch(/S1 Bisnis Digital/i);
+    expect(answer).toMatch(/Teknik Pembuatan Prompt untuk Model AI/i);
+    expect(answer).toMatch(/tanpa menyimpulkan salah satu lebih mudah/i);
+    expect(answer).not.toMatch(/pasti lebih gampang|sama sekali tidak ada coding/i);
   });
 });
