@@ -77,7 +77,7 @@ const CANONICAL_DOMAIN_LEXICON = [
   'kontak', 'telepon', 'whatsapp', 'alamat', 'narahubung', 'softskill', 'soft'
 ];
 
-const INSTITUTIONAL_ANCHOR_REGEX = /\b(?:stikom|kampus|kuliah|perkuliahan|akademik|pmb|mahasiswa|dosen|prodi|jurusan|fakultas|sarjana|diploma|magister|pascasarjana|s1|s2|d3|biaya|spp|dpp|uang\s+kuliah|uang\s+gedung|beasiswa|pendaftaran|daftar|syarat|persyaratan|berkas|dokumen|gelombang|jadwal|kurikulum|matkul|mata\s+kuliah|semester|smstr|sks|akreditasi|ban-?pt|lam-?infokom|fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|wisuda|yudisium|rpl|magang|lulus|lulusan|kelulusan|karir|karier|alumni|universitas|institut|sekolah\s+tinggi|dual\s+degree|double\s+degree|degree|gelar|ijazah|sebutan|durasi|program\s+studi|studi|masa\s+studi|lama\s+studi|waktu\s+studi|university|college|campus|student|students|lecturer|professor|tuition|fee|fees|scholarship|admission|admissions|register|registration|curriculum|course|courses|credit|credits|accreditation|facility|facilities|laboratory|laboratories|library|dormitory|dorm|graduation|graduate|graduating|thesis|final\s+project|defense|internship|career|careers|degree|duration|study\s+duration|student\s+exchange|parking|undergraduate|bachelor|master|postgraduate|study\s+programs?|academic\s+programs?|degree\s+programs?|majors?|soft\s*skills?|pengembangan\s+(?:soft\s*skills?|karakter|mahasiswa)|pelatihan\s+soft\s*skills?|career\s+center|pusat\s+karier|cdc|kontak|telepon|whatsapp|narahubung|ktp|kk|kartu\s+keluarga|akta|formulir|registrasi|konfirmasi|verifikasi|kode\s+verifikasi|otp|tes\s+masuk|seleksi|ujian\s+seleksi|kartu\s+peserta|bukti\s+bayar|bukti\s+transfer|bukti\s+pembayaran|panitia|panitia\s+pmb|sion|portal\s+akademik|kemahasiswaan|bagian\s+kemahasiswaan|layanan\s+kemahasiswaan|coding|pemrograman|programming|bahasa\s+inggris|english|vokasi|pendidikan\s+vokasi|program\s+vokasi|fokus\s+riset|topik\s+riset|data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics|pengalaman\s+industri|sertifikasi(?:\s+industri)?|digital\s+marketing|seo|baak|ipk|dosen\s+wali|perwalian|cuti(?:\s+kuliah)?|online|daring|aplikasi\s+(?:kuliah|perkuliahan|belajar)|murah|mahal|tarif|harga|terjangkau|teknologi|komputer|hardware|software)\b/i;
+const INSTITUTIONAL_ANCHOR_REGEX = /\b(?:stikom|kampus|kuliah|perkuliahan|akademik|pmb|mahasiswa|dosen|prodi|jurusan|fakultas|sarjana|diploma|magister|pascasarjana|s1|s2|d3|biaya|spp|dpp|uang\s+kuliah|uang\s+gedung|dana\s+pengembangan(?:\s+pendidikan)?|dana\s+pendidikan|beasiswa|pendaftaran|daftar|syarat|persyaratan|berkas|dokumen|gelombang|jadwal|kurikulum|matkul|mata\s+kuliah|semester|smstr|sks|akreditasi|ban-?pt|lam-?infokom|fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|wisuda|yudisium|rpl|magang|lulus|lulusan|kelulusan|karir|karier|alumni|universitas|institut|sekolah\s+tinggi|dual\s+degree|double\s+degree|degree|gelar|ijazah|sebutan|durasi|program\s+studi|studi|masa\s+studi|lama\s+studi|waktu\s+studi|university|college|campus|student|students|lecturer|professor|tuition|fee|fees|scholarship|admission|admissions|register|registration|curriculum|course|courses|credit|credits|accreditation|facility|facilities|laboratory|laboratories|library|dormitory|dorm|graduation|graduate|graduating|thesis|final\s+project|defense|internship|career|careers|degree|duration|study\s+duration|student\s+exchange|parking|undergraduate|bachelor|master|postgraduate|study\s+programs?|academic\s+programs?|degree\s+programs?|majors?|soft\s*skills?|pengembangan\s+(?:soft\s*skills?|karakter|mahasiswa)|pelatihan\s+soft\s*skills?|career\s+center|pusat\s+karier|cdc|kontak|telepon|whatsapp|narahubung|ktp|kk|kartu\s+keluarga|akta|formulir|registrasi|konfirmasi|verifikasi|kode\s+verifikasi|otp|tes\s+masuk|seleksi|ujian\s+seleksi|kartu\s+peserta|bukti\s+bayar|bukti\s+transfer|bukti\s+pembayaran|panitia|panitia\s+pmb|sion|portal\s+akademik|kemahasiswaan|bagian\s+kemahasiswaan|layanan\s+kemahasiswaan|coding|pemrograman|programming|bahasa\s+inggris|english|vokasi|pendidikan\s+vokasi|program\s+vokasi|fokus\s+riset|topik\s+riset|data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics|pengalaman\s+industri|sertifikasi(?:\s+industri)?|digital\s+marketing|seo|baak|ipk|dosen\s+wali|perwalian|cuti(?:\s+kuliah)?|online|daring|aplikasi\s+(?:kuliah|perkuliahan|belajar)|murah|mahal|tarif|harga|terjangkau|teknologi|komputer|hardware|software)\b/i;
 
 const PROTECTED_CANONICAL_WORDS = new Set([
   'dan', 'atau', 'ke', 'di', 'dari', 'pada', 'untuk', 'dengan', 'ada', 'bisa', 'boleh', 'mau', 'ingin', 'saya', 'kami', 'kita', 'dia', 'ini', 'itu', 'apa', 'siapa', 'mana', 'kapan', 'sudah', 'belum', 'tidak', 'bukan'
@@ -159,7 +159,7 @@ function hasGenuineProgramFitSignal(q) {
       !/\b(?:rekomendasi|cocok|saran|bingung|suka|minat|hobi|bakat|passion|tertarik|cita-?cita)\b/i.test(text)) {
     return false;
   }
-  const hasExplicitPersonalFitCue = /\b(?:rekomendasi|rekomendasikan|cocok(?:nya)?|saran|bingung(?:\s+pilih|\s+mau|\s+ambil)?|pas(?:nya)?\s+(?:masuk|ambil|pilih|prodi|jurusan)|jurusan\s+apa\s+yang\s+pas|prodi\s+apa\s+yang\s+pas|sebaiknya\s+(?:ambil|pilih|masuk)|suka|minat|hobi|bakat|passion|tertarik|senang|cita-?cita|ingin\s+menjadi|mau\s+berkarir|mau\s+jadi|ingin\s+jadi)\b/i.test(text);
+  const hasExplicitPersonalFitCue = /\b(?:rekomendasi|rekomendasikan|cocok(?:nya)?|saran|bingung(?:\s+pilih|\s+mau|\s+ambil)?|pas(?:nya)?\s+(?:masuk|ambil|pilih|prodi|jurusan)|jurusan\s+apa\s+yang\s+pas|prodi\s+apa\s+yang\s+pas|sebaiknya\s+(?:mengambil|ambil|memilih|pilih|masuk)|mending(?:\s+masuk|\s+ambil|\s+pilih)?|enaknya\s+(?:masuk|ambil|pilih)|which\s+major\s+is\s+recommended|awam\s+(?:soal|tentang)?\s*(?:pemrograman|coding|koding)|suka|minat|hobi|bakat|passion|tertarik|senang|cita-?cita|ingin\s+menjadi|mau\s+berkarir|mau\s+jadi|ingin\s+jadi)\b/i.test(text);
   const hasSkillOrTopicInterest = /\b(?:coding|koding|ngoding|pemrograman|programming|software|aplikasi|game|jaringan|network|iot|robotik|hardware|cyber|desain|design|multimedia|bisnis|usaha|wirausaha|marketing|pemasaran|data\s+analyst|data\s+science|ai\b|hitung-?hitungan|matematika)\b/i.test(text);
   if (hasExplicitPersonalFitCue) return true;
   if (hasSkillOrTopicInterest && /\b(?:masuk\s+(?:prodi|jurusan)\s+apa|ambil\s+(?:prodi|jurusan)\s+apa|(?:prodi|jurusan)\s+apa\s+yang\s+relevan)\b/i.test(text)) {
@@ -1263,8 +1263,8 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     !/\b(?:rekomendasi|cocok(?:nya)?|saran|bingung\s+pilih)\b/i.test(normalized);
 
   const isRecommendationInquiry = !hasSpecificProgramEntity && !isNonAcademicInquiry && !isProcedureInquiry && (
-    (/\b(?:rekomendasi|rekomendasikan|cocok(?:nya)?|saran|bingung\s+pilih|pas)\b/i.test(normalized) &&
-      (/\b(?:prodi|jurusan|program\s*studi|kuliah)\b/i.test(normalized) || /\b(?:suka|minat|hobi|bakat|passion)\b/i.test(normalized))) ||
+    (/\b(?:rekomendasi|rekomendasikan|cocok(?:nya)?|saran|bingung\s+pilih|pas|recommend(?:ed|ation)?)\b/i.test(normalized) &&
+      (/\b(?:prodi|jurusan|program\s*studi|kuliah|majors?|study\s+programs?)\b/i.test(normalized) || /\b(?:suka|minat|hobi|bakat|passion|code|coding)\b/i.test(normalized))) ||
     (/\b(?:suka|minat|hobi|bakat|passion|tertarik|senang|cita-?cita|ingin\s+menjadi|mau\s+berkarir|mau\s+jadi|ingin\s+jadi)\b/i.test(normalized) &&
       /\b(?:data\s+analyst|digital\s+marketing?|analyst|marketer|programmer|bisnis|teknologi|prodi|jurusan)\b/i.test(normalized)) ||
     (/\b(?:prodi|jurusan)\s+(?:apa\s+yang\s+)?relevan\b/i.test(normalized)) ||
@@ -1289,7 +1289,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   const hasScopeConcept = /\b(?:pascasarjana|magister|sarjana|diploma|undergraduate|postgraduate|master|bachelor)\b/i.test(normalized);
 
   const isAvailableProgramsInquiry = !isRecommendationInquiry && !hasSpecificProgramEntity && !hasStudentOrgEntity && hasProgramConcept && (hasListingConcept || hasScopeConcept) &&
-    !/\b(?:biaya|bayar|daftar\s+ulang|syarat|akreditasi|kurikulum|matkul|beasiswa|lokasi|jadwal|bingung|rekomendasi|rekomendasikan|cocok|saran|minat|relevan|data\s+analyst|digital\s+marketer|ingin\s+menjadi|cara\s+daftar|caranya\s+gimana|alur|prosedur|(?:mau|mw|pengen|ingin|bisa)\s+daftar|himpunan|himaprodi|hima|ukm|ormawa|fee|fees|cost|tuition|scholarship|requirements?)\b/i.test(normalized);
+    !/\b(?:biaya|bayar|daftar\s+ulang|syarat|akreditasi|kurikulum|matkul|beasiswa|lokasi|jadwal|bingung|rekomendasi|rekomendasikan|cocok|saran|minat|relevan|recommend(?:ed|ation)?|data\s+analyst|digital\s+marketer|ingin\s+menjadi|cara\s+daftar|caranya\s+gimana|alur|prosedur|(?:mau|mw|pengen|ingin|bisa)\s+daftar|himpunan|himaprodi|hima|ukm|ormawa|fee|fees|cost|tuition|scholarship|requirements?)\b/i.test(normalized);
 
   if (isAvailableProgramsInquiry) {
     const scopeResolution = resolveAcademicScope(normalized + ' ' + raw);
@@ -1313,7 +1313,29 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     };
   }
 
-  // 7. Program Overview / Definition / Profile / Career / Degree (Generic across academic programs)
+  // 7. Program Comparison (Perbedaan / Pilihan Antar-Prodi)
+  const hasProgramEntity = entities.some(e => e.family === 'academic_program' || e.type === 'program');
+  const isComparisonPattern = /\b(perbedaan|beda|bedanya|banding(?:kan)?|dibandingkan|komparasi|difference|differ|compare|comparison|versus|vs|mana\s+yang\s+lebih|lebih\s+[\w\s]{1,30}?\s*(?:yang\s+)?mana|pilih\s+mana)\b/i.test(normalized) ||
+    (entities.length >= 2 && /\b(?:atau|vs|versus|bandingkan)\b/i.test(normalized) && /\b(?:pilih|ambil|masuk|enaknya|mending)\b/i.test(normalized));
+
+  if (isComparisonPattern &&
+    (/\b(prodi|jurusan|program\s+studi|program|programs|majors?|courses?)\b/i.test(normalized) || hasProgramEntity || entities.length >= 2)) {
+    const compAspects = ['curriculum_difference', 'career_prospects'];
+    if (/\b(?:biaya|tarif|spp|dpp|harga|murah|mahal)\b/i.test(normalized)) {
+      compAspects.push('fee');
+    }
+    return {
+      domain: 'ACADEMIC_PROGRAM',
+      intent: 'PROGRAM_COMPARISON',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_PROGRAM_DIFFERENTIATION',
+      aspects: compAspects,
+      relation: 'PROGRAM_COMPARISON'
+    };
+  }
+
+  // 7b. Program Overview / Definition / Profile / Career / Degree (Generic across academic programs)
   const hasAcademicProgram = entities.some(e => e.family === 'academic_program' || e.type === 'program');
   // Program leadership is a property of the already-resolved academic entity,
   // not a second entity and not a generic helpdesk contact request.
@@ -1330,7 +1352,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     };
   }
   const hasStudentOrg = entities.some(e => e.family === 'student_organization') || /\b(himpunan\s+mahasiswa|himaprodi|hima\b|ukm\b|ormawa)\b/i.test(normalized);
-  const isFeeInquiry = /\b(?:biaya|bayar|uang|dana\s+(?:kuliah|pendidikan|didik)|ukt|spp|dpp|tarif|cicilan|harga|cost|fee)\b/i.test(normalized + ' ' + raw);
+  const isFeeInquiry = /\b(?:biaya|bayar|uang|dana\s+(?:kuliah|pendidikan|didik|pengembangan(?:\s+pendidikan)?)|ukt|spp|dpp|tarif|cicilan|harga|cost|fee)\b/i.test(normalized + ' ' + raw);
   const isStudyModeInquiry = /\b(kuliah\s+sore|kelas\s+sore|kelas\s+karyawan|kuliah\s+malam|untuk\s+yang\s+bekerja|sambil\s+kerja|kelas\s+malam|kuliah\s+sambil\s+kerja)\b/i.test(normalized + ' ' + raw);
   const isScheduleOrAdmissionInquiry = isStudyModeInquiry || /\b(?:jadwal|gelombang|syarat|persyaratan|cara\s+daftar|pendaftaran|kurikulum|mata\s+kuliah|matkul|semester|beasiswa|akreditasi)\b/i.test(normalized);
   if (!isFeeInquiry && !isScheduleOrAdmissionInquiry && !hasStudentOrg && ((/\b(apa\s+itu|pengertian|definisi|profil|tentang|penjelasan|jelas(?:kan)?|deskripsi|gambaran|belajar\s+apa|mempelajari\s+apa|fokus(?:nya)?(?:\s+apa|\s+jurusan)?|kuliah\s+tentang\s+apa|prospek(?:nya)?|peluang\s+kerja|lulusan(?:nya)?\s+(?:bisa\s+)?jadi\s+apa|lulusan|kerja\s+(?:sebagai\s+|menjadi\s+)?apa|bekerja\s+(?:sebagai\s+|menjadi\s+)?apa|jadi\s+apa|profesi|karir|karier|gelar(?:nya)?|(?:ingin|mau)\s+tahu\s+(?:tentang\s+)?(?:prodi|program\s*studi|jurusan)?|(?:info|informasi)\s+(?:tentang|lengkap|seputar)\s+(?:prodi|program\s*studi|jurusan)?|(?:apakah\s+)?(?:ada|tersedia)\s+(?:program|prodi|jurusan)?|kalau|kalo|bagaimana|gimana)\b/i.test(normalized) && hasAcademicProgram) ||
@@ -1531,7 +1553,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
 
   // 13. Tuition Fee / Biaya Kuliah (Prioritized before PMB schedule when cost/fee is asked)
   const hasScheduleOrCalendarFocus = /\b(?:kapan|tanggal|jadwal|periode|kalender|buka|dibuka|ditutup|tutup|batas\s+(?:waktu|pendaftaran)|apa\s+saja|daftar\s+gelombang|pembagian\s+gelombang)\b/i.test(normalized);
-  const hasFeeFocus = /\b(?:biaya|potongan|diskon|total|dpp|spp|bayar|uang\s+kuliah|dana\s+(?:kuliah|pendidikan|didik)|ukt|uang\s+gedung|angsuran|cicilan|pengeluaran)\b/i.test(normalized + ' ' + raw);
+  const hasFeeFocus = /\b(?:biaya|potongan|diskon|total|dpp|spp|bayar|uang\s+kuliah|dana\s+(?:kuliah|pendidikan|didik|pengembangan(?:\s+pendidikan)?)|ukt|uang\s+gedung|angsuran|cicilan|pengeluaran)\b/i.test(normalized + ' ' + raw);
   const isAdmissionScheduleOrStatus = !isFeeInquiry && !hasFeeFocus && (
     /\b(?:sekarang\s+buka|buka\s+gelombang|buka\s+pendaftaran|kapan\s+(?:buka|dibuka|ditutup|tutup)|jadwal\s+(?:gelombang|pendaftaran|pmb)|periode\s+(?:gelombang|pendaftaran)|kalender\s+pmb|gelombang\s+berapa)\b/i.test(normalized) ||
     (/\bgelombang\b/i.test(normalized) && (hasScheduleOrCalendarFocus || /\bpmb\b/i.test(normalized)))
@@ -1545,7 +1567,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   );
 
   const isProgramComparison = /\b(bandingkan|perbandingan|komparasi|versus|vs)\b/i.test(normalized);
-  if (!isProgramComparison && (isWaveFeeFollowup || /\b(biaya(?:nya)?|biaya\s+kuliah|spp(?:nya)?|dpp(?:nya)?|uang\s+kuliah(?:nya)?|dana\s+(?:kuliah|pendidikan|didik)(?:nya)?|ukt\b|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|bayar\s+kuliah|bayar\s+berapa|angsuran|potongan\s+biaya|diskon(?:nya)?|potongan(?:nya)?|keringanan(?:nya)?|cicilan|(?:di)?cicil(?:an)?|angsur(?:an)?|pengeluaran(?:nya)?|tarif|harga|murah(?:an)?|mahal(?:an)?|terjangkau|tuition(?:\s+fee)?|tuition\s+cost|cost\s+of\s+study|fees?|fee\s+per\s+semester|semester\s+fee|pay\s+each\s+semester|installment)\b/i.test(normalized + ' ' + raw))) {
+  if (!isProgramComparison && (isWaveFeeFollowup || /\b(biaya(?:nya)?|biaya\s+kuliah|spp(?:nya)?|dpp(?:nya)?|uang\s+kuliah(?:nya)?|dana\s+(?:kuliah|pendidikan|didik|pengembangan(?:\s+pendidikan)?)(?:nya)?|ukt\b|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|bayar\s+kuliah|bayar\s+berapa|angsuran|potongan\s+biaya|diskon(?:nya)?|potongan(?:nya)?|keringanan(?:nya)?|cicilan|(?:di)?cicil(?:an)?|angsur(?:an)?|pengeluaran(?:nya)?|tarif|harga|murah(?:an)?|mahal(?:an)?|terjangkau|tuition(?:\s+fee)?|tuition\s+cost|cost\s+of\s+study|fees?|fee\s+per\s+semester|semester\s+fee|pay\s+each\s+semester|installment)\b/i.test(normalized + ' ' + raw))) {
     const isInstallmentProcedure =
       /\b(?:syarat|persyaratan|prosedur|tata\s*cara|cara(?:\s+mengajukan)?|bagaimana\s+mengajukan|pengajuan|dokumen|berkas|formulir)\b/i.test(normalized) &&
       /\b(?:di)?(?:cicil(?:an)?|angsur(?:an)?|mengangsur)\b/i.test(normalized);
@@ -1676,6 +1698,9 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     }
 
     const isTestingOrAnnouncementOrDeadline = /\b(?:tes|testing|ujian|pengumuman|batas\s+akhir|penutupan)\b/i.test(normalized);
+    const isRequirementsOnly = !isTestingOrAnnouncementOrDeadline &&
+      /\b(?:syarat|persyaratan|berkas|dokumen)\b/i.test(normalized) &&
+      !/\b(?:cara|alur|langkah|tahapan|prosedur|mulai\s+dari\s+mana)\b/i.test(normalized);
     const isProcedureOrRequirements = !isTestingOrAnnouncementOrDeadline && !isWhenQuestion && (
       /\b(?:cara\s+(?:daftar|mendaftar)|bagaimana\s+(?:cara\s+)?(?:daftar|mendaftar)|boleh\s+(?:daftar|mendaftar)|bisa\s+(?:daftar|mendaftar|masuk|kuliah)|apakah\s+(?:boleh|bisa)\s+mendaftar|syarat|persyaratan|dokumen|berkas|alur|prosedur|mulai\s+dari\s+mana|proses\s+masuk|cara\s+masuk)\b/i.test(normalized) ||
       /\b(?:(?:saya\s+)?(?:mau|mw|pengen|ingin|bisa)\s+daftar|daftar\s+(?:pmb|kuliah|stikom))\b/i.test(normalized)
@@ -1686,18 +1711,20 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       (!isAdmissionStages && /\b(pmb|pendaftaran)\b/i.test(normalized) && !/\b(biaya|bayar|kurikulum|beasiswa|kontak|nomor|telepon|telp|whatsapp|wa|hotline)\b/i.test(normalized));
 
     if (isTopicOpener) {
-      const baseAspects = isProcedureOrRequirements ? ['procedure', 'requirements', 'documents'] : ['admission_overview', 'procedure', 'admission_pathways'];
+      const baseAspects = isRequirementsOnly
+        ? ['requirements', 'documents', 'admission_requirements']
+        : (isProcedureOrRequirements ? ['procedure', 'requirements', 'documents'] : ['admission_overview', 'procedure', 'admission_pathways']);
       if (isAdmissionStages && !baseAspects.includes('schedule')) {
         baseAspects.push('schedule', 'wave_info');
       }
       return {
         domain: 'PMB',
-        intent: isProcedureOrRequirements ? 'ADMISSION_PROCEDURE' : 'GENERAL_PMB_INQUIRY',
+        intent: isRequirementsOnly ? 'ADMISSION_REQUIREMENTS' : (isProcedureOrRequirements ? 'ADMISSION_PROCEDURE' : 'GENERAL_PMB_INQUIRY'),
         retrievalRequired: true,
         userState: 'INQUIRING',
-        desiredAction: isProcedureOrRequirements ? 'PROVIDE_ADMISSION_PROCEDURE' : 'PROVIDE_GENERAL_PMB_OVERVIEW',
+        desiredAction: isRequirementsOnly ? 'PROVIDE_ADMISSION_REQUIREMENTS' : (isProcedureOrRequirements ? 'PROVIDE_ADMISSION_PROCEDURE' : 'PROVIDE_GENERAL_PMB_OVERVIEW'),
         aspects: baseAspects,
-        relation: 'PMB_OVERVIEW'
+        relation: isRequirementsOnly ? 'ADMISSION_REQUIREMENTS' : 'PMB_OVERVIEW'
       };
     }
 
@@ -1709,25 +1736,6 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       desiredAction: 'PROVIDE_PMB_STATUS',
       aspects: ['schedule', 'status', 'wave_info', 'stages'],
       relation: 'ADMISSION_WINDOW'
-    };
-  }
-
-  // 14. Program Comparison (Perbedaan Prodi)
-  const hasProgramEntity = entities.some(e => e.family === 'academic_program' || e.type === 'program');
-  if (/\b(perbedaan|beda|bedanya|banding(?:kan)?|dibandingkan|komparasi|difference|differ|compare|comparison|versus|vs|mana\s+yang\s+lebih|lebih\s+[\w\s]{1,30}?\s*(?:yang\s+)?mana|pilih\s+mana)\b/i.test(normalized) &&
-    (/\b(prodi|jurusan|program\s+studi|program|programs|majors?|courses?)\b/i.test(normalized) || hasProgramEntity || entities.length >= 2)) {
-    const compAspects = ['curriculum_difference', 'career_prospects'];
-    if (/\b(?:biaya|tarif|spp|dpp|harga|murah|mahal)\b/i.test(normalized)) {
-      compAspects.push('fee');
-    }
-    return {
-      domain: 'ACADEMIC_PROGRAM',
-      intent: 'PROGRAM_COMPARISON',
-      retrievalRequired: true,
-      userState: 'INQUIRING',
-      desiredAction: 'PROVIDE_PROGRAM_DIFFERENTIATION',
-      aspects: compAspects,
-      relation: 'PROGRAM_COMPARISON'
     };
   }
 
@@ -2377,8 +2385,8 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     combinedAspects.add('curriculum');
     combinedAspects.add('courses');
   }
-  if (/\b(biaya(?:nya)?|spp|dpp|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|bayar)\b/i.test(normalized) ||
-    /\b(biaya|spp|dpp|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|bayar)\b/i.test(unstemmedQuery) ||
+  if (/\b(biaya(?:nya)?|spp|dpp|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|dana\s+pengembangan(?:\s+pendidikan)?|dana\s+pendidikan|bayar)\b/i.test(normalized) ||
+    /\b(biaya|spp|dpp|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|dana\s+pengembangan(?:\s+pendidikan)?|dana\s+pendidikan|bayar)\b/i.test(unstemmedQuery) ||
     contextDep.reason === 'fee_continuation' ||
     (contextDep.isEntityCorrection && contextDep.inheritedDomain === 'TUITION_FEE')) {
     combinedAspects.add('fee');
@@ -2559,7 +2567,7 @@ function composeSemanticElements(frame, rawQuery = '', normalizedQuery = '', con
   if (frame.intent === 'ADMISSION_PROCEDURE') attrSet.add('admission_procedure');
   // Compositional multi-attribute detection from positive query text (for multi-attribute single-entity queries)
   if (frame.domain !== 'CONVERSATIONAL' && frame.domain !== 'OUT_OF_DOMAIN') {
-    if (/\b(?:biaya\s+kuliah|rincian\s+biaya|uang\s+kuliah|dana\s+(?:kuliah|pendidikan|didik)|spp\b|dpp\b|tarif\s+kuliah|ukt\b|uang\s+gedung|biaya\s+gedung)\b/i.test(norm + ' ' + q) && !(frame.negatedAspects && frame.negatedAspects.has('fee'))) {
+    if (/\b(?:biaya\s+kuliah|rincian\s+biaya|uang\s+kuliah|dana\s+(?:kuliah|pendidikan|didik|pengembangan(?:\s+pendidikan)?)|spp\b|dpp\b|tarif\s+kuliah|ukt\b|uang\s+gedung|biaya\s+gedung)\b/i.test(norm + ' ' + q) && !(frame.negatedAspects && frame.negatedAspects.has('fee'))) {
       attrSet.add('fee');
       attrSet.add('dpp');
       attrSet.add('tuition');
@@ -2588,8 +2596,8 @@ function composeSemanticElements(frame, rawQuery = '', normalizedQuery = '', con
     attrSet.add('overview');
   }
   const ATTRIBUTE_ORDER_PATTERNS = {
-    fee: /\b(?:biaya(?:\s+kuliah)?|rincian\s+biaya|uang\s+kuliah|dana\s+(?:kuliah|pendidikan|didik)|spp\b|dpp\b|tarif\s+kuliah|ukt\b|uang\s+gedung|biaya\s+gedung)\b/i,
-    dpp: /\b(?:dpp\b|uang\s+gedung|biaya\s+gedung|dana\s+pengembangan)\b/i,
+    fee: /\b(?:biaya(?:\s+kuliah)?|rincian\s+biaya|uang\s+kuliah|dana\s+(?:kuliah|pendidikan|didik|pengembangan(?:\s+pendidikan)?)|spp\b|dpp\b|tarif\s+kuliah|ukt\b|uang\s+gedung|biaya\s+gedung)\b/i,
+    dpp: /\b(?:dpp\b|uang\s+gedung|biaya\s+gedung|dana\s+pengembangan(?:\s+pendidikan)?)\b/i,
     accreditation: /\b(?:akreditasi(?:nya)?|terakreditasi|peringkat\s+akreditasi|status\s+akreditasi)\b/i,
     curriculum: /\b(?:kurikulum(?:nya)?|mata\s+kuliah|matkul|apa\s+saja\s+yang\s+dipelajari|yang\s+dipelajari|belajar\s+apa)\b/i,
     sks: /\b(?:total\s+sks|jumlah\s+sks|berapa\s+sks|beban\s+studi|sks\b)\b/i,

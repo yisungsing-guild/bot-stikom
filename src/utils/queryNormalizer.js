@@ -84,6 +84,7 @@ const SLANG_REPLACEMENTS = {
   ny: 'nya',
   ntar: 'nanti',
   dpt: 'dapat',
+  bs: 'bisa',
   bsa: 'bisa',
   bcicil: 'dicicil',
   dcicil: 'dicicil',
@@ -133,6 +134,7 @@ const SLANG_REPLACEMENTS = {
 const FILLER_TOKENS = new Set(['min', 'kak', 'bro', 'dong', 'nih', 'dah']);
 
 const FUZZY_PROTECTED_VALID_TOKENS = new Set([
+  'dana',
   'data',
   'mata',
   'alasan',
@@ -265,6 +267,11 @@ function normalizeUserQuery(text) {
   normalized = normalized
     .replace(/\bpasca\s+sarjana\b/g, 'pascasarjana')
     .replace(/\bdual\s+degree\b/g, 'double degree')
+    .replace(/\binformation\s+systems?\b/g, 'sistem informasi')
+    .replace(/\bcomputer\s+systems?\b/g, 'sistem komputer')
+    .replace(/\binformation\s+technology\b/g, 'teknologi informasi')
+    .replace(/\bdigital\s+business\b/g, 'bisnis digital')
+    .replace(/\binformatics\s+management\b/g, 'manajemen informatika')
     .replace(/\bhi[-\s]*think\b/g, 'hi think')
     .replace(/\bjob\s+fair\b/g, 'job fair')
     .replace(/\bcampus\s+hiring\b/g, 'campus hiring')

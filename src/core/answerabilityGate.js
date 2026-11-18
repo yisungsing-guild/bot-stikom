@@ -373,10 +373,23 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         };
       }
 
-      const isTechnicalOrRequirementPmbInquiry = /\b(?:kode\s+verifikasi|otp|salah\s+(?:mengisi|isi)|kesalahan\s+(?:pengisian|data|formulir)|perbaikan\s+data|edit\s+data|ubah\s+(?:data|pilihan)|ktp|kk|kartu\s+keluarga|unggah|upload|verifikasi\s+berkas|tes\s+masuk|ujian\s+(?:masuk|seleksi)|seleksi\s+(?:masuk|tambahan)|tes\s+tulis|ujian\s+tulis|paket\s+c)\b/i.test(rawQ) ||
-        ['TECHNICAL_SUPPORT', 'ADMISSION_REQUIREMENTS', 'ENTRANCE_EXAM_INQUIRY', 'DOCUMENT_VERIFICATION_INQUIRY'].includes(semanticFrame.intent);
+      const isRequirementPmbInquiry = /\b(?:syarat|persyaratan|berkas|dokumen|ktp|kk|kartu\s+keluarga|ijazah|skl|rapor)\b/i.test(rawQ) ||
+        ['ADMISSION_REQUIREMENTS', 'DOCUMENT_VERIFICATION_INQUIRY'].includes(semanticFrame.intent) ||
+        (semanticFrame.aspects && (semanticFrame.aspects.includes('requirements') || semanticFrame.aspects.includes('admission_requirements')));
 
-      const isProcedureQuery = !isTechnicalOrRequirementPmbInquiry && (
+      if (isRequirementPmbInquiry) {
+        return {
+          status: ANSWERABILITY_STATUS.UNKNOWN,
+          reason: 'corpus_gap_admission_requirements',
+          coveredAspects: [],
+          missingAspects: ['admission_requirements', 'requirements'],
+          guidance: isEn
+            ? `Official registration requirements${entityPart} are currently not fully listed in available official documents in our knowledge base (SOURCE_GAP). For the latest requirements, please refer to https://pmb.stikom-bali.ac.id or contact the admissions committee directly.`
+            : `Rincian persyaratan pendaftaran${entityPart} saat ini belum tercantum secara lengkap dalam dokumen resmi pada basis pengetahuan kami (SOURCE_GAP). Untuk informasi persyaratan terbaru, silakan merujuk ke portal resmi https://pmb.stikom-bali.ac.id atau berkonsultasi langsung dengan Panitia PMB ITB STIKOM Bali.`
+        };
+      }
+
+      const isProcedureQuery = (
         semanticFrame.intent === 'ADMISSION_PROCEDURE' ||
         (semanticFrame.aspects && semanticFrame.aspects.includes('procedure')) ||
         /\b(?:cara\s+daftar|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+daftar|(?:mau|mw|pengen|ingin|bisa)\s+daftar|mulai\s+dari\s+mana)\b/i.test(rawQ)
@@ -398,8 +411,8 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         status: ANSWERABILITY_STATUS.UNKNOWN,
         reason: 'corpus_gap',
         guidance: isEn
-          ? `Official detailed registration steps${entityPart} are not fully listed in the available guidelines. Registration can be accessed online at https://pmb.stikom-bali.ac.id or by contacting campus admissions directly.`
-          : `Tahapan prosedur pendaftaran rinci${entityPart} belum tercantum lengkap dalam panduan yang tersedia. Pendaftaran resmi dapat diakses secara online melalui portal https://pmb.stikom-bali.ac.id atau berkonsultasi langsung ke layanan admisi kampus ITB STIKOM Bali.`
+          ? `Official registration information${entityPart} is not fully listed in the available guidelines. Registration can be accessed online at https://pmb.stikom-bali.ac.id or by contacting campus admissions directly.`
+          : `Informasi pendaftaran resmi${entityPart} belum tercantum lengkap dalam panduan yang tersedia. Pendaftaran resmi dapat diakses secara online melalui portal https://pmb.stikom-bali.ac.id atau berkonsultasi langsung ke layanan admisi kampus ITB STIKOM Bali.`
       };
     }
 
@@ -431,6 +444,8 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
   const isCanteenMenu = /\b(kantin|menu\s+makanan|katering)\b/i.test(rawQ);
   const isShuttleBus = /\b(bus\s+shuttle|shuttle\s+bus)\b/i.test(rawQ);
   const isSpecificExternalScholarship = /\b(pemda|pemerintah\s+daerah|provinsi\s+papua|beasiswa\s+pemda)\b/i.test(rawQ);
+  const isS2DeliveryMode = /\b(?:online\s+(?:atau|atw|\/)\s*offline|offline\s+(?:atau|atw|\/)\s*online|daring\s+(?:atau|atw|\/)\s*luring|luring\s+(?:atau|atw|\/)\s*daring|apakah\s+(?:kuliah|perkuliahan).*(?:online|offline|daring|luring)|kuliah\s+(?:secara\s+)?(?:online|offline|daring|luring)|perkuliahan\s+(?:secara\s+)?(?:online|offline|daring|luring)|moda\s+perkuliahan)\b/i.test(rawQ) &&
+    /\b(?:s2|magister|pascasarjana)\b/i.test(rawQ);
 
   const combinedEvidenceText = accepted.map(c => c.text || c.chunk || '').join(' ').toLowerCase();
 
@@ -495,6 +510,38 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       coveredAspects: [],
       missingAspects: ['regional_scholarship'],
       guidance: 'Informasi resmi terkait program beasiswa khusus dari Pemerintah Daerah tersebut belum tercantum dalam dokumen resmi yang tersedia.'
+    };
+  }
+
+  if (isS2DeliveryMode && !/\b(?:kuliah\s+daring\s+penuh|perkuliahan\s+tatap\s+muka\s+luring\s+s2)\b/i.test(combinedEvidenceText)) {
+    return {
+      status: ANSWERABILITY_STATUS.UNKNOWN,
+      reason: 'corpus_gap_s2_delivery_mode_unrecorded',
+      coveredAspects: [],
+      missingAspects: ['s2_delivery_mode'],
+      guidance: isEn
+        ? 'Based on official documents of ITB STIKOM Bali (*ISIAN WEBSITE* & *Dataset Pascasarjana*), the Master of Information Systems (S2) program offers Regular Classes (Kelas Reguler). However, explicit confirmation on whether lectures are conducted onsite/offline (at the Renon campus), fully online (daring), or hybrid is not currently specified in available official documents (SOURCE_GAP). For exact lecture delivery mode and schedules, please contact the Postgraduate Secretariat directly via hotline WhatsApp 0822-7738-9999 or telephone (0361) 244445.'
+        : 'Berdasarkan dokumen resmi ITB STIKOM Bali (*ISIAN WEBSITE* dan *Dataset Pascasarjana*), Program Studi Magister Sistem Informasi (S2) menyelenggarakan perkuliahan dengan Pilihan Kelas: Reguler. Namun, kepastian mengenai moda pelaksanaan perkuliahan (apakah dilaksanakan secara tatap muka luring di kampus Renon Denpasar, perkuliahan daring online penuh, atau hybrid) belum tercantum secara eksplisit dalam dokumen resmi yang tersedia saat ini (SOURCE_GAP). Untuk konfirmasi kepastian moda perkuliahan pada semester berjalan, silakan menghubungi Sekretariat Pascasarjana ITB STIKOM Bali melalui hotline WhatsApp 0822-7738-9999 atau telepon (0361) 244445.'
+    };
+  }
+
+  const isRequirementPmbInquiry = (
+    /\b(?:syarat\s+(?:pendaftaran|daftar|masuk)|persyaratan\s+(?:pendaftaran|daftar|masuk)|berkas\s+(?:pendaftaran|persyaratan)|dokumen\s+persyaratan)\b/i.test(rawQ) ||
+    (semanticFrame.domain === 'PMB' && (semanticFrame.intent === 'ADMISSION_REQUIREMENTS' || (semanticFrame.aspects && semanticFrame.aspects.includes('admission_requirements'))))
+  ) && !/\b(?:coding|koding|ngoding|pemrograman|programming|bahasa\s+inggris)\b/i.test(rawQ);
+
+  if (isRequirementPmbInquiry && !/\b(?:ijazah|skl|surat\s+keterangan\s+lulus|rapor|pasfoto|akta\s+kelahiran|berkas\s+persyaratan|dokumen\s+persyaratan)\b/i.test(combinedEvidenceText)) {
+    const targetEntity = (semanticFrame.entities && semanticFrame.entities[0]) || semanticFrame.activeEntity || null;
+    const entityLabel = typeof targetEntity === 'string' ? targetEntity : (targetEntity?.canonical || targetEntity?.name || '');
+    const entityPart = entityLabel ? ` untuk program ${entityLabel}` : '';
+    return {
+      status: ANSWERABILITY_STATUS.UNKNOWN,
+      reason: 'corpus_gap_admission_requirements',
+      coveredAspects: [],
+      missingAspects: ['admission_requirements', 'requirements'],
+      guidance: isEn
+        ? `Official registration requirements${entityPart} are currently not fully listed in available official documents in our knowledge base (SOURCE_GAP). For the latest requirements, please refer to https://pmb.stikom-bali.ac.id or contact the admissions committee directly.`
+        : `Rincian persyaratan pendaftaran${entityPart} saat ini belum tercantum secara lengkap dalam dokumen resmi pada basis pengetahuan kami (SOURCE_GAP). Untuk informasi persyaratan terbaru, silakan merujuk ke portal resmi https://pmb.stikom-bali.ac.id atau berkonsultasi langsung dengan Panitia PMB ITB STIKOM Bali.`
     };
   }
 

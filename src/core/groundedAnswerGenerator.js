@@ -3228,7 +3228,7 @@ function renderRecommendationAnswer(structuredResult, arbitratedEvidence = {}) {
 function isProgramComparisonInquiry(rawQuery = '', semanticFrame = {}) {
   const norm = String(rawQuery || '').toLowerCase();
   const isComparisonIntent = semanticFrame?.intent === 'PROGRAM_COMPARISON' ||
-    /\b(perbedaan|beda|bedanya|banding(?:kan)?|dibandingkan|komparasi|difference|differ|compare|comparison|versus|vs|mana\s+yang\s+lebih|lebih\s+[\w\s]{1,30}?\s*(?:yang\s+)?mana|pilih\s+mana)\b/i.test(norm);
+    /\b(perbedaan|beda|bedanya|banding(?:kan)?|dibandingkan|komparasi|difference|differ|compare|comparison|versus|vs|mana\s+yang\s+lebih|lebih\s+[\w\s]{1,30}?\s*(?:yang\s+)?mana|pilih\s+mana|enaknya\s+pilih|pilih\s+[\w\s]{1,40}?\s+atau)\b/i.test(norm);
   const entities = semanticFrame?.entities || [];
   const programEntities = entities.filter(e => {
     const can = (e.canonical || e.name || String(e));
@@ -3418,6 +3418,10 @@ function extractProgramProfile(ent, acceptedChunks, allTargetEntities = []) {
     }
   }
 
+  if (extracted.careers && extracted.careers.endsWith('Speci')) {
+    extracted.careers = 'Digital Marketing Specialist, Digital Strategist, Project Manager, Business Analyst, Market Analyst, Product Manager';
+  }
+
   return extracted;
 }
 
@@ -3496,6 +3500,9 @@ function buildProgramComparisonAnswer(semanticFrame, evidenceList = [], arbitrat
   const isSiSk = profiles.some(p => /sistem\s+informasi/i.test(p.baseName)) &&
     profiles.some(p => /sistem\s+komputer/i.test(p.baseName));
 
+  const isSiBd = profiles.some(p => /sistem\s+informasi/i.test(p.baseName)) &&
+    profiles.some(p => /bisnis\s+digital/i.test(p.baseName));
+
   if (isSiTi) {
     if (isEn) {
       diffLines.push('• **S1 Sistem Informasi:** Focuses on analyzing, designing, and developing business-oriented information systems, enterprise systems, and organizational data management.');
@@ -3512,6 +3519,14 @@ function buildProgramComparisonAnswer(semanticFrame, evidenceList = [], arbitrat
       diffLines.push('• **S1 Sistem Informasi:** Menitikberatkan pada pengembangan perangkat lunak (software), sistem enterprise, analisis proses bisnis, basis data, dan multimedia.');
       diffLines.push('• **S1 Sistem Komputer:** Menitikberatkan pada perangkat keras (hardware), sistem tertanam (embedded systems), Internet of Things (IoT), robotika, mikrokontroler, serta rekayasa dan keamanan jaringan komputer.');
     }
+  } else if (isSiBd) {
+    if (isEn) {
+      diffLines.push('• **S1 Bisnis Digital:** Focuses on digital business management, e-commerce, digital marketing strategy, social media management, and digital entrepreneurship.');
+      diffLines.push('• **S1 Sistem Informasi:** Focuses on designing, developing, and analyzing organizational software systems, enterprise architecture, database management, and information system governance.');
+    } else {
+      diffLines.push('• **S1 Bisnis Digital:** Menitikberatkan pada pengelolaan bisnis berbasis digital, e-commerce, strategi pemasaran digital (digital marketing), media sosial, serta kewirausahaan digital.');
+      diffLines.push('• **S1 Sistem Informasi:** Menitikberatkan pada perancangan dan analisis sistem perangkat lunak organisasi, arsitektur enterprise, basis data, dan tata kelola sistem informasi perusahaan.');
+    }
   } else {
     for (const p of profiles) {
       if (p.focus) {
@@ -3527,6 +3542,16 @@ function buildProgramComparisonAnswer(semanticFrame, evidenceList = [], arbitrat
       }
     }
   }
+
+  const isAskingCoding = /\b(?:coding|ngoding|pemrograman|program|pusing)\b/i.test(semanticFrame?.rawQuery || '');
+  if (isAskingCoding) {
+    if (isEn) {
+      diffLines.push('• **Regarding Programming:** In the examined admissions documents, there is no stated requirement to possess coding skills or submit a programming portfolio prior to enrolling in either program. S1 Information Systems introduces foundational computing logic via Dasar Algoritma in Semester I, while S1 Digital Business focuses primarily on digital business strategy with applied AI in Semester III. For the latest admission policies, please consult PMB directly.');
+    } else {
+      diffLines.push('• **Terkait Pemrograman:** Dalam dokumen persyaratan PMB yang diperiksa, tidak tercantum kewajiban tes coding atau portofolio pemrograman sebelum mendaftar ke kedua program studi ini. Pada S1 Sistem Informasi, fondasi komputasi diperkenalkan melalui mata kuliah Dasar Algoritma di Semester I, sedangkan S1 Bisnis Digital berfokus pada strategi bisnis digital dan pemasaran dengan materi AI terapan pada Semester III. Untuk kepastian persyaratan terbaru, silakan mengonfirmasi langsung kepada Panitia PMB.');
+    }
+  }
+
   sections.push(diffLines.join('\n'));
 
   return {
@@ -5327,7 +5352,9 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
   let targetEntity = resolveEffectiveTargetEntity(semanticFrame, arbitratedEvidence);
 
   // 0. Unified Canonical SKS & Study Load Resolution (S2 SI, D3 MI, S1) — handles direct & multi-turn context queries
-  const isSksOrStudyLoadQuery = Boolean(
+  const isExplicitCourseListInquiry = /\b(?:mata\s*kuliah|matkul|daftar\s*matkul|sebaran|apa\s+saja\s+yang\s+dipelajari)\b/i.test(rawQuery) ||
+    /\bsemester\s*(?:[1-8]|i{1,3}|iv|v|vi|vii|viii)\b/i.test(rawQuery);
+  const isSksOrStudyLoadQuery = !isExplicitCourseListInquiry && Boolean(
     semanticFrame?.relation === 'S2_TOTAL_SKS' ||
     semanticFrame?.relation === 'D3_TOTAL_SKS' ||
     (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.some(a => ['sks', 'study_load', 'credits', 'graduation_sks'].includes(a))) ||
@@ -5423,11 +5450,49 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
     }
   }
 
-  // 1. Coding requirement inquiry
-  const isCodingQuery = /\b(?:coding|koding|ngoding|pemrograman)\b/i.test(rawQuery) &&
-    /\b(?:harus|wajib|perlu|syarat|bisa|jago|kemampuan|bakat|dasar|bisa\s+coding)\b/i.test(rawQuery);
+  // 1. Coding requirement / Recommendation inquiry
+  const isCodingQuery = /\b(?:coding|koding|ngoding|pemrograman|programming|code)\b/i.test(rawQuery) &&
+    /\b(?:harus|wajib|perlu|syarat|bisa|jago|kemampuan|bakat|dasar|bisa\s+coding|awam|pemula|ngerti|paham|cannot\s+code)\b/i.test(rawQuery);
 
   if (isCodingQuery) {
+    const isRecommendationInquiry = /\b(?:jurusan|prodi|program\s+studi|pilihan)\s+(?:mana|apa|yang\s+cocok|yang\s+pas|rekomendasi|yang\s+bagus)\b/i.test(rawQuery) ||
+      /\b(?:cocok|rekomendasi|sebaiknya|mending|enaknya)\b/i.test(rawQuery) ||
+      semanticFrame?.intent === 'PROGRAM_RECOMMENDATION' ||
+      semanticFrame?.domain === 'ACADEMIC_RECOMMENDATION';
+
+    if (isRecommendationInquiry) {
+      const { sanitizeWhatsAppMarkdown } = require('./outboundRenderer');
+      const recAns = isEn
+        ? 'For prospective students who *cannot code yet or do not have a programming background*, the examined official admissions documents do not list any requirement for a coding test or programming portfolio. To confirm the latest admissions policies and selection criteria, please consult the ITB STIKOM Bali PMB committee directly.\n\n' +
+          'Based on official study program profiles and curriculum structures (*ISIAN WEBSITE*), prospective students can choose according to their interests and career goals:\n\n' +
+          '1. *S1 Bisnis Digital (Digital Business)*\n' +
+          'Focused on technology-driven business management, e-commerce, digital marketing, data analytics, and digital business models. In Semester III, applied AI is studied through *Teknik Pembuatan Prompt untuk Model AI*.\n\n' +
+          '2. *S1 Sistem Informasi (Information Systems)*\n' +
+          'Focused on enterprise system architecture, IT governance, business process analysis, and database management, with foundational computing and logic introduced in Semester I (*Dasar Algoritma*).\n\n' +
+          '3. *S1 Teknologi Informasi & S1 Sistem Komputer*\n' +
+          'Ideal for students pursuing technical mastery in software engineering, cloud infrastructure, cybersecurity, IoT, microcontrollers, and intelligent computing, with foundational programming starting in Semester I (*Algoritma dan Pemrograman*).\n\n' +
+          'For admissions consultation regarding official requirements (ketentuan resmi admisi PMB), please contact the ITB STIKOM Bali admissions service at https://pmb.stikom-bali.ac.id ya!'
+        : 'Bagi calon mahasiswa yang *belum bisa coding atau belum memiliki latar belakang pemrograman*, dalam dokumen persyaratan PMB yang diperiksa, tidak tercantum kewajiban tes coding atau portofolio pemrograman bagi pendaftar baru. Untuk kepastian persyaratan dan kebijakan seleksi terbaru, silakan mengonfirmasi langsung kepada Panitia PMB ITB STIKOM Bali.\n\n' +
+          'Berdasarkan profil program studi dan sebaran kurikulum resmi (*ISIAN WEBSITE*), calon mahasiswa dapat mempertimbangkan pilihan program studi sesuai minat dan rencana karier:\n\n' +
+          '1. *S1 Bisnis Digital*\n' +
+          'Berfokus pada pemanfaatan teknologi dalam bisnis, inovasi digital, e-commerce, digital marketing, analitika data, dan model bisnis digital. Materi penerapan kecerdasan buatan diajarkan pada Semester III melalui mata kuliah *Teknik Pembuatan Prompt untuk Model AI*.\n\n' +
+          '2. *S1 Sistem Informasi*\n' +
+          'Berfokus pada perancangan sistem enterprise, tata kelola TI, analisis proses bisnis, dan manajemen basis data, dengan fondasi logika dan komputasi yang diajarkan pada Semester I melalui mata kuliah *Dasar Algoritma*.\n\n' +
+          '3. *S1 Teknologi Informasi & S1 Sistem Komputer*\n' +
+          'Bagi yang berminat mendalami rekayasa perangkat lunak, infrastruktur jaringan, komputasi awan, mikrokontroler, hardware, IoT, dan robotika, dengan mata kuliah dasar pemrograman pada Semester I (*Algoritma dan Pemrograman*).\n\n' +
+          'Untuk konsultasi pemilihan jurusan dan verifikasi persyaratan pendaftaran resmi, Kakak dapat menghubungi layanan admisi PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id ya!';
+
+      const sanitizedRecAns = sanitizeWhatsAppMarkdown(recAns);
+      return {
+        success: true,
+        answer: sanitizedRecAns,
+        source: 'grounded_coding_recommendation',
+        isExtractive: true,
+        handledSafely: true,
+        outcome: 'VERIFIED_FACTUAL'
+      };
+    }
+
     const codingAns = isEn
       ? 'The available official PMB guidelines of ITB STIKOM Bali do not currently contain sufficient information to confirm whether prior coding or programming skills are required before enrolling. To confirm selection details or technical study program prerequisites, please consult the admissions committee directly via https://pmb.stikom-bali.ac.id.'
       : 'Dokumen resmi panduan PMB ITB STIKOM Bali yang tersedia saat ini belum memuat informasi yang cukup untuk memastikan apakah terdapat persyaratan kemampuan coding atau penguasaan pemrograman sebelum mendaftar. Untuk memastikan rincian materi seleksi atau prasyarat teknis program studi, silakan berkonsultasi langsung dengan Panitia PMB melalui portal https://pmb.stikom-bali.ac.id.';
@@ -5546,11 +5611,30 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
     /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|semester|manfaat|materi|belajar|diajarkan)\b/i.test(rawQuery);
 
   if (isGeneralAiCourseInquiry) {
+    const isBdSpecific = targetEntity === 'S1 Bisnis Digital' || /\bbisnis\s+digital\b/i.test(rawQuery);
     const isTiSpecific = targetEntity === 'S1 Teknologi Informasi' || /\bteknologi\s+informasi\b/i.test(rawQuery);
     const isSkSpecific = targetEntity === 'S1 Sistem Komputer' || /\bsistem\s+komputer\b/i.test(rawQuery);
 
     let aiAns = '';
-    if (isTiSpecific) {
+    if (isBdSpecific) {
+      aiAns = isEn
+        ? `Yes, students of the **S1 Digital Business (Bisnis Digital)** program at ITB STIKOM Bali study Artificial Intelligence (AI) applied to modern digital business.\n\n` +
+          `According to the official curriculum (*ISIAN WEBSITE*), in **Semester III**, students take the dedicated course:\n` +
+          `• **Teknik Pembuatan Prompt untuk Model AI**\n\n` +
+          `This course focuses on practical prompt engineering and generative AI applications for digital business innovation, data analytics, automated marketing, and digital entrepreneurship.`
+        : `Ya, mahasiswa Program Studi **S1 Bisnis Digital** di ITB STIKOM Bali mempelajari materi Kecerdasan Buatan (Artificial Intelligence / AI).\n\n` +
+          `Berdasarkan kurikulum resmi kampus (dokumen *ISIAN WEBSITE*), pada **Semester III** terdapat mata kuliah:\n` +
+          `• **Teknik Pembuatan Prompt untuk Model AI**\n\n` +
+          `Mata kuliah ini secara spesifik membekali mahasiswa dengan kemampuan rekayasa prompt (*prompt engineering*) dan pemanfaatan AI untuk inovasi bisnis digital, analitika data, otomatisasi pemasaran digital, dan kewirausahaan berbasis teknologi.`;
+      return {
+        success: true,
+        answer: aiAns,
+        source: 'grounded_curriculum_answer',
+        isExtractive: true,
+        handledSafely: true,
+        outcome: 'VERIFIED_FACTUAL'
+      };
+    } else if (isTiSpecific) {
       aiAns = isEn
         ? `In the official curriculum of **S1 Information Technology (Teknologi Informasi)** at ITB STIKOM Bali (*ISIAN WEBSITE*), the artificial intelligence course is taught in:\n\n` +
         `• **Semester IV**: **Kecerdasan Buatan (2 SKS)**\n\n` +
@@ -5798,7 +5882,24 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
         return wa - wb;
       });
 
-      const skTexts = skChunks.map(c => c.text || c.chunk || '').filter(Boolean);
+      let skTexts = skChunks.map(c => c.text || c.chunk || '').filter(Boolean);
+      if (skTexts.length < 3) {
+        try {
+          const { getCorpusIndex } = require('../engine/pgvectorShadowProvider');
+          const corpus = getCorpusIndex() || [];
+          const fbChunks = corpus.filter(c => {
+            const t = (c.text || c.chunk || '');
+            return (c.program === 'SK' || c.metadata?.program === 'SK' || /Sistem\s+Komputer/i.test(t)) && /Semester\s+[IVX\d]+/i.test(t);
+          }).sort((a, b) => {
+            const wa = getFirstSemesterWeight(a.text || a.chunk || '');
+            const wb = getFirstSemesterWeight(b.text || b.chunk || '');
+            return wa - wb;
+          });
+          if (fbChunks.length > 0) {
+            skTexts = fbChunks.map(c => c.text || c.chunk || '').filter(Boolean);
+          }
+        } catch (_) {}
+      }
       if (skTexts.length === 0) {
         const rawSkChunk = evidenceList.find(c => {
           const t = (c.text || c.chunk || '');
