@@ -1512,6 +1512,83 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
       }
     }
 
+    // Course Code Provenance Check against accepted evidence and canonical facts registry
+    const courseCodeMatches = text.match(/\b([A-Z]{2}\d{6})\b/g);
+    if (courseCodeMatches) {
+      const allAcceptedText = acceptedList.map(c => String(c.text || c.chunk || '')).join('\n');
+      for (const code of courseCodeMatches) {
+        const inEvidence = allAcceptedText.includes(code);
+        let inRegistry = false;
+        let matchedRegistryCourse = null;
+        if (canonicalAcademicRegistry && canonicalAcademicRegistry.curriculumFacts) {
+          for (const prog of Object.values(canonicalAcademicRegistry.curriculumFacts)) {
+            if (Array.isArray(prog.courses)) {
+              const matched = prog.courses.find(c => c.code === code && c.verificationStatus === 'VERIFIED_PRIMARY_SOURCE');
+              if (matched) {
+                inRegistry = true;
+                matchedRegistryCourse = matched;
+                break;
+              }
+            }
+          }
+        }
+        if (!inEvidence && !inRegistry) {
+          return failVerification(`unverified_course_code_claim: course code ${code} not supported by accepted evidence or verified registry`);
+        }
+
+        // Multi-attribute verification against verified registry record
+        if (matchedRegistryCourse) {
+          // 1. Verification status check
+          if (matchedRegistryCourse.verificationStatus !== 'VERIFIED_PRIMARY_SOURCE') {
+            return failVerification(`unverified_course_status: course code ${code} is not verified primary source`);
+          }
+
+          // 2. SKS mismatch check
+          const sksMatches = text.match(/\b(\d+)\s*(?:sks|kredit)\b/gi);
+          if (sksMatches && matchedRegistryCourse.sks != null) {
+            for (const sm of sksMatches) {
+              const claimedSks = parseInt(sm.replace(/\D/g, ''), 10);
+              if (claimedSks !== matchedRegistryCourse.sks && !allAcceptedText.includes(`${claimedSks} SKS`)) {
+                return failVerification(`unverified_course_sks_claim: course ${code} claims ${claimedSks} SKS but registry specifies ${matchedRegistryCourse.sks} SKS`);
+              }
+            }
+          }
+
+          // 3. Semester mismatch check
+          const semMatches = text.match(/\bSemester\s*([1-8]|I{1,3}|IV|V|VI|VII|VIII)\b/gi);
+          if (semMatches && matchedRegistryCourse.semester) {
+            const regSemNorm = matchedRegistryCourse.semester.toUpperCase().replace(/\s+/g, '')
+              .replace(/SEMESTER/, '')
+              .replace(/^1$/, 'I').replace(/^2$/, 'II').replace(/^3$/, 'III').replace(/^4$/, 'IV')
+              .replace(/^5$/, 'V').replace(/^6$/, 'VI').replace(/^7$/, 'VII').replace(/^8$/, 'VIII');
+            for (const semStr of semMatches) {
+              const claimedSemNorm = semStr.toUpperCase().replace(/\s+/g, '')
+                .replace(/SEMESTER/, '')
+                .replace(/^1$/, 'I').replace(/^2$/, 'II').replace(/^3$/, 'III').replace(/^4$/, 'IV')
+                .replace(/^5$/, 'V').replace(/^6$/, 'VI').replace(/^7$/, 'VII').replace(/^8$/, 'VIII');
+              if (claimedSemNorm !== regSemNorm && !allAcceptedText.includes(semStr)) {
+                return failVerification(`unverified_course_semester_claim: course ${code} claims ${semStr} but registry specifies ${matchedRegistryCourse.semester}`);
+              }
+            }
+          }
+
+          // 4. Course Name mismatch check
+          if (matchedRegistryCourse.name) {
+            const coreTokens = matchedRegistryCourse.name.toLowerCase().split(/\s+/).filter(w => w.length > 3 && !['untuk', 'model'].includes(w));
+            const hasCoreMatch = coreTokens.some(t => text.toLowerCase().includes(t));
+            if (!hasCoreMatch) {
+              return failVerification(`unverified_course_name_claim: course ${code} name does not match registry (${matchedRegistryCourse.name})`);
+            }
+          }
+
+          // 5. Source identity check (reject known obsolete / 404 URL)
+          if (text.includes('kurikulum-bisnis-digital') || (text.includes('http') && text.includes('stikom-bali.ac.id/kurikulum-'))) {
+            return failVerification(`unverified_course_source_url: invalid or 404 source URL claimed in course provenance`);
+          }
+        }
+      }
+    }
+
     // 3. Historical archive fact presented as active fact (historical_fact_presented_as_active)
     const isHistoricalQuery = semanticFrame?.constraints?.temporalConstraint === 'HISTORICAL_ARCHIVE' ||
       /\b(?:arsip|historis|tahun\s+lalu|masa\s+lalu|202[0-4]\/202[1-5])\b/i.test(semanticFrame?.rawQuery || '');

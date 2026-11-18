@@ -7,7 +7,11 @@
   "officialFaculty": {
     "Fakultas Informatika dan Komputer": {
       "canonicalName": "Fakultas Informatika dan Komputer",
-      "aliases": ["FIK", "INFOKOM", "Fakultas Informatika & Komputer"],
+      "aliases": [
+        "FIK",
+        "INFOKOM",
+        "Fakultas Informatika & Komputer"
+      ],
       "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
       "sourceDocument": "https://pasca.stikom-bali.ac.id/tentang & ISIAN WEBSITE (1).pdf",
       "dean": {
@@ -55,7 +59,11 @@
     },
     "Fakultas Bisnis dan Vokasi": {
       "canonicalName": "Fakultas Bisnis dan Vokasi",
-      "aliases": ["FBV", "BISVO", "Fakultas Bisnis & Vokasi"],
+      "aliases": [
+        "FBV",
+        "BISVO",
+        "Fakultas Bisnis & Vokasi"
+      ],
       "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
       "sourceDocument": "https://pasca.stikom-bali.ac.id/tentang & ISIAN WEBSITE (1).pdf",
       "dean": {
@@ -86,7 +94,11 @@
     },
     "Program Pascasarjana": {
       "canonicalName": "Program Pascasarjana",
-      "aliases": ["Pascasarjana", "Magister", "S2"],
+      "aliases": [
+        "Pascasarjana",
+        "Magister",
+        "S2"
+      ],
       "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
       "sourceDocument": "https://pasca.stikom-bali.ac.id/tentang, ISIAN WEBSITE (1).pdf & Training_Dataset_Pascasarjana_ITB_STIKOM_Bali.xlsx",
       "programs": [
@@ -128,7 +140,19 @@
       "normalDurationYears": 4,
       "sourceDocument": "ISIAN WEBSITE (1).pdf, Kalender Akademik Ganjil, Genap dan Antara TA 2025-2026 (1).pdf & knowledge/raw/curriculum_current_2025/SK_curriculum_verified_2025.json",
       "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
-      "status": "OFFICIAL_PROVENANCE"
+      "status": "OFFICIAL_PROVENANCE",
+      "courses": [
+        {
+          "code": "SK231501",
+          "name": "Kecerdasan Artifisial",
+          "semester": "Semester V",
+          "semesterNumber": 5,
+          "sks": 4,
+          "category": "AI_CORE",
+          "sourceDocument": "Pedoman RPL SK & ISIAN WEBSITE (1).pdf",
+          "verificationStatus": "VERIFIED_PRIMARY_SOURCE"
+        }
+      ]
     },
     "S1 Teknologi Informasi": {
       "program": "S1 Teknologi Informasi",
@@ -142,7 +166,19 @@
       "normalDurationYears": 4,
       "sourceDocument": "ISIAN WEBSITE (1).pdf, Kalender Akademik Ganjil, Genap dan Antara TA 2025-2026 (1).pdf & knowledge/raw/curriculum_current_2025/TI_curriculum_verified_2025.json",
       "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
-      "status": "OFFICIAL_PROVENANCE"
+      "status": "OFFICIAL_PROVENANCE",
+      "courses": [
+        {
+          "code": "TI231401",
+          "name": "Kecerdasan Buatan",
+          "semester": "Semester IV",
+          "semesterNumber": 4,
+          "sks": 2,
+          "category": "AI_CORE",
+          "sourceDocument": "ISIAN WEBSITE (1).pdf & knowledge/raw/curriculum_current_2025/TI_curriculum_verified_2025.json",
+          "verificationStatus": "VERIFIED_PRIMARY_SOURCE"
+        }
+      ]
     },
     "S1 Bisnis Digital": {
       "program": "S1 Bisnis Digital",
@@ -152,11 +188,236 @@
       "mandatorySks": null,
       "electiveOfferedSks": null,
       "graduationMinimumSks": 144,
+      "offeredCurriculumSks": 146,
+      "curriculumSksDistribution": {
+        "Semester I": 20,
+        "Semester II": 20,
+        "Semester III": 22,
+        "Semester IV": 22,
+        "Semester V": 20,
+        "Semester VI": 20,
+        "Semester VII": 16,
+        "Semester VIII": 6,
+        "totalOffered": 146
+      },
+      "sksDiscrepancyExplanation": "Laman resmi Program Studi Bisnis Digital (https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/) mencantumkan total 146 SKS (akumulasi sebaran Semester I-VIII: 20+20+22+22+20+20+16+6 SKS). Sementara beban studi minimum untuk kelulusan jenjang sarjana (S1) adalah 144 SKS berdasarkan Permendiktisaintek No. 39 Tahun 2025 Pasal 18 dan Pedoman Akademik ITB STIKOM Bali. Dokumen resmi yang tersedia tidak memerinci alasan selisih 2 SKS antara total penawaran sebaran dan batas minimum kelulusan tersebut.",
       "normalDurationSemesters": 8,
       "normalDurationYears": 4,
       "sourceDocument": "ISIAN WEBSITE (1).pdf, Kalender Akademik Ganjil, Genap dan Antara TA 2025-2026 (1).pdf & knowledge/raw/curriculum_current_2025/BD_curriculum_verified_2023.json",
       "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
-      "status": "OFFICIAL_PROVENANCE"
+      "status": "OFFICIAL_PROVENANCE",
+      "courses": [
+        {
+          "code": "BD233103",
+          "name": "Pengelolaan Hubungan Pelanggan",
+          "semester": "Semester III",
+          "semesterNumber": 3,
+          "sks": 4,
+          "category": "BUSINESS_MANAGEMENT",
+          "curriculumVersion": "Kurikulum 2023",
+          "sourceDocument": "Daftar_Mata_Kuliah_S1_Bisnis_Digital_Resmi.html & Portal Resmi Prodi Bisnis Digital (https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/)",
+          "sourceUrl": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/",
+          "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+          "provenanceByAttribute": {
+            "code": {
+              "value": "BD233103",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/ & BD_curriculum_raw.html"
+            },
+            "name": {
+              "value": "Pengelolaan Hubungan Pelanggan",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/, BD_curriculum_raw.html & ISIAN WEBSITE (1).pdf"
+            },
+            "semester": {
+              "value": "Semester III",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/, BD_curriculum_raw.html & ISIAN WEBSITE (1).pdf"
+            },
+            "sks": {
+              "value": 4,
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/"
+            }
+          }
+        },
+        {
+          "code": "BD233509",
+          "name": "Bisnis Digital Budaya dan Seni",
+          "semester": "Semester III",
+          "semesterNumber": 3,
+          "sks": 2,
+          "category": "CULTURE_BUSINESS",
+          "curriculumVersion": "Kurikulum 2023",
+          "sourceDocument": "Daftar_Mata_Kuliah_S1_Bisnis_Digital_Resmi.html & Portal Resmi Prodi Bisnis Digital (https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/)",
+          "sourceUrl": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/",
+          "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+          "provenanceByAttribute": {
+            "code": {
+              "value": "BD233509",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/ & BD_curriculum_raw.html"
+            },
+            "name": {
+              "value": "Bisnis Digital Budaya dan Seni",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/, BD_curriculum_raw.html & ISIAN WEBSITE (1).pdf"
+            },
+            "semester": {
+              "value": "Semester III",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/, BD_curriculum_raw.html & ISIAN WEBSITE (1).pdf"
+            },
+            "sks": {
+              "value": 2,
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/"
+            }
+          }
+        },
+        {
+          "code": "BD233506",
+          "name": "Digital Konten",
+          "semester": "Semester III",
+          "semesterNumber": 3,
+          "sks": 4,
+          "category": "CONTENT_CREATIVE",
+          "curriculumVersion": "Kurikulum 2023",
+          "sourceDocument": "Daftar_Mata_Kuliah_S1_Bisnis_Digital_Resmi.html & Portal Resmi Prodi Bisnis Digital (https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/)",
+          "sourceUrl": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/",
+          "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+          "provenanceByAttribute": {
+            "code": {
+              "value": "BD233506",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/ & BD_curriculum_raw.html"
+            },
+            "name": {
+              "value": "Digital Konten",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/, BD_curriculum_raw.html & ISIAN WEBSITE (1).pdf"
+            },
+            "semester": {
+              "value": "Semester III",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/, BD_curriculum_raw.html & ISIAN WEBSITE (1).pdf"
+            },
+            "sks": {
+              "value": 4,
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/"
+            }
+          }
+        },
+        {
+          "code": "BD233301",
+          "name": "Sistem Pengelolaan Konten Berbasis Web",
+          "semester": "Semester III",
+          "semesterNumber": 3,
+          "sks": 4,
+          "category": "WEB_SYSTEMS",
+          "curriculumVersion": "Kurikulum 2023",
+          "sourceDocument": "Daftar_Mata_Kuliah_S1_Bisnis_Digital_Resmi.html & Portal Resmi Prodi Bisnis Digital (https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/)",
+          "sourceUrl": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/",
+          "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+          "provenanceByAttribute": {
+            "code": {
+              "value": "BD233301",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/ & BD_curriculum_raw.html"
+            },
+            "name": {
+              "value": "Sistem Pengelolaan Konten Berbasis Web",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/, BD_curriculum_raw.html & ISIAN WEBSITE (1).pdf"
+            },
+            "semester": {
+              "value": "Semester III",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/, BD_curriculum_raw.html & ISIAN WEBSITE (1).pdf"
+            },
+            "sks": {
+              "value": 4,
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/"
+            }
+          }
+        },
+        {
+          "code": "BD232101",
+          "name": "Kewirausahaan",
+          "semester": "Semester III",
+          "semesterNumber": 3,
+          "sks": 2,
+          "category": "ENTREPRENEURSHIP",
+          "curriculumVersion": "Kurikulum 2023",
+          "sourceDocument": "Daftar_Mata_Kuliah_S1_Bisnis_Digital_Resmi.html & Portal Resmi Prodi Bisnis Digital (https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/)",
+          "sourceUrl": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/",
+          "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+          "provenanceByAttribute": {
+            "code": {
+              "value": "BD232101",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/ & BD_curriculum_raw.html"
+            },
+            "name": {
+              "value": "Kewirausahaan",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/, BD_curriculum_raw.html & ISIAN WEBSITE (1).pdf"
+            },
+            "semester": {
+              "value": "Semester III",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/, BD_curriculum_raw.html & ISIAN WEBSITE (1).pdf"
+            },
+            "sks": {
+              "value": 2,
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/"
+            }
+          }
+        },
+        {
+          "code": "BD233508",
+          "name": "Analisis Data Bisnis",
+          "semester": "Semester III",
+          "semesterNumber": 3,
+          "sks": 4,
+          "category": "DATA_ANALYTICS",
+          "curriculumVersion": "Kurikulum 2023",
+          "sourceDocument": "Daftar_Mata_Kuliah_S1_Bisnis_Digital_Resmi.html & Portal Resmi Prodi Bisnis Digital (https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/)",
+          "sourceUrl": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/",
+          "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+          "provenanceByAttribute": {
+            "code": {
+              "value": "BD233508",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/ & BD_curriculum_raw.html"
+            },
+            "name": {
+              "value": "Analisis Data Bisnis",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/, BD_curriculum_raw.html & ISIAN WEBSITE (1).pdf"
+            },
+            "semester": {
+              "value": "Semester III",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/, BD_curriculum_raw.html & ISIAN WEBSITE (1).pdf"
+            },
+            "sks": {
+              "value": 4,
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/"
+            }
+          }
+        },
+        {
+          "code": "BD233507",
+          "name": "Teknik Pembuatan Prompt untuk Model AI",
+          "semester": "Semester III",
+          "semesterNumber": 3,
+          "sks": 2,
+          "category": "AI_APPLIED",
+          "curriculumVersion": "Kurikulum 2023",
+          "sourceDocument": "Daftar_Mata_Kuliah_S1_Bisnis_Digital_Resmi.html & Portal Resmi Prodi Bisnis Digital (https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/)",
+          "sourceUrl": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/",
+          "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+          "provenanceByAttribute": {
+            "code": {
+              "value": "BD233507",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/ & BD_curriculum_raw.html"
+            },
+            "name": {
+              "value": "Teknik Pembuatan Prompt untuk Model AI",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/, BD_curriculum_raw.html & ISIAN WEBSITE (1).pdf"
+            },
+            "semester": {
+              "value": "Semester III",
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/, BD_curriculum_raw.html & ISIAN WEBSITE (1).pdf"
+            },
+            "sks": {
+              "value": 2,
+              "source": "https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/"
+            }
+          }
+        }
+      ]
     },
     "D3 Manajemen Informatika": {
       "program": "D3 Manajemen Informatika",
@@ -197,12 +458,42 @@
           "mandatorySks": 18,
           "coursesCount": 6,
           "courses": [
-            { "code": "MI241001", "name": "Metodologi Penelitian", "sks": 3, "type": "WAJIB" },
-            { "code": "MI241002", "name": "Keamanan dan Privasi Data", "sks": 3, "type": "WAJIB" },
-            { "code": "MI241003", "name": "Rekayasa Sistem Informasi Lanjut", "sks": 3, "type": "WAJIB" },
-            { "code": "MI241004", "name": "Tata Kelola dan Audit Sistem Informasi", "sks": 3, "type": "WAJIB" },
-            { "code": "MI241005", "name": "Transformasi Digital dan Inovasi Bisnis", "sks": 3, "type": "WAJIB" },
-            { "code": "MI241006", "name": "Data Science dan Big Data Analytics", "sks": 3, "type": "WAJIB" }
+            {
+              "code": "MI241001",
+              "name": "Metodologi Penelitian",
+              "sks": 3,
+              "type": "WAJIB"
+            },
+            {
+              "code": "MI241002",
+              "name": "Keamanan dan Privasi Data",
+              "sks": 3,
+              "type": "WAJIB"
+            },
+            {
+              "code": "MI241003",
+              "name": "Rekayasa Sistem Informasi Lanjut",
+              "sks": 3,
+              "type": "WAJIB"
+            },
+            {
+              "code": "MI241004",
+              "name": "Tata Kelola dan Audit Sistem Informasi",
+              "sks": 3,
+              "type": "WAJIB"
+            },
+            {
+              "code": "MI241005",
+              "name": "Transformasi Digital dan Inovasi Bisnis",
+              "sks": 3,
+              "type": "WAJIB"
+            },
+            {
+              "code": "MI241006",
+              "name": "Data Science dan Big Data Analytics",
+              "sks": 3,
+              "type": "WAJIB"
+            }
           ]
         },
         "Semester II": {
@@ -212,28 +503,78 @@
           "electiveOfferedCoursesCount": 3,
           "totalListedSks": 18,
           "courses": [
-            { "code": "MI242001", "name": "Arsitektur dan Integrasi Sistem Enterprise", "sks": 3, "type": "WAJIB" },
-            { "code": "MI242002", "name": "Manajemen Proyek Sistem Informasi Lanjut", "sks": 3, "type": "WAJIB" },
-            { "code": "MI242003", "name": "Sistem Pendukung Keputusan Cerdas", "sks": 3, "type": "WAJIB" },
-            { "code": "MI242101", "name": "System Enterprise Mutakhir", "sks": 3, "type": "PILIHAN" },
-            { "code": "MI242102", "name": "Intelligence, Security, and Infosphere", "sks": 3, "type": "PILIHAN" },
-            { "code": "MI242103", "name": "Deep Learning", "sks": 3, "type": "PILIHAN" }
+            {
+              "code": "MI242001",
+              "name": "Arsitektur dan Integrasi Sistem Enterprise",
+              "sks": 3,
+              "type": "WAJIB"
+            },
+            {
+              "code": "MI242002",
+              "name": "Manajemen Proyek Sistem Informasi Lanjut",
+              "sks": 3,
+              "type": "WAJIB"
+            },
+            {
+              "code": "MI242003",
+              "name": "Sistem Pendukung Keputusan Cerdas",
+              "sks": 3,
+              "type": "WAJIB"
+            },
+            {
+              "code": "MI242101",
+              "name": "System Enterprise Mutakhir",
+              "sks": 3,
+              "type": "PILIHAN"
+            },
+            {
+              "code": "MI242102",
+              "name": "Intelligence, Security, and Infosphere",
+              "sks": 3,
+              "type": "PILIHAN"
+            },
+            {
+              "code": "MI242103",
+              "name": "Deep Learning",
+              "sks": 3,
+              "type": "PILIHAN"
+            }
           ]
         },
         "Semester III": {
           "mandatorySks": 12,
           "coursesCount": 3,
           "courses": [
-            { "code": "MI243001", "name": "Seminar Proposal Tesis", "sks": 4, "type": "WAJIB" },
-            { "code": "MI243002", "name": "Riset dan Publikasi Ilmiah I", "sks": 4, "type": "WAJIB" },
-            { "code": "MI243003", "name": "Studi Mandiri Terarah", "sks": 4, "type": "WAJIB" }
+            {
+              "code": "MI243001",
+              "name": "Seminar Proposal Tesis",
+              "sks": 4,
+              "type": "WAJIB"
+            },
+            {
+              "code": "MI243002",
+              "name": "Riset dan Publikasi Ilmiah I",
+              "sks": 4,
+              "type": "WAJIB"
+            },
+            {
+              "code": "MI243003",
+              "name": "Studi Mandiri Terarah",
+              "sks": 4,
+              "type": "WAJIB"
+            }
           ]
         },
         "Semester IV": {
           "mandatorySks": 8,
           "coursesCount": 1,
           "courses": [
-            { "code": "MI244001", "name": "Tesis dan Publikasi Ilmiah II", "sks": 8, "type": "WAJIB" }
+            {
+              "code": "MI244001",
+              "name": "Tesis dan Publikasi Ilmiah II",
+              "sks": 8,
+              "type": "WAJIB"
+            }
           ]
         }
       },
@@ -308,7 +649,11 @@
     "1K1S": {
       "entity": "1K1S",
       "canonicalName": "Beasiswa 1 Keluarga 1 Sarjana (1K1S)",
-      "aliases": ["1k1s", "1 keluarga 1 sarjana", "satu keluarga satu sarjana"],
+      "aliases": [
+        "1k1s",
+        "1 keluarga 1 sarjana",
+        "satu keluarga satu sarjana"
+      ],
       "verificationStatus": "SOURCE_GAP",
       "status": "SOURCE_NOT_FOUND",
       "explanation": "Informasi resmi mengenai program \"Beasiswa 1 Keluarga 1 Sarjana (1K1S)\" belum tercantum dalam dokumen pedoman beasiswa resmi maupun SK PMB ITB STIKOM Bali yang tersedia (SOURCE_NOT_FOUND).",
@@ -317,7 +662,9 @@
     "SKSS": {
       "entity": "SKSS",
       "canonicalName": "Beasiswa SKSS",
-      "aliases": ["skss"],
+      "aliases": [
+        "skss"
+      ],
       "verificationStatus": "SOURCE_GAP",
       "status": "SOURCE_NOT_FOUND",
       "explanation": "Informasi resmi mengenai program atau singkatan \"Beasiswa SKSS\" belum tercantum dalam dokumen pedoman beasiswa resmi ITB STIKOM Bali yang tersedia (SOURCE_NOT_FOUND). Entitas atau singkatan \"SKSS\" tidak terdefinisi secara resmi dalam dokumen panduan kampus.",

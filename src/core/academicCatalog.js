@@ -718,6 +718,43 @@ function getCanonicalProgramFacts(programQuery) {
   return null;
 }
 
+/**
+ * Retrieve specific verified course record from the canonical curriculum registry.
+ */
+function getProgramCourseFact(programQuery, courseQuery = '') {
+  const progFacts = getCanonicalProgramFacts(programQuery);
+  if (!progFacts || !Array.isArray(progFacts.courses) || progFacts.courses.length === 0) {
+    return null;
+  }
+  if (!courseQuery) return progFacts.courses;
+
+  const cq = String(courseQuery).toLowerCase().trim();
+  const explicitCodeMatch = cq.match(/\b([a-z]{2}\d{6})\b/i);
+  if (explicitCodeMatch) {
+    const codeTarget = explicitCodeMatch[1].toUpperCase();
+    const found = progFacts.courses.find(c => c.code && c.code.toUpperCase() === codeTarget);
+    if (!found || found.verificationStatus !== 'VERIFIED_PRIMARY_SOURCE') {
+      return null;
+    }
+    return found;
+  }
+
+  const found = progFacts.courses.find(c => {
+    const codeMatch = c.code && cq.includes(c.code.toLowerCase());
+    const nameMatch = c.name && (cq.includes(c.name.toLowerCase()) || c.name.toLowerCase().includes(cq));
+    const catMatch = c.category && cq.includes(c.category.toLowerCase());
+    const isGenericAiInquiry = /\b(?:belajar\s+(?:ai|kecerdasan|artificial)|ada\s+(?:matkul|mata\s*kuliah)\s+ai|mata\s*kuliah\s+ai|prompt\s+(?:model\s+)?ai|prompting)\b/i.test(cq) ||
+      ['prompt', 'ai', 'prompt model ai'].includes(cq);
+    const aiCourseMatch = isGenericAiInquiry && /\b(?:prompt|ai|artificial|kecerdasan)\b/i.test(c.name);
+    return Boolean(codeMatch || nameMatch || catMatch || aiCourseMatch);
+  }) || null;
+
+  if (!found || found.verificationStatus !== 'VERIFIED_PRIMARY_SOURCE') {
+    return null;
+  }
+  return found;
+}
+
 module.exports = {
   CANONICAL_FACTS_REGISTRY,
   ACADEMIC_SCOPE_STATUS,
@@ -737,6 +774,7 @@ module.exports = {
   generateGroundedCampusLocationSummary,
   generateGroundedContactSummary,
   getCanonicalProgramFacts,
+  getProgramCourseFact,
   CATALOG_FACT_PROVENANCE_STATUS,
   S1_CATALOG_CLAIM_PROVENANCE,
   getCatalogClaimProvenance

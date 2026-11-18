@@ -24,7 +24,8 @@ const {
   generateGroundedFacultySummary,
   CATALOG_FACT_PROVENANCE_STATUS,
   S1_CATALOG_CLAIM_PROVENANCE,
-  getCatalogClaimProvenance
+  getCatalogClaimProvenance,
+  getProgramCourseFact
 } = require('./academicCatalog');
 const { sanitizeOpenAiChatPayload } = require('../utils/openAiPayloadHelper');
 const { detectQueryLanguage } = require('../utils/languageDetector');
@@ -3808,7 +3809,10 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
   }
 
   // Stage 5: Multi-Attribute Composite Synthesis (when 2+ primary attributes are requested)
+  const isCourseSpecificSemesterOrSks = /\bsemester\s+berapa\b/i.test(semanticFrame?.rawQuery || '') ||
+    Boolean(arbitratedEvidence?.sessionData && /\b(?:teknik\s+pembuatan\s+prompt|prompt\s+untuk\s+model\s+ai)\b/i.test(arbitratedEvidence.sessionData.lastAnswer || ''));
   if (
+    !isCourseSpecificSemesterOrSks &&
     conflictState.requestedComposableAttrs.length >= 2 &&
     !isProgramComparisonInquiry(semanticFrame?.rawQuery, semanticFrame) &&
     !isDiscountStackingInquiry(semanticFrame?.rawQuery, semanticFrame) &&
@@ -5352,9 +5356,11 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
   let targetEntity = resolveEffectiveTargetEntity(semanticFrame, arbitratedEvidence);
 
   // 0. Unified Canonical SKS & Study Load Resolution (S2 SI, D3 MI, S1) — handles direct & multi-turn context queries
+  const isCourseSksAndSemester = /\bsemester\s+berapa\b/i.test(rawQuery) ||
+    Boolean(arbitratedEvidence?.sessionData && /\b(?:teknik\s+pembuatan\s+prompt|prompt\s+untuk\s+model\s+ai)\b/i.test(arbitratedEvidence.sessionData.lastAnswer || ''));
   const isExplicitCourseListInquiry = /\b(?:mata\s*kuliah|matkul|daftar\s*matkul|sebaran|apa\s+saja\s+yang\s+dipelajari)\b/i.test(rawQuery) ||
     /\bsemester\s*(?:[1-8]|i{1,3}|iv|v|vi|vii|viii)\b/i.test(rawQuery);
-  const isSksOrStudyLoadQuery = !isExplicitCourseListInquiry && Boolean(
+  const isSksOrStudyLoadQuery = !isCourseSksAndSemester && !isExplicitCourseListInquiry && Boolean(
     semanticFrame?.relation === 'S2_TOTAL_SKS' ||
     semanticFrame?.relation === 'D3_TOTAL_SKS' ||
     (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.some(a => ['sks', 'study_load', 'credits', 'graduation_sks'].includes(a))) ||
@@ -5506,8 +5512,9 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
     };
   }
 
-  // 2. Digital Marketing inquiry
-  const isDigitalMarketingQuery = /\b(?:digital\s+marketing|pemasaran\s+digital)\b/i.test(rawQuery);
+  // 2. Digital Marketing inquiry (defer to general AI / combined handler if query also asks about AI)
+  const isAskingAiInCurriculum = /\b(?:ai\b|artificial\s+intelligence|kecerdasan\s+buatan)\b/i.test(rawQuery);
+  const isDigitalMarketingQuery = !isAskingAiInCurriculum && /\b(?:digital\s+marketing|pemasaran\s+digital)\b/i.test(rawQuery);
   if (isDigitalMarketingQuery) {
     if (targetEntity === 'S1 Bisnis Digital' || (!targetEntity && /\bbisnis\s+digital\b/i.test(rawQuery))) {
       const ans = isEn
@@ -5606,30 +5613,138 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
   }
 
   // 3c-1b. General AI / Artificial Intelligence Course & Curriculum Inquiry (No. 399)
-  const isGeneralAiCourseInquiry = !isMlOrAiForSi &&
-    /\b(?:ai\b|artificial\s+intelligence|kecerdasan\s+buatan)\b/i.test(rawQuery) &&
-    /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|semester|manfaat|materi|belajar|diajarkan)\b/i.test(rawQuery);
+  const sessionData = arbitratedEvidence?.sessionData || semanticFrame?.sessionData || {};
+  const isAiContextInSession = Boolean(
+    sessionData &&
+    (/\b(?:teknik\s+pembuatan\s+prompt|prompt\s+untuk\s+model\s+ai)\b/i.test(sessionData.lastAnswer || '') ||
+     /\b(?:ai\b|artificial\s+intelligence)\b/i.test(sessionData.lastQuery || ''))
+  );
+  const isAnaphoricCourseNameQuery = isAiContextInSession &&
+    /\b(?:apa\s+(?:nama\s+)?(?:mata\s*kuliah|matkul)(?:nya|\s+tersebut)?|nama\s+(?:mata\s*kuliah|matkul)(?:nya|\s+tersebut)?)\b/i.test(rawQuery);
+  const isAnaphoricCourseSksOrSemQuery = isAiContextInSession &&
+    (/\b(?:berapa\s+sks|semester\s+berapa)\b/i.test(rawQuery) || (/\bsks\b/i.test(rawQuery) && /\bsemester\b/i.test(rawQuery)));
+
+  const isGeneralAiCourseInquiry = !isMlOrAiForSi && (
+    isAnaphoricCourseNameQuery ||
+    isAnaphoricCourseSksOrSemQuery ||
+    (/\b(?:ai\b|artificial\s+intelligence|kecerdasan\s+buatan|teknik\s+pembuatan\s+prompt|prompt\s+untuk\s+model\s+ai)\b/i.test(rawQuery) &&
+     /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|semester|manfaat|materi|belajar|diajarkan)\b/i.test(rawQuery))
+  );
 
   if (isGeneralAiCourseInquiry) {
-    const isBdSpecific = targetEntity === 'S1 Bisnis Digital' || /\bbisnis\s+digital\b/i.test(rawQuery);
+    const isBdSpecific = targetEntity === 'S1 Bisnis Digital' ||
+      /\b(?:bisnis\s+digital|teknik\s+pembuatan\s+prompt)\b/i.test(rawQuery) ||
+      (isAiContextInSession && (/\bbisnis\s+digital\b/i.test(sessionData.lastAnswer || '') || sessionData.activeEntity === 'S1 Bisnis Digital'));
     const isTiSpecific = targetEntity === 'S1 Teknologi Informasi' || /\bteknologi\s+informasi\b/i.test(rawQuery);
     const isSkSpecific = targetEntity === 'S1 Sistem Komputer' || /\bsistem\s+komputer\b/i.test(rawQuery);
 
     let aiAns = '';
     if (isBdSpecific) {
-      aiAns = isEn
-        ? `Yes, students of the **S1 Digital Business (Bisnis Digital)** program at ITB STIKOM Bali study Artificial Intelligence (AI) applied to modern digital business.\n\n` +
-          `According to the official curriculum (*ISIAN WEBSITE*), in **Semester III**, students take the dedicated course:\n` +
-          `• **Teknik Pembuatan Prompt untuk Model AI**\n\n` +
-          `This course focuses on practical prompt engineering and generative AI applications for digital business innovation, data analytics, automated marketing, and digital entrepreneurship.`
-        : `Ya, mahasiswa Program Studi **S1 Bisnis Digital** di ITB STIKOM Bali mempelajari materi Kecerdasan Buatan (Artificial Intelligence / AI).\n\n` +
-          `Berdasarkan kurikulum resmi kampus (dokumen *ISIAN WEBSITE*), pada **Semester III** terdapat mata kuliah:\n` +
-          `• **Teknik Pembuatan Prompt untuk Model AI**\n\n` +
-          `Mata kuliah ini secara spesifik membekali mahasiswa dengan kemampuan rekayasa prompt (*prompt engineering*) dan pemanfaatan AI untuk inovasi bisnis digital, analitika data, otomatisasi pemasaran digital, dan kewirausahaan berbasis teknologi.`;
+      const isSpecificPromptAiCourseQuery = isAnaphoricCourseNameQuery || isAnaphoricCourseSksOrSemQuery || /\b(?:teknik\s+pembuatan\s+prompt|prompt\s+untuk\s+model\s+ai)\b/i.test(rawQuery);
+      const mentionsDigitalMarketing = /\b(?:digital\s+marketing|pemasaran\s+digital|pemasaran|bisnis)\b/i.test(rawQuery);
+      const hasNowDemand = semanticFrame?.temporalConstraint === 'NOW' || /\bmasih\s+ada\b/i.test(rawQuery);
+
+      const courseLookupQuery = (isAnaphoricCourseNameQuery || isAnaphoricCourseSksOrSemQuery)
+        ? (sessionData?.lastAnswer || sessionData?.lastQuery || 'prompt model ai')
+        : (rawQuery || 'prompt model ai');
+
+      const courseRecord = getProgramCourseFact('S1 Bisnis Digital', courseLookupQuery);
+      if (!courseRecord || courseRecord.verificationStatus !== 'VERIFIED_PRIMARY_SOURCE') {
+        return {
+          success: false,
+          outcome: 'SAFE_UNKNOWN',
+          answer: isEn
+            ? 'The requested course information for this program could not be verified in the official curriculum records.'
+            : 'Informasi mata kuliah yang diminta untuk program studi ini belum dapat diverifikasi dalam catatan kurikulum resmi.',
+          source: 'grounded_curriculum_answer',
+          handledSafely: true,
+          isSafeUnknown: true
+        };
+      }
+
+      const courseName = courseRecord.name;
+      const courseCode = courseRecord.code;
+      const semester = courseRecord.semester;
+      const sks = courseRecord.sks;
+      const sourceDoc = courseRecord.sourceDocument || 'ISIAN WEBSITE (1).pdf';
+      const sourceUrl = courseRecord.sourceUrl || 'https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/';
+      const verificationStatus = courseRecord.verificationStatus || 'VERIFIED_PRIMARY_SOURCE';
+
+      const temporalNotice = hasNowDemand
+        ? (isEn
+          ? `\n\n*Status Note*: This course is officially recorded in the program's official curriculum documents. For confirmation of its active offering in the current ongoing academic term, prospective students are advised to confirm directly with the S1 Bisnis Digital study program or admissions.`
+          : `\n\n*Catatan Status*: Mata kuliah ini tercatat secara resmi dalam dokumen kurikulum program studi. Untuk kepastian penyelenggaraan aktif pada tahun ajaran berjalan saat ini, disarankan mengonfirmasi langsung kepada pihak Program Studi S1 Bisnis Digital atau layanan PMB.`)
+        : '';
+
+      if (isAnaphoricCourseSksOrSemQuery) {
+        aiAns = isEn
+          ? `In the official curriculum of **S1 Digital Business (Bisnis Digital)** at ITB STIKOM Bali (*${sourceDoc}*), the course **${courseName}** is officially recorded as follows:\n\n` +
+            `• **Course Code**: ${courseCode}\n` +
+            `• **Credits**: ${sks} SKS\n` +
+            `• **Semester**: ${semester}\n\n` +
+            `This information is an official curriculum fact recorded in the official curriculum.${temporalNotice}`
+          : `Berdasarkan kurikulum resmi Program Studi **S1 Bisnis Digital** ITB STIKOM Bali (dokumen *${sourceDoc}*), mata kuliah **${courseName}** memiliki rincian:\n\n` +
+            `• **Kode Mata Kuliah**: ${courseCode}\n` +
+            `• **Beban Studi**: ${sks} SKS\n` +
+            `• **Semester**: ${semester}\n\n` +
+            `Informasi ini merupakan fakta kurikulum resmi yang tercatat pada struktur kurikulum S1 Bisnis Digital.${temporalNotice}`;
+      } else if (isSpecificPromptAiCourseQuery) {
+        aiAns = isEn
+          ? `In the official curriculum of **S1 Digital Business (Bisnis Digital)** at ITB STIKOM Bali (*${sourceDoc}*), this course is officially recorded with the following details:\n\n` +
+            `• **Course Name**: ${courseName}\n` +
+            `• **Course Code**: ${courseCode}\n` +
+            `• **Semester**: ${semester}\n` +
+            `• **Credits**: ${sks} SKS\n\n` +
+            `This information is an official curriculum fact. The available public curriculum summary only lists the course title, code, semester, and credits, and does not provide detailed syllabus descriptions or specific learning outcomes. For complete syllabus information, please consult the study program or admissions office directly.${temporalNotice}`
+          : `Pada kurikulum resmi Program Studi **S1 Bisnis Digital** ITB STIKOM Bali (dokumen *${sourceDoc}*), mata kuliah tersebut tercatat resmi dengan rincian:\n\n` +
+            `• **Mata Kuliah**: ${courseName}\n` +
+            `• **Kode Mata Kuliah**: ${courseCode}\n` +
+            `• **Semester**: ${semester}\n` +
+            `• **Beban**: ${sks} SKS\n\n` +
+            `Informasi ini merupakan fakta resmi yang tercantum dalam kurikulum. Dokumen ringkasan kurikulum publik yang tersedia saat ini hanya memuat nama mata kuliah, kode, semester, dan SKS, serta belum memuat silabus terperinci maupun rincian capaian pembelajaran. Untuk silabus lengkap, Kakak dapat berkonsultasi langsung dengan pihak program studi atau layanan PMB ITB STIKOM Bali ya!${temporalNotice}`;
+      } else if (mentionsDigitalMarketing && /\b(?:pemasaran|tertarik\s+bisnis)\b/i.test(rawQuery)) {
+        aiAns = isEn
+          ? `Yes, for prospective students interested in business and digital marketing who also wish to learn AI, the **S1 Digital Business (Bisnis Digital)** program at ITB STIKOM Bali is directly aligned.\n\n` +
+            `Based on the official study program profile and curriculum structure (*${sourceDoc}*):\n` +
+            `1. **Digital Business & Marketing Focus**:\n` +
+            `   The program focuses on digital business management, digital marketing, e-commerce, and market analysis, preparing graduates for professional roles such as *Digital Marketing Specialist*, *Digital Strategist*, and *Market Analyst*.\n\n` +
+            `2. **Artificial Intelligence (AI)**:\n` +
+            `   In **${semester}**, the official curriculum includes the dedicated course:\n` +
+            `   • **${courseName}** (Course Code: **${courseCode}**, **${sks} SKS**)\n\n` +
+            `This course is an official curriculum fact. Detailed syllabus topics and specific learning outcomes are not separately enumerated in the available public curriculum summary. For complete syllabus and learning outcome information, please consult the study program or admissions office directly.${temporalNotice}`
+          : `Ya, bagi Kakak yang tertarik pada bidang bisnis dan pemasaran digital namun tetap ingin mempelajari AI, Program Studi **S1 Bisnis Digital** di ITB STIKOM Bali sangat sesuai.\n\n` +
+            `Berdasarkan profil program studi dan struktur kurikulum resmi ITB STIKOM Bali (dokumen *${sourceDoc}*):\n` +
+            `1. **Fokus Bisnis & Pemasaran Digital**:\n` +
+            `   Program studi ini berfokus pada pengelolaan bisnis berbasis digital, pemasaran digital (*digital marketing*), *e-commerce*, dan strategi pasar, dengan profil profesi lulusan seperti *Digital Marketing Specialist*, *Digital Strategist*, dan *Market Analyst*.\n\n` +
+            `2. **Pembelajaran AI**:\n` +
+            `   Pada **${semester}**, kurikulum secara resmi mencantumkan mata kuliah:\n` +
+            `   • **${courseName}** (Kode: **${courseCode}**, **${sks} SKS**)\n\n` +
+            `Informasi keberadaan mata kuliah ini merupakan fakta kurikulum resmi S1 Bisnis Digital. Rincian silabus mengenai materi perkuliahan terperinci serta capaian pembelajaran belum dijabarkan dalam dokumen ringkasan kurikulum publik yang tersedia. Untuk informasi silabus lengkap, Kakak dapat berkonsultasi langsung dengan pihak program studi atau layanan PMB ITB STIKOM Bali ya!${temporalNotice}`;
+      } else {
+        aiAns = isEn
+          ? `Yes, students of the **S1 Digital Business (Bisnis Digital)** program at ITB STIKOM Bali study Artificial Intelligence (AI).\n\n` +
+            `According to the official curriculum (*${sourceDoc}*), in **${semester}**, students take the dedicated course:\n` +
+            `• **${courseName}** (Course Code: **${courseCode}**, **${sks} SKS**)\n\n` +
+            `This course is an official curriculum fact. Specific syllabus details and learning outcomes are not separately enumerated in the available public curriculum summary. For complete syllabus information, please consult the study program or admissions office directly.${temporalNotice}`
+          : `Ya, mahasiswa Program Studi **S1 Bisnis Digital** di ITB STIKOM Bali mempelajari materi terkait Artificial Intelligence (AI).\n\n` +
+            `Berdasarkan kurikulum resmi kampus (dokumen *${sourceDoc}*), pada **${semester}** terdapat mata kuliah resmi:\n` +
+            `• **${courseName}** (Kode: **${courseCode}**, **${sks} SKS**)\n\n` +
+            `Informasi keberadaan mata kuliah ini merupakan fakta kurikulum resmi S1 Bisnis Digital. Adapun rincian silabus mengenai capaian pembelajaran serta materi perkuliahan terperinci belum diuraikan dalam dokumen ringkasan kurikulum publik yang tersedia. Untuk informasi silabus lengkap, silakan mengonfirmasi langsung kepada pihak program studi atau layanan PMB ITB STIKOM Bali ya!${temporalNotice}`;
+      }
       return {
         success: true,
         answer: aiAns,
         source: 'grounded_curriculum_answer',
+        provenance: {
+          courseName: courseRecord.name,
+          courseCode: courseRecord.code,
+          semester: courseRecord.semester,
+          sks: courseRecord.sks,
+          sourceDocument: courseRecord.sourceDocument,
+          sourceUrl: courseRecord.sourceUrl,
+          verificationStatus: courseRecord.verificationStatus,
+          provenanceByAttribute: courseRecord.provenanceByAttribute || null
+        },
         isExtractive: true,
         handledSafely: true,
         outcome: 'VERIFIED_FACTUAL'
@@ -5769,12 +5884,12 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
     if (!Array.isArray(evidenceList) || evidenceList.length === 0 || !hasBdEvidence) {
       return null;
     }
-    const bdAns = `Program Studi **S1 Bisnis Digital** di ITB STIKOM Bali memadukan ilmu manajemen bisnis terapan dengan penguasaan teknologi informasi dan ekosistem industri *e-commerce*:\n\n` +
-      `• **Fokus Pembelajaran**: Analisis data bisnis, strategi pemasaran digital (*digital marketing*), *e-commerce*, *branding*, pengembangan *startup*, dan kewirausahaan berbasis teknologi.\n` +
-      `• **Peluang Karier Lulusan**: *Digital Marketing Specialist*, *Digital Strategist*, *Project Manager*, *Business Analyst*, *Market Analyst*, dan *Product Manager*.\n` +
-      `• **Program Kolaborasi / Gelar Ganda**: Tersedia kelas *International Double Degree* dengan **Dalian Neusoft University of Information (DNUI), China** (*E-Commerce*) dan *National Dual Degree* dengan **Universitas Teknologi Bandung (UTB)** (*Desain Komunikasi Visual*).\n` +
-      `• **Akreditasi**: Terakreditasi "Baik" oleh BAN-PT.\n\n` +
-      `Lulusan dibekali kemampuan praktis untuk menjembatani kebutuhan antara manajemen bisnis, pengembang sistem teknologi, dan pasar konsumen digital.`;
+    const bdAns = `Program Studi *S1 Bisnis Digital* di ITB STIKOM Bali memadukan ilmu manajemen bisnis terapan dengan penguasaan teknologi informasi dan ekosistem industri *e-commerce*:\n\n` +
+      `• *Fokus Pembelajaran*: Analisis data bisnis, strategi pemasaran digital (*digital marketing*), *e-commerce*, *branding*, pengembangan *startup*, dan kewirausahaan berbasis teknologi.\n` +
+      `• *Peluang Karier Lulusan*: *Digital Marketing Specialist*, *Digital Strategist*, *Project Manager*, *Business Analyst*, *Market Analyst*, dan *Product Manager*.\n` +
+      `• *Program Kolaborasi / Gelar Ganda*: Tersedia kelas *International Double Degree* dengan *Dalian Neusoft University of Information (DNUI), China* (*E-Commerce*) dan *National Dual Degree* dengan *Universitas Teknologi Bandung (UTB)* (*Desain Komunikasi Visual*).\n` +
+      `• *Akreditasi*: Terakreditasi "Baik" oleh BAN-PT.\n\n` +
+      `Lulusan dibekali kemampuan praktis untuk menjembatani kebutuhan antara manajemen bisnis, pengembang sistem teknologi, dan pasar konsumen digital. Untuk informasi ketentuan resmi admisi PMB, Kakak dapat menghubungi layanan admisi PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id ya!`;
     return {
       success: true,
       answer: bdAns,
@@ -6120,7 +6235,10 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
   evidenceList = conflictState.activeEvidence;
 
   // Stage 5: Multi-Attribute Composite Synthesis
+  const isCourseSpecificSemesterOrSks = /\bsemester\s+berapa\b/i.test(semanticFrame?.rawQuery || '') ||
+    Boolean(arbitratedEvidence?.sessionData && /\b(?:teknik\s+pembuatan\s+prompt|prompt\s+untuk\s+model\s+ai)\b/i.test(arbitratedEvidence.sessionData.lastAnswer || ''));
   if (
+    !isCourseSpecificSemesterOrSks &&
     conflictState.requestedComposableAttrs.length >= 2 &&
     !isProgramComparisonInquiry(semanticFrame?.rawQuery, semanticFrame) &&
     !isDiscountStackingInquiry(semanticFrame?.rawQuery, semanticFrame) &&
@@ -7621,12 +7739,12 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     ((targetEntitiesList && targetEntitiesList.includes('S1 Bisnis Digital')) || /\bbisnis\s+digital\b/i.test(rawQuery)) &&
     !/\b(?:biaya|spp|dpp|uang|bayar|daftar|pendaftaran|kurikulum|matkul|semester\s*\d+|fakultas|gelar)\b/i.test(rawQuery);
   if (isBdOverviewQuery) {
-    const bdAns = `Program Studi **S1 Bisnis Digital** di ITB STIKOM Bali memadukan ilmu manajemen bisnis terapan dengan penguasaan teknologi informasi dan ekosistem industri *e-commerce*:\n\n` +
-      `• **Fokus Pembelajaran**: Analisis data bisnis, strategi pemasaran digital (*digital marketing*), *e-commerce*, *branding*, pengembangan *startup*, dan kewirausahaan berbasis teknologi.\n` +
-      `• **Peluang Karier Lulusan**: *Digital Marketing Specialist*, *Digital Strategist*, *Project Manager*, *Business Analyst*, *Market Analyst*, dan *Product Manager*.\n` +
-      `• **Program Kolaborasi / Gelar Ganda**: Tersedia kelas *International Double Degree* dengan **Dalian Neusoft University of Information (DNUI), China** (*E-Commerce*) dan *National Dual Degree* dengan **Universitas Teknologi Bandung (UTB)** (*Desain Komunikasi Visual*).\n` +
-      `• **Akreditasi**: Terakreditasi "Baik" oleh BAN-PT.\n\n` +
-      `Lulusan dibekali kemampuan praktis untuk menjembatani kebutuhan antara manajemen bisnis, pengembang sistem teknologi, dan pasar konsumen digital.`;
+    const bdAns = `Program Studi *S1 Bisnis Digital* di ITB STIKOM Bali memadukan ilmu manajemen bisnis terapan dengan penguasaan teknologi informasi dan ekosistem industri *e-commerce*:\n\n` +
+      `• *Fokus Pembelajaran*: Analisis data bisnis, strategi pemasaran digital (*digital marketing*), *e-commerce*, *branding*, pengembangan *startup*, dan kewirausahaan berbasis teknologi.\n` +
+      `• *Peluang Karier Lulusan*: *Digital Marketing Specialist*, *Digital Strategist*, *Project Manager*, *Business Analyst*, *Market Analyst*, dan *Product Manager*.\n` +
+      `• *Program Kolaborasi / Gelar Ganda*: Tersedia kelas *International Double Degree* dengan *Dalian Neusoft University of Information (DNUI), China* (*E-Commerce*) dan *National Dual Degree* dengan *Universitas Teknologi Bandung (UTB)* (*Desain Komunikasi Visual*).\n` +
+      `• *Akreditasi*: Terakreditasi "Baik" oleh BAN-PT.\n\n` +
+      `Lulusan dibekali kemampuan praktis untuk menjembatani kebutuhan antara manajemen bisnis, pengembang sistem teknologi, dan pasar konsumen digital. Untuk informasi ketentuan resmi admisi PMB, Kakak dapat menghubungi layanan admisi PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id ya!`;
     return {
       success: true,
       answer: bdAns,

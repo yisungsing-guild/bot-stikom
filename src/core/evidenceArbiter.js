@@ -1604,10 +1604,24 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
         /\b(?:202[6-9]|203[0-9])\b/i.test(candidateFile);
       const validUntilYear = candidate.validUntil ? new Date(candidate.validUntil).getFullYear() : null;
       const isValidUntilFuture = Boolean(validUntilYear && validUntilYear >= currentYear);
+      // Explicit and narrow curriculum intent: must be CURRICULUM_INQUIRY or ACADEMIC_CURRICULUM domain
+      // Excludes generic PROGRAM_SEARCH and standalone 'sks' aspects
+      const isCurriculumIntent = (retrievalPlan.intent === 'CURRICULUM_INQUIRY' ||
+        retrievalPlan.domain === 'ACADEMIC_CURRICULUM' ||
+        (Array.isArray(retrievalPlan.requiredAspects) && retrievalPlan.requiredAspects.some(a => ['curriculum', 'courses'].includes(a)))) &&
+        retrievalPlan.intent !== 'PROGRAM_SEARCH';
+
+      // Documented curriculum chunk: verified official curriculum documents (not general profile or bare semester word)
+      const isCurriculumEvidence = isCurriculumIntent && (
+        candidate.category === 'KURIKULUM' ||
+        candidate.docCategory === 'KURIKULUM' ||
+        /\b(?:struktur\s+kurikulum|sebaran\s+mata\s*kuliah|daftar\s+mata\s*kuliah)\b/i.test(text)
+      );
       const hasCurrentMarker = text.includes(String(currentYear)) ||
         text.includes(String(currentYear - 1)) ||
         isCurrentAccreditationCert ||
         isValidUntilFuture ||
+        isCurriculumEvidence ||
         /\b(sedang berlangsung|berlaku hingga 202[6-9]|berlaku sampai 202[6-9]|periode 202[1-6]-202[6-9])\b/i.test(text);
       if (isExpired || !hasCurrentMarker) {
         return {

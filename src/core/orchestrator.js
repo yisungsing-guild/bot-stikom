@@ -1054,6 +1054,9 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         // 7. Universal Final Verification
         const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
         verification = verifFn(synthesis.answer, frame, arbitrated, null, recResult);
+        if (synthesis?.provenance) {
+          verification.provenance = synthesis.provenance;
+        }
         answer = synthesis.answer;
 
         // A factual synthesis is releasable only after an affirmative factual verification.
@@ -1477,6 +1480,10 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     overallVerificationReason = subQueryResults[0]?.verification?.reason || 'unconfirmed';
   }
 
+  const overallProvenance = subQueryResults.length === 1
+    ? (subQueryResults[0]?.synthesis?.provenance || subQueryResults[0]?.verification?.provenance || null)
+    : subQueryResults.map(s => s.synthesis?.provenance || s.verification?.provenance).filter(Boolean);
+
   const overallVerification = {
     pass: allVerified || hasPartialGrounded,
     outcome: overallVerificationOutcome,
@@ -1484,7 +1491,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     reason: overallVerificationReason,
     isGrounded: allVerified || hasPartialGrounded,
     handledSafely: true,
-    sourceGap: Boolean(hasPartialGrounded)
+    sourceGap: Boolean(hasPartialGrounded),
+    provenance: overallProvenance
   };
 
   const verifiedFacts = [];
@@ -1512,6 +1520,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     intent: subQueryResults.length === 1 ? subQueryResults[0]?.frame?.intent : 'MULTI_INTENT',
     status: overallStatus,
     verification: overallVerification,
+    provenance: overallProvenance,
     verifiedFacts,
     unconfirmedAspects,
     hasUnconfirmedAspects: hasCorpusGap,

@@ -34,7 +34,7 @@ const logger = require('../logger');
 const { filterNegatedSemanticAspects, filterNegatedCanonicalEntities, getNegatedAspectSet, stripNegatedAspectPhrases } = require('../utils/semanticNegation');
 
 // Temporal markers for NOW / current status
-const TEMPORAL_NOW_REGEX = /\b(masih|sekarang|hari ini|saat ini|tahun ini|terbaru|gelombang ini|saat sekarang)\b/i;
+const TEMPORAL_NOW_REGEX = /\b(sekarang|hari ini|saat ini|tahun ini|terbaru|gelombang ini|saat sekarang|masih\s+(?:buka|dibuka|ada(?:\s+kuota)?|berlaku|menerima|bisa\s+daftar|tersedia))\b/i;
 
 const NON_CURRICULUM_SEMESTER_TOPIC_REGEX = /\b(?:uts|uas|ujian\s+(?:tengah|akhir)\s+semester|jadwal\s+(?:ujian|kuliah|perkuliahan|krs|uts|uas|wisuda|yudisium)|kalender\s+akademik|pengisian\s+krs|krs\b|perwalian|cuti(?:\s+kuliah|\s+akademik)?|baak|dosen\s+wali)\b/i;
 
@@ -518,9 +518,10 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     };
   }
 
-  // 0.0215 Academic Recommendation Inquiries (unless explicitly comparing specific entities)
+  // 0.0215 Academic Recommendation Inquiries (unless explicitly comparing specific entities or asking curriculum topic of a specific program)
   const isMultiEntityComparison = entities.length >= 2 && /\b(?:atau|vs|versus|dibandingkan|bandingkan)\b/i.test(normalized);
-  if (!isMultiEntityComparison && (
+  const isSpecificProgramCurriculum = entities.length === 1 && /\b(?:belajar|mempelajari|matkul|mata\s*kuliah|kurikulum|silabus|ai\b|artificial\s+intelligence)\b/i.test(normalized);
+  if (!isMultiEntityComparison && !isSpecificProgramCurriculum && (
     /\b(?:bingung|bimbang|ragu|belum tahu|galau)\s+(?:pilih|memilih|menentukan)?\s*(?:kampus|kuliah|jurusan|prodi|bidang)\b/i.test(normalized) ||
     (/\b(?:suka|minat|tertarik|hobi|bakat|passion)\b/i.test(normalized) && /\b(?:teknologi|komputer|coding|pemrograman|it|bisnis|desain)\b/i.test(normalized)) ||
     /\b(?:kurang|tidak|belum|bukan)\s+(?:bisa|cakap|mahir|mengerti|paham|mampu|ahli|bakat)?\s*(?:di\s+bidang\s+)?(?:ti|teknologi\s+informasi|it|coding|pemrograman)\b/i.test(normalized)
@@ -1607,7 +1608,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   const isPmbSelectionContext = /\b(?:pmb|pendaftaran|seleksi)\b/i.test(normalized);
-  if (!isPmbSelectionContext && /\b(?:sks|jumlah\s+sks|sks\s+lulus|beban\s+sks|beban\s+studi|kelulusan|tugas\s+akhir|skripsi|credits?|total\s+credits?|graduation|graduating|graduate|final\s+project|thesis|defense|final\s+project\s+defense|thesis\s+defense|academic\s+requirements?|graduation\s+requirements?)\b/i.test(normalized) &&
+  if (!isPmbSelectionContext && !/\bsemester\s+berapa\b/i.test(normalized) && /\b(?:sks|jumlah\s+sks|sks\s+lulus|beban\s+sks|beban\s+studi|kelulusan|tugas\s+akhir|skripsi|credits?|total\s+credits?|graduation|graduating|graduate|final\s+project|thesis|defense|final\s+project\s+defense|thesis\s+defense|academic\s+requirements?|graduation\s+requirements?)\b/i.test(normalized) &&
     !/\b(?:biaya|bayar|daftar\s+ulang|tuition|fees?)\b/i.test(normalized)) {
     const isGuidanceProcedure = /\b(?:tahapan|tahap|pelaksanaan|bimbingan|pembimbing|dosen\s+pembimbing|pedoman|buku\s+pedoman|alur|prosedur|proposal|sidang|procedure|stages?|guidance|advisor|advisors?|supervision|supervisor|defen[sd]e?|prerequisites?|complete|finish)\b/i.test(normalized) &&
       !/\b(?:berapa|jumlah\s+sks|total\s+sks|minimal\s+sks|sks\s+minimal|batas\s+sks|how\s+many\s+credits)\b/i.test(normalized);
@@ -2020,6 +2021,14 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   );
   if (hasSpecificBranch) {
     entities = entities.filter(e => e.canonical !== 'Kampus ITB STIKOM Bali');
+  }
+
+  // Infer academic program from unique distinctive course name if no explicit program entity is present
+  if (entities.length === 0) {
+    if (/\b(?:teknik\s+pembuatan\s+prompt|prompt\s+untuk\s+model\s+ai)\b/i.test(positiveNormalizedQuery)) {
+      const bd = findCanonicalEntity('S1 Bisnis Digital');
+      if (bd) entities.push(bd);
+    }
   }
 
   // 2b. Separate primary targets from modifier entities (admission_track, participant_scope, academic_scope)
