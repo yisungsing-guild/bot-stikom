@@ -2212,6 +2212,20 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
     targetEntities.length <= 1;
 
   if (isCurriculumInquiry) {
+    const isCurriculumValidityInquiry = semanticFrame.intent === 'CURRICULUM_VALIDITY_INQUIRY' ||
+      (semanticFrame.aspects && semanticFrame.aspects.includes('curriculum_validity')) ||
+      (/\bkurikulum\b/i.test(rawQuery) && /\b(?:masih\s+berlaku|berlaku\s+(?:saat\s+ini|sekarang)|status\s+(?:keberlakuan|berlaku))\b/i.test(rawQuery));
+    if (isCurriculumValidityInquiry) {
+      return null;
+    }
+
+    const isSpecificCourseSyllabusInquiry = Boolean(semanticFrame.courseFact) ||
+      Boolean(semanticFrame.courseFocus) ||
+      (semanticFrame.aspects && semanticFrame.aspects.includes('course_syllabus')) ||
+      (/\b(?:mata\s*kuliah|matkul)(?:\s+tersebut)?\b/i.test(rawQuery) && /\b(?:mempelajari\s+apa|apa\s+saja\s+yang\s+dipelajari|silabus|materi)\b/i.test(rawQuery));
+    if (isSpecificCourseSyllabusInquiry) {
+      return null;
+    }
     const isS2 = /\b(s2|magister|pascasarjana)\b/i.test(entityLabel) || /\b(s2|magister|pascasarjana)\b/i.test(rawQuery);
     const isSk = /\b(sistem komputer|sk)\b/i.test(entityLabel) || /\b(sistem komputer|sk)\b/i.test(rawQuery);
     const isSi = !isS2 && (/\b(sistem informasi|si)\b/i.test(entityLabel) || /\b(sistem informasi|si)\b/i.test(rawQuery));
@@ -5617,16 +5631,21 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
   const isAiContextInSession = Boolean(
     sessionData &&
     (/\b(?:teknik\s+pembuatan\s+prompt|prompt\s+untuk\s+model\s+ai)\b/i.test(sessionData.lastAnswer || '') ||
-     /\b(?:ai\b|artificial\s+intelligence)\b/i.test(sessionData.lastQuery || ''))
+     /\b(?:ai\b|artificial\s+intelligence)\b/i.test(sessionData.lastQuery || '') ||
+     Boolean(sessionData.lastCourseFact))
   );
   const isAnaphoricCourseNameQuery = isAiContextInSession &&
     /\b(?:apa\s+(?:nama\s+)?(?:mata\s*kuliah|matkul)(?:nya|\s+tersebut)?|nama\s+(?:mata\s*kuliah|matkul)(?:nya|\s+tersebut)?)\b/i.test(rawQuery);
   const isAnaphoricCourseSksOrSemQuery = isAiContextInSession &&
     (/\b(?:berapa\s+sks|semester\s+berapa)\b/i.test(rawQuery) || (/\bsks\b/i.test(rawQuery) && /\bsemester\b/i.test(rawQuery)));
+  const isAnaphoricCourseSyllabusQuery = (isAiContextInSession || Boolean(sessionData?.lastCourseFact) || Boolean(semanticFrame?.courseFact)) &&
+    (/\b(?:mata\s*kuliah|matkul)(?:\s+tersebut)?\b/i.test(rawQuery) || /\btersebut\b/i.test(rawQuery) || (semanticFrame?.aspects && semanticFrame.aspects.includes('course_syllabus'))) &&
+    /\b(?:mempelajari\s+apa(?:\s+saja)?|apa\s+saja\s+yang\s+dipelajari|belajar\s+apa(?:\s+saja)?|silabus|materi|topik|isi(?:\s+mata\s*kuliah)?)\b/i.test(rawQuery);
 
   const isGeneralAiCourseInquiry = !isMlOrAiForSi && (
     isAnaphoricCourseNameQuery ||
     isAnaphoricCourseSksOrSemQuery ||
+    isAnaphoricCourseSyllabusQuery ||
     (/\b(?:ai\b|artificial\s+intelligence|kecerdasan\s+buatan|teknik\s+pembuatan\s+prompt|prompt\s+untuk\s+model\s+ai)\b/i.test(rawQuery) &&
      /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|semester|manfaat|materi|belajar|diajarkan)\b/i.test(rawQuery))
   );
@@ -5640,12 +5659,12 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
 
     let aiAns = '';
     if (isBdSpecific) {
-      const isSpecificPromptAiCourseQuery = isAnaphoricCourseNameQuery || isAnaphoricCourseSksOrSemQuery || /\b(?:teknik\s+pembuatan\s+prompt|prompt\s+untuk\s+model\s+ai)\b/i.test(rawQuery);
+      const isSpecificPromptAiCourseQuery = isAnaphoricCourseNameQuery || isAnaphoricCourseSksOrSemQuery || isAnaphoricCourseSyllabusQuery || /\b(?:teknik\s+pembuatan\s+prompt|prompt\s+untuk\s+model\s+ai)\b/i.test(rawQuery);
       const mentionsDigitalMarketing = /\b(?:digital\s+marketing|pemasaran\s+digital|pemasaran|bisnis)\b/i.test(rawQuery);
       const hasNowDemand = semanticFrame?.temporalConstraint === 'NOW' || /\bmasih\s+ada\b/i.test(rawQuery);
 
-      const courseLookupQuery = (isAnaphoricCourseNameQuery || isAnaphoricCourseSksOrSemQuery)
-        ? (sessionData?.lastAnswer || sessionData?.lastQuery || 'prompt model ai')
+      const courseLookupQuery = (isAnaphoricCourseNameQuery || isAnaphoricCourseSksOrSemQuery || isAnaphoricCourseSyllabusQuery)
+        ? (sessionData?.lastCourseFact?.courseName || sessionData?.lastCourseFact?.courseCode || semanticFrame?.courseFact?.courseName || semanticFrame?.courseFact?.courseCode || sessionData?.lastAnswer || sessionData?.lastQuery || 'prompt model ai')
         : (rawQuery || 'prompt model ai');
 
       const courseRecord = getProgramCourseFact('S1 Bisnis Digital', courseLookupQuery);
@@ -5753,6 +5772,7 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
         answer: aiAns,
         source: 'grounded_curriculum_answer',
         provenance: {
+          program: 'S1 Bisnis Digital',
           courseName: courseRecord.name,
           courseCode: courseRecord.code,
           semester: courseRecord.semester,
@@ -7106,6 +7126,10 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
   }
 
   if (!evidenceList || evidenceList.length === 0) {
+    const zeroEvCurric = buildGroundedCurriculumAnswer(semanticFrame, [], arbitratedEvidence);
+    if (zeroEvCurric && zeroEvCurric.success && zeroEvCurric.answer) {
+      return zeroEvCurric;
+    }
     if (!skipDomainTemplates) {
       const zeroEvSummary = buildGroundedDeterministicSummary(semanticFrame, [], arbitratedEvidence);
       if (zeroEvSummary) {
@@ -7126,6 +7150,17 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
         : 'Mohon maaf Kak, informasi resmi mengenai hal tersebut saat ini belum dapat diverifikasi dari dokumen yang tersedia. Silakan hubungi bagian admisi kampus ITB STIKOM Bali untuk konfirmasi langsung ya.',
       source: 'unanswerable_natural_guidance',
       isExtractive: false,
+      handledSafely: true
+    };
+  }
+
+  const isCurriculumValidityInquiry = semanticFrame?.intent === 'CURRICULUM_VALIDITY_INQUIRY' ||
+    Boolean(semanticFrame?.aspects && semanticFrame.aspects.includes('curriculum_validity')) ||
+    (/\bkurikulum\b/i.test(rawQuery) && /\b(?:masih\s+berlaku|berlaku\s+(?:saat\s+ini|sekarang)|status\s+(?:keberlakuan|berlaku))\b/i.test(rawQuery));
+  if (isCurriculumValidityInquiry) {
+    return {
+      success: false,
+      outcome: 'SAFE_UNKNOWN',
       handledSafely: true
     };
   }

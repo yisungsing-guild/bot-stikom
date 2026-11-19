@@ -6,6 +6,7 @@ delete process.env.GEMINI_API_KEY;
 process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
 
 const { runPhase1DeterministicPipeline } = require('../src/core/orchestrator');
+const { getSession } = require('../src/core/conversationState');
 const { getProgramCourseFact } = require('../src/core/academicCatalog');
 const { buildGroundedCurriculumAnswer } = require('../src/core/groundedAnswerGenerator');
 const { evaluateAnswerability, ANSWERABILITY_STATUS } = require('../src/core/answerabilityGate');
@@ -825,5 +826,110 @@ describe('Targeted Six Defects Regression Suite (ce0b3dc + Targeted Fixes)', () 
     }, { refDate: refDateBali });
     expect(undatedGateRes.status).toBe(ANSWERABILITY_STATUS.UNKNOWN);
     expect(undatedGateRes.reason).toBe('admission_schedule_unconfirmed');
+  });
+
+  test('DEFECT-1-REGRESS (Test A): Multi-turn course follow-up resolves anaphora to BD233507 without generic overview deflection', async () => {
+    const chatId = 'DEFECT-1-REGRESS-SESSION-' + Date.now();
+
+    // Turn 1: AI course inquiry for S1 Bisnis Digital
+    const t1 = await runPhase1DeterministicPipeline(chatId, 'Apakah mahasiswa Bisnis Digital belajar Artificial Intelligence?');
+    const sq1 = t1.subQueryResults?.[0];
+    const outcome1 = t1.verification?.outcome || sq1?.verification?.outcome;
+    const answer1 = t1.finalAnswer || t1.answer || '';
+
+    expect(outcome1).toBe('VERIFIED_FACTUAL');
+    expect(answer1).toMatch(/S1 Bisnis Digital/i);
+    expect(answer1).toMatch(/Teknik Pembuatan Prompt untuk Model AI/i);
+    expect(answer1).toMatch(/BD233507/i);
+    expect(answer1).toMatch(/Semester III/i);
+    expect(answer1).toMatch(/2 SKS/i);
+
+    // Verify production session persistence mechanism populated lastCourseFact
+    const sessionAfterT1 = await getSession(chatId);
+    expect(sessionAfterT1.data?.lastCourseFact).toBeDefined();
+    expect(sessionAfterT1.data?.lastCourseFact.courseCode).toBe('BD233507');
+    expect(sessionAfterT1.data?.lastCourseFact.program).toBe('S1 Bisnis Digital');
+
+    // Turn 2: Anaphoric follow-up: "Mata kuliah tersebut mempelajari apa saja?" (no manual injection)
+    const t2 = await runPhase1DeterministicPipeline(chatId, 'Mata kuliah tersebut mempelajari apa saja?');
+    const sq2 = t2.subQueryResults?.[0];
+    const outcome2 = t2.verification?.outcome || sq2?.verification?.outcome;
+    const answer2 = t2.finalAnswer || t2.answer || '';
+
+    // Anaphora resolution and entity continuity
+    expect(outcome2).toBe('SAFE_UNKNOWN');
+    expect(t2.verification?.handledSafely).toBe(true);
+    expect(t2.semanticFrame?.entities?.map(e => e.canonical)).toContain('S1 Bisnis Digital');
+
+    // Specific grounded course facts asserted
+    expect(answer2).toMatch(/Teknik Pembuatan Prompt untuk Model AI/i);
+    expect(answer2).toMatch(/BD233507/i);
+    expect(answer2).toMatch(/Semester III/i);
+    expect(answer2).toMatch(/2 SKS/i);
+
+    // Honest syllabus limitation without hallucination
+    expect(answer2).toMatch(/belum memuat silabus terperinci/i);
+
+    // Absolute prohibition of generic 8-semester curriculum overview
+    expect(answer2).not.toMatch(/8 semester/i);
+    expect(answer2).not.toMatch(/Tahun I \(Semester I - II\)/i);
+    expect(answer2).not.toMatch(/total 144 SKS/i);
+
+    // Turn 3: Program switch to S1 Sistem Informasi -> previous BD course context must be purged
+    const t3 = await runPhase1DeterministicPipeline(chatId, 'Bagaimana dengan program studi S1 Sistem Informasi?');
+    const sessionAfterT3 = await getSession(chatId);
+    expect(sessionAfterT3.data?.activeEntity).toBe('S1 Sistem Informasi');
+    expect(sessionAfterT3.data?.lastCourseFact).toBeNull();
+    expect(t3.finalAnswer).not.toMatch(/BD233507/i);
+    expect(t3.finalAnswer).not.toMatch(/Teknik Pembuatan Prompt untuk Model AI/i);
+  });
+
+  test('DEFECT-2-REGRESS (Test B): Full 4-turn production smoke test sequence including curriculum validity', async () => {
+    const chatId = 'DEFECT-2-REGRESS-SESSION-' + Date.now();
+
+    // Turn 1: AI course inquiry ("Apakah mahasiswa Bisnis Digital belajar AI?")
+    const t1 = await runPhase1DeterministicPipeline(chatId, 'Apakah mahasiswa Bisnis Digital belajar AI?');
+    expect(t1.verification?.outcome || t1.subQueryResults?.[0]?.verification?.outcome).toBe('VERIFIED_FACTUAL');
+    expect(t1.finalAnswer).toMatch(/BD233507/i);
+
+    // Turn 2: Follow-up syllabus inquiry
+    const t2 = await runPhase1DeterministicPipeline(chatId, 'Mata kuliah tersebut mempelajari apa saja?');
+    expect(t2.verification?.outcome || t2.subQueryResults?.[0]?.verification?.outcome).toBe('SAFE_UNKNOWN');
+    expect(t2.verification?.handledSafely).toBe(true);
+    expect(t2.finalAnswer).toMatch(/BD233507/i);
+    expect(t2.finalAnswer).toMatch(/belum memuat silabus terperinci/i);
+    expect(t2.finalAnswer).not.toMatch(/8 semester/i);
+
+    // Turn 3: PMB enrollment current status
+    const t3 = await runPhase1DeterministicPipeline(chatId, 'Pendaftaran masih dibuka?');
+    expect(t3.verification?.outcome || t3.subQueryResults?.[0]?.verification?.outcome).toBe('SAFE_UNKNOWN');
+    expect(t3.verification?.handledSafely).toBe(true);
+    expect(t3.finalAnswer).toMatch(/pmb\.stikom-bali\.ac\.id|\(0361\)\s*244445/i);
+
+    // Turn 4: Curriculum validity inquiry: "Apakah kurikulum Bisnis Digital masih berlaku?"
+    const t4 = await runPhase1DeterministicPipeline(chatId, 'Apakah kurikulum Bisnis Digital masih berlaku?');
+    const outcome4 = t4.verification?.outcome || t4.subQueryResults?.[0]?.verification?.outcome;
+    const answer4 = t4.finalAnswer || t4.answer || '';
+
+    // Semantic Frame assertions
+    expect(t4.semanticFrame?.intent).toBe('CURRICULUM_VALIDITY_INQUIRY');
+    expect(t4.semanticFrame?.entities?.map(e => e.canonical)).toContain('S1 Bisnis Digital');
+    expect(t4.semanticFrame?.temporal?.constraint).toBe('NOW');
+
+    // Answerability & Verification assertions
+    expect(outcome4).toBe('SAFE_UNKNOWN');
+    expect(t4.verification?.handledSafely).toBe(true);
+
+    // Documented version stated without asserting active live validity
+    expect(answer4).toMatch(/Kurikulum 2023/i);
+    expect(answer4).toMatch(/BAAK|Direktorat Administrasi Akademik/i);
+    expect(answer4).toMatch(/Program Studi S1 Bisnis Digital/i);
+    expect(answer4).toMatch(/belum dapat dipastikan/i);
+
+    // Absolute prohibition of generic 8-semester curriculum overview or equating 146 with 144 SKS
+    expect(answer4).not.toMatch(/8 semester/i);
+    expect(answer4).not.toMatch(/Tahun I \(Semester I - II\)/i);
+    expect(answer4).not.toMatch(/144 SKS/i);
+    expect(answer4).not.toMatch(/146 SKS/i);
   });
 });

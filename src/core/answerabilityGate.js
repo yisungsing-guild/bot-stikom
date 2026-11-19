@@ -464,6 +464,30 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}, options =
 
   const combinedEvidenceText = accepted.map(c => c.text || c.chunk || '').join(' ').toLowerCase();
 
+  // 2b. Temporal Curriculum Live Validity Gate
+  const isCurriculumValidityInquiry = semanticFrame?.intent === 'CURRICULUM_VALIDITY_INQUIRY' ||
+    Boolean(semanticFrame?.aspects && semanticFrame.aspects.includes('curriculum_validity')) ||
+    (/\bkurikulum\b/i.test(rawQ) && /\b(?:masih\s+berlaku|berlaku\s+(?:saat\s+ini|sekarang)|status\s+(?:keberlakuan|berlaku))\b/i.test(rawQ));
+  if (isCurriculumValidityInquiry) {
+    const frameEntities = semanticFrame?.entities || [];
+    const isBd = frameEntities.some(e => /bisnis\s+digital/i.test(e?.canonical || e?.name || (typeof e === 'string' ? e : ''))) || /\bbisnis\s+digital\b/i.test(rawQ);
+    const curriculumVersionText = isBd
+      ? 'Kurikulum 2023'
+      : 'Kurikulum 2025';
+    const prodiName = isBd ? 'Program Studi S1 Bisnis Digital' : 'program studi terkait';
+    const prodiNameEn = isBd ? 'the S1 Digital Business (Bisnis Digital) study program' : 'the relevant study program office';
+
+    return {
+      status: ANSWERABILITY_STATUS.UNKNOWN,
+      reason: 'curriculum_validity_unconfirmed',
+      coveredAspects: ['curriculum'],
+      missingAspects: ['live_curriculum_validity_status'],
+      guidance: isEn
+        ? `Based on official curriculum records on file, the documented curriculum version is **${curriculumVersionText}**. However, whether this curriculum remains actively in force for the current academic period without recent adjustments cannot be confirmed from the available documents alone. Please verify current curriculum validity directly with the Academic Administration Directorate (BAAK) or ${prodiNameEn} at ITB STIKOM Bali.`
+        : `Berdasarkan dokumen kurikulum resmi yang tercatat di arsip kampus, kurikulum yang tercatat adalah **${curriculumVersionText}**. Namun, kepastian status keberlakuan aktif kurikulum tersebut untuk periode akademik berjalan saat ini (apakah masih berlaku penuh atau telah mengalami penyesuaian terbaru) belum dapat dipastikan hanya dari dokumen yang tersedia. Untuk memastikan status kurikulum yang sedang aktif berlaku, silakan mengonfirmasi langsung kepada bagian **Direktorat Administrasi Akademik (BAAK)** atau ${prodiName} di ITB STIKOM Bali.`
+    };
+  }
+
   if (/\bskss\b/i.test(rawQ)) {
     return {
       status: ANSWERABILITY_STATUS.UNKNOWN,
@@ -1162,19 +1186,6 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}, options =
     };
   }
 
-  // 4b. Temporal Status Validation: verify actual live validity status before declaring answerable
-  const isCurriculumValidityInquiry = /\b(?:kurikulum\s+masih\s+berlaku|apakah\s+kurikulum\s+masih\s+berlaku|status\s+(?:keberlakuan|berlaku)\s+kurikulum)\b/i.test(rawQ);
-  if (isCurriculumValidityInquiry) {
-    return {
-      status: ANSWERABILITY_STATUS.UNKNOWN,
-      reason: 'curriculum_validity_unconfirmed',
-      coveredAspects: ['curriculum'],
-      missingAspects: ['live_curriculum_validity_status'],
-      guidance: isEn
-        ? 'Based on official curriculum records on file, the latest documented curriculum is Kurikulum 2025. However, whether this curriculum remains actively in force for the current academic period without recent adjustments cannot be confirmed from the available documents alone. Please verify current curriculum validity directly with the Academic Administration Directorate (BAAK) or the relevant study program office at ITB STIKOM Bali.'
-        : 'Berdasarkan dokumen kurikulum resmi yang tercatat di arsip kampus, kurikulum yang tercatat adalah **Kurikulum 2025**. Namun, kepastian status keberlakuan aktif kurikulum tersebut untuk periode akademik berjalan saat ini (apakah masih berlaku penuh atau telah mengalami penyesuaian terbaru) belum dapat dipastikan hanya dari dokumen yang tersedia. Untuk memastikan status kurikulum yang sedang aktif berlaku, silakan mengonfirmasi langsung kepada bagian **Direktorat Administrasi Akademik (BAAK)** atau program studi terkait di ITB STIKOM Bali.'
-    };
-  }
 
   const isCurrentEnrollmentInquiry = (semanticFrame?.intent === 'CURRENT_ENROLLMENT_STATUS' ||
     /\b(?:apakah\s+(?:pendaftaran(?:\s+[a-z0-9]+)*\s+)?(?:masih|sudah)\s+dibuka|pendaftaran\s+(?:masih|sudah)\s+dibuka|masih\s+bisa\s+daftar\s+hari\s+ini|daftar\s+hari\s+ini)\b/i.test(rawQ)) &&

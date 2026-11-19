@@ -895,7 +895,8 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
       shouldInherit: true,
       reason: 'pronoun_reference',
       inheritedDomain: isInternationalActiveEntity && !hasFeeFocus ? 'INTERNATIONAL' : sessionData.activeDomain,
-      inheritedEntity: sessionData.activeEntity
+      inheritedEntity: sessionData.activeEntity,
+      inheritedCourseFact: sessionData.lastCourseFact || null
     };
   }
 

@@ -1414,6 +1414,28 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       newPendingClarification = null;
     }
 
+    const currentProvenance = subQueryResults.length === 1
+      ? (subQueryResults[0]?.synthesis?.provenance || subQueryResults[0]?.verification?.provenance || null)
+      : subQueryResults.map(s => s.synthesis?.provenance || s.verification?.provenance).filter(Boolean);
+
+    const isProgramSwitch = Boolean(
+      sessionData.lastCourseFact &&
+      newActiveEntity &&
+      /^(?:S1|S2|D3)\s+/i.test(newActiveEntity) &&
+      sessionData.lastCourseFact.program &&
+      newActiveEntity !== sessionData.lastCourseFact.program
+    );
+
+    let activeCourseFact = subQueryResults.find(s => s?.synthesis?.provenance?.courseCode || s?.verification?.provenance?.courseCode)?.synthesis?.provenance ||
+      subQueryResults.find(s => s?.synthesis?.provenance?.courseCode || s?.verification?.provenance?.courseCode)?.verification?.provenance ||
+      (currentProvenance && currentProvenance.courseCode ? currentProvenance : null) ||
+      (isExplicitReset || isProgramSwitch ? null : sessionData.lastCourseFact) ||
+      null;
+
+    if (activeCourseFact && !activeCourseFact.program && newActiveEntity) {
+      activeCourseFact = { ...activeCourseFact, program: newActiveEntity };
+    }
+
     await updateSession(chatId, {
       dataPatch: {
         activeDomain: primaryFrame.domain,
@@ -1431,6 +1453,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         lastActiveWave: currentWave || sessionData.lastActiveWave || null,
         academicYear: activeAcademicYear,
         historicalAcademicYear: historicalAcademicYear,
+        lastCourseFact: activeCourseFact,
         lastQuery: rawQuery,
         lastAnswer: finalAnswer,
         conversationHistory: appendConciseTurnHistory(sessionData.conversationHistory || [], rawQuery, finalAnswer)

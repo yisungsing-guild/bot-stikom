@@ -2031,6 +2031,17 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     }
   }
 
+  // Resolve anaphora for course ("mata kuliah tersebut", "matkul tersebut") if sessionData has lastCourseFact
+  const courseFact = sessionData.lastCourseFact || contextDep?.inheritedCourseFact || null;
+  const isCourseAnaphora = Boolean(courseFact) &&
+    (/\b(?:mata\s*kuliah|matkul)(?:\s+(?:tersebut|itu|ini))?\b/i.test(positiveNormalizedQuery) || /\btersebut\b/i.test(positiveNormalizedQuery)) &&
+    /\b(?:mempelajari\s+apa|apa\s+saja\s+yang\s+dipelajari|belajar\s+apa|silabus|materi|sks|semester|nama|rincian)\b/i.test(positiveNormalizedQuery);
+
+  if (entities.length === 0 && isCourseAnaphora && courseFact?.program) {
+    const progEntity = findCanonicalEntity(courseFact.program);
+    if (progEntity) entities.push(progEntity);
+  }
+
   // 2b. Separate primary targets from modifier entities (admission_track, participant_scope, academic_scope)
   const MODIFIER_FAMILIES = new Set(['admission_track', 'participant_scope', 'academic_scope']);
   const PRIMARY_FAMILIES = new Set(['academic_program', 'international_program', 'campus_service', 'student_organization', 'facility', 'campus_facility']);
@@ -2237,6 +2248,20 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     }
   }
 
+  const isCurriculumValidityInquiry = /\bkurikulum\b/i.test(positiveNormalizedQuery) &&
+    /\b(?:masih\s+berlaku|berlaku\s+(?:saat\s+ini|sekarang)|status\s+(?:keberlakuan|berlaku))\b/i.test(positiveNormalizedQuery);
+  if (isCurriculumValidityInquiry) {
+    domain = 'ACADEMIC_CURRICULUM';
+    intent = 'CURRICULUM_VALIDITY_INQUIRY';
+    inferred.desiredAction = 'PROVIDE_CURRICULUM_INFO';
+    inferred.relation = 'PROGRAM_CURRICULUM';
+  } else if (isCourseAnaphora) {
+    domain = 'ACADEMIC_CURRICULUM';
+    intent = 'CURRICULUM_INQUIRY';
+    inferred.desiredAction = 'PROVIDE_CURRICULUM_INFO';
+    inferred.relation = 'PROGRAM_CURRICULUM';
+  }
+
   // If the query is not a facilities/campus location query, "Kampus ITB STIKOM Bali" or "ITB STIKOM Bali"
   // represents the parent institution, NOT a physical branch restriction that filters out institutional fee/scholarship/PMB chunks.
   if (domain !== 'FACILITIES' && intent !== 'CAMPUS_LOCATION') {
@@ -2391,9 +2416,20 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   const isFeeContext = domain === 'TUITION_FEE' || domain === 'FINANCIAL_ADMISSION' || intent === 'TUITION_FEE_INQUIRY' || combinedAspects.has('fee') || combinedAspects.has('dpp') || /\b(?:biaya|spp|dpp|tarif|uang\s+(?:kuliah|pangkal|gedung))\b/i.test(unstemmedQuery);
   const hasExplicitCurriculumTerm = /\b(kurikulum(?:nya)?|mata\s*kuliah|matkul|(?:apa\s+yang\s+)?dipelajari|pembelajaran|materi\s+kuliah|pelajaran|fokus\s+keilmuan|fokus\s+pembelajaran|bidang\s+keilmuan)\b/i.test(normalized + ' ' + unstemmedQuery);
 
-  if (domain === 'ACADEMIC_CURRICULUM' || intent === 'CURRICULUM_INQUIRY' || hasExplicitCurriculumTerm || (!isFeeContext && /\bsks\b/i.test(normalized + ' ' + unstemmedQuery))) {
+  if (domain === 'ACADEMIC_CURRICULUM' || intent === 'CURRICULUM_INQUIRY' || intent === 'CURRICULUM_VALIDITY_INQUIRY' || hasExplicitCurriculumTerm || (!isFeeContext && /\bsks\b/i.test(normalized + ' ' + unstemmedQuery))) {
     combinedAspects.add('curriculum');
     combinedAspects.add('courses');
+  }
+  if (isCurriculumValidityInquiry) {
+    combinedAspects.add('curriculum');
+    combinedAspects.add('curriculum_validity');
+    temporal.constraint = 'NOW';
+    temporal.isCurrentConstraint = true;
+  }
+  if (isCourseAnaphora) {
+    combinedAspects.add('curriculum');
+    combinedAspects.add('courses');
+    combinedAspects.add('course_syllabus');
   }
   if (/\b(biaya(?:nya)?|spp|dpp|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|dana\s+pengembangan(?:\s+pendidikan)?|dana\s+pendidikan|bayar)\b/i.test(normalized) ||
     /\b(biaya|spp|dpp|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|dana\s+pengembangan(?:\s+pendidikan)?|dana\s+pendidikan|bayar)\b/i.test(unstemmedQuery) ||
@@ -2481,6 +2517,8 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     clarificationResolved: Boolean(contextDep.clarificationResolved),
     contextDependencies: contextDep.shouldInherit ? [contextDep] : [],
     activeEntity: contextDep.shouldInherit ? (contextDep.inheritedEntity || sessionData.activeEntity || null) : null,
+    courseFact: courseFact || null,
+    courseFocus: (courseFact && (courseFact.courseCode || courseFact.courseName)) || null,
     explicitReset: Boolean(contextDep.explicitReset),
     topicContinuity: contextDep.explicitReset ? 'NEW_TOPIC' : (contextDep.shouldInherit ? 'CONTINUATION' : 'INDEPENDENT'),
     unsupportedEntity: isUnsupported,
@@ -3430,7 +3468,12 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
 
     if ((isCurriculumInquiry || (domain === 'ACADEMIC_CURRICULUM' && hasValidDirectProgramEntity && !hasUnsupportedDirectProgram)) && resolvedEntities.some(e => e.family === 'academic_program' || e.type === 'program')) {
       domain = 'ACADEMIC_CURRICULUM';
-      intent = 'CURRICULUM_INQUIRY';
+      if (syncFrame.intent === 'CURRICULUM_VALIDITY_INQUIRY' || syncFrame.aspects?.includes('curriculum_validity')) {
+        intent = 'CURRICULUM_VALIDITY_INQUIRY';
+        if (!aspects.includes('curriculum_validity')) aspects.push('curriculum_validity');
+      } else {
+        intent = 'CURRICULUM_INQUIRY';
+      }
       if (!aspects.includes('curriculum')) aspects.push('curriculum');
       if (!aspects.includes('courses')) aspects.push('courses');
     }
@@ -3548,6 +3591,8 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       desiredAction: isUnsupported ? 'REFUSE_UNSUPPORTED_PROGRAM' : (isOOD ? 'REFUSE_OUT_OF_DOMAIN' : (intent === 'CURRICULUM_INQUIRY' ? 'PROVIDE_CURRICULUM_INFO' : (intent === 'AMBIGUOUS_CLARIFICATION' ? 'ASK_CLARIFICATION' : syncFrame.desiredAction))),
       language: detectQueryLanguage(rawQuery),
       subQueries: [],
+      courseFact: syncFrame.courseFact || sessionData.lastCourseFact || null,
+      courseFocus: syncFrame.courseFocus || (sessionData.lastCourseFact && (sessionData.lastCourseFact.courseCode || sessionData.lastCourseFact.courseName)) || null,
       contextDependencies: validated.contextDependency?.isFollowUp
         ? [validated.contextDependency]
         : (Array.isArray(syncFrame.contextDependencies) ? syncFrame.contextDependencies : []),

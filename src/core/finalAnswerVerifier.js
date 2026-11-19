@@ -1593,14 +1593,22 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   const isExplicitAbstain = /\b(belum\s+(?:tercantum|tersedia|ditemukan|memuat|cukup)|tidak\s+(?:ditemukan|tersedia|tercantum|memuat)|tidak\s+dapat\s+(?:diverifikasi|dipastikan)|belum\s+dapat\s+dipastikan|not\s+(?:listed|found|available|recorded)|unrecorded)\b/i.test(text);
   const isAiCurriculumQuery = /\b(?:ai\b|artificial\s+intelligence|kecerdasan\s+buatan)\b/i.test(semanticFrame?.rawQuery || '') &&
     /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|semester)\b/i.test(semanticFrame?.rawQuery || '');
-  if (isAiCurriculumQuery && isExplicitAbstain) {
+  const isCourseSyllabusQuery = (
+    Boolean(semanticFrame?.courseFact) ||
+    Boolean(semanticFrame?.courseFocus) ||
+    Boolean(options?.provenance?.courseCode) ||
+    /\b(?:mata\s*kuliah|matkul)(?:\s+tersebut)?\b/i.test(semanticFrame?.rawQuery || '')
+  ) && /\b(?:mempelajari|belajar\s+apa|silabus|materi|topik|manfaat)\b/i.test(semanticFrame?.rawQuery || '');
+
+  if ((isAiCurriculumQuery || isCourseSyllabusQuery) && isExplicitAbstain) {
     return {
       pass: false,
       outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
       status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
       reason: 'ai_curriculum_source_gap_handled_safely',
       isGrounded: false,
-      handledSafely: true
+      handledSafely: true,
+      provenance: options?.provenance || semanticFrame?.courseFact || null
     };
   }
 
