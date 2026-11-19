@@ -1587,20 +1587,44 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
       if (/\b(?:36|56|108|110)\s*(?:sks|credits?)\b/i.test(text)) {
         return failVerification('contradictory_s1_sks_claim');
       }
+
+      // S1 Bisnis Digital SKS Discrepancy Gate:
+      // Total offered curriculum structure is 146 SKS, while graduation minimum is 144 SKS (Permendiktisaintek 39/2025 Pasal 18).
+      // The two must never be conflated.
+      const isBdTarget = frameEntities.some(e => /bisnis\s+digital/i.test(e)) ||
+        /\b(?:bisnis\s+digital|bd)\b/i.test(rawQ) ||
+        /\b(?:bisnis\s+digital)\b/i.test(activeEnt);
+      if (isBdTarget) {
+        const claimsOfferedIs144 = (
+          /\b(?:total\s+(?:struktur\s+)?kurikulum|kurikulum\s+yang\s+ditawarkan|total\s+(?:penawaran|sebaran|mata\s*kuliah))\b[^.\n]*?\b144\s*sks\b/i.test(text) ||
+          /\b144\s*sks\b[^.\n]*?\b(?:total\s+(?:struktur\s+)?kurikulum|kurikulum\s+yang\s+ditawarkan|struktur\s+kurikulum)\b/i.test(text)
+        );
+        if (claimsOfferedIs144) {
+          return failVerification('curriculum_structure_sks_mismatch_bd_146');
+        }
+        const claimsGraduationIs146 = (
+          /\b(?:minimum\s+kelulusan|syarat\s+kelulusan|beban\s+(?:studi\s+)?minimum|batas\s+minimum)\b[^.\n]*?\b146\s*sks\b/i.test(text) ||
+          /\b146\s*sks\b[^.\n]*?\b(?:minimum\s+kelulusan|syarat\s+kelulusan|beban\s+(?:studi\s+)?minimum|batas\s+minimum)\b/i.test(text)
+        );
+        if (claimsGraduationIs146) {
+          return failVerification('graduation_minimum_sks_mismatch_bd_144');
+        }
+      }
     }
   }
 
   const isExplicitAbstain = /\b(belum\s+(?:tercantum|tersedia|ditemukan|memuat|cukup)|tidak\s+(?:ditemukan|tersedia|tercantum|memuat)|tidak\s+dapat\s+(?:diverifikasi|dipastikan)|belum\s+dapat\s+dipastikan|not\s+(?:listed|found|available|recorded)|unrecorded)\b/i.test(text);
   const isAiCurriculumQuery = /\b(?:ai\b|artificial\s+intelligence|kecerdasan\s+buatan)\b/i.test(semanticFrame?.rawQuery || '') &&
-    /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|semester)\b/i.test(semanticFrame?.rawQuery || '');
+    /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|semester|belajar|diajarkan)\b/i.test(semanticFrame?.rawQuery || '');
   const isCourseSyllabusQuery = (
     Boolean(semanticFrame?.courseFact) ||
     Boolean(semanticFrame?.courseFocus) ||
     Boolean(options?.provenance?.courseCode) ||
     /\b(?:mata\s*kuliah|matkul)(?:\s+tersebut)?\b/i.test(semanticFrame?.rawQuery || '')
-  ) && /\b(?:mempelajari|belajar\s+apa|silabus|materi|topik|manfaat)\b/i.test(semanticFrame?.rawQuery || '');
+  ) && /\b(?:mempelajari\s+apa|apa\s+(?:saja\s+)?yang\s+dipelajari|belajar\s+apa|silabus|rincian\s+materi|topik\s+bahasan|isi\s+mata\s*kuliah)\b/i.test(semanticFrame?.rawQuery || '');
+  const hasCourseCodeMention = /\b[A-Z]{2}\d{6}\b/.test(text);
 
-  if ((isAiCurriculumQuery || isCourseSyllabusQuery) && isExplicitAbstain) {
+  if (isCourseSyllabusQuery && isExplicitAbstain) {
     return {
       pass: false,
       outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
@@ -1611,6 +1635,20 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
       provenance: options?.provenance || semanticFrame?.courseFact || null
     };
   }
+
+  if (isAiCurriculumQuery && isExplicitAbstain && !hasCourseCodeMention) {
+    return {
+      pass: false,
+      outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+      status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+      reason: 'ai_curriculum_source_gap_handled_safely',
+      isGrounded: false,
+      handledSafely: true,
+      provenance: options?.provenance || semanticFrame?.courseFact || null
+    };
+  }
+
+  let verifiedCourseRecord = null;
 
   // Stage 5: Claim-to-Evidence Verification (Swapped DPP/SPP, Contradicting Secondary Sources, Historical Archive presented as Active, Unsubstantiated Missing Attributes)
   {
@@ -1719,7 +1757,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
 
           // 2. Canonical source document and URL completeness
           if (!matchedRegistryCourse.sourceDocument || (typeof matchedRegistryCourse.sourceDocument === 'string' && !matchedRegistryCourse.sourceDocument.trim()) ||
-              !matchedRegistryCourse.sourceUrl || (typeof matchedRegistryCourse.sourceUrl === 'string' && !matchedRegistryCourse.sourceUrl.trim())) {
+            !matchedRegistryCourse.sourceUrl || (typeof matchedRegistryCourse.sourceUrl === 'string' && !matchedRegistryCourse.sourceUrl.trim())) {
             return failVerification(`missing_course_source_metadata: course code ${code} missing sourceDocument or sourceUrl`);
           }
 
@@ -1763,7 +1801,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
               return failVerification(`unverified_course_status: claimed provenance for ${code} is not verified primary source`);
             }
             if (!claimedProv.sourceDocument || (typeof claimedProv.sourceDocument === 'string' && !claimedProv.sourceDocument.trim()) ||
-                !claimedProv.sourceUrl || (typeof claimedProv.sourceUrl === 'string' && !claimedProv.sourceUrl.trim())) {
+              !claimedProv.sourceUrl || (typeof claimedProv.sourceUrl === 'string' && !claimedProv.sourceUrl.trim())) {
               return failVerification(`missing_course_source_metadata: claimed provenance for ${code} missing sourceDocument or sourceUrl`);
             }
             if (!isSourceCitationMatching(claimedProv.sourceDocument, matchedRegistryCourse.sourceDocument)) {
@@ -1856,7 +1894,64 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
           if (text.includes('kurikulum-bisnis-digital') || (text.includes('http') && text.includes('stikom-bali.ac.id/kurikulum-'))) {
             return failVerification(`unverified_course_source_url: invalid or 404 source URL claimed in course provenance`);
           }
+
+          verifiedCourseRecord = matchedRegistryCourse;
         }
+      }
+    }
+
+    // Contradictory total SKS check: asserting specific total SKS while claiming total SKS is unconfirmed
+    const hasTotalSksClaim = /\b(?:total\s+(?:beban\s+studi|sks)|beban\s+studi\s+total|beban\s+studi)\s*(?:adalah|sebesar|mencapai)?\s*\d{2,3}\s*sks\b/i.test(text) ||
+      (/\b(?:total|beban\s+studi)\b/i.test(text) && /\b(?:144|146)\s*sks\b/i.test(text));
+    const hasTotalSksUnconfirmedClaim = /\b(?:total\s+(?:beban\s+studi|sks)|beban\s+studi\s*(?:\(sks\))?|informasi\s+mengenai\s+total\s+beban\s+studi)\b.*?\b(?:belum\s+(?:terkonfirmasi|dipastikan|tercantum|tersedia)|tidak\s+(?:terkonfirmasi|tercantum|tersedia))\b/i.test(text);
+
+    if (hasTotalSksClaim && hasTotalSksUnconfirmedClaim) {
+      return failVerification('contradictory_sks_claim_asserted_and_unconfirmed');
+    }
+
+    // Unsubstantiated positive course syllabus claims not supported by accepted evidence or registry
+    const hasAffirmativeSyllabusClaim = (
+      /\b(?:silabus|materi\s+(?:kuliah|perkuliahan)|pokok\s+bahasan|topik\s+(?:perkuliahan|bahasan))\s*(?:meliputi|mencakup|adalah|terdiri\s+dari|seperti|antara\s+lain)\b/i.test(text) ||
+      /\b(?:mempelajari|membahas|mengkaji)\s+(?:secara\s+khusus\s+)?(?:tentang\s+)?(?:konsep|algoritma|teori|praktek|metode|teknik\s+dasar\s+ai|machine\s+learning|deep\s+learning|neural\s+network|pemodelan\s+ai|natural\s+language)\b/i.test(text)
+    ) && !/\b(?:belum\s+(?:tercantum|tersedia|memuat|diuraikan|dijabarkan)|tidak\s+(?:tercantum|tersedia|memuat|diuraikan|dijabarkan))\b/i.test(text);
+
+    if (hasAffirmativeSyllabusClaim || (isCourseSyllabusQuery && !isExplicitAbstain)) {
+      let hasEvidenceSyllabus = false;
+      for (const c of acceptedList) {
+        const cText = String(c.text || c.chunk || '');
+        // Reject negative or abstention statements in evidence
+        const isEvidenceNegative = /\b(?:belum\s+(?:tersedia|tercantum|memuat|diuraikan)|tidak\s+(?:tersedia|tercantum|memuat|diuraikan))\b/i.test(cText);
+        if (isEvidenceNegative) continue;
+
+        // Evidence must be tied to the specific course if course code is present
+        const matchesCourse = courseCodeMatches && courseCodeMatches.length > 0
+          ? courseCodeMatches.some(code => cText.includes(code))
+          : (Boolean(semanticFrame?.courseFact?.courseName && cText.includes(semanticFrame.courseFact.courseName)) || true);
+
+        // Evidence must contain actual substantive syllabus items/topics, not just mentioning the word "silabus" or "materi perkuliahan"
+        const hasSubstantiveSyllabusContent = /\b(?:silabus|pokok\s+bahasan|materi\s+(?:kuliah|perkuliahan))\s*:\s*[^\n]{10,}/i.test(cText) ||
+          (/\b(?:silabus|pokok\s+bahasan|materi\s+(?:kuliah|perkuliahan))\b/i.test(cText) && /\b(?:bab|modul|topik|pertemuan\s+\d+|minggu\s+\d+)\b/i.test(cText));
+
+        if (matchesCourse && hasSubstantiveSyllabusContent) {
+          hasEvidenceSyllabus = true;
+          break;
+        }
+      }
+
+      let hasRegistrySyllabus = false;
+      if (canonicalAcademicRegistry && canonicalAcademicRegistry.curriculumFacts) {
+        for (const prog of Object.values(canonicalAcademicRegistry.curriculumFacts)) {
+          if (Array.isArray(prog.courses)) {
+            const cMatch = prog.courses.find(c => courseCodeMatches && courseCodeMatches.includes(c.code));
+            if (cMatch && cMatch.syllabus && typeof cMatch.syllabus === 'object' && Object.keys(cMatch.syllabus).length > 0) {
+              hasRegistrySyllabus = true;
+              break;
+            }
+          }
+        }
+      }
+      if (!hasEvidenceSyllabus && !hasRegistrySyllabus) {
+        return failVerification('unsubstantiated_course_syllabus_claim');
       }
     }
 
@@ -2097,7 +2192,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
         'fee', 'accreditation', 'curriculum', 'sks', 'study_mode', 'faculty', 'degree_award',
         'career_prospects', 'scholarship', 'location', 'contact', 'facilities', 'student_organization'
       ]);
-      const isMultiAttrPartial = Array.isArray(arbitratedEvidence?.missingAspects) &&
+      const isMultiAttrPartial = !verifiedCourseRecord && Array.isArray(arbitratedEvidence?.missingAspects) &&
         arbitratedEvidence.missingAspects.some(a => PRIMARY_MULTI_ATTRS.has(a)) &&
         Array.isArray(arbitratedEvidence?.coveredAspects) &&
         arbitratedEvidence.coveredAspects.some(a => PRIMARY_MULTI_ATTRS.has(a));
@@ -2120,7 +2215,18 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
         status: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
         reason: 'verified_grounded_partial_disclosure',
         isGrounded: true,
-        handledSafely: true
+        handledSafely: true,
+        provenance: verifiedCourseRecord ? {
+          program: verifiedCourseRecord.program || (semanticFrame?.entities?.find(e => /^(?:s1|s2|d3)\s+/i.test(e.canonical || e.name || String(e)))?.canonical) || 'S1 Bisnis Digital',
+          courseCode: verifiedCourseRecord.code,
+          courseName: verifiedCourseRecord.name,
+          semester: verifiedCourseRecord.semester,
+          sks: verifiedCourseRecord.sks,
+          sourceDocument: verifiedCourseRecord.sourceDocument,
+          sourceUrl: verifiedCourseRecord.sourceUrl,
+          verificationStatus: verifiedCourseRecord.verificationStatus,
+          provenanceByAttribute: verifiedCourseRecord.provenanceByAttribute
+        } : (options?.provenance || arbitratedEvidence?.provenance || null)
       };
     }
   }
@@ -2278,7 +2384,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
       'fee', 'accreditation', 'curriculum', 'sks', 'study_mode', 'faculty', 'degree_award',
       'career_prospects', 'scholarship', 'location', 'contact', 'facilities', 'student_organization'
     ]);
-    const isMultiAttrPartialFinal = Array.isArray(arbitratedEvidence?.missingAspects) &&
+    const isMultiAttrPartialFinal = !verifiedCourseRecord && Array.isArray(arbitratedEvidence?.missingAspects) &&
       arbitratedEvidence.missingAspects.some(a => PRIMARY_MULTI_ATTRS_FINAL.has(a)) &&
       Array.isArray(arbitratedEvidence?.coveredAspects) &&
       arbitratedEvidence.coveredAspects.some(a => PRIMARY_MULTI_ATTRS_FINAL.has(a)) &&
@@ -2302,7 +2408,18 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
       status: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
       reason: 'verified_grounded',
       isGrounded: true,
-      handledSafely: true
+      handledSafely: true,
+      provenance: verifiedCourseRecord ? {
+        program: verifiedCourseRecord.program || (semanticFrame?.entities?.find(e => /^(?:s1|s2|d3)\s+/i.test(e.canonical || e.name || String(e)))?.canonical) || 'S1 Bisnis Digital',
+        courseCode: verifiedCourseRecord.code,
+        courseName: verifiedCourseRecord.name,
+        semester: verifiedCourseRecord.semester,
+        sks: verifiedCourseRecord.sks,
+        sourceDocument: verifiedCourseRecord.sourceDocument,
+        sourceUrl: verifiedCourseRecord.sourceUrl,
+        verificationStatus: verifiedCourseRecord.verificationStatus,
+        provenanceByAttribute: verifiedCourseRecord.provenanceByAttribute
+      } : (options?.provenance || arbitratedEvidence?.provenance || null)
     };
   }
 

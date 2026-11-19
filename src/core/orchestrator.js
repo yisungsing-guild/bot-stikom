@@ -27,7 +27,7 @@ const { arbitrateEvidence } = require('./evidenceArbiter');
 const { evaluateAnswerability, ANSWERABILITY_STATUS } = require('./answerabilityGate');
 const groundedAnswerGenerator = require('./groundedAnswerGenerator');
 const finalAnswerVerifier = require('./finalAnswerVerifier');
-const { synthesizeAnswer, buildGenericExtractiveFallback } = groundedAnswerGenerator;
+const { synthesizeAnswer, buildGenericExtractiveFallback, buildGroundedCurriculumAnswer } = groundedAnswerGenerator;
 const { verifyFinalAnswer } = finalAnswerVerifier;
 const outboundDispatcher = require('./outboundDispatcher');
 const logger = require('../logger');
@@ -1069,7 +1069,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         const hasVerifiedFactualOutcome = verification.pass === true &&
           verification.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL &&
           isVerifiedAnswer(synthesis.answer, verification);
-        const isSafeAbstention = (synthesis.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN || synthesis.handledSafely) &&
+        const isSafeAbstention = (synthesis.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN || synthesis.handledSafely || (synthesis.source === 'llm_grounded_synthesis' && verification.handledSafely)) &&
           verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN &&
           verification.handledSafely;
         const isPartialGroundedOutcome = verification.pass === true &&
@@ -1081,25 +1081,73 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         const synthesisMustBeBlocked = !hasVerifiedFactualOutcome && !isSafeAbstention && !isPartialGroundedOutcome && !isSafeClarificationPrompt;
 
         if (synthesisMustBeBlocked) {
-          logger.warn({ reason: verification.reason, outcome: verification.outcome }, '[Orchestrator] Synthesized answer flagged by verifier, attempting generic extractive recovery');
+          logger.warn({ reason: verification.reason, outcome: verification.outcome }, '[Orchestrator] Synthesized answer flagged by verifier, attempting recovery');
           let recovered = false;
-          const extractiveRecovery = (groundedAnswerGenerator.buildGenericExtractiveFallback || buildGenericExtractiveFallback)(frame, arbitrated.accepted, synthOpts);
-          if (extractiveRecovery && extractiveRecovery.success && extractiveRecovery.answer) {
-            const recoveryVerif = verifFn(extractiveRecovery.answer, frame, arbitrated, null, recResult);
-            if (recoveryVerif.pass === true && (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.outcome === 'PARTIAL')) {
-              answer = extractiveRecovery.answer;
+
+          const queryText = (frame?.rawQuery || '').toLowerCase();
+          const hasAnaphoricCourseReference = (
+            /\b(?:mata\s*kuliah|matkul)(?:\s+tersebut)?\b/i.test(queryText) ||
+            /\b(?:mempelajari\s+apa|belajar\s+apa|silabus|rincian\s+materi|topik\s+bahasan)\b/i.test(queryText)
+          ) && (Boolean(frame?.courseFact) || Boolean(sessionData?.lastCourseFact));
+
+          const isSpecificCourseOrSyllabusQuery = Boolean(frame?.courseFact) ||
+            Boolean(frame?.courseFocus) ||
+            hasAnaphoricCourseReference ||
+            /\b(?:bd\d{6}|if\d{6}|si\d{6}|sk\d{6}|ti\d{6})\b/i.test(queryText) ||
+            (/\b(?:ai\b|artificial\s+intelligence|kecerdasan\s+buatan|prompt\s+(?:untuk\s+)?model\s+ai|teknik\s+pembuatan\s+prompt)\b/i.test(queryText) &&
+             /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|semester|belajar|diajarkan)\b/i.test(queryText));
+
+          if (isSpecificCourseOrSyllabusQuery) {
+            // Priority 1: Deterministic grounded curriculum answer for specific course/syllabus
+            const curriculumAnswerFn = groundedAnswerGenerator.buildGroundedCurriculumAnswer || buildGroundedCurriculumAnswer;
+            const curriculumRecovery = curriculumAnswerFn(frame, arbitrated.accepted, synthOpts);
+            if (curriculumRecovery && curriculumRecovery.success && curriculumRecovery.answer) {
+              const recoveryVerif = verifFn(curriculumRecovery.answer, frame, arbitrated, null, recResult);
+              if (recoveryVerif.pass === true && (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.outcome === 'PARTIAL')) {
+                answer = curriculumRecovery.answer;
+                verification = {
+                  ...recoveryVerif,
+                  source: curriculumRecovery.source || 'grounded_curriculum_answer',
+                  isGrounded: true,
+                  handledSafely: true
+                };
+                recovered = true;
+              }
+            }
+
+            // Priority 2: Safe unknown response if syllabus data is unavailable or verification failed
+            if (!recovered) {
+              answer = buildSafeUnknownResponse(frame, answerability);
               verification = {
-                ...recoveryVerif,
-                source: 'generic_extractive_fallback',
-                isGrounded: true,
+                pass: false,
+                outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+                status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+                reason: 'specific_course_syllabus_source_gap_handled_safely',
+                isGrounded: false,
                 handledSafely: true
               };
               recovered = true;
             }
-          }
-          if (!recovered) {
-            // Never expose the original synthesis after a failed/unsafe verification.
-            answer = null;
+          } else {
+            // Broad curriculum or general inquiries: use generic extractive fallback safely
+            const extractiveRecovery = (groundedAnswerGenerator.buildGenericExtractiveFallback || buildGenericExtractiveFallback)(frame, arbitrated.accepted, synthOpts);
+            if (extractiveRecovery && extractiveRecovery.success && extractiveRecovery.answer) {
+              const recoveryVerif = verifFn(extractiveRecovery.answer, frame, arbitrated, null, recResult);
+              if (recoveryVerif.pass === true && (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.outcome === 'PARTIAL')) {
+                answer = extractiveRecovery.answer;
+                verification = {
+                  ...recoveryVerif,
+                  source: 'generic_extractive_fallback',
+                  isGrounded: true,
+                  handledSafely: true
+                };
+                recovered = true;
+              }
+            }
+            if (!recovered) {
+              // Never expose the original synthesis after a failed/unsafe verification.
+              answer = null;
+            }
           }
         }
 
@@ -1128,32 +1176,74 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
           }
         }
       } else {
-        const extractiveFallback = (groundedAnswerGenerator.buildGenericExtractiveFallback || buildGenericExtractiveFallback)(frame, arbitrated.accepted, arbitrated);
-        if (extractiveFallback && extractiveFallback.answer) {
-          const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
-          const recoveryVerif = verifFn(extractiveFallback.answer, frame, arbitrated);
-          const isFallbackVerified = extractiveFallback.success && recoveryVerif.pass === true &&
-            (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.outcome === 'PARTIAL') &&
-            (recoveryVerif.outcome === 'PARTIAL' || isVerifiedAnswer(extractiveFallback.answer, recoveryVerif));
-          if (isFallbackVerified) {
-            answer = extractiveFallback.answer;
-            verification = {
-              ...recoveryVerif,
-              source: 'generic_extractive_fallback',
-              isGrounded: true,
-              handledSafely: true
-            };
-          } else {
-            // The extracted text is only a candidate. If it fails verification, discard it.
-            answer = null;
+        const queryText = (frame?.rawQuery || '').toLowerCase();
+        const hasAnaphoricCourseReference = (
+          /\b(?:mata\s*kuliah|matkul)(?:\s+tersebut)?\b/i.test(queryText) ||
+          /\b(?:mempelajari\s+apa|belajar\s+apa|silabus|rincian\s+materi|topik\s+bahasan)\b/i.test(queryText)
+        ) && (Boolean(frame?.courseFact) || Boolean(sessionData?.lastCourseFact));
+
+        const isSpecificCourseOrSyllabusQuery = Boolean(frame?.courseFact) ||
+          Boolean(frame?.courseFocus) ||
+          hasAnaphoricCourseReference ||
+          /\b(?:bd\d{6}|if\d{6}|si\d{6}|sk\d{6}|ti\d{6})\b/i.test(queryText) ||
+          (/\b(?:ai\b|artificial\s+intelligence|kecerdasan\s+buatan|prompt\s+(?:untuk\s+)?model\s+ai|teknik\s+pembuatan\s+prompt)\b/i.test(queryText) &&
+           /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|semester|belajar|diajarkan)\b/i.test(queryText));
+
+        if (isSpecificCourseOrSyllabusQuery) {
+          const curriculumAnswerFn = groundedAnswerGenerator.buildGroundedCurriculumAnswer || buildGroundedCurriculumAnswer;
+          const curriculumRes = curriculumAnswerFn(frame, arbitrated.accepted, synthOpts);
+          if (curriculumRes && curriculumRes.success && curriculumRes.answer) {
+            const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
+            const recoveryVerif = verifFn(curriculumRes.answer, frame, arbitrated, null, recResult);
+            if (recoveryVerif.pass === true && (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.outcome === 'PARTIAL')) {
+              answer = curriculumRes.answer;
+              verification = {
+                ...recoveryVerif,
+                source: curriculumRes.source || 'grounded_curriculum_answer',
+                isGrounded: true,
+                handledSafely: true
+              };
+            }
+          }
+          if (!answer) {
+            answer = buildSafeUnknownResponse(frame, answerability);
             verification = {
               pass: false,
               outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
               status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
-              reason: 'generic_extractive_unverified',
+              reason: 'specific_course_syllabus_source_gap_handled_safely',
               isGrounded: false,
               handledSafely: true
             };
+          }
+        } else {
+          const extractiveFallback = (groundedAnswerGenerator.buildGenericExtractiveFallback || buildGenericExtractiveFallback)(frame, arbitrated.accepted, arbitrated);
+          if (extractiveFallback && extractiveFallback.answer) {
+            const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
+            const recoveryVerif = verifFn(extractiveFallback.answer, frame, arbitrated);
+            const isFallbackVerified = extractiveFallback.success && recoveryVerif.pass === true &&
+              (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.outcome === 'PARTIAL') &&
+              (recoveryVerif.outcome === 'PARTIAL' || isVerifiedAnswer(extractiveFallback.answer, recoveryVerif));
+            if (isFallbackVerified) {
+              answer = extractiveFallback.answer;
+              verification = {
+                ...recoveryVerif,
+                source: 'generic_extractive_fallback',
+                isGrounded: true,
+                handledSafely: true
+              };
+            } else {
+              // The extracted text is only a candidate. If it fails verification, discard it.
+              answer = null;
+              verification = {
+                pass: false,
+                outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+                status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+                reason: 'generic_extractive_unverified',
+                isGrounded: false,
+                handledSafely: true
+              };
+            }
           }
         }
         if (!answer) {
@@ -1426,10 +1516,14 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       newActiveEntity !== sessionData.lastCourseFact.program
     );
 
+    const isDomainSwitch = primaryFrame.domain && !['ACADEMIC_CURRICULUM', 'ACADEMIC_PROGRAM', 'GENERAL_CONVERSATION'].includes(primaryFrame.domain);
+    const isGeneralCurriculumQuery = primaryFrame.intent === 'CURRICULUM_INQUIRY' && !Boolean(primaryFrame.courseFact) && !Boolean(primaryFrame.courseFocus);
+    const shouldClearCourseFact = isExplicitReset || isProgramSwitch || isDomainSwitch || isGeneralCurriculumQuery;
+
     let activeCourseFact = subQueryResults.find(s => s?.synthesis?.provenance?.courseCode || s?.verification?.provenance?.courseCode)?.synthesis?.provenance ||
       subQueryResults.find(s => s?.synthesis?.provenance?.courseCode || s?.verification?.provenance?.courseCode)?.verification?.provenance ||
       (currentProvenance && currentProvenance.courseCode ? currentProvenance : null) ||
-      (isExplicitReset || isProgramSwitch ? null : sessionData.lastCourseFact) ||
+      (shouldClearCourseFact ? null : sessionData.lastCourseFact) ||
       null;
 
     if (activeCourseFact && !activeCourseFact.program && newActiveEntity) {

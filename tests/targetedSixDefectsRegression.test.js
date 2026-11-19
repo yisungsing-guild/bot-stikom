@@ -932,4 +932,285 @@ describe('Targeted Six Defects Regression Suite (ce0b3dc + Targeted Fixes)', () 
     expect(answer4).not.toMatch(/144 SKS/i);
     expect(answer4).not.toMatch(/146 SKS/i);
   });
+
+  describe('Post-Deployment Defect Fix: AI Course Grounding & Syllabus Recovery', () => {
+    test('Test 1: Mocked LLM answer with course facts and syllabus limitation passes VERIFIED_FACTUAL', () => {
+      const text = 'Mahasiswa Program Studi S1 Bisnis Digital di ITB STIKOM Bali mempelajari mata kuliah terkait Artificial Intelligence, yaitu BD233507 - Teknik Pembuatan Prompt untuk Model AI pada Semester III dengan bobot 2 SKS. Namun, rincian silabus atau deskripsi materi perkuliahan belum tercantum dalam dokumen resmi kurikulum yang tersedia.';
+      const frame = {
+        rawQuery: 'Apakah mahasiswa Bisnis Digital belajar Artificial Intelligence?',
+        normalizedQuery: 'apakah mahasiswa bisnis digital belajar artificial intelligence',
+        intent: 'CURRICULUM_INQUIRY',
+        domain: 'ACADEMIC_CURRICULUM',
+        entities: [{ canonical: 'S1 Bisnis Digital', type: 'academic_program' }],
+        aspects: ['curriculum']
+      };
+      const arbitrated = {
+        answerability: 'ANSWERABLE',
+        accepted: [
+          {
+            id: 'chunk_bd_course',
+            text: 'BD233507 Teknik Pembuatan Prompt untuk Model AI Semester III 2 SKS',
+            provenance: {
+              sourceDocument: 'Daftar_Mata_Kuliah_S1_Bisnis_Digital_Resmi.html',
+              sourceUrl: 'https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/',
+              verificationStatus: 'VERIFIED_PRIMARY_SOURCE',
+              authorityTier: 1
+            }
+          }
+        ],
+        coveredAspects: ['curriculum']
+      };
+
+      const result = verifyFinalAnswer(text, frame, arbitrated);
+
+      expect(result.pass).toBe(true);
+      expect(result.outcome).toBe(VERIFICATION_OUTCOME.VERIFIED_FACTUAL);
+      expect(result.outcome).not.toBe(VERIFICATION_OUTCOME.SAFE_UNKNOWN);
+      expect(result.outcome).not.toBe('PARTIAL');
+      expect(result.provenance?.courseCode).toBe('BD233507');
+      expect(result.provenance?.program).toBe('S1 Bisnis Digital');
+    });
+
+    test('Test 1b: Contradictory SKS claim (asserting 144 SKS and stating total SKS unconfirmed) is rejected', () => {
+      const contradictoryText = 'Beban studi Program Studi S1 Bisnis Digital adalah 144 SKS.\n\n_Catatan: Informasi mengenai total beban studi (SKS) belum terkonfirmasi dalam sumber bukti yang tersedia saat ini._';
+      const frame = {
+        rawQuery: 'Bagaimana kurikulum Bisnis Digital?',
+        intent: 'CURRICULUM_INQUIRY',
+        domain: 'ACADEMIC_CURRICULUM',
+        entities: [{ canonical: 'S1 Bisnis Digital' }]
+      };
+      const arbitrated = {
+        accepted: [{ id: 'c1', text: 'Kurikulum S1 Bisnis Digital 144 SKS' }]
+      };
+      const result = verifyFinalAnswer(contradictoryText, frame, arbitrated);
+
+      expect(result.pass).toBe(false);
+      expect(result.reason).toBe('contradictory_sks_claim_asserted_and_unconfirmed');
+    });
+
+    test('Test 1c: Unsubstantiated positive syllabus claim is rejected with unsubstantiated_course_syllabus_claim', () => {
+      const hallucinatedSyllabusText = 'Mata kuliah BD233507 Teknik Pembuatan Prompt untuk Model AI pada Semester III dengan bobot 2 SKS mempelajari modul machine learning, deep learning, dan neural network secara mendalam.';
+      const frame = {
+        rawQuery: 'Mata kuliah BD233507 mempelajari apa saja?',
+        intent: 'CURRICULUM_INQUIRY',
+        domain: 'ACADEMIC_CURRICULUM',
+        entities: [{ canonical: 'S1 Bisnis Digital' }]
+      };
+      const arbitrated = {
+        accepted: [{ id: 'c1', text: 'BD233507 Teknik Pembuatan Prompt untuk Model AI Semester III 2 SKS' }]
+      };
+      const result = verifyFinalAnswer(hallucinatedSyllabusText, frame, arbitrated);
+
+      expect(result.pass).toBe(false);
+      expect(result.reason).toBe('unsubstantiated_course_syllabus_claim');
+    });
+
+    test('Test 2: Specific course inquiry rejected by verifier in synthesis recovers without 8-semester summary', async () => {
+      const chatId = 'POST-DEPLOY-RECOVERY-' + Date.now();
+      let callCount = 0;
+      const customVerifier = (text, frame, arbitrated, nullArg, recResult, verifOpts) => {
+        callCount++;
+        // Reject the first call (initial synthesis) to force the recovery path
+        if (callCount === 1) {
+          return {
+            pass: false,
+            outcome: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
+            status: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
+            reason: 'simulated_first_synthesis_rejection',
+            handledSafely: false
+          };
+        }
+        // Let recovery call use the standard verifier
+        return verifyFinalAnswer(text, frame, arbitrated, nullArg, recResult, verifOpts);
+      };
+
+      const res = await runPhase1DeterministicPipeline(chatId, 'Apakah mahasiswa Bisnis Digital belajar Artificial Intelligence?', {
+        finalAnswerVerifier: customVerifier
+      });
+
+      const finalAns = res.finalAnswer || res.answer || '';
+
+      // Verification outcome must be safe or verified factual
+      expect(res.verification?.handledSafely).toBe(true);
+
+      // Must assert the specific course BD233507
+      expect(finalAns).toMatch(/BD233507/i);
+      expect(finalAns).toMatch(/Teknik Pembuatan Prompt untuk Model AI/i);
+
+      // Absolute prohibition: Must NOT generate generic 8-semester curriculum summary
+      expect(finalAns).not.toMatch(/8 semester/i);
+      expect(finalAns).not.toMatch(/Tahun I \(Semester I - II\)/i);
+      expect(finalAns).not.toMatch(/total 144 SKS/i);
+    });
+
+    test('Test 3: Multi-turn syllabus follow-up after AI course inquiry resolves context and safely abstains', async () => {
+      const chatId = 'POST-DEPLOY-MULTITURN-' + Date.now();
+
+      // Turn 1: AI course inquiry ("Apakah mahasiswa Bisnis Digital belajar Artificial Intelligence?")
+      const t1 = await runPhase1DeterministicPipeline(chatId, 'Apakah mahasiswa Bisnis Digital belajar Artificial Intelligence?');
+      expect(t1.verification?.outcome || t1.subQueryResults?.[0]?.verification?.outcome).toBe('VERIFIED_FACTUAL');
+      expect(t1.finalAnswer).toMatch(/BD233507/i);
+
+      // Verify Turn 1 automatically stored lastCourseFact in session
+      const sessionAfterT1 = await getSession(chatId);
+      expect(sessionAfterT1.data?.lastCourseFact?.courseCode).toBe('BD233507');
+      expect(sessionAfterT1.data?.lastCourseFact?.program).toBe('S1 Bisnis Digital');
+
+      // Turn 2: Follow-up syllabus inquiry ("Mata kuliah tersebut mempelajari apa saja?")
+      const t2 = await runPhase1DeterministicPipeline(chatId, 'Mata kuliah tersebut mempelajari apa saja?');
+      const outcome2 = t2.verification?.outcome || t2.subQueryResults?.[0]?.verification?.outcome;
+      const answer2 = t2.finalAnswer || t2.answer || '';
+
+      // Context resolution: Turn 2 recognizes context BD233507 and S1 Bisnis Digital
+      expect(t2.semanticFrame?.entities?.map(e => e.canonical)).toContain('S1 Bisnis Digital');
+
+      // Safe unknown with syllabus limitation
+      expect(outcome2).toBe('SAFE_UNKNOWN');
+      expect(t2.verification?.handledSafely).toBe(true);
+      expect(answer2).toMatch(/BD233507/i);
+      expect(answer2).toMatch(/belum memuat silabus terperinci/i);
+
+      // Prohibition of generic 8-semester overview
+      expect(answer2).not.toMatch(/8 semester/i);
+      expect(answer2).not.toMatch(/Tahun I \(Semester I - II\)/i);
+      expect(answer2).not.toMatch(/total 144 SKS/i);
+
+      // Prohibition of fake syllabus claims
+      expect(answer2).not.toMatch(/machine learning/i);
+      expect(answer2).not.toMatch(/deep learning/i);
+      expect(answer2).not.toMatch(/neural network/i);
+    });
+
+    test('Test 4: Broad curriculum inquiry uses appropriate broad curriculum summary without contradictory SKS claims', async () => {
+      const chatId = 'POST-DEPLOY-BROAD-CURRICULUM-' + Date.now();
+      const res = await runPhase1DeterministicPipeline(chatId, 'Bagaimana struktur kurikulum S1 Bisnis Digital?');
+      const outcome = res.verification?.outcome || res.subQueryResults?.[0]?.verification?.outcome;
+      const answer = res.finalAnswer || res.answer || '';
+
+      // Must be safely verified
+      expect(res.verification?.pass).toBe(true);
+      expect(outcome === 'VERIFIED_FACTUAL' || outcome === 'PARTIAL').toBe(true);
+
+      // Must contain broad curriculum information
+      expect(answer).toMatch(/kurikulum|mata kuliah|semester/i);
+
+      // Must NOT contain contradictory SKS assertion vs unconfirmed disclaimer
+      const hasContradictorySks = /\b144\s*sks\b/i.test(answer) && /\btotal beban studi \(sks\) belum terkonfirmasi\b/i.test(answer);
+      expect(hasContradictorySks).toBe(false);
+    });
+
+    test('Test 5: 5-turn session sequence proves course context does not contaminate PMB, Fee, or General Curriculum turns', async () => {
+      const chatId = 'POST-DEPLOY-5TURN-SESSION-' + Date.now();
+
+      // Turn 1: AI course inquiry S1 Bisnis Digital
+      const t1 = await runPhase1DeterministicPipeline(chatId, 'Apakah mahasiswa Bisnis Digital belajar Artificial Intelligence?');
+      expect(t1.finalAnswer).toMatch(/BD233507/i);
+      const sessionAfterT1 = await getSession(chatId);
+      expect(sessionAfterT1.data?.lastCourseFact?.courseCode).toBe('BD233507');
+
+      // Turn 2: Follow-up syllabus inquiry
+      const t2 = await runPhase1DeterministicPipeline(chatId, 'Mata kuliah tersebut mempelajari apa saja?');
+      expect(t2.verification?.outcome || t2.subQueryResults?.[0]?.verification?.outcome).toBe('SAFE_UNKNOWN');
+      expect(t2.finalAnswer).toMatch(/BD233507/i);
+
+      // Turn 3: Topic switch to PMB ("Pendaftaran masih dibuka?")
+      const t3 = await runPhase1DeterministicPipeline(chatId, 'Pendaftaran masih dibuka?');
+      expect(t3.semanticFrame?.domain).toBe('PMB');
+      expect(t3.finalAnswer).toMatch(/pmb\.stikom-bali\.ac\.id|\(0361\)\s*244445/i);
+      expect(t3.finalAnswer).not.toMatch(/BD233507/i);
+      const sessionAfterT3 = await getSession(chatId);
+      expect(sessionAfterT3.data?.lastCourseFact).toBeNull(); // Cleared on domain switch
+
+      // Turn 4: Tuition fee inquiry ("Berapa biaya kuliah S1 Bisnis Digital?")
+      const t4 = await runPhase1DeterministicPipeline(chatId, 'Berapa biaya kuliah S1 Bisnis Digital?');
+      expect(t4.semanticFrame?.domain).toBe('TUITION_FEE');
+      expect(t4.finalAnswer).toMatch(/DPP|SPP|biaya/i);
+      expect(t4.finalAnswer).not.toMatch(/BD233507/i);
+
+      // Turn 5: General curriculum inquiry ("Bagaimana struktur kurikulum S1 Bisnis Digital?")
+      const t5 = await runPhase1DeterministicPipeline(chatId, 'Bagaimana struktur kurikulum S1 Bisnis Digital?');
+      expect(t5.semanticFrame?.intent).toBe('CURRICULUM_INQUIRY');
+      expect(t5.finalAnswer).toMatch(/kurikulum|mata kuliah|semester/i);
+      // General curriculum route successfully used, not hijacked into specific BD233507 recovery
+      expect(t5.verification?.pass).toBe(true);
+    });
+
+    test('Test 6: Syllabus evidence verification cases A, B, C, D', () => {
+      const frame = {
+        rawQuery: 'Mata kuliah BD233507 mempelajari apa saja?',
+        intent: 'CURRICULUM_INQUIRY',
+        domain: 'ACADEMIC_CURRICULUM',
+        entities: [{ canonical: 'S1 Bisnis Digital' }]
+      };
+
+      // Case A: Accepted evidence explicitly says "silabus belum tersedia" -> rejected if answer claims topics
+      const evA = {
+        accepted: [{ id: 'cA', text: 'BD233507 Teknik Pembuatan Prompt untuk Model AI. Rincian silabus belum tersedia.' }]
+      };
+      const ansA = 'Mata kuliah BD233507 Teknik Pembuatan Prompt untuk Model AI mempelajari teknik prompt engineering lanjutan dan model generative AI.';
+      const resA = verifyFinalAnswer(ansA, frame, evA);
+      expect(resA.pass).toBe(false);
+      expect(resA.reason).toBe('unsubstantiated_course_syllabus_claim');
+
+      // Case B: Accepted evidence mentions "materi perkuliahan" without content -> rejected if answer claims topics
+      const evB = {
+        accepted: [{ id: 'cB', text: 'Mata kuliah ini termasuk materi perkuliahan kurikulum 2023.' }]
+      };
+      const ansB = 'Mata kuliah BD233507 Teknik Pembuatan Prompt untuk Model AI mempelajari modul machine learning dan deep learning.';
+      const resB = verifyFinalAnswer(ansB, frame, evB);
+      expect(resB.pass).toBe(false);
+      expect(resB.reason).toBe('unsubstantiated_course_syllabus_claim');
+
+      // Case C: Accepted evidence actually contains substantive syllabus details for BD233507 -> accepted
+      const evC = {
+        accepted: [
+          {
+            id: 'cC',
+            text: 'BD233507 Teknik Pembuatan Prompt untuk Model AI Semester III 2 SKS. Silabus: Modul 1 Dasar Prompting, Modul 2 Few-Shot Prompting, Modul 3 Evaluasi Output Model AI.'
+          }
+        ]
+      };
+      const ansC = 'Mata kuliah BD233507 Teknik Pembuatan Prompt untuk Model AI pada Semester III (2 SKS) memuat silabus: Modul 1 Dasar Prompting, Modul 2 Few-Shot Prompting, dan Modul 3 Evaluasi Output Model AI.';
+      const resC = verifyFinalAnswer(ansC, frame, evC);
+      expect(resC.pass).toBe(true);
+      expect(resC.outcome).toBe(VERIFICATION_OUTCOME.VERIFIED_FACTUAL);
+
+      // Case D: LLM invents machine learning / neural networks without evidence -> rejected
+      const evD = { accepted: [{ id: 'cD', text: 'BD233507 2 SKS Semester III' }] };
+      const ansD = 'Mata kuliah BD233507 Teknik Pembuatan Prompt untuk Model AI mempelajari machine learning, deep learning, dan neural network secara mendalam.';
+      const resD = verifyFinalAnswer(ansD, frame, evD);
+      expect(resD.pass).toBe(false);
+      expect(resD.reason).toBe('unsubstantiated_course_syllabus_claim');
+    });
+
+    test('Test 7: S1 Bisnis Digital curriculum structure (146 SKS) vs graduation minimum (144 SKS) discrepancy gate', () => {
+      const frameBD = {
+        rawQuery: 'Berapa total SKS S1 Bisnis Digital?',
+        intent: 'CURRICULUM_INQUIRY',
+        domain: 'ACADEMIC_CURRICULUM',
+        entities: [{ canonical: 'S1 Bisnis Digital' }]
+      };
+      const arbitrated = {
+        accepted: [{ text: 'Kurikulum S1 Bisnis Digital 146 SKS sebaran, 144 SKS minimum kelulusan' }]
+      };
+
+      // 7a. Claiming total offered curriculum is 144 SKS -> REJECTED
+      const claimWrongOffered = 'Total struktur kurikulum yang ditawarkan pada Program Studi S1 Bisnis Digital adalah 144 SKS.';
+      const resWrongOffered = verifyFinalAnswer(claimWrongOffered, frameBD, arbitrated);
+      expect(resWrongOffered.pass).toBe(false);
+      expect(resWrongOffered.reason).toBe('curriculum_structure_sks_mismatch_bd_146');
+
+      // 7b. Claiming graduation minimum is 146 SKS -> REJECTED
+      const claimWrongGrad = 'Beban studi minimum kelulusan untuk Program Studi S1 Bisnis Digital adalah 146 SKS.';
+      const resWrongGrad = verifyFinalAnswer(claimWrongGrad, frameBD, arbitrated);
+      expect(resWrongGrad.pass).toBe(false);
+      expect(resWrongGrad.reason).toBe('graduation_minimum_sks_mismatch_bd_144');
+
+      // 7c. Accurately distinguishing 146 SKS offered and 144 SKS graduation minimum per Permendiktisaintek 39/2025 -> PASS
+      const accurateDiscrepancy = 'Struktur kurikulum Program Studi S1 Bisnis Digital menawarkan total 146 SKS (akumulasi Semester I–VIII). Sementara itu, beban studi minimum kelulusan sarjana adalah 144 SKS sesuai Permendiktisaintek No. 39 Tahun 2025 dan Pedoman Akademik ITB STIKOM Bali.';
+      const resAccurate = verifyFinalAnswer(accurateDiscrepancy, frameBD, arbitrated);
+      expect(resAccurate.pass).toBe(true);
+      expect(resAccurate.outcome).toBe(VERIFICATION_OUTCOME.VERIFIED_FACTUAL);
+    });
+  });
 });
