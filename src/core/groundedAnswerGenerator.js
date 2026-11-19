@@ -5649,7 +5649,24 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
         : (rawQuery || 'prompt model ai');
 
       const courseRecord = getProgramCourseFact('S1 Bisnis Digital', courseLookupQuery);
-      if (!courseRecord || courseRecord.verificationStatus !== 'VERIFIED_PRIMARY_SOURCE') {
+
+      const hasCompleteProvenance = Boolean(
+        courseRecord &&
+        courseRecord.verificationStatus === 'VERIFIED_PRIMARY_SOURCE' &&
+        courseRecord.sourceDocument &&
+        courseRecord.sourceUrl &&
+        courseRecord.code &&
+        courseRecord.name &&
+        courseRecord.semester &&
+        courseRecord.sks != null &&
+        courseRecord.provenanceByAttribute &&
+        courseRecord.provenanceByAttribute.code?.value === courseRecord.code &&
+        courseRecord.provenanceByAttribute.name?.value === courseRecord.name &&
+        courseRecord.provenanceByAttribute.semester?.value === courseRecord.semester &&
+        courseRecord.provenanceByAttribute.sks?.value === courseRecord.sks
+      );
+
+      if (!hasCompleteProvenance) {
         return {
           success: false,
           outcome: 'SAFE_UNKNOWN',
@@ -5666,9 +5683,9 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
       const courseCode = courseRecord.code;
       const semester = courseRecord.semester;
       const sks = courseRecord.sks;
-      const sourceDoc = courseRecord.sourceDocument || 'ISIAN WEBSITE (1).pdf';
-      const sourceUrl = courseRecord.sourceUrl || 'https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/';
-      const verificationStatus = courseRecord.verificationStatus || 'VERIFIED_PRIMARY_SOURCE';
+      const sourceDoc = courseRecord.sourceDocument;
+      const sourceUrl = courseRecord.sourceUrl;
+      const verificationStatus = courseRecord.verificationStatus;
 
       const temporalNotice = hasNowDemand
         ? (isEn
@@ -5743,7 +5760,7 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
           sourceDocument: courseRecord.sourceDocument,
           sourceUrl: courseRecord.sourceUrl,
           verificationStatus: courseRecord.verificationStatus,
-          provenanceByAttribute: courseRecord.provenanceByAttribute || null
+          provenanceByAttribute: courseRecord.provenanceByAttribute
         },
         isExtractive: true,
         handledSafely: true,

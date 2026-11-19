@@ -57,7 +57,173 @@ function failVerification(reason, extra = {}) {
   };
 }
 
-function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEvidence = {}, comparisonEnvelope = null, recommendationResult = null) {
+function tryParseUrl(str) {
+  try {
+    const trimmed = String(str).trim();
+    if (!/^https?:\/\//i.test(trimmed)) return null;
+    return new URL(trimmed);
+  } catch (e) {
+    return null;
+  }
+}
+
+function extractUrlAndLabel(item) {
+  const str = String(item || '').trim();
+  const urlMatch = str.match(/https?:\/\/[^\s\)\'\"]+/i);
+  const url = urlMatch ? urlMatch[0] : null;
+  let label = str;
+  if (url) {
+    label = str.replace(url, '').replace(/[()]/g, '').trim();
+  }
+  return { url, label: label || null, raw: str };
+}
+
+function isLabelMatch(labelA, labelB) {
+  if (!labelA || !labelB) return false;
+  const normA = String(labelA).trim().replace(/\s+/g, ' ').toLowerCase();
+  const normB = String(labelB).trim().replace(/\s+/g, ' ').toLowerCase();
+  return normA === normB;
+}
+
+function isUrlMatch(urlA, urlB) {
+  const uA = tryParseUrl(urlA);
+  const uB = tryParseUrl(urlB);
+  if (!uA || !uB) return false;
+
+  // 1. Dilarang menyertakan kredensial (username/password) baik pada claimed maupun expected URL
+  if (
+    uA.username || uA.password ||
+    uB.username || uB.password
+  ) {
+    return false;
+  }
+
+  // 2. Protocol must match exactly (HTTPS != HTTP)
+  if (uA.protocol.toLowerCase() !== uB.protocol.toLowerCase()) {
+    return false;
+  }
+
+  // 3. Strict hostname match (rejects .evil.test, phishing domains, lookalikes)
+  if (uA.hostname.toLowerCase() !== uB.hostname.toLowerCase()) {
+    return false;
+  }
+
+  // 4. Port must match (default ports normalized)
+  const portA = uA.port || (uA.protocol === 'https:' ? '443' : (uA.protocol === 'http:' ? '80' : ''));
+  const portB = uB.port || (uB.protocol === 'https:' ? '443' : (uB.protocol === 'http:' ? '80' : ''));
+  if (portA !== portB) {
+    return false;
+  }
+
+  // 5. Strict pathname match: normalized trailing slash ONLY, WITHOUT lowercasing path
+  const pathA = uA.pathname.replace(/\/+$/, '') || '/';
+  const pathB = uB.pathname.replace(/\/+$/, '') || '/';
+  if (pathA !== pathB) {
+    return false;
+  }
+
+  // 6. Search / query string matching
+  if (!uB.search || uB.search === '?') {
+    if (uA.search && uA.search.length > 1) return false;
+  } else {
+    if (uA.search !== uB.search) return false;
+  }
+
+  // 7. Hash / fragment matching
+  if (!uB.hash || uB.hash === '#') {
+    if (uA.hash && uA.hash.length > 1) return false;
+  } else {
+    if (uA.hash !== uB.hash) return false;
+  }
+
+  return true;
+}
+
+function isAtomicSourceMatch(claimed, expected) {
+  if (!claimed || !expected) return false;
+  const cRaw = String(claimed).trim();
+  const eRaw = String(expected).trim();
+
+  const cParsed = extractUrlAndLabel(cRaw);
+  const eParsed = extractUrlAndLabel(eRaw);
+
+  // Case 1: Both claimed and expected have BOTH a URL and a document label -> validate BOTH!
+  if (cParsed.url && cParsed.label && eParsed.url && eParsed.label) {
+    const urlMatches = isUrlMatch(cParsed.url, eParsed.url);
+    const labelMatches = isLabelMatch(cParsed.label, eParsed.label);
+    return urlMatches && labelMatches;
+  }
+
+  // Case 2: Both have URLs
+  if (cParsed.url && eParsed.url) {
+    const urlMatches = isUrlMatch(cParsed.url, eParsed.url);
+    if (!urlMatches) return false;
+
+    if (cParsed.label && eParsed.label) {
+      return isLabelMatch(cParsed.label, eParsed.label);
+    }
+    // Claimed is URL only, expected has URL (with or without label) -> valid subset
+    if (!cParsed.label && cParsed.url) {
+      return true;
+    }
+    // Claimed specifies a label that expected does not have
+    return false;
+  }
+
+  // Case 3: Claimed has NO URL (label only), and expected has an embedded URL and label -> valid subset
+  if (!cParsed.url && eParsed.url) {
+    if (eParsed.label && cParsed.label) {
+      return isLabelMatch(cParsed.label, eParsed.label);
+    }
+    return false;
+  }
+
+  // Case 4: Claimed has a URL, but expected has NO URL (label only)
+  if (cParsed.url && !eParsed.url) {
+    return false;
+  }
+
+  // Case 5: Neither has a URL -> both are document names / text labels -> EXACT match
+  return isLabelMatch(cParsed.label || cRaw, eParsed.label || eRaw);
+}
+
+function splitSources(str) {
+  if (!str) return [];
+  // Split on delimiters outside of parentheses: , ; &
+  const parts = [];
+  let current = '';
+  let inParen = false;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i];
+    if (ch === '(') inParen = true;
+    else if (ch === ')') inParen = false;
+
+    if (!inParen && (ch === '&' || ch === ';' || ch === ',')) {
+      if (current.trim()) parts.push(current.trim());
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  if (current.trim()) parts.push(current.trim());
+  return parts;
+}
+
+function isSourceCitationMatching(claimed, expected) {
+  if (!claimed || !expected) return false;
+  const c = String(claimed).trim();
+  const e = String(expected).trim();
+
+  const expectedParts = splitSources(e);
+  const claimedParts = splitSources(c);
+
+  if (claimedParts.length === 0 || expectedParts.length === 0) return false;
+
+  // Claimed matches if all claimed parts are legitimate expected source parts
+  return claimedParts.every(cp => expectedParts.some(ep => isAtomicSourceMatch(cp, ep)));
+}
+
+function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEvidence = {}, comparisonEnvelope = null, recommendationResult = null, options = {}) {
   if (Array.isArray(arbitratedEvidence)) {
     arbitratedEvidence = { accepted: arbitratedEvidence, rejected: [] };
   }
@@ -1543,6 +1709,103 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
             return failVerification(`unverified_course_status: course code ${code} is not verified primary source`);
           }
 
+          // 2. Canonical source document and URL completeness
+          if (!matchedRegistryCourse.sourceDocument || (typeof matchedRegistryCourse.sourceDocument === 'string' && !matchedRegistryCourse.sourceDocument.trim()) ||
+              !matchedRegistryCourse.sourceUrl || (typeof matchedRegistryCourse.sourceUrl === 'string' && !matchedRegistryCourse.sourceUrl.trim())) {
+            return failVerification(`missing_course_source_metadata: course code ${code} missing sourceDocument or sourceUrl`);
+          }
+
+          // 3. Canonical attribute-level provenance completeness & consistency
+          if (!matchedRegistryCourse.provenanceByAttribute || typeof matchedRegistryCourse.provenanceByAttribute !== 'object') {
+            return failVerification(`missing_course_attribute_provenance: course code ${code} missing provenanceByAttribute`);
+          }
+
+          const requiredAttrs = ['code', 'name', 'semester', 'sks'];
+          for (const attr of requiredAttrs) {
+            const attrProv = matchedRegistryCourse.provenanceByAttribute[attr];
+            if (!attrProv || typeof attrProv !== 'object') {
+              return failVerification(`missing_course_attribute_provenance: course code ${code} missing provenance for attribute ${attr}`);
+            }
+            if (!attrProv.source || typeof attrProv.source !== 'string' || !attrProv.source.trim()) {
+              return failVerification(`missing_course_attribute_source: course code ${code} attribute ${attr} missing source citation`);
+            }
+          }
+
+          if (matchedRegistryCourse.provenanceByAttribute.code?.value !== matchedRegistryCourse.code) {
+            return failVerification(`provenance_attribute_code_mismatch: course ${code} code provenance mismatch`);
+          }
+          if (matchedRegistryCourse.provenanceByAttribute.name?.value !== matchedRegistryCourse.name) {
+            return failVerification(`provenance_attribute_name_mismatch: course ${code} name provenance mismatch`);
+          }
+          if (matchedRegistryCourse.provenanceByAttribute.semester?.value !== matchedRegistryCourse.semester) {
+            return failVerification(`provenance_attribute_semester_mismatch: course ${code} semester provenance mismatch`);
+          }
+          if (matchedRegistryCourse.provenanceByAttribute.sks?.value !== matchedRegistryCourse.sks) {
+            return failVerification(`provenance_attribute_sks_mismatch: course ${code} sks provenance mismatch`);
+          }
+
+          // 4. Claimed Provenance Verification (if provenance is explicitly provided in pipeline or test)
+          const claimedProv = (arbitratedEvidence && arbitratedEvidence.provenance) ||
+            (semanticFrame && semanticFrame.provenance) ||
+            (typeof candidateAnswer === 'object' && candidateAnswer?.provenance) ||
+            (options && options.provenance) || null;
+
+          if (claimedProv) {
+            if (claimedProv.verificationStatus !== 'VERIFIED_PRIMARY_SOURCE') {
+              return failVerification(`unverified_course_status: claimed provenance for ${code} is not verified primary source`);
+            }
+            if (!claimedProv.sourceDocument || (typeof claimedProv.sourceDocument === 'string' && !claimedProv.sourceDocument.trim()) ||
+                !claimedProv.sourceUrl || (typeof claimedProv.sourceUrl === 'string' && !claimedProv.sourceUrl.trim())) {
+              return failVerification(`missing_course_source_metadata: claimed provenance for ${code} missing sourceDocument or sourceUrl`);
+            }
+            if (!isSourceCitationMatching(claimedProv.sourceDocument, matchedRegistryCourse.sourceDocument)) {
+              return failVerification(`mismatched_course_source_document: claimed sourceDocument for ${code} does not match registry`);
+            }
+            if (!isSourceCitationMatching(claimedProv.sourceUrl, matchedRegistryCourse.sourceUrl)) {
+              return failVerification(`mismatched_course_source_url: claimed sourceUrl for ${code} does not match registry`);
+            }
+            if (!claimedProv.provenanceByAttribute || typeof claimedProv.provenanceByAttribute !== 'object') {
+              return failVerification(`missing_course_attribute_provenance: claimed provenance for ${code} missing provenanceByAttribute`);
+            }
+            for (const attr of requiredAttrs) {
+              const attrProv = claimedProv.provenanceByAttribute[attr];
+              if (!attrProv || typeof attrProv !== 'object') {
+                return failVerification(`missing_course_attribute_provenance: claimed provenance for ${code} missing attribute ${attr}`);
+              }
+              if (!attrProv.source || typeof attrProv.source !== 'string' || !attrProv.source.trim()) {
+                return failVerification(`missing_course_attribute_source: claimed provenance for ${code} attribute ${attr} missing source citation`);
+              }
+              const expectedAttrSource = matchedRegistryCourse.provenanceByAttribute[attr]?.source;
+              if (!isSourceCitationMatching(attrProv.source, expectedAttrSource)) {
+                return failVerification(`mismatched_course_attribute_source: claimed source for ${code} attribute ${attr} does not match registry`);
+              }
+            }
+            if (claimedProv.courseCode && claimedProv.courseCode !== matchedRegistryCourse.code) {
+              return failVerification(`provenance_attribute_code_mismatch: claimed course code ${claimedProv.courseCode} does not match registry ${matchedRegistryCourse.code}`);
+            }
+            if (claimedProv.provenanceByAttribute.code?.value !== matchedRegistryCourse.code) {
+              return failVerification(`provenance_attribute_code_mismatch: claimed code provenance value does not match registry ${matchedRegistryCourse.code}`);
+            }
+            if (claimedProv.courseName && claimedProv.courseName !== matchedRegistryCourse.name) {
+              return failVerification(`provenance_attribute_name_mismatch: claimed course name ${claimedProv.courseName} does not match registry ${matchedRegistryCourse.name}`);
+            }
+            if (claimedProv.provenanceByAttribute.name?.value !== matchedRegistryCourse.name) {
+              return failVerification(`provenance_attribute_name_mismatch: claimed name provenance value does not match registry ${matchedRegistryCourse.name}`);
+            }
+            if (claimedProv.semester && claimedProv.semester !== matchedRegistryCourse.semester) {
+              return failVerification(`provenance_attribute_semester_mismatch: claimed semester ${claimedProv.semester} does not match registry ${matchedRegistryCourse.semester}`);
+            }
+            if (claimedProv.provenanceByAttribute.semester?.value !== matchedRegistryCourse.semester) {
+              return failVerification(`provenance_attribute_semester_mismatch: claimed semester provenance value does not match registry ${matchedRegistryCourse.semester}`);
+            }
+            if (claimedProv.sks != null && claimedProv.sks !== matchedRegistryCourse.sks) {
+              return failVerification(`provenance_attribute_sks_mismatch: claimed sks ${claimedProv.sks} does not match registry ${matchedRegistryCourse.sks}`);
+            }
+            if (claimedProv.provenanceByAttribute.sks?.value !== matchedRegistryCourse.sks) {
+              return failVerification(`provenance_attribute_sks_mismatch: claimed sks provenance value does not match registry ${matchedRegistryCourse.sks}`);
+            }
+          }
+
           // 2. SKS mismatch check
           const sksMatches = text.match(/\b(\d+)\s*(?:sks|kredit)\b/gi);
           if (sksMatches && matchedRegistryCourse.sks != null) {
@@ -2047,5 +2310,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
 
 module.exports = {
   verifyFinalAnswer,
-  VERIFICATION_OUTCOME
+  VERIFICATION_OUTCOME,
+  isUrlMatch,
+  isSourceCitationMatching
 };

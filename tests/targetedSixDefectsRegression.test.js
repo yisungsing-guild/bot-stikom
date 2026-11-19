@@ -9,7 +9,7 @@ const { runPhase1DeterministicPipeline } = require('../src/core/orchestrator');
 const { getProgramCourseFact } = require('../src/core/academicCatalog');
 const { buildGroundedCurriculumAnswer } = require('../src/core/groundedAnswerGenerator');
 const { evaluateAnswerability, ANSWERABILITY_STATUS } = require('../src/core/answerabilityGate');
-const { verifyFinalAnswer } = require('../src/core/finalAnswerVerifier');
+const { verifyFinalAnswer, isUrlMatch, isSourceCitationMatching } = require('../src/core/finalAnswerVerifier');
 const { VERIFICATION_OUTCOME } = require('../src/reasoning/contracts');
 
 describe('Targeted Six Defects Regression Suite (ce0b3dc + Targeted Fixes)', () => {
@@ -411,29 +411,347 @@ describe('Targeted Six Defects Regression Suite (ce0b3dc + Targeted Fixes)', () 
     // Clean up mock course from memory
     catalogData.curriculumFacts['S1 Bisnis Digital'].courses.pop();
 
-    // 5c. Final Answer Verifier Multi-Attribute Negative Tests:
-    // 5c-1. SKS mismatch: Correct code BD233507, but SKS deliberately mutated (claims 3 SKS while registry has 2 SKS) -> Rejected
+    // 5b-2. Incomplete provenance metadata (missing sourceDocument / provenanceByAttribute) -> fails closed to SAFE_UNKNOWN
+    const mockIncompleteCourse = {
+      code: 'BD888888',
+      name: 'Pemodelan AI Tanpa Metadata Sumber',
+      semester: 'Semester III',
+      sks: 2,
+      category: 'AI_APPLIED',
+      verificationStatus: 'VERIFIED_PRIMARY_SOURCE'
+      // missing sourceDocument, sourceUrl, and provenanceByAttribute
+    };
+    catalogData.curriculumFacts['S1 Bisnis Digital'].courses.push(mockIncompleteCourse);
+    const incompleteGenRes = buildGroundedCurriculumAnswer({
+      intent: 'CURRICULUM_INQUIRY',
+      rawQuery: 'Apakah ada mata kuliah AI BD888888 di Bisnis Digital?',
+      entities: [{ canonical: 'S1 Bisnis Digital' }]
+    }, [], {});
+    expect(incompleteGenRes).toBeDefined();
+    expect(incompleteGenRes.outcome).toBe('SAFE_UNKNOWN');
+    expect(incompleteGenRes.success).toBe(false);
+
+    // 5b-3. Attribute mismatch in provenanceByAttribute -> fails closed to SAFE_UNKNOWN
+    const mockMismatchedProvenanceCourse = {
+      code: 'BD777777',
+      name: 'Pemodelan AI Provenance Mismatch',
+      semester: 'Semester III',
+      sks: 2,
+      category: 'AI_APPLIED',
+      sourceDocument: 'Dokumen_Resmi.pdf',
+      sourceUrl: 'https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/',
+      verificationStatus: 'VERIFIED_PRIMARY_SOURCE',
+      provenanceByAttribute: {
+        code: { value: 'BD777777', source: 'url' },
+        name: { value: 'Pemodelan AI Provenance Mismatch', source: 'url' },
+        semester: { value: 'Semester III', source: 'url' },
+        sks: { value: 3, source: 'url' } // Mismatch! Course sks is 2, but provenance says 3
+      }
+    };
+    catalogData.curriculumFacts['S1 Bisnis Digital'].courses.push(mockMismatchedProvenanceCourse);
+    const mismatchedGenRes = buildGroundedCurriculumAnswer({
+      intent: 'CURRICULUM_INQUIRY',
+      rawQuery: 'Apakah ada mata kuliah AI BD777777 di Bisnis Digital?',
+      entities: [{ canonical: 'S1 Bisnis Digital' }]
+    }, [], {});
+    expect(mismatchedGenRes).toBeDefined();
+    expect(mismatchedGenRes.outcome).toBe('SAFE_UNKNOWN');
+    expect(mismatchedGenRes.success).toBe(false);
+
+    // 5c-Direct: Section C Direct Negative & Positive Verifier Tests for verifyFinalAnswer
+    const validPromptAiAnswer = 'Pada kurikulum resmi S1 Bisnis Digital, terdapat mata kuliah Teknik Pembuatan Prompt untuk Model AI (Kode: BD233507, 2 SKS) pada Semester III.';
+    const validFullProvenance = {
+      courseName: expectedBdFact.name,
+      courseCode: expectedBdFact.code,
+      semester: expectedBdFact.semester,
+      sks: expectedBdFact.sks,
+      sourceDocument: expectedBdFact.sourceDocument,
+      sourceUrl: expectedBdFact.sourceUrl,
+      verificationStatus: expectedBdFact.verificationStatus,
+      provenanceByAttribute: {
+        code: { value: 'BD233507', source: 'https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/' },
+        name: { value: 'Teknik Pembuatan Prompt untuk Model AI', source: 'https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/' },
+        semester: { value: 'Semester III', source: 'https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/' },
+        sks: { value: 2, source: 'https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/' }
+      }
+    };
+    const baseEvidence = {
+      accepted: [{ text: 'BD233507 Teknik Pembuatan Prompt untuk Model AI Semester III 2 SKS' }],
+      provenance: validFullProvenance
+    };
+
+    // Scenario 1: Provenance lengkap dan valid, identik dengan registry -> PASS (VERIFIED_FACTUAL)
+    const validVerifResult = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, baseEvidence);
+    expect(validVerifResult.pass).toBe(true);
+    expect(validVerifResult.outcome).toBe(VERIFICATION_OUTCOME.VERIFIED_FACTUAL);
+
+    // Scenario 2: sourceDocument berbeda meski non-empty -> REJECT (mismatched_course_source_document)
+    const badDocProvenance = {
+      ...validFullProvenance,
+      sourceDocument: 'kurikulum_tidak_resmi_2024.pdf'
+    };
+    const badDocVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: badDocProvenance });
+    expect(badDocVerif.pass).toBe(false);
+    expect(badDocVerif.outcome).toBe(VERIFICATION_OUTCOME.VERIFICATION_FAILED);
+    expect(badDocVerif.reason).toMatch(/mismatched_course_source_document/);
+
+    // 2b: Fake document prepended/appended with official identity -> REJECT
+    const appendedDocProvenance = {
+      ...validFullProvenance,
+      sourceDocument: 'Daftar_Mata_Kuliah_S1_Bisnis_Digital_Resmi.html - palsu.docx'
+    };
+    const appendedDocVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: appendedDocProvenance });
+    expect(appendedDocVerif.pass).toBe(false);
+    expect(appendedDocVerif.reason).toMatch(/mismatched_course_source_document/);
+
+    // 2c (Neg 8): Fake document name with legitimate official URL in composite label -> REJECT
+    const fakeLabelCorrectUrlProv = {
+      ...validFullProvenance,
+      sourceDocument: 'Dokumen Palsu.pdf (https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/)'
+    };
+    const fakeLabelVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: fakeLabelCorrectUrlProv });
+    expect(fakeLabelVerif.pass).toBe(false);
+    expect(fakeLabelVerif.reason).toMatch(/mismatched_course_source_document/);
+
+    // 2d (Neg 9): Legitimate document label with fake/evil URL -> REJECT
+    const legitLabelFakeUrlProv = {
+      ...validFullProvenance,
+      sourceDocument: 'Portal Resmi Prodi Bisnis Digital (https://evil.test/)'
+    };
+    const legitLabelFakeUrlVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: legitLabelFakeUrlProv });
+    expect(legitLabelFakeUrlVerif.pass).toBe(false);
+    expect(legitLabelFakeUrlVerif.reason).toMatch(/mismatched_course_source_document/);
+
+    // 2e (Pos 5): Official document label only matches expected composite source -> PASS
+    const legitLabelOnlyProv = {
+      ...validFullProvenance,
+      sourceDocument: 'Portal Resmi Prodi Bisnis Digital'
+    };
+    const legitLabelOnlyVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: legitLabelOnlyProv });
+    expect(legitLabelOnlyVerif.pass).toBe(true);
+
+    // Scenario 3: sourceUrl berbeda meski non-empty -> REJECT (mismatched_course_source_url)
+    const badUrlProvenance = {
+      ...validFullProvenance,
+      sourceUrl: 'https://bisnisdigital-palsu.ac.id'
+    };
+    const badUrlVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: badUrlProvenance });
+    expect(badUrlVerif.pass).toBe(false);
+    expect(badUrlVerif.outcome).toBe(VERIFICATION_OUTCOME.VERIFICATION_FAILED);
+    expect(badUrlVerif.reason).toMatch(/mismatched_course_source_url/);
+
+    // 3b (Neg 1): HTTP instead of HTTPS -> REJECT
+    const httpProvenance = {
+      ...validFullProvenance,
+      sourceUrl: 'http://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/'
+    };
+    const httpVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: httpProvenance });
+    expect(httpVerif.pass).toBe(false);
+    expect(httpVerif.reason).toMatch(/mismatched_course_source_url/);
+
+    // 3c (Neg 2): Lookalike URL (subdomain attack) -> REJECT
+    const lookalikeSubdomainProvenance = {
+      ...validFullProvenance,
+      sourceUrl: 'https://bisnisdigital.stikom-bali.ac.id.evil.test/id/daftar-mata-kuliah/'
+    };
+    const lookalikeSubVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: lookalikeSubdomainProvenance });
+    expect(lookalikeSubVerif.pass).toBe(false);
+    expect(lookalikeSubVerif.reason).toMatch(/mismatched_course_source_url/);
+
+    // 3d (Neg 3): Different port -> REJECT
+    const diffPortProvenance = {
+      ...validFullProvenance,
+      sourceUrl: 'https://bisnisdigital.stikom-bali.ac.id:8443/id/daftar-mata-kuliah/'
+    };
+    const diffPortVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: diffPortProvenance });
+    expect(diffPortVerif.pass).toBe(false);
+    expect(diffPortVerif.reason).toMatch(/mismatched_course_source_url/);
+
+    // 3e (Neg 4): Username/password credentials -> REJECT
+    const credsProvenance = {
+      ...validFullProvenance,
+      sourceUrl: 'https://admin:secret@bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/'
+    };
+    const credsVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: credsProvenance });
+    expect(credsVerif.pass).toBe(false);
+    expect(credsVerif.reason).toMatch(/mismatched_course_source_url/);
+
+    // 3e-2: Claimed dan expected sama-sama menggunakan username/password -> tetap ditolak
+    const bothCredsUrl = 'https://admin:secret@bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/';
+    expect(isUrlMatch(bothCredsUrl, bothCredsUrl)).toBe(false);
+    expect(isSourceCitationMatching(bothCredsUrl, bothCredsUrl)).toBe(false);
+
+    // 3e-3: URL resmi tanpa kredensial -> tetap diterima
+    const officialCleanUrl = 'https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/';
+    expect(isUrlMatch(officialCleanUrl, officialCleanUrl)).toBe(true);
+    expect(isSourceCitationMatching(officialCleanUrl, officialCleanUrl)).toBe(true);
+
+    // 3f (Neg 5): Path casing mismatch -> REJECT
+    const pathCasingProvenance = {
+      ...validFullProvenance,
+      sourceUrl: 'https://bisnisdigital.stikom-bali.ac.id/ID/DAFTAR-MATA-KULIAH/'
+    };
+    const pathCasingVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: pathCasingProvenance });
+    expect(pathCasingVerif.pass).toBe(false);
+    expect(pathCasingVerif.reason).toMatch(/mismatched_course_source_url/);
+
+    // 3g (Neg 6): Query param redirect / fake query -> REJECT
+    const fakeQueryProvenance = {
+      ...validFullProvenance,
+      sourceUrl: 'https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/?redirect=evil.test'
+    };
+    const fakeQueryVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: fakeQueryProvenance });
+    expect(fakeQueryVerif.pass).toBe(false);
+    expect(fakeQueryVerif.reason).toMatch(/mismatched_course_source_url/);
+
+    // 3h (Neg 7): Fragment fake anchor -> REJECT
+    const fakeHashProvenance = {
+      ...validFullProvenance,
+      sourceUrl: 'https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/#fake-anchor'
+    };
+    const fakeHashVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: fakeHashProvenance });
+    expect(fakeHashVerif.pass).toBe(false);
+    expect(fakeHashVerif.reason).toMatch(/mismatched_course_source_url/);
+
+    // 3i (Pos 2): Official URL without trailing slash matches -> PASS
+    const noTrailingSlashProv = {
+      ...validFullProvenance,
+      sourceUrl: 'https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah'
+    };
+    const noTrailingSlashVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: noTrailingSlashProv });
+    expect(noTrailingSlashVerif.pass).toBe(true);
+
+    // Scenario 4: Source atribut SKS palsu meski non-empty -> REJECT (mismatched_course_attribute_source)
+    const fakeSksSourceProvenance = {
+      ...validFullProvenance,
+      provenanceByAttribute: {
+        ...validFullProvenance.provenanceByAttribute,
+        sks: { value: 2, source: 'https://unverified-blog.com/sks' }
+      }
+    };
+    const fakeSksSourceVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: fakeSksSourceProvenance });
+    expect(fakeSksSourceVerif.pass).toBe(false);
+    expect(fakeSksSourceVerif.outcome).toBe(VERIFICATION_OUTCOME.VERIFICATION_FAILED);
+    expect(fakeSksSourceVerif.reason).toMatch(/mismatched_course_attribute_source/);
+
+    // 4b (Neg 10): Multi-source attribute citation containing one fake source -> REJECT
+    const mixedFakeAttrSourceProv = {
+      ...validFullProvenance,
+      provenanceByAttribute: {
+        ...validFullProvenance.provenanceByAttribute,
+        code: { value: 'BD233507', source: 'BD_curriculum_raw.html & Dokumen_Palsu.pdf' }
+      }
+    };
+    const mixedFakeVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: mixedFakeAttrSourceProv });
+    expect(mixedFakeVerif.pass).toBe(false);
+    expect(mixedFakeVerif.reason).toMatch(/mismatched_course_attribute_source/);
+
+    // Scenario 5: Source atribut nama berbeda -> REJECT (mismatched_course_attribute_source)
+    const badNameSourceProvenance = {
+      ...validFullProvenance,
+      provenanceByAttribute: {
+        ...validFullProvenance.provenanceByAttribute,
+        name: { value: 'Teknik Pembuatan Prompt untuk Model AI', source: 'silabus_tidak_terverifikasi.docx' }
+      }
+    };
+    const badNameSourceVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: badNameSourceProvenance });
+    expect(badNameSourceVerif.pass).toBe(false);
+    expect(badNameSourceVerif.outcome).toBe(VERIFICATION_OUTCOME.VERIFICATION_FAILED);
+    expect(badNameSourceVerif.reason).toMatch(/mismatched_course_attribute_source/);
+
+    // Additional checks: Attribute value mismatches & empty sources
+    const badSksProvenance = {
+      ...validFullProvenance,
+      sks: 3,
+      provenanceByAttribute: {
+        ...validFullProvenance.provenanceByAttribute,
+        sks: { value: 3, source: 'https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/' }
+      }
+    };
+    const badSksVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: badSksProvenance });
+    expect(badSksVerif.pass).toBe(false);
+    expect(badSksVerif.outcome).toBe(VERIFICATION_OUTCOME.VERIFICATION_FAILED);
+    expect(badSksVerif.reason).toMatch(/provenance_attribute_sks_mismatch/);
+
+    const badSemProvenance = {
+      ...validFullProvenance,
+      semester: 'Semester IV',
+      provenanceByAttribute: {
+        ...validFullProvenance.provenanceByAttribute,
+        semester: { value: 'Semester IV', source: 'https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/' }
+      }
+    };
+    const badSemVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: badSemProvenance });
+    expect(badSemVerif.pass).toBe(false);
+    expect(badSemVerif.outcome).toBe(VERIFICATION_OUTCOME.VERIFICATION_FAILED);
+    expect(badSemVerif.reason).toMatch(/provenance_attribute_semester_mismatch/);
+
+    const badNameProvenance = {
+      ...validFullProvenance,
+      courseName: 'Prompting Generatif AI Lanjut',
+      provenanceByAttribute: {
+        ...validFullProvenance.provenanceByAttribute,
+        name: { value: 'Prompting Generatif AI Lanjut', source: 'https://bisnisdigital.stikom-bali.ac.id/id/daftar-mata-kuliah/' }
+      }
+    };
+    const badNameVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: badNameProvenance });
+    expect(badNameVerif.pass).toBe(false);
+    expect(badNameVerif.outcome).toBe(VERIFICATION_OUTCOME.VERIFICATION_FAILED);
+    expect(badNameVerif.reason).toMatch(/provenance_attribute_name_mismatch/);
+
+    const emptySourceProvenance = {
+      ...validFullProvenance,
+      provenanceByAttribute: {
+        ...validFullProvenance.provenanceByAttribute,
+        sks: { value: 2, source: '   ' }
+      }
+    };
+    const emptySourceVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: emptySourceProvenance });
+    expect(emptySourceVerif.pass).toBe(false);
+    expect(emptySourceVerif.outcome).toBe(VERIFICATION_OUTCOME.VERIFICATION_FAILED);
+    expect(emptySourceVerif.reason).toMatch(/missing_course_attribute_source/);
+
+    const emptySourceUrlProvenance = {
+      ...validFullProvenance,
+      sourceUrl: ''
+    };
+    const emptySourceUrlVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY', rawQuery: 'Apakah ada mata kuliah AI di Bisnis Digital?' }, { ...baseEvidence, provenance: emptySourceUrlProvenance });
+    expect(emptySourceUrlVerif.pass).toBe(false);
+    expect(emptySourceUrlVerif.outcome).toBe(VERIFICATION_OUTCOME.VERIFICATION_FAILED);
+    expect(emptySourceUrlVerif.reason).toMatch(/missing_course_source_metadata/);
+
+    // Clean up mock courses
+    catalogData.curriculumFacts['S1 Bisnis Digital'].courses.pop();
+    catalogData.curriculumFacts['S1 Bisnis Digital'].courses.pop();
+
+    // Scenario 6: Provenance tidak disertakan saat jawaban memuat kode mata kuliah -> canonical registry menjadi basis verifikasi
+    // 6a. Factual correct answer without claimed provenance passes verifier using canonical registry
+    const noProvCorrectVerif = verifyFinalAnswer(validPromptAiAnswer, { intent: 'CURRICULUM_INQUIRY' }, { accepted: [{ text: 'BD233507 2 SKS Semester III' }] });
+    expect(noProvCorrectVerif.pass).toBe(true);
+    expect(noProvCorrectVerif.outcome).toBe(VERIFICATION_OUTCOME.VERIFIED_FACTUAL);
+
+    // 6b. SKS mismatch: Correct code BD233507, but SKS deliberately mutated (claims 3 SKS while registry has 2 SKS) -> Rejected
     const wrongSksAnswer = 'Pada kurikulum resmi S1 Bisnis Digital, terdapat mata kuliah Teknik Pembuatan Prompt untuk Model AI (Kode: BD233507, 3 SKS) pada Semester III.';
     const wrongSksVerif = verifyFinalAnswer(wrongSksAnswer, { intent: 'CURRICULUM_INQUIRY' }, { accepted: [] });
     expect(wrongSksVerif.pass).toBe(false);
     expect(wrongSksVerif.outcome).toBe(VERIFICATION_OUTCOME.VERIFICATION_FAILED);
     expect(wrongSksVerif.reason).toMatch(/unverified_course_sks_claim/);
 
-    // 5c-2. Semester mismatch: Correct code BD233507, but semester deliberately mutated (claims Semester IV while registry has Semester III) -> Rejected
+    // 6c. Semester mismatch: Correct code BD233507, but semester deliberately mutated (claims Semester IV while registry has Semester III) -> Rejected
     const wrongSemAnswer = 'Pada kurikulum resmi S1 Bisnis Digital, terdapat mata kuliah Teknik Pembuatan Prompt untuk Model AI (Kode: BD233507, 2 SKS) pada Semester IV.';
     const wrongSemVerif = verifyFinalAnswer(wrongSemAnswer, { intent: 'CURRICULUM_INQUIRY' }, { accepted: [] });
     expect(wrongSemVerif.pass).toBe(false);
     expect(wrongSemVerif.outcome).toBe(VERIFICATION_OUTCOME.VERIFICATION_FAILED);
     expect(wrongSemVerif.reason).toMatch(/unverified_course_semester_claim/);
 
-    // 5c-3. Course Name mismatch: Correct code BD233507, but course name completely mismatched (Robotika Otomasi Industri) -> Rejected
+    // 6d. Course Name mismatch: Correct code BD233507, but course name completely mismatched (Robotika Otomasi Industri) -> Rejected
     const wrongNameAnswer = 'Pada kurikulum resmi S1 Bisnis Digital, terdapat mata kuliah Robotika Otomasi Industri (Kode: BD233507, 2 SKS) pada Semester III.';
     const wrongNameVerif = verifyFinalAnswer(wrongNameAnswer, { intent: 'CURRICULUM_INQUIRY' }, { accepted: [] });
     expect(wrongNameVerif.pass).toBe(false);
     expect(wrongNameVerif.outcome).toBe(VERIFICATION_OUTCOME.VERIFICATION_FAILED);
     expect(wrongNameVerif.reason).toMatch(/unverified_course_name_claim/);
 
-    // 5c-4. Obsolete/404 Source URL: claims 404 URL -> Rejected
+    // 6e. Obsolete/404 Source URL: claims 404 URL -> Rejected
     const wrongUrlAnswer = 'Pada kurikulum resmi S1 Bisnis Digital, mata kuliah Teknik Pembuatan Prompt untuk Model AI (Kode: BD233507, 2 SKS) Semester III merujuk https://stikom-bali.ac.id/kurikulum-bisnis-digital';
     const wrongUrlVerif = verifyFinalAnswer(wrongUrlAnswer, { intent: 'CURRICULUM_INQUIRY' }, { accepted: [] });
     expect(wrongUrlVerif.pass).toBe(false);

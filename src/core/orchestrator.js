@@ -1052,8 +1052,12 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       const synthesis = synthesisResult;
       if (synthesis && synthesis.success && synthesis.answer) {
         // 7. Universal Final Verification
+        if (synthesis?.provenance) {
+          arbitrated.provenance = synthesis.provenance;
+        }
+        const verifOpts = { provenance: synthesis?.provenance || null };
         const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
-        verification = verifFn(synthesis.answer, frame, arbitrated, null, recResult);
+        verification = verifFn(synthesis.answer, frame, arbitrated, null, recResult, verifOpts);
         if (synthesis?.provenance) {
           verification.provenance = synthesis.provenance;
         }
