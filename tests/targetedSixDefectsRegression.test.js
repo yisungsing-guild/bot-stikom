@@ -1438,4 +1438,169 @@ describe('Targeted Six Defects Regression Suite (ce0b3dc + Targeted Fixes)', () 
       expect(feeRes.answer || feeRes.text).toMatch(/Rp\s*6\.500\.000/i);
     });
   });
+
+  describe('Prioritas 5: Production Deterministic Course Handoff & Regression Suite', () => {
+    test('1. Production simulation: Prompt AI course resolves before LLM, LLM spy is NOT called', async () => {
+      const mockLlmSpy = jest.fn().mockResolvedValue({
+        success: true,
+        answer: 'Unwanted LLM generation',
+        content: 'Unwanted LLM generation'
+      });
+      const mockAiEngine = {
+        apiKey: 'sk-proj-mock-prod-key',
+        model: 'gpt-6-luna',
+        generateCompletion: mockLlmSpy
+      };
+
+      const q = 'Di S1 Bisnis Digital, apa nama mata kuliah tentang pembuatan prompt untuk model AI, semester berapa, dan berapa SKS?';
+      const res = await runPhase1DeterministicPipeline('PROD-HANDOFF-01', q, { aiEngine: mockAiEngine });
+      const answer = res.answer || res.text || '';
+      const outcome = res.verification?.outcome || res.subQueryResults?.[0]?.verification?.outcome;
+
+      expect(mockLlmSpy).not.toHaveBeenCalled();
+      expect(answer).toMatch(/Teknik Pembuatan Prompt untuk Model AI/i);
+      expect(answer).toMatch(/BD233507/);
+      expect(answer).toMatch(/Semester\s*III/i);
+      expect(answer).toMatch(/2\s*SKS/i);
+      expect(answer).toMatch(/S1 Bisnis Digital/i);
+      expect(outcome).toBe('VERIFIED_FACTUAL');
+    });
+
+    test('2. "pembuatan" is preserved and not corrupted into "peminatan"', () => {
+      const { normalizeUserQuery } = require('../src/utils/queryNormalizer');
+      const { resolveSemanticFrame } = require('../src/core/semanticFrameResolver');
+
+      const raw = 'pembuatan prompt untuk model AI';
+      const normRes = normalizeUserQuery(raw);
+      const normalized = typeof normRes === 'object' ? normRes.normalizedText : normRes;
+      expect(normalized).toBe('pembuatan prompt untuk model ai');
+      expect(normalized).not.toMatch(/\bpeminatan\b/i);
+
+      const frame = resolveSemanticFrame(raw);
+      expect(frame.normalizedQuery).toBe('pembuatan prompt untuk model ai');
+      expect(frame.normalizedQuery).not.toMatch(/\bpeminatan\b/i);
+    });
+
+    test('3. Generic course resolver works for other study programs (TI, SI, SK)', () => {
+      const siCourse = getProgramCourseFact('S1 Sistem Informasi', 'dasar algoritma');
+      expect(siCourse).not.toBeNull();
+      expect(siCourse.name).toBe('Dasar Algoritma');
+      expect(siCourse.semester).toBe('Semester I');
+      expect(siCourse.sks).toBe(2);
+
+      const siMlCourse = getProgramCourseFact('S1 Sistem Informasi', 'pembelajaran mesin');
+      expect(siMlCourse).not.toBeNull();
+      expect(siMlCourse.name).toBe('Pembelajaran Mesin');
+      expect(siMlCourse.semester).toBe('Semester VI');
+      expect(siMlCourse.sks).toBe(4);
+
+      const tiCourse = getProgramCourseFact('S1 Teknologi Informasi', 'kecerdasan buatan');
+      expect(tiCourse).not.toBeNull();
+      expect(tiCourse.name).toBe('Kecerdasan Buatan');
+      expect(tiCourse.semester).toBe('Semester IV');
+      expect(tiCourse.sks).toBe(2);
+
+      const skCourse = getProgramCourseFact('S1 Sistem Komputer', 'kecerdasan artifisial');
+      expect(skCourse).not.toBeNull();
+      expect(skCourse.name).toBe('Kecerdasan Artifisial');
+      expect(skCourse.semester).toBe('Semester V');
+      expect(skCourse.sks).toBe(4);
+    });
+
+    test('4. Ambiguous / false positive queries fail closed without forcing a wrong candidate', () => {
+      const ambig1 = getProgramCourseFact('S1 Bisnis Digital', 'apa saja mata kuliahnya?');
+      expect(ambig1).toBeNull();
+
+      const ambig2 = getProgramCourseFact('S1 Bisnis Digital', 'pembuatan game');
+      expect(ambig2).toBeNull();
+
+      const ambig3 = getProgramCourseFact('S1 Bisnis Digital', 'sistem');
+      expect(ambig3).toBeNull();
+
+      const nonExistentCode = getProgramCourseFact('S1 Bisnis Digital', 'XX999999');
+      expect(nonExistentCode).toBeNull();
+    });
+
+    test('5. Syllabus inquiry returns SAFE_UNKNOWN with course identity and no syllabus hallucination', async () => {
+      const q = 'Di S1 Bisnis Digital, apa nama mata kuliah tentang pembuatan prompt untuk model AI, semester berapa, dan berapa SKS?';
+      await runPhase1DeterministicPipeline('PROD-SYLLABUS-01', q);
+
+      const syllabusQ = 'Mata kuliah tersebut mempelajari apa saja?';
+      const syllabusRes = await runPhase1DeterministicPipeline('PROD-SYLLABUS-01', syllabusQ);
+      const answer = syllabusRes.answer || syllabusRes.text || '';
+      const outcome = syllabusRes.verification?.outcome || syllabusRes.subQueryResults?.[0]?.verification?.outcome;
+
+      expect(answer).toMatch(/Teknik Pembuatan Prompt untuk Model AI/i);
+      expect(answer).toMatch(/BD233507/);
+      expect(answer).toMatch(/belum\s+memuat\s+silabus/i);
+      expect(answer).not.toMatch(/machine\s+learning|deep\s+learning|neural\s+network/i);
+      expect(answer).not.toMatch(/kewirausahaan/i);
+      expect(outcome).toBe('SAFE_UNKNOWN');
+    });
+
+    test('6. Multi-turn session maintains lastCourseFact across 3 turns', async () => {
+      const q1 = 'Di S1 Bisnis Digital, apa nama mata kuliah tentang pembuatan prompt untuk model AI, semester berapa, dan berapa SKS?';
+      const r1 = await runPhase1DeterministicPipeline('PROD-MULTITURN-01', q1);
+      expect(r1.answer).toMatch(/BD233507/);
+
+      const sess1 = await getSession('PROD-MULTITURN-01');
+      expect(sess1.data.lastCourseFact).toBeDefined();
+      expect(sess1.data.lastCourseFact.code || sess1.data.lastCourseFact.courseCode).toBe('BD233507');
+
+      const q2 = 'Mata kuliah tersebut mempelajari apa saja?';
+      const r2 = await runPhase1DeterministicPipeline('PROD-MULTITURN-01', q2);
+      expect(r2.answer).toMatch(/BD233507/);
+
+      const sess2 = await getSession('PROD-MULTITURN-01');
+      expect(sess2.data.lastCourseFact).toBeDefined();
+      expect(sess2.data.lastCourseFact.code || sess2.data.lastCourseFact.courseCode).toBe('BD233507');
+
+      const q3 = 'Berapa SKS dan semester berapa mata kuliah tersebut?';
+      const r3 = await runPhase1DeterministicPipeline('PROD-MULTITURN-01', q3);
+      expect(r3.answer).toMatch(/2\s*SKS/i);
+      expect(r3.answer).toMatch(/Semester\s*III/i);
+      expect(r3.verification?.outcome || r3.subQueryResults?.[0]?.verification?.outcome).toBe('VERIFIED_FACTUAL');
+    });
+
+    test('7. Orchestrator recovery overrides ungrounded LLM SAFE_UNKNOWN when registry has verified facts', async () => {
+      const mockAbstainEngine = {
+        apiKey: 'sk-proj-mock-prod-key',
+        model: 'gpt-6-luna',
+        generateCompletion: jest.fn().mockResolvedValue({
+          success: true,
+          answer: 'Maaf, saya tidak tahu mengenai informasi mata kuliah tersebut.',
+          content: 'Maaf, saya tidak tahu mengenai informasi mata kuliah tersebut.',
+          outcome: 'SAFE_UNKNOWN'
+        })
+      };
+
+      const q = 'Di S1 Bisnis Digital, apa nama mata kuliah tentang pembuatan prompt untuk model AI, semester berapa, dan berapa SKS?';
+      const res = await runPhase1DeterministicPipeline('PROD-RECOVERY-01', q, { aiEngine: mockAbstainEngine });
+      const answer = res.answer || res.text || '';
+      const outcome = res.verification?.outcome || res.subQueryResults?.[0]?.verification?.outcome;
+
+      expect(answer).toMatch(/Teknik Pembuatan Prompt untuk Model AI/i);
+      expect(answer).toMatch(/BD233507/);
+      expect(outcome).toBe('VERIFIED_FACTUAL');
+    });
+
+    test('8. General curriculum structure query does not latch onto single-course handoff', async () => {
+      const q = 'Bagaimana struktur kurikulum S1 Bisnis Digital?';
+      const res = await runPhase1DeterministicPipeline('PROD-GEN-CURRIC-01', q);
+      const answer = res.answer || res.text || '';
+
+      expect(answer).toMatch(/146\s*SKS|Semester\s*I/i);
+      expect(answer).not.toMatch(/Teknik Pembuatan Prompt untuk Model AI.*Beban.*2 SKS/i);
+    });
+
+    test('9. PMB and Fee behaviors remain intact in production-like environment', async () => {
+      const pmbRes = await runPhase1DeterministicPipeline('PROD-SMOKE-PMB', 'Pendaftaran masih dibuka?');
+      expect(pmbRes.verification?.outcome || pmbRes.subQueryResults?.[0]?.verification?.outcome).toBe('SAFE_UNKNOWN');
+      expect(pmbRes.answer || pmbRes.text).toMatch(/pmb\.stikom-bali\.ac\.id|\(0361\)\s*244445/i);
+
+      const feeRes = await runPhase1DeterministicPipeline('PROD-SMOKE-FEE', 'Berapa biaya kuliah S1 Bisnis Digital?');
+      expect(feeRes.verification?.outcome || feeRes.subQueryResults?.[0]?.verification?.outcome).toBe('VERIFIED_FACTUAL');
+      expect(feeRes.answer || feeRes.text).toMatch(/Rp\s*6\.500\.000/i);
+    });
+  });
 });

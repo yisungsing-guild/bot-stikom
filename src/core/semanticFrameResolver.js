@@ -125,23 +125,22 @@ function approximateDomainToken(token) {
 
   for (const target of CANONICAL_DOMAIN_LEXICON) {
     if (token === target) return target;
+    if (token[0] !== target[0]) continue;
     const targSkel = getConsonantSkeleton(target);
 
     // Rule 1: Consonant skeleton match (missing vowels shorthand)
-    if (tSkel.length >= 2 && tSkel === targSkel && token[0] === target[0]) {
+    if (tSkel.length >= 2 && tSkel === targSkel) {
       return target;
     }
 
     // Rule 2: Levenshtein distance
+    // Edit distance 2 is only allowed if consonant skeletons match; otherwise dist must be at most 1
+    const maxAllowedDist = (tSkel.length >= 2 && tSkel === targSkel) ? (token.length <= 4 ? 1 : 2) : 1;
     const dist = levenshteinDistance(token, target);
-    const maxLen = Math.max(token.length, target.length);
-    const maxAllowedDist = maxLen <= 4 ? 1 : (maxLen <= 7 ? 1 : 2);
 
     if (dist <= maxAllowedDist && dist < bestScore) {
-      if (token[0] === target[0]) {
-        bestScore = dist;
-        bestMatch = target;
-      }
+      bestScore = dist;
+      bestMatch = target;
     }
   }
 
@@ -156,7 +155,7 @@ function hasGenuineProgramFitSignal(q) {
     return false;
   }
   if (/\b(?:apa\s+saja|ada\s+apa(?:\s+saja)?|daftar\s+(?:prodi|jurusan|program\s+studi)|list\s+(?:prodi|jurusan|program\s+studi)|pilihan\s+(?:prodi|jurusan|program\s+studi)|what\s+(?:.*?\s+)?(?:programs?|majors?|degrees?)|which\s+(?:programs?|majors?))\b/i.test(text) &&
-      !/\b(?:rekomendasi|cocok|saran|bingung|suka|minat|hobi|bakat|passion|tertarik|cita-?cita)\b/i.test(text)) {
+    !/\b(?:rekomendasi|cocok|saran|bingung|suka|minat|hobi|bakat|passion|tertarik|cita-?cita)\b/i.test(text)) {
     return false;
   }
   const hasExplicitPersonalFitCue = /\b(?:rekomendasi|rekomendasikan|cocok(?:nya)?|saran|bingung(?:\s+pilih|\s+mau|\s+ambil)?|pas(?:nya)?\s+(?:masuk|ambil|pilih|prodi|jurusan)|jurusan\s+apa\s+yang\s+pas|prodi\s+apa\s+yang\s+pas|sebaiknya\s+(?:mengambil|ambil|memilih|pilih|masuk)|mending(?:\s+masuk|\s+ambil|\s+pilih)?|enaknya\s+(?:masuk|ambil|pilih)|which\s+major\s+is\s+recommended|awam\s+(?:soal|tentang)?\s*(?:pemrograman|coding|koding)|suka|minat|hobi|bakat|passion|tertarik|senang|cita-?cita|ingin\s+menjadi|mau\s+berkarir|mau\s+jadi|ingin\s+jadi)\b/i.test(text);
@@ -503,7 +502,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     /\b(?:(?:kamu|anda|bot|tiko)\s+(?:bisa|dapat)\s+(?:bantu|melayani|jawab|memberikan|lakukan)\s+(?:apa(?:\s+saja)?|informasi\s+apa)|bisa\s+bantu\s+apa(?:\s+saja)?|apa\s+(?:fungsi|tugas|kegunaan|kemampuan)(?:mu)?)\b/i.test(normalized) ||
     /\b(?:apa\s+saja\s+yang\s+(?:bisa|dapat)\s+(?:kamu|anda|bot|tiko)?\s*(?:jawab|bantu|jelaskan)|apa\s+yang\s+bisa\s+(?:kamu|anda|bot|tiko)\s*(?:jawab|bantu|jelaskan))\b/i.test(normalized) ||
     (/\b(?:kamu|anda|bot|tiko)\s+(?:tahu|mengetahui|paham|mengerti)\s+(?:semua|seluruh|apa\s+saja|tentang\s+apa)\b/i.test(normalized) &&
-     !/\b(biaya|tarif|spp|dpp|daftar|pendaftaran|jurusan|prodi|beasiswa|potongan|akreditasi|kurikulum|matkul|lokasi|alamat|kontak)\b/i.test(normalized)) ||
+      !/\b(biaya|tarif|spp|dpp|daftar|pendaftaran|jurusan|prodi|beasiswa|potongan|akreditasi|kurikulum|matkul|lokasi|alamat|kontak)\b/i.test(normalized)) ||
     /\b(?:apakah\s+)?(?:kamu|anda|bot|tiko)\s+(?:bisa|dapat|mampu)\s+menjawab\s+(?:semua|seluruh)\s+(?:pertanyaan|informasi)\b/i.test(normalized) ||
     /\b(?:what\s+can\s+you\s+do|what\s+do\s+you\s+know|how\s+can\s+you\s+help)\b/i.test(normalized)
   ) {

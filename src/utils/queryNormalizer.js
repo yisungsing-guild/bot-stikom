@@ -320,19 +320,26 @@ function normalizeUserQuery(text) {
 const FUZZY_TOKEN_CACHE_MAX = 2048;
 const fuzzyTokenCache = new Map();
 
+function getConsonantSkeleton(w) {
+  return String(w || '').replace(/[aeiou]/gi, '');
+}
+
 function fuzzyNormalizeDomainToken(token) {
   if (!token || token.length < 4) return token;
   if (FUZZY_PROTECTED_VALID_TOKENS.has(token)) return token;
   if (fuzzyTokenCache.has(token)) return fuzzyTokenCache.get(token);
 
+  const tSkel = getConsonantSkeleton(token);
   let bestMatch = token;
   let bestDistance = Infinity;
   for (const candidate of DOMAIN_FUZZY_VOCAB) {
     if (candidate === token) return token;
-    const threshold = token.length <= 4 ? 1 : (candidate.length <= 6 ? 1 : 2);
-    if (Math.abs(token.length - candidate.length) > threshold) continue;
-    const distance = levenshteinDistance(token, candidate, threshold);
-    if (distance <= threshold && distance < bestDistance) {
+    if (candidate[0] !== token[0]) continue;
+    const cSkel = getConsonantSkeleton(candidate);
+    const maxAllowed = (tSkel.length >= 2 && tSkel === cSkel) ? (token.length <= 4 ? 1 : 2) : 1;
+    if (Math.abs(token.length - candidate.length) > maxAllowed) continue;
+    const distance = levenshteinDistance(token, candidate, maxAllowed);
+    if (distance <= maxAllowed && distance < bestDistance) {
       bestDistance = distance;
       bestMatch = candidate;
     }

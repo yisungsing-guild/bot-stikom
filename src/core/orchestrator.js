@@ -27,7 +27,8 @@ const { arbitrateEvidence } = require('./evidenceArbiter');
 const { evaluateAnswerability, ANSWERABILITY_STATUS } = require('./answerabilityGate');
 const groundedAnswerGenerator = require('./groundedAnswerGenerator');
 const finalAnswerVerifier = require('./finalAnswerVerifier');
-const { synthesizeAnswer, buildGenericExtractiveFallback, buildGroundedCurriculumAnswer } = groundedAnswerGenerator;
+const { synthesizeAnswer, buildGenericExtractiveFallback, buildGroundedCurriculumAnswer, resolveEffectiveTargetEntity } = groundedAnswerGenerator;
+const { getProgramCourseFact } = require('./academicCatalog');
 const { verifyFinalAnswer } = finalAnswerVerifier;
 const outboundDispatcher = require('./outboundDispatcher');
 const logger = require('../logger');
@@ -1069,7 +1070,42 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         const hasVerifiedFactualOutcome = verification.pass === true &&
           verification.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL &&
           isVerifiedAnswer(synthesis.answer, verification);
-        const isSafeAbstention = (synthesis.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN || synthesis.handledSafely || (synthesis.source === 'llm_grounded_synthesis' && verification.handledSafely)) &&
+
+        const targetProgForCourse = (typeof resolveEffectiveTargetEntity === 'function' ? resolveEffectiveTargetEntity(frame, arbitrated) : null) ||
+          frame.academicProgram ||
+          (frame.entities || []).find(e => (e.family === 'academic_program' || e.type === 'program'))?.canonical ||
+          sessionData?.lastCourseFact?.program ||
+          sessionData?.activeEntity;
+
+        const isCourseQuery = (
+          frame.domain === 'ACADEMIC_CURRICULUM' ||
+          frame.intent === 'CURRICULUM_INQUIRY' ||
+          (Array.isArray(frame.aspects) && frame.aspects.some(a => ['curriculum', 'courses', 'course_syllabus', 'sks', 'semester', 'course_details'].includes(a))) ||
+          /\b(?:mata\s*kuliah|matkul|kurikulum|silabus)\b/i.test(frame.rawQuery || '')
+        ) && !frame.isComparison && frame.intent !== 'PROGRAM_COMPARISON';
+
+        let hasVerifiedCourseInRegistry = false;
+        if (isCourseQuery && targetProgForCourse) {
+          const isAnaphoric = (
+            /\b(?:mata\s*kuliah|matkul)(?:\s+(?:tersebut|itu|ini))?\b/i.test(frame.rawQuery || '') ||
+            /\btersebut\b/i.test(frame.rawQuery || '')
+          ) && Boolean(sessionData?.lastCourseFact || frame?.courseFact);
+
+          const lookupQ = isAnaphoric
+            ? (sessionData?.lastCourseFact?.name || sessionData?.lastCourseFact?.courseName || sessionData?.lastCourseFact?.code || sessionData?.lastCourseFact?.courseCode || frame.rawQuery)
+            : frame.rawQuery;
+
+          const courseRec = getProgramCourseFact(targetProgForCourse, lookupQ);
+          if (courseRec && courseRec.verificationStatus === 'VERIFIED_PRIMARY_SOURCE') {
+            hasVerifiedCourseInRegistry = true;
+          }
+        }
+
+        const isLlmUnsubstantiatedAbstention = hasVerifiedCourseInRegistry &&
+          (synthesis.source === 'llm_grounded_synthesis' || synthesis.source === 'openai');
+
+        const isSafeAbstention = !isLlmUnsubstantiatedAbstention &&
+          (synthesis.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN || synthesis.handledSafely || (synthesis.source === 'llm_grounded_synthesis' && verification.handledSafely)) &&
           verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN &&
           verification.handledSafely;
         const isPartialGroundedOutcome = verification.pass === true &&
@@ -1093,6 +1129,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
           const isSpecificCourseOrSyllabusQuery = Boolean(frame?.courseFact) ||
             Boolean(frame?.courseFocus) ||
             hasAnaphoricCourseReference ||
+            hasVerifiedCourseInRegistry ||
             /\b[a-z]{2}\d{6}\b/i.test(queryText) ||
             frame?.intent === 'CURRICULUM_INQUIRY' ||
             (/\b(?:mata\s*kuliah|matkul|kurikulum|silabus)\b/i.test(queryText) &&
@@ -1103,7 +1140,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
             const curriculumAnswerFn = groundedAnswerGenerator.buildGroundedCurriculumAnswer || buildGroundedCurriculumAnswer;
             const curriculumRecovery = curriculumAnswerFn(frame, arbitrated.accepted, synthOpts);
             if (curriculumRecovery && curriculumRecovery.success && curriculumRecovery.answer) {
-              const recoveryVerif = verifFn(curriculumRecovery.answer, frame, arbitrated, null, recResult);
+              const recoveryVerifOpts = { provenance: curriculumRecovery.provenance || null };
+              const recoveryVerif = verifFn(curriculumRecovery.answer, frame, arbitrated, null, recResult, recoveryVerifOpts);
               const isAcceptableRecoveryVerif = (recoveryVerif.pass === true && (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.outcome === 'PARTIAL')) ||
                 (recoveryVerif.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN && (recoveryVerif.handledSafely || recoveryVerif.reason === 'ai_curriculum_source_gap_handled_safely'));
 
@@ -1112,9 +1150,16 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
                 verification = {
                   ...recoveryVerif,
                   source: curriculumRecovery.source || 'grounded_curriculum_answer',
+                  provenance: curriculumRecovery.provenance || recoveryVerif.provenance || null,
                   isGrounded: recoveryVerif.isGrounded !== false,
                   handledSafely: true
                 };
+                if (curriculumRecovery.provenance) {
+                  synthesisResult = {
+                    ...synthesisResult,
+                    provenance: curriculumRecovery.provenance
+                  };
+                }
                 recovered = true;
               }
             }
@@ -1199,7 +1244,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
           const curriculumRes = curriculumAnswerFn(frame, arbitrated.accepted, synthOpts);
           if (curriculumRes && curriculumRes.success && curriculumRes.answer) {
             const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
-            const recoveryVerif = verifFn(curriculumRes.answer, frame, arbitrated, null, recResult);
+            const recoveryVerifOpts = { provenance: curriculumRes.provenance || null };
+            const recoveryVerif = verifFn(curriculumRes.answer, frame, arbitrated, null, recResult, recoveryVerifOpts);
             const isAcceptableRecoveryVerif = (recoveryVerif.pass === true && (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.outcome === 'PARTIAL')) ||
               (recoveryVerif.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN && (recoveryVerif.handledSafely || recoveryVerif.reason === 'ai_curriculum_source_gap_handled_safely'));
 
@@ -1208,9 +1254,16 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
               verification = {
                 ...recoveryVerif,
                 source: curriculumRes.source || 'grounded_curriculum_answer',
+                provenance: curriculumRes.provenance || recoveryVerif.provenance || null,
                 isGrounded: recoveryVerif.isGrounded !== false,
                 handledSafely: true
               };
+              if (curriculumRes.provenance) {
+                synthesisResult = {
+                  ...synthesisResult,
+                  provenance: curriculumRes.provenance
+                };
+              }
             }
           }
           if (!answer) {
@@ -1529,14 +1582,23 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     const isGeneralCurriculumQuery = primaryFrame.intent === 'CURRICULUM_INQUIRY' && !Boolean(primaryFrame.courseFact) && !Boolean(primaryFrame.courseFocus);
     const shouldClearCourseFact = isExplicitReset || isProgramSwitch || isDomainSwitch || isGeneralCurriculumQuery;
 
-    let activeCourseFact = subQueryResults.find(s => s?.synthesis?.provenance?.courseCode || s?.verification?.provenance?.courseCode)?.synthesis?.provenance ||
-      subQueryResults.find(s => s?.synthesis?.provenance?.courseCode || s?.verification?.provenance?.courseCode)?.verification?.provenance ||
-      (currentProvenance && currentProvenance.courseCode ? currentProvenance : null) ||
+    const hasCourseProv = (p) => Boolean(p && (p.courseCode || p.code || p.courseName || p.name));
+    let activeCourseFact = subQueryResults.find(s => hasCourseProv(s?.synthesis?.provenance))?.synthesis?.provenance ||
+      subQueryResults.find(s => hasCourseProv(s?.verification?.provenance))?.verification?.provenance ||
+      (hasCourseProv(currentProvenance) ? currentProvenance : null) ||
       (shouldClearCourseFact ? null : sessionData.lastCourseFact) ||
       null;
 
-    if (activeCourseFact && !activeCourseFact.program && newActiveEntity) {
-      activeCourseFact = { ...activeCourseFact, program: newActiveEntity };
+    if (activeCourseFact) {
+      if (!activeCourseFact.program && newActiveEntity) {
+        activeCourseFact = { ...activeCourseFact, program: newActiveEntity };
+      }
+      if (!activeCourseFact.courseName && activeCourseFact.name) {
+        activeCourseFact = { ...activeCourseFact, courseName: activeCourseFact.name };
+      }
+      if (!activeCourseFact.courseCode && activeCourseFact.code) {
+        activeCourseFact = { ...activeCourseFact, courseCode: activeCourseFact.code };
+      }
     }
 
     await updateSession(chatId, {

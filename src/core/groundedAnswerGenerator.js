@@ -3938,6 +3938,49 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     }
   }
 
+  // Dynamic Grounded Curriculum / Course Fact Engine Hand-off (All Study Programs)
+  const isCourseInquiryCandidate = (
+    semanticFrame?.domain === 'ACADEMIC_CURRICULUM' ||
+    semanticFrame?.intent === 'CURRICULUM_INQUIRY' ||
+    (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.some(a => ['curriculum', 'courses', 'course_syllabus', 'sks', 'semester', 'course_details'].includes(a))) ||
+    /\b(?:mata\s*kuliah|matkul|kurikulum|silabus)\b/i.test(semanticFrame?.rawQuery || '')
+  ) && !semanticFrame?.isComparison && semanticFrame?.intent !== 'PROGRAM_COMPARISON';
+
+  if (isCourseInquiryCandidate) {
+    const progTarget = resolveEffectiveTargetEntity(semanticFrame, arbitratedEvidence) ||
+      semanticFrame?.academicProgram ||
+      (semanticFrame?.entities || []).find(e => (e.family === 'academic_program' || e.type === 'program'))?.canonical ||
+      arbitratedEvidence?.sessionData?.lastCourseFact?.program ||
+      arbitratedEvidence?.sessionData?.activeEntity;
+
+    if (progTarget) {
+      const isAnaphoric = (
+        /\b(?:mata\s*kuliah|matkul)(?:\s+(?:tersebut|itu|ini))?\b/i.test(semanticFrame?.rawQuery || '') ||
+        /\btersebut\b/i.test(semanticFrame?.rawQuery || '')
+      ) && Boolean(arbitratedEvidence?.sessionData?.lastCourseFact || semanticFrame?.courseFact);
+
+      const courseLookupQuery = isAnaphoric
+        ? (arbitratedEvidence?.sessionData?.lastCourseFact?.name ||
+           arbitratedEvidence?.sessionData?.lastCourseFact?.courseName ||
+           arbitratedEvidence?.sessionData?.lastCourseFact?.code ||
+           arbitratedEvidence?.sessionData?.lastCourseFact?.courseCode ||
+           semanticFrame?.rawQuery)
+        : (semanticFrame?.rawQuery || '');
+
+      const courseRecord = getProgramCourseFact(progTarget, courseLookupQuery);
+      if (courseRecord && courseRecord.verificationStatus === 'VERIFIED_PRIMARY_SOURCE') {
+        const curricRes = buildGroundedCurriculumAnswer(
+          semanticFrame,
+          generationEvidence,
+          { ...arbitratedEvidence, courseFact: courseRecord, resolvedCourseFact: courseRecord, targetProgram: progTarget }
+        );
+        if (curricRes && curricRes.success && curricRes.answer) {
+          return curricRes;
+        }
+      }
+    }
+  }
+
 
 
   // In test environment, when OpenAI key is absent/circuit open, or fast fallback requested, use generic extractive fallback
@@ -5683,7 +5726,10 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
         ? (sessionData?.lastCourseFact?.courseName || sessionData?.lastCourseFact?.courseCode || semanticFrame?.courseFact?.courseName || semanticFrame?.courseFact?.courseCode || sessionData?.lastAnswer || sessionData?.lastQuery || 'prompt model ai')
         : (rawQuery || 'prompt model ai');
 
-      const courseRecord = getProgramCourseFact('S1 Bisnis Digital', courseLookupQuery);
+      const effectiveCourseProg = targetEntity || arbitratedEvidence?.targetProgram || arbitratedEvidence?.sessionData?.lastCourseFact?.program || 'S1 Bisnis Digital';
+      const courseRecord = (arbitratedEvidence?.courseFact && arbitratedEvidence.courseFact.verificationStatus === 'VERIFIED_PRIMARY_SOURCE')
+        ? arbitratedEvidence.courseFact
+        : getProgramCourseFact(effectiveCourseProg, courseLookupQuery);
 
       const hasCompleteProvenance = Boolean(
         courseRecord &&
@@ -5788,9 +5834,11 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
         answer: aiAns,
         source: 'grounded_curriculum_answer',
         provenance: {
-          program: 'S1 Bisnis Digital',
+          program: effectiveCourseProg,
           courseName: courseRecord.name,
           courseCode: courseRecord.code,
+          code: courseRecord.code,
+          name: courseRecord.name,
           semester: courseRecord.semester,
           sks: courseRecord.sks,
           sourceDocument: courseRecord.sourceDocument,
@@ -9075,6 +9123,7 @@ module.exports = {
   isolateTargetPassages,
   formatCurriculumTable,
   buildGroundedCurriculumAnswer,
+  resolveEffectiveTargetEntity,
   parseCalendarWavesFromEvidence,
   extractAcademicYearFromEvidence,
   getCalendarSummaryFromEvidence,
