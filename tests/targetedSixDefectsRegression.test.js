@@ -1213,4 +1213,229 @@ describe('Targeted Six Defects Regression Suite (ce0b3dc + Targeted Fixes)', () 
       expect(resAccurate.outcome).toBe(VERIFICATION_OUTCOME.VERIFIED_FACTUAL);
     });
   });
+
+  describe('Post-Deployment e755d83 Targeted Defects & AI Course Identity Suite', () => {
+    test('Case 1: Full multi-attribute course query returns BD233507, Semester III, 2 SKS', async () => {
+      const q = 'Di S1 Bisnis Digital, apa nama mata kuliah tentang pembuatan prompt untuk model AI, semester berapa, dan berapa SKS?';
+      const res = await runPhase1DeterministicPipeline('POST-DEPLOY-AI-01', q);
+      const answer = res.answer || res.text || '';
+      const outcome = res.verification?.outcome || res.subQueryResults?.[0]?.verification?.outcome;
+
+      expect(answer).toMatch(/Teknik Pembuatan Prompt untuk Model AI/i);
+      expect(answer).toMatch(/BD233507/);
+      expect(answer).toMatch(/Semester\s*III/i);
+      expect(answer).toMatch(/2\s*SKS/i);
+      expect(answer).toMatch(/S1 Bisnis Digital/i);
+      expect(outcome).toBe('VERIFIED_FACTUAL');
+      expect(answer).not.toMatch(/Pesan\s*3/i);
+      expect(answer).not.toMatch(/di luar informasi kampus/i);
+    });
+
+    test('Case 2: Variations find canonical course fact BD233507 in S1 Bisnis Digital', () => {
+      const v1 = getProgramCourseFact('S1 Bisnis Digital', 'prompt untuk model AI');
+      expect(v1).not.toBeNull();
+      expect(v1.code).toBe('BD233507');
+      expect(v1.name).toBe('Teknik Pembuatan Prompt untuk Model AI');
+      expect(v1.semester).toBe('Semester III');
+      expect(v1.sks).toBe(2);
+
+      const v2 = getProgramCourseFact('S1 Bisnis Digital', 'prompt engineering');
+      expect(v2).not.toBeNull();
+      expect(v2.code).toBe('BD233507');
+
+      const v3 = getProgramCourseFact('S1 Bisnis Digital', 'pembuatan prompt untuk model AI');
+      expect(v3).not.toBeNull();
+      expect(v3.code).toBe('BD233507');
+    });
+
+    test('Case 3: Single compound question does not decompose "berapa SKS" into graduation requirements', async () => {
+      const q = 'Di S1 Bisnis Digital, apa nama mata kuliah tentang pembuatan prompt untuk model AI, semester berapa, dan berapa SKS?';
+      const res = await runPhase1DeterministicPipeline('POST-DEPLOY-AI-03', q);
+      expect(res.subQueryResults).toBeDefined();
+      expect(res.subQueryResults.length).toBe(1);
+      const frame = res.subQueryResults[0].frame;
+      expect(frame.intent).not.toBe('GRADUATION_REQUIREMENTS');
+      expect(res.answer).toMatch(/2\s*SKS/i);
+      expect(res.answer).not.toMatch(/144\s*SKS.*beban studi minimum/i);
+    });
+
+    test('Case 4: Multi-turn follow-up preserves lastCourseFact and returns safe unknown for syllabus without hallucination', async () => {
+      const q1 = 'Di S1 Bisnis Digital, apa nama mata kuliah tentang pembuatan prompt untuk model AI, semester berapa, dan berapa SKS?';
+      const turn1Res = await runPhase1DeterministicPipeline('POST-DEPLOY-AI-04-TURN1', q1);
+      expect(turn1Res.answer).toMatch(/BD233507/);
+
+      const sess = await getSession('POST-DEPLOY-AI-04-TURN1');
+      expect(sess.data.lastCourseFact).toBeDefined();
+      expect(sess.data.lastCourseFact.courseCode).toBe('BD233507');
+
+      const q2 = 'Mata kuliah tersebut mempelajari apa saja?';
+      const turn2Res = await runPhase1DeterministicPipeline('POST-DEPLOY-AI-04-TURN1', q2);
+      const answer2 = turn2Res.answer || turn2Res.text || '';
+      const outcome2 = turn2Res.verification?.outcome || turn2Res.subQueryResults?.[0]?.verification?.outcome;
+
+      expect(answer2).toMatch(/BD233507|Teknik Pembuatan Prompt untuk Model AI/i);
+      expect(answer2).toMatch(/belum\s+memuat\s+silabus|dokumen\s+ringkasan\s+kurikulum\s+publik/i);
+      expect(answer2).not.toMatch(/BD232101/);
+      expect(answer2).not.toMatch(/kewirausahaan/i);
+      expect(answer2).not.toMatch(/machine\s+learning|deep\s+learning|neural\s+network/i);
+      expect(outcome2).toBe('SAFE_UNKNOWN');
+    });
+
+    test('Case 5: General curriculum inquiry does not latch onto unrelated courses like Kewirausahaan', async () => {
+      const q = 'Bagaimana struktur kurikulum S1 Bisnis Digital?';
+      const res = await runPhase1DeterministicPipeline('POST-DEPLOY-AI-05', q);
+      const answer = res.answer || res.text || '';
+      expect(answer).toMatch(/146\s*SKS|Semester\s*I/i);
+      expect(answer).not.toMatch(/mata kuliah tersebut/i);
+    });
+
+    test('Case 6: Leading/trailing test label like "Pesan 3" is not treated as OUT_OF_DOMAIN subquery note', async () => {
+      // 6a. Leading "Pesan 3: "
+      const q = 'Pesan 3: Di S1 Bisnis Digital, apa nama mata kuliah tentang pembuatan prompt untuk model AI, semester berapa, dan berapa SKS?';
+      const res = await runPhase1DeterministicPipeline('POST-DEPLOY-AI-06', q);
+      const answer = res.answer || res.text || '';
+
+      expect(answer).toMatch(/Teknik Pembuatan Prompt untuk Model AI/i);
+      expect(answer).toMatch(/BD233507/);
+      expect(answer).not.toMatch(/di luar informasi kampus/i);
+      expect(answer).not.toMatch(/Pesan 3/i);
+
+      // 6b. Leading bracketed "[Pertanyaan 1]"
+      const qBracket = '[Pertanyaan 1] Di S1 Bisnis Digital, apa nama mata kuliah tentang pembuatan prompt untuk model AI, semester berapa, dan berapa SKS?';
+      const resBracket = await runPhase1DeterministicPipeline('POST-DEPLOY-AI-06-BRACKET', qBracket);
+      const ansBracket = resBracket.answer || resBracket.text || '';
+      expect(ansBracket).toMatch(/Teknik Pembuatan Prompt untuk Model AI/i);
+      expect(ansBracket).toMatch(/BD233507/);
+      expect(ansBracket).not.toMatch(/di luar informasi kampus/i);
+      expect(ansBracket).not.toMatch(/Pertanyaan 1/i);
+
+      // 6c. Legitimate Indonesian word "pesan" in query is NOT removed
+      const qLegit = 'Bagaimana cara kirim pesan untuk menanyakan pendaftaran mahasiswa baru?';
+      const resLegit = await runPhase1DeterministicPipeline('POST-DEPLOY-AI-06-LEGIT', qLegit);
+      expect(resLegit.subQueryResults[0].frame.domain).not.toBe('OUT_OF_DOMAIN');
+      expect(resLegit.subQueryResults[0].frame.rawQuery).toMatch(/pesan/i);
+    });
+
+    test('Case 7: PMB status and tuition fee behaviors remain intact', async () => {
+      // 7a. PMB status inquiry remains safe unknown with no unverified real-time claims
+      const pmbRes = await runPhase1DeterministicPipeline('POST-DEPLOY-AI-07-PMB', 'Pendaftaran mahasiswa baru masih dibuka?');
+      const pmbAnswer = pmbRes.answer || pmbRes.text || '';
+      const pmbOutcome = pmbRes.verification?.outcome || pmbRes.subQueryResults?.[0]?.verification?.outcome;
+      expect(pmbOutcome).toBe('SAFE_UNKNOWN');
+      expect(pmbAnswer).toMatch(/pmb\.stikom-bali\.ac\.id|0813-3939-6443/i);
+      expect(pmbAnswer).not.toMatch(/dibuka\s+sampai\s+tanggal\s+\d+/i);
+
+      // 7b. Tuition fee remains VERIFIED_FACTUAL with exact amounts
+      const feeRes = await runPhase1DeterministicPipeline('POST-DEPLOY-AI-07-FEE', 'Berapa biaya kuliah S1 Bisnis Digital?');
+      const feeAnswer = feeRes.answer || feeRes.text || '';
+      const feeOutcome = feeRes.verification?.outcome || feeRes.subQueryResults?.[0]?.verification?.outcome;
+      expect(feeOutcome).toBe('VERIFIED_FACTUAL');
+      expect(feeAnswer).toMatch(/Rp\s*6\.500\.000|Rp\s*14\.000\.000/i);
+    });
+  });
+
+  describe('Final Quality Gate & Canonical Registry Hardening Suite', () => {
+    const { getProgramCourseFact, CANONICAL_FACTS_REGISTRY } = require('../src/core/academicCatalog');
+    const { verifyFinalAnswer } = require('../src/core/finalAnswerVerifier');
+
+    test('1. Query generic "sistem" does not force BD233301', () => {
+      const match = getProgramCourseFact('S1 Bisnis Digital', 'sistem');
+      expect(match).toBeNull();
+    });
+
+    test('2. Compound query "Kewirausahaan dan Analisis Data Bisnis" is recognized as ambiguous', () => {
+      const match = getProgramCourseFact('S1 Bisnis Digital', 'Kewirausahaan dan Analisis Data Bisnis');
+      expect(match).toBeNull();
+    });
+
+    test('3. Query "prompt engineering" finds the correct record via generic resolver', () => {
+      const match = getProgramCourseFact('S1 Bisnis Digital', 'prompt engineering');
+      expect(match).not.toBeNull();
+      expect(match.code).toBe('BD233507');
+      expect(match.name).toBe('Teknik Pembuatan Prompt untuk Model AI');
+      expect(match.semester).toBe('Semester III');
+      expect(match.sks).toBe(2);
+    });
+
+    test('4. Name, semester, and SKS attributes originate exclusively from canonical registry', () => {
+      const registryCourse = CANONICAL_FACTS_REGISTRY.curriculumFacts['S1 Bisnis Digital'].courses
+        .find(c => c.code === 'BD233507');
+      expect(registryCourse).toBeDefined();
+
+      const resolved = getProgramCourseFact('S1 Bisnis Digital', 'pembuatan prompt untuk model AI');
+      expect(resolved.name).toBe(registryCourse.name);
+      expect(resolved.code).toBe(registryCourse.code);
+      expect(resolved.semester).toBe(registryCourse.semester);
+      expect(resolved.sks).toBe(registryCourse.sks);
+      expect(resolved.verificationStatus).toBe('VERIFIED_PRIMARY_SOURCE');
+    });
+
+    test('5. Unavailable course syllabus produces SAFE_UNKNOWN', async () => {
+      const chatId = 'FINAL-GATE-SYLLABUS-' + Date.now();
+      // Turn 1: Ground course
+      await runPhase1DeterministicPipeline(chatId, 'Di S1 Bisnis Digital, apa nama mata kuliah tentang pembuatan prompt untuk model AI, semester berapa, dan berapa SKS?');
+      // Turn 2: Follow-up syllabus
+      const res = await runPhase1DeterministicPipeline(chatId, 'Mata kuliah tersebut mempelajari apa saja?');
+      const outcome = res.verification?.outcome || res.subQueryResults?.[0]?.verification?.outcome;
+      const answer = res.answer || res.text || '';
+
+      expect(outcome).toBe('SAFE_UNKNOWN');
+      expect(res.verification?.handledSafely).toBe(true);
+      expect(answer).toMatch(/belum memuat silabus terperinci|belum diuraikan/i);
+      expect(answer).toMatch(/BD233507/);
+    });
+
+    test('6. Curriculum structure inquiry is answered from official structure evidence', async () => {
+      const q = 'Di S1 Bisnis Digital, apa nama mata kuliah tentang pembuatan prompt untuk model AI, semester berapa, dan berapa SKS?';
+      const res = await runPhase1DeterministicPipeline('FINAL-GATE-STRUCTURE', q);
+      const outcome = res.verification?.outcome || res.subQueryResults?.[0]?.verification?.outcome;
+      const answer = res.answer || res.text || '';
+
+      expect(outcome).toBe('VERIFIED_FACTUAL');
+      expect(answer).toMatch(/Teknik Pembuatan Prompt untuk Model AI/i);
+      expect(answer).toMatch(/BD233507/);
+      expect(answer).toMatch(/Semester III/i);
+      expect(answer).toMatch(/2 SKS/i);
+    });
+
+    test('7. Current curriculum validity inquiry does not pass merely because document has category KURIKULUM', () => {
+      const positiveClaim = 'Kurikulum S1 Bisnis Digital masih berlaku aktif saat ini pada tahun 2026.';
+      const frame = {
+        rawQuery: 'Apakah kurikulum Bisnis Digital masih berlaku saat ini?',
+        intent: 'CURRICULUM_VALIDITY_INQUIRY',
+        domain: 'ACADEMIC_CURRICULUM',
+        temporal: { isCurrent: true, constraint: 'NOW' },
+        entities: [{ canonical: 'S1 Bisnis Digital', type: 'academic_program' }]
+      };
+      // Evidence has category KURIKULUM but lacks proof of current live academic year / decree
+      const multiYearCurriculumEvidenceOnly = {
+        answerability: 'ANSWERABLE',
+        accepted: [
+          {
+            id: 'chunk_curriculum_structure_2023',
+            category: 'KURIKULUM',
+            text: 'Daftar Mata Kuliah Kurikulum 2023 Program Studi Bisnis Digital',
+            provenance: { sourceDocument: 'Daftar_Mata_Kuliah_S1_Bisnis_Digital_Resmi.html' }
+          }
+        ]
+      };
+
+      const verification = verifyFinalAnswer(positiveClaim, frame, multiYearCurriculumEvidenceOnly);
+      // Must FAIL verification because category KURIKULUM alone does not prove real-time validity
+      expect(verification.pass).toBe(false);
+      expect(verification.reason).toBe('unsupported_temporal_claim_lacks_valid_temporal_evidence');
+    });
+
+    test('8. PMB and fee behaviors remain intact without regression', async () => {
+      const pmbRes = await runPhase1DeterministicPipeline('FINAL-GATE-PMB', 'Pendaftaran masih dibuka?');
+      const pmbOutcome = pmbRes.verification?.outcome || pmbRes.subQueryResults?.[0]?.verification?.outcome;
+      expect(pmbOutcome).toBe('SAFE_UNKNOWN');
+      expect(pmbRes.answer || pmbRes.text).toMatch(/pmb\.stikom-bali\.ac\.id|\(0361\)\s*244445/i);
+
+      const feeRes = await runPhase1DeterministicPipeline('FINAL-GATE-FEE', 'Berapa biaya kuliah S1 Bisnis Digital?');
+      const feeOutcome = feeRes.verification?.outcome || feeRes.subQueryResults?.[0]?.verification?.outcome;
+      expect(feeOutcome).toBe('VERIFIED_FACTUAL');
+      expect(feeRes.answer || feeRes.text).toMatch(/Rp\s*6\.500\.000/i);
+    });
+  });
 });

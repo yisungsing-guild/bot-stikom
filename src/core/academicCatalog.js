@@ -11,6 +11,74 @@ const CURRICULUM_FACTS = CANONICAL_FACTS_REGISTRY?.curriculumFacts || {};
 const D3_MI_FACTS = CURRICULUM_FACTS['D3 Manajemen Informatika'] || {};
 const S2_SI_FACTS = CURRICULUM_FACTS['S2 Sistem Informasi'] || {};
 
+// Dynamically hydrate verified curriculum courses across all academic programs from primary source records
+// and index global corpus token document frequencies for discriminative specificity weighting
+const CORPUS_TOKEN_DOCUMENT_FREQUENCY = new Map();
+(function initCorpusTokenIndex() {
+  const fs = require('fs');
+  const path = require('path');
+  const curriculumDir = path.join(__dirname, '../../knowledge/raw/curriculum_current_2025');
+
+  const programFileMapping = {
+    'S1 Sistem Informasi': 'SI_curriculum_verified_2025.json',
+    'S1 Sistem Komputer': 'SK_curriculum_verified_2025.json',
+    'S1 Teknologi Informasi': 'TI_curriculum_verified_2025.json',
+    'S1 Bisnis Digital': 'BD_curriculum_verified_2023.json',
+    'D3 Manajemen Informatika': 'MI_curriculum_verified_obe-2023.json'
+  };
+
+  for (const [progName, fileName] of Object.entries(programFileMapping)) {
+    const filePath = path.join(curriculumDir, fileName);
+    if (!fs.existsSync(filePath)) continue;
+    try {
+      const rawData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      const parsedCourses = [];
+      if (rawData.semesters) {
+        for (const sem of Object.values(rawData.semesters)) {
+          if (Array.isArray(sem.courses)) {
+            for (const c of sem.courses) {
+              parsedCourses.push({
+                code: c.code || null,
+                name: c.name,
+                semester: sem.semester,
+                sks: c.sks,
+                sourceDocument: rawData.sourceFile || fileName,
+                verificationStatus: 'VERIFIED_PRIMARY_SOURCE'
+              });
+            }
+          }
+        }
+      } else if (Array.isArray(rawData.courses)) {
+        for (const c of rawData.courses) {
+          parsedCourses.push({
+            code: c.code || null,
+            name: c.name,
+            semester: c.semester,
+            sks: c.sks,
+            sourceDocument: rawData.sourceFile || fileName,
+            verificationStatus: 'VERIFIED_PRIMARY_SOURCE'
+          });
+        }
+      }
+
+      if (CURRICULUM_FACTS[progName]) {
+        if (!Array.isArray(CURRICULUM_FACTS[progName].courses) || CURRICULUM_FACTS[progName].courses.length === 0) {
+          CURRICULUM_FACTS[progName].courses = parsedCourses;
+        }
+      }
+
+      const allProgCourses = (CURRICULUM_FACTS[progName]?.courses) || parsedCourses;
+      for (const c of allProgCourses) {
+        const words = String(c.name || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 1);
+        const uniqueWords = new Set(words);
+        for (const w of uniqueWords) {
+          CORPUS_TOKEN_DOCUMENT_FREQUENCY.set(w, (CORPUS_TOKEN_DOCUMENT_FREQUENCY.get(w) || 0) + 1);
+        }
+      }
+    } catch (_) {}
+  }
+})();
+
 /**
  * src/core/academicCatalog.js
  *
@@ -718,8 +786,71 @@ function getCanonicalProgramFacts(programQuery) {
   return null;
 }
 
+const ACADEMIC_TERM_SYNONYMS = {
+  'engineering': 'teknik',
+  'management': 'manajemen',
+  'business': 'bisnis',
+  'system': 'sistem',
+  'content': 'konten',
+  'customer': 'pelanggan',
+  'relationship': 'hubungan',
+  'analysis': 'analisis',
+  'data': 'data',
+  'marketing': 'pemasaran'
+};
+
+const COURSE_QUERY_STOPWORDS = new Set([
+  'apakah', 'ada', 'adakah', 'mata', 'kuliah', 'matkul', 'course', 'tentang', 'terkait', 'di', 'pada',
+  'semester', 'berapa', 'sks', 'nama', 'apa', 'siapa', 'mana', 'program', 'studi', 'prodi', 'jurusan',
+  's1', 's2', 'd3', 'stikom', 'bali', 'itb', 'kampus', 'universitas', 'belajar', 'diajarkan', 'pelajari',
+  'mempelajari', 'materi', 'silabus', 'kurikulum', 'struktur', 'yang', 'dan', 'atau', 'untuk', 'dengan',
+  'dalam', 'mohon', 'info', 'tahu', 'tolong', 'bisa', 'kak', 'kakak', 'min', 'admin', 'mahasiswa',
+  'aku', 'saya', 'kami', 'kita', 'kamu', 'anda', 'lebih', 'paling', 'sangat', 'tertarik', 'minat',
+  'ingin', 'mau', 'pengen', 'tapi', 'tetapi', 'namun', 'masih', 'bagaimana', 'gimana',
+  'kalau', 'jika', 'bila', 'seperti', 'contoh', 'misal', 'misalnya', 'itu', 'ini', 'tersebut', 'nya',
+  'soal', 'mengenai', 'seputar'
+]);
+
+function normalizeAcademicQuery(text) {
+  return String(text || '').toLowerCase()
+    .replace(/\b(?:artificial\s+intelligence|kecerdasan\s+buatan|kecerdasan\s+artifisial)\b/gi, 'ai')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .trim();
+}
+
+function getProgramStopwords(progFacts, programQuery) {
+  const set = new Set();
+  const raw = [
+    programQuery,
+    progFacts?.name,
+    progFacts?.canonical,
+    progFacts?.code,
+    progFacts?.focusId,
+    progFacts?.focusEn
+  ].filter(Boolean).join(' ');
+  const tokens = String(raw).toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/);
+  for (const t of tokens) {
+    if (t.length > 1) set.add(t);
+  }
+  if (set.has('bisnis') && set.has('digital')) { set.add('bd'); set.add('pemasaran'); set.add('marketing'); }
+  if (set.has('sistem') && set.has('informasi')) { set.add('si'); }
+  if (set.has('sistem') && set.has('komputer')) { set.add('sk'); }
+  if (set.has('teknologi') && set.has('informasi')) { set.add('ti'); }
+  if (set.has('manajemen') && set.has('informatika')) { set.add('mi'); }
+  return set;
+}
+
+function tokenizeAcademicTerms(text, excludeSet = null) {
+  const norm = normalizeAcademicQuery(text);
+  return norm.split(/\s+/).filter(t => t.length > 1 && !COURSE_QUERY_STOPWORDS.has(t) && (!excludeSet || !excludeSet.has(t)));
+}
+
 /**
  * Retrieve specific verified course record from the canonical curriculum registry.
+ * Uses a single generic course resolver across all academic programs based on:
+ * 1. Explicit official course code matching (e.g. BD233507, TI231401, SK231501).
+ * 2. Exact full course name matching against the canonical registry.
+ * 3. Generic token-based relevance scoring with program-context isolation, confidence threshold, and fail-closed ambiguity rejection.
  */
 function getProgramCourseFact(programQuery, courseQuery = '') {
   const progFacts = getCanonicalProgramFacts(programQuery);
@@ -729,6 +860,8 @@ function getProgramCourseFact(programQuery, courseQuery = '') {
   if (!courseQuery) return progFacts.courses;
 
   const cq = String(courseQuery).toLowerCase().trim();
+
+  // 1. Explicit official course code matching (e.g. BD233507, TI231401, SK231501)
   const explicitCodeMatch = cq.match(/\b([a-z]{2}\d{6})\b/i);
   if (explicitCodeMatch) {
     const codeTarget = explicitCodeMatch[1].toUpperCase();
@@ -739,20 +872,109 @@ function getProgramCourseFact(programQuery, courseQuery = '') {
     return found;
   }
 
-  const found = progFacts.courses.find(c => {
-    const codeMatch = c.code && cq.includes(c.code.toLowerCase());
-    const nameMatch = c.name && (cq.includes(c.name.toLowerCase()) || c.name.toLowerCase().includes(cq));
-    const catMatch = c.category && cq.includes(c.category.toLowerCase());
-    const isGenericAiInquiry = /\b(?:belajar\s+(?:ai|kecerdasan|artificial)|ada\s+(?:matkul|mata\s*kuliah)\s+ai|mata\s*kuliah\s+ai|prompt\s+(?:model\s+)?ai|prompting)\b/i.test(cq) ||
-      ['prompt', 'ai', 'prompt model ai'].includes(cq);
-    const aiCourseMatch = isGenericAiInquiry && /\b(?:prompt|ai|artificial|kecerdasan)\b/i.test(c.name);
-    return Boolean(codeMatch || nameMatch || catMatch || aiCourseMatch);
-  }) || null;
+  // 2. Exact full course name match with multi-course ambiguity detection
+  const exactNameMatches = [];
+  for (const c of progFacts.courses) {
+    const cName = (c.name || '').toLowerCase().trim();
+    if (cName) {
+      const escaped = cName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      if (new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'i').test(cq)) {
+        exactNameMatches.push(c);
+      }
+    }
+  }
 
-  if (!found || found.verificationStatus !== 'VERIFIED_PRIMARY_SOURCE') {
+  // If query mentions two or more distinct course names (e.g. "Kewirausahaan dan Analisis Data Bisnis"),
+  // treat as ambiguous and fail closed
+  if (exactNameMatches.length > 1) {
     return null;
   }
-  return found;
+  if (exactNameMatches.length === 1) {
+    const single = exactNameMatches[0];
+    if (single.verificationStatus === 'VERIFIED_PRIMARY_SOURCE') {
+      return single;
+    }
+    return null;
+  }
+
+  // 3. Generic token-based relevance scoring with program-context isolation & discriminative weighting
+  const progStops = getProgramStopwords(progFacts, programQuery);
+  const qTokens = tokenizeAcademicTerms(cq, progStops);
+  if (qTokens.length === 0) return null;
+
+  // Single-token query check: A single generic word with low discriminative power (high corpus frequency)
+  // must not match a multi-word course where precision is low
+  if (qTokens.length === 1) {
+    const singleToken = qTokens[0];
+    const syn = ACADEMIC_TERM_SYNONYMS[singleToken] || singleToken;
+    const docFreq = Math.max(CORPUS_TOKEN_DOCUMENT_FREQUENCY.get(singleToken) || 0, CORPUS_TOKEN_DOCUMENT_FREQUENCY.get(syn) || 0);
+    // If token appears in 5 or more courses across the institution, it has low discriminative power
+    if (docFreq >= 5) {
+      // It can only match if a course is practically a 1-to-1 match for that word (course precision >= 0.6)
+      const directMatch = progFacts.courses.find(c => {
+        const cTokens = tokenizeAcademicTerms(c.name);
+        return cTokens.length === 1 && (cTokens[0] === singleToken || cTokens[0] === syn);
+      });
+      if (directMatch && directMatch.verificationStatus === 'VERIFIED_PRIMARY_SOURCE') {
+        return directMatch;
+      }
+      return null; // Reject generic single word like "sistem", "data", "teknologi"
+    }
+  }
+
+  const candidates = [];
+  for (const c of progFacts.courses) {
+    const cTokens = tokenizeAcademicTerms(c.name);
+    let matchedCount = 0;
+    const unmatched = [];
+
+    for (const qt of qTokens) {
+      const syn = ACADEMIC_TERM_SYNONYMS[qt] || qt;
+      const isMatch = cTokens.some(ct => {
+        if (ct === qt || ct === syn) return true;
+        if (qt.length >= 4 && ct.length >= 4 && (ct.startsWith(qt) || qt.startsWith(ct))) return true;
+        return false;
+      });
+      if (isMatch) {
+        matchedCount++;
+      } else {
+        unmatched.push(qt);
+      }
+    }
+
+    const queryRecall = qTokens.length > 0 ? matchedCount / qTokens.length : 0;
+    const coursePrecision = cTokens.length > 0 ? matchedCount / cTokens.length : 0;
+
+    // Disqualify if query contains substantive terms that are completely unmatched in this course
+    if (unmatched.length > 0 && queryRecall < 0.6) {
+      continue;
+    }
+
+    candidates.push({
+      course: c,
+      matchedCount,
+      unmatchedCount: unmatched.length,
+      queryRecall,
+      coursePrecision,
+      score: queryRecall * 0.7 + coursePrecision * 0.3
+    });
+  }
+
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => b.score - a.score);
+
+  const best = candidates[0];
+  // Require at least 60% substantive query term coverage and minimum confidence threshold
+  if (best.queryRecall >= 0.6 && best.score >= 0.45) {
+    // Check ambiguity: if top two candidates have near-identical score, fail-closed
+    if (candidates.length > 1 && Math.abs(candidates[1].score - best.score) < 0.05) {
+      return null;
+    }
+    if (best.course.verificationStatus === 'VERIFIED_PRIMARY_SOURCE') {
+      return best.course;
+    }
+  }
+  return null;
 }
 
 module.exports = {

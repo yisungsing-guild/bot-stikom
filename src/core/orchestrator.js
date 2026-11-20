@@ -1093,9 +1093,10 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
           const isSpecificCourseOrSyllabusQuery = Boolean(frame?.courseFact) ||
             Boolean(frame?.courseFocus) ||
             hasAnaphoricCourseReference ||
-            /\b(?:bd\d{6}|if\d{6}|si\d{6}|sk\d{6}|ti\d{6})\b/i.test(queryText) ||
-            (/\b(?:ai\b|artificial\s+intelligence|kecerdasan\s+buatan|prompt\s+(?:untuk\s+)?model\s+ai|teknik\s+pembuatan\s+prompt)\b/i.test(queryText) &&
-             /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|semester|belajar|diajarkan)\b/i.test(queryText));
+            /\b[a-z]{2}\d{6}\b/i.test(queryText) ||
+            frame?.intent === 'CURRICULUM_INQUIRY' ||
+            (/\b(?:mata\s*kuliah|matkul|kurikulum|silabus)\b/i.test(queryText) &&
+             /\b(?:semester|sks|mempelajari|belajar|diajarkan|apa|rincian)\b/i.test(queryText));
 
           if (isSpecificCourseOrSyllabusQuery) {
             // Priority 1: Deterministic grounded curriculum answer for specific course/syllabus
@@ -1103,12 +1104,15 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
             const curriculumRecovery = curriculumAnswerFn(frame, arbitrated.accepted, synthOpts);
             if (curriculumRecovery && curriculumRecovery.success && curriculumRecovery.answer) {
               const recoveryVerif = verifFn(curriculumRecovery.answer, frame, arbitrated, null, recResult);
-              if (recoveryVerif.pass === true && (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.outcome === 'PARTIAL')) {
+              const isAcceptableRecoveryVerif = (recoveryVerif.pass === true && (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.outcome === 'PARTIAL')) ||
+                (recoveryVerif.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN && (recoveryVerif.handledSafely || recoveryVerif.reason === 'ai_curriculum_source_gap_handled_safely'));
+
+              if (isAcceptableRecoveryVerif) {
                 answer = curriculumRecovery.answer;
                 verification = {
                   ...recoveryVerif,
                   source: curriculumRecovery.source || 'grounded_curriculum_answer',
-                  isGrounded: true,
+                  isGrounded: recoveryVerif.isGrounded !== false,
                   handledSafely: true
                 };
                 recovered = true;
@@ -1185,9 +1189,10 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         const isSpecificCourseOrSyllabusQuery = Boolean(frame?.courseFact) ||
           Boolean(frame?.courseFocus) ||
           hasAnaphoricCourseReference ||
-          /\b(?:bd\d{6}|if\d{6}|si\d{6}|sk\d{6}|ti\d{6})\b/i.test(queryText) ||
-          (/\b(?:ai\b|artificial\s+intelligence|kecerdasan\s+buatan|prompt\s+(?:untuk\s+)?model\s+ai|teknik\s+pembuatan\s+prompt)\b/i.test(queryText) &&
-           /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|semester|belajar|diajarkan)\b/i.test(queryText));
+          /\b[a-z]{2}\d{6}\b/i.test(queryText) ||
+          frame?.intent === 'CURRICULUM_INQUIRY' ||
+          (/\b(?:mata\s*kuliah|matkul|kurikulum|silabus)\b/i.test(queryText) &&
+           /\b(?:semester|sks|mempelajari|belajar|diajarkan|apa|rincian)\b/i.test(queryText));
 
         if (isSpecificCourseOrSyllabusQuery) {
           const curriculumAnswerFn = groundedAnswerGenerator.buildGroundedCurriculumAnswer || buildGroundedCurriculumAnswer;
@@ -1195,12 +1200,15 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
           if (curriculumRes && curriculumRes.success && curriculumRes.answer) {
             const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
             const recoveryVerif = verifFn(curriculumRes.answer, frame, arbitrated, null, recResult);
-            if (recoveryVerif.pass === true && (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.outcome === 'PARTIAL')) {
+            const isAcceptableRecoveryVerif = (recoveryVerif.pass === true && (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.outcome === 'PARTIAL')) ||
+              (recoveryVerif.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN && (recoveryVerif.handledSafely || recoveryVerif.reason === 'ai_curriculum_source_gap_handled_safely'));
+
+            if (isAcceptableRecoveryVerif) {
               answer = curriculumRes.answer;
               verification = {
                 ...recoveryVerif,
                 source: curriculumRes.source || 'grounded_curriculum_answer',
-                isGrounded: true,
+                isGrounded: recoveryVerif.isGrounded !== false,
                 handledSafely: true
               };
             }
@@ -1336,7 +1344,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     if (r.frame && (r.frame.domain === 'OUT_OF_DOMAIN' || r.status === 'out_of_domain') && hasSuccessfulCampusAnswer) {
       const q = String(r.frame.rawQuery || '').trim();
       const isAnaphoricServiceOrDetail = hasAnaphoricReference(q) || /\b(?:layanan(?:nya)?|fasilitas(?:nya)?|program(?:nya)?|manfaat(?:nya)?|syarat(?:nya)?)\b/i.test(q);
-      if (isAnaphoricServiceOrDetail) {
+      const isTestLabelOnly = /^(?:(?:\[|\()?\s*(?:pesan|pertanyaan|soal|nomor|no\.?|turn|prompt|message|test|case|skenario|scenario|sample|query|q)\s*\d+\s*(?:\]|\))?[\s:.,\-–—]*)+$/i.test(q);
+      if (isAnaphoricServiceOrDetail || isTestLabelOnly) {
         continue;
       }
       // If there is a successful campus answer and this is a distinct non-campus clause (e.g. "bagaimana resep nasi goreng"),

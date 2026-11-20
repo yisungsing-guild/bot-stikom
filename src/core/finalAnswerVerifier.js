@@ -648,10 +648,21 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     // If query has constraint NOW, verify that accepted evidence actually supports temporal validity
     if (semanticFrame.temporal && semanticFrame.temporal.constraint === 'NOW') {
       const currentYear = new Date().getFullYear();
+      const isExplicitCurrentValidityQuery =
+        semanticFrame.intent === 'CURRICULUM_VALIDITY_INQUIRY' ||
+        /\b(?:masih\s+berlaku|berlaku\s+saat\s+ini|berlaku\s+sekarang|digunakan\s+sekarang|terbaru|terkini|kurikulum\s+saat\s+ini)\b/i.test(semanticFrame.rawQuery || '');
+
+      // Factual inquiries about course existence, list of courses, semesters, or credits
+      // can rely on multi-year curriculum structure documents.
+      // Explicit inquiries demanding current active validity CANNOT rely on category KURIKULUM alone.
+      const isFactualCurriculumStructureInquiry = (semanticFrame.intent === 'CURRICULUM_INQUIRY' ||
+        semanticFrame.domain === 'ACADEMIC_CURRICULUM') && !isExplicitCurrentValidityQuery;
+
       const hasTemporalEvidence = arbitratedEvidence.accepted.some(c => {
         const cText = (c.text || '').toLowerCase();
         return cText.includes(String(currentYear)) ||
           cText.includes(String(currentYear - 1)) ||
+          (isFactualCurriculumStructureInquiry && (c.category === 'KURIKULUM' || /\b(?:kurikulum|struktur\s+kurikulum|daftar\s+mata\s*kuliah|obe|kurikulum\s+202[0-9])\b/i.test(cText))) ||
           /\b(periode 202[1-6]-202[6-9]|berlaku sampai 202[6-9]|baik sekali|sk|surat keputusan)\b/i.test(cText);
       });
       if (!hasTemporalEvidence) {
@@ -1613,7 +1624,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     }
   }
 
-  const isExplicitAbstain = /\b(belum\s+(?:tercantum|tersedia|ditemukan|memuat|cukup)|tidak\s+(?:ditemukan|tersedia|tercantum|memuat)|tidak\s+dapat\s+(?:diverifikasi|dipastikan)|belum\s+dapat\s+dipastikan|not\s+(?:listed|found|available|recorded)|unrecorded)\b/i.test(text);
+  const isExplicitAbstain = /\b(belum\s+(?:tercantum|tersedia|ditemukan|memuat|cukup|diuraikan|dijabarkan|disebutkan|dijelaskan)|tidak\s+(?:ditemukan|tersedia|tercantum|memuat|diuraikan|dijabarkan|disebutkan|dijelaskan)|tidak\s+dapat\s+(?:diverifikasi|dipastikan)|belum\s+dapat\s+dipastikan|not\s+(?:listed|found|available|recorded)|unrecorded)\b/i.test(text);
   const isAiCurriculumQuery = /\b(?:ai\b|artificial\s+intelligence|kecerdasan\s+buatan)\b/i.test(semanticFrame?.rawQuery || '') &&
     /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|semester|belajar|diajarkan)\b/i.test(semanticFrame?.rawQuery || '');
   const isCourseSyllabusQuery = (

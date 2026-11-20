@@ -449,7 +449,7 @@ BATASAN KETAT AKURASI (GROUNDING INVARIANTS):
 4. Fokus HANYA pada entitas atau program studi yang ditanyakan pengguna. Dilarang mencampuradukkan kurikulum, biaya, atau info prodi lain.
 5. PANDUAN KHUSUS KURIKULUM & PERSYARATAN:
    - Jika ditanya apakah harus jago coding/pemrograman: sampaikan bahwa pada persyaratan PMB yang tersedia kemampuan coding tidak tercantum sebagai syarat wajib pendaftaran; jelaskan bahwa pembelajaran dasar dimulai bertahap. Dilarang menjamin "pasti mudah" atau "tidak butuh kemampuan sama sekali".
-   - Jika ditanya apakah belajar topik tertentu (misal: digital marketing atau AI): utamakan mata kuliah kurikulum resmi (misal: Pemasaran Digital, SEO, Pemasaran Media Sosial, Teknik Pembuatan Prompt untuk Model AI), bukan hanya menyebut peran karier lulusan. Batasi klaim AI pada pemanfaatan prompt dan model terapan bisnis, bukan rekayasa algoritma Machine Learning teknis mendalam.
+   - Jika ditanya apakah belajar topik atau keahlian tertentu: utamakan rujukan pada mata kuliah kurikulum resmi yang tercantum dalam fakta resmi yang tersedia, bukan hanya menyebut peran karier lulusan. Batasi klaim hanya pada bukti mata kuliah terdaftar dan jangan mengarang materi silabus atau algoritma teknis yang tidak didukung data resmi.
    - Jika menampilkan daftar mata kuliah: sajikan dalam bentuk poin rapi per semester dengan SKS, jangan memunculkan header tabel atau nomor urut mentah.${recInstructionsId}`,
     userPrompt: `${conversationHistorySnippet}Pertanyaan Pengguna: "${semanticFrame.rawQuery}"${semanticScopeSnippet}${semanticInterpretationSnippet}
 FAKTA RESMI YANG TERSEDIA:
@@ -3560,10 +3560,18 @@ function buildProgramComparisonAnswer(semanticFrame, evidenceList = [], arbitrat
 
   const isAskingCoding = /\b(?:coding|ngoding|pemrograman|program|pusing)\b/i.test(semanticFrame?.rawQuery || '');
   if (isAskingCoding) {
+    const { getProgramCourseFact } = require('./academicCatalog');
+    const siAlgoCourse = getProgramCourseFact('S1 Sistem Informasi', 'Dasar Algoritma') || getProgramCourseFact('S1 Sistem Informasi', 'algoritma');
+    const bdAiCourse = getProgramCourseFact('S1 Bisnis Digital', 'ai') || getProgramCourseFact('S1 Bisnis Digital', 'prompt');
+    const siCourseMention = siAlgoCourse ? ` dengan mata kuliah ${siAlgoCourse.name} pada ${siAlgoCourse.semester}` : '';
+    const bdCourseMention = bdAiCourse ? ` serta ${bdAiCourse.name} pada ${bdAiCourse.semester}` : '';
+    const siCourseMentionEn = siAlgoCourse ? ` with ${siAlgoCourse.name} in ${siAlgoCourse.semester}` : '';
+    const bdCourseMentionEn = bdAiCourse ? ` and ${bdAiCourse.name} in ${bdAiCourse.semester}` : '';
+
     if (isEn) {
-      diffLines.push('• **Regarding Programming:** In the available official PMB documents, I did not find any requirement for a coding test or programming portfolio. To confirm the latest requirements, you may confirm directly with the PMB committee. S1 Information Systems combines technology, business processes, analysis, and information system design with Dasar Algoritma in Semester I, while S1 Digital Business is oriented toward digital business, e-commerce, marketing strategy, and business management with foundational business and data courses in Semester I and Teknik Pembuatan Prompt untuk Model AI in Semester III. Study program selection should be tailored to your interests and career plans, without concluding that one is definitely easier.');
+      diffLines.push(`• **Regarding Programming:** In the available official PMB documents, I did not find any requirement for a coding test or programming portfolio. To confirm the latest requirements, you may confirm directly with the PMB committee. S1 Information Systems combines technology, business processes, analysis, and information system design${siCourseMentionEn}, while S1 Digital Business is oriented toward digital business, e-commerce, marketing strategy, and business management with foundational business and data courses in Semester I${bdCourseMentionEn}. Study program selection should be tailored to your interests and career plans, without concluding that one is definitely easier.`);
     } else {
-      diffLines.push('• **Terkait Pemrograman:** Dalam dokumen persyaratan PMB yang tersedia, saya tidak menemukan kewajiban tes coding atau portofolio pemrograman. Untuk memastikan persyaratan terbaru, Kakak dapat mengonfirmasi langsung kepada bagian PMB. S1 Sistem Informasi memadukan teknologi, proses bisnis, analisis dan perancangan sistem informasi dengan mata kuliah Dasar Algoritma pada Semester I, sedangkan S1 Bisnis Digital berorientasi pada bisnis digital, e-commerce, strategi pemasaran digital dan pengelolaan bisnis dengan mata kuliah fondasi bisnis dan data pada Semester I serta Teknik Pembuatan Prompt untuk Model AI pada Semester III. Pemilihan program studi sebaiknya disesuaikan dengan minat dan rencana karier Kakak, karena setiap prodi memiliki fokus keilmuan yang terstruktur tanpa menyimpulkan salah satu lebih mudah.');
+      diffLines.push(`• **Terkait Pemrograman:** Dalam dokumen persyaratan PMB yang tersedia, saya tidak menemukan kewajiban tes coding atau portofolio pemrograman. Untuk memastikan persyaratan terbaru, Kakak dapat mengonfirmasi langsung kepada bagian PMB. S1 Sistem Informasi memadukan teknologi, proses bisnis, analisis dan perancangan sistem informasi${siCourseMention}, sedangkan S1 Bisnis Digital berorientasi pada bisnis digital, e-commerce, strategi pemasaran digital dan pengelolaan bisnis dengan mata kuliah fondasi bisnis dan data pada Semester I${bdCourseMention}. Pemilihan program studi sebaiknya disesuaikan dengan minat dan rencana karier Kakak, karena setiap prodi memiliki fokus keilmuan yang terstruktur tanpa menyimpulkan salah satu lebih mudah.`);
     }
   }
 
@@ -5482,22 +5490,30 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
 
     if (isRecommendationInquiry) {
       const { sanitizeWhatsAppMarkdown } = require('./outboundRenderer');
+      const { getProgramCourseFact } = require('./academicCatalog');
+      const siAlgoCourse = getProgramCourseFact('S1 Sistem Informasi', 'Dasar Algoritma') || getProgramCourseFact('S1 Sistem Informasi', 'algoritma');
+      const bdAiCourse = getProgramCourseFact('S1 Bisnis Digital', 'ai') || getProgramCourseFact('S1 Bisnis Digital', 'prompt');
+      const siCourseStr = siAlgoCourse ? ` melalui *${siAlgoCourse.name}*` : '';
+      const bdCourseStr = bdAiCourse ? `, serta pada ${bdAiCourse.semester} terdapat mata kuliah *${bdAiCourse.name}*` : '';
+      const siCourseStrEn = siAlgoCourse ? ` through the course *${siAlgoCourse.name}*` : '';
+      const bdCourseStrEn = bdAiCourse ? `, and in ${bdAiCourse.semester} includes *${bdAiCourse.name}*` : '';
+
       const recAns = isEn
         ? 'In the available official PMB documents, I did not find any requirement for a coding test or programming portfolio. To confirm the latest requirements, you may confirm directly with the admissions committee (admisi PMB).\n\n' +
           'Based on official study program profiles and curriculum structures (*ISIAN WEBSITE*), you may consider study program options aligned with your interests and career plans:\n\n' +
           '1. *S1 Sistem Informasi*\n' +
-          'Combines technology, business processes, analysis, and information system design. In the official Semester I curriculum, foundational computing logic is introduced through the course *Dasar Algoritma*.\n\n' +
+          `Combines technology, business processes, analysis, and information system design. In the official Semester I curriculum, foundational computing logic is introduced${siCourseStrEn}.\n\n` +
           '2. *S1 Bisnis Digital*\n' +
-          'Oriented toward digital business, e-commerce, digital marketing strategy, and business management. Semester I includes foundational business and data courses, and in Semester III includes *Teknik Pembuatan Prompt untuk Model AI*.\n\n' +
+          `Oriented toward digital business, e-commerce, digital marketing strategy, and business management. Semester I includes foundational business and data courses${bdCourseStrEn}.\n\n` +
           '3. *S1 Teknologi Informasi & S1 Sistem Komputer*\n' +
           'For students pursuing technical depth in software engineering, networking infrastructure, microcontrollers, hardware, IoT, and robotics, with introductory programming starting in Semester I (*Algoritma dan Pemrograman*).\n\n' +
           'Study program selection is best guided by your personal interests and career aspirations, without assuming any single program is inherently easier. For admissions consultation regarding official requirements (ketentuan resmi admisi PMB), please contact the ITB STIKOM Bali admissions service at https://pmb.stikom-bali.ac.id ya!'
         : 'Dalam dokumen persyaratan PMB yang tersedia, saya tidak menemukan kewajiban tes coding atau portofolio pemrograman. Untuk memastikan persyaratan terbaru, Kakak dapat mengonfirmasi langsung kepada bagian PMB.\n\n' +
           'Berdasarkan profil program studi dan sebaran kurikulum resmi (*ISIAN WEBSITE*), Kakak dapat mempertimbangkan pilihan program studi sesuai minat dan rencana karier:\n\n' +
           '1. *S1 Sistem Informasi*\n' +
-          'Memadukan teknologi, proses bisnis, analisis dan perancangan sistem informasi. Kurikulum Semester I mencantumkan mata kuliah fondasi logika komputasi melalui *Dasar Algoritma*.\n\n' +
+          `Memadukan teknologi, proses bisnis, analisis dan perancangan sistem informasi. Kurikulum Semester I mencantumkan mata kuliah fondasi logika komputasi${siCourseStr}.\n\n` +
           '2. *S1 Bisnis Digital*\n' +
-          'Berorientasi pada bisnis digital, e-commerce, strategi pemasaran digital, dan pengelolaan bisnis. Pada Semester I, kurikulum memuat mata kuliah fondasi bisnis dan data, serta pada Semester III terdapat mata kuliah *Teknik Pembuatan Prompt untuk Model AI*.\n\n' +
+          `Berorientasi pada bisnis digital, e-commerce, strategi pemasaran digital, dan pengelolaan bisnis. Pada Semester I, kurikulum memuat mata kuliah fondasi bisnis dan data${bdCourseStr}.\n\n` +
           '3. *S1 Teknologi Informasi & S1 Sistem Komputer*\n' +
           'Bagi yang berminat mendalami rekayasa perangkat lunak, infrastruktur jaringan, hardware, IoT, maupun robotika, dengan pembelajaran dasar pemrograman pada Semester I (*Algoritma dan Pemrograman*).\n\n' +
           'Pemilihan program studi sebaiknya disesuaikan dengan minat dan rencana karier Kakak, karena setiap prodi memiliki fokus keilmuan yang terstruktur tanpa menyimpulkan salah satu lebih mudah. Untuk konsultasi pemilihan jurusan dan verifikasi ketentuan resmi admisi PMB, Kakak dapat menghubungi layanan admisi PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id ya!';
@@ -5982,23 +5998,31 @@ function buildGroundedCurriculumAnswer(semanticFrame, evidenceList = [], arbitra
   // 3. Artificial Intelligence inquiry
   const isAiQuery = /\b(?:artificial\s+intelligence|\bai\b|kecerdasan\s+artifisial|kecerdasan\s+buatan|prompt)\b/i.test(rawQuery);
   if (isAiQuery) {
-    if (targetEntity === 'S1 Bisnis Digital' || (!targetEntity && /\bbisnis\s+digital\b/i.test(rawQuery))) {
-      const ans = isEn
-        ? `**Yes**, the **S1 Digital Business** program at ITB STIKOM Bali includes coursework on Artificial Intelligence (AI) applied to digital business.\n\n` +
-        `Based on the official curriculum, this topic is specifically taught in:\n` +
-        `• **Semester III**: **Teknik Pembuatan Prompt untuk Model AI**\n\n` +
-        `The learning focus is centered on the **practical utilization of AI models and prompt engineering** for business analytics, content creation, and digital decision making. This differs from the S1 Computer Systems program or Postgraduate (S2) studies which focus on deep technical AI algorithm engineering such as low-level Machine Learning or Deep Learning architecture design.`
-        : `**Ya**, di Program Studi **S1 Bisnis Digital** ITB STIKOM Bali terdapat pembelajaran terkait pemanfaatan Artificial Intelligence (AI) yang disesuaikan dengan kebutuhan bisnis digital.\n\n` +
-        `Berdasarkan Kurikulum Resmi, materi tersebut diajarkan secara spesifik pada mata kuliah:\n` +
-        `• **Semester III**: **Teknik Pembuatan Prompt untuk Model AI**\n\n` +
-        `Fokus pembelajaran pada prodi ini diarahkan pada **pemanfaatan praktis AI dan prompt engineering** untuk analisis data, kreasi konten, serta pengambilan keputusan bisnis digital. Hal ini berbeda dengan Program Studi S1 Sistem Komputer atau program Magister (S2) yang berfokus pada rekayasa algoritma AI teknis mendalam seperti perancangan model *Machine Learning* atau *Deep Learning*.`;
-      return {
-        success: true,
-        answer: ans,
-        source: 'grounded_curriculum_answer',
-        isExtractive: true,
-        handledSafely: true
-      };
+    const aiProg = targetEntity || (/\bbisnis\s+digital\b/i.test(rawQuery) ? 'S1 Bisnis Digital' : null);
+    if (aiProg) {
+      const { getProgramCourseFact } = require('./academicCatalog');
+      const aiCourse = getProgramCourseFact(aiProg, 'ai') || getProgramCourseFact(aiProg, 'prompt');
+      if (aiCourse) {
+        const semStr = aiCourse.semester ? `• **${aiCourse.semester}**: ` : '• ';
+        const codeStr = aiCourse.code ? ` (${aiCourse.code})` : '';
+        const sksStr = aiCourse.sks ? ` (${aiCourse.sks} SKS)` : '';
+        const ans = isEn
+          ? `**Yes**, the **${aiProg}** program at ITB STIKOM Bali includes coursework on Artificial Intelligence (AI).\n\n` +
+            `Based on the official curriculum, this topic is specifically taught in:\n` +
+            `${semStr}**${aiCourse.name}**${codeStr}${sksStr}\n\n` +
+            `Detailed syllabus topics and specific learning outcomes are not separately enumerated in the available public curriculum summary. For complete syllabus and learning outcome information, please consult the study program or admissions office directly.`
+          : `**Ya**, di Program Studi **${aiProg}** ITB STIKOM Bali terdapat pembelajaran terkait Artificial Intelligence (AI).\n\n` +
+            `Berdasarkan Kurikulum Resmi, materi tersebut diajarkan secara spesifik pada mata kuliah:\n` +
+            `${semStr}**${aiCourse.name}**${codeStr}${sksStr}\n\n` +
+            `Rincian silabus mengenai materi perkuliahan terperinci serta capaian pembelajaran belum dijabarkan dalam dokumen ringkasan kurikulum publik yang tersedia. Untuk informasi silabus lengkap, silakan mengonfirmasi langsung kepada pihak program studi atau layanan PMB ITB STIKOM Bali ya!`;
+        return {
+          success: true,
+          answer: ans,
+          source: 'grounded_curriculum_answer',
+          isExtractive: true,
+          handledSafely: true
+        };
+      }
     }
   }
 

@@ -26,14 +26,38 @@ function isSalutationOnly(text) {
   return /^(?:halo|hai|hey|hei|assalamu(?:'|’)?alaikum|selamat\s+(?:pagi|siang|sore|malam)|pagi|siang|sore|malam|permisi|tes|test|ping)(?:\s+(?:tiko|kak|kakak|min|admin|stikom|bot|sahabat|bro|sis))?$/i.test(s);
 }
 
+function cleanTestLabelMetadata(text) {
+  if (!text || typeof text !== 'string') return '';
+  let s = text.trim();
+  // Strip standalone leading test label e.g. "Pesan 3: ", "[Pesan 3] ", "[Pertanyaan 1] ", "Pertanyaan 1. ", "Pesan 3, ", "Pesan 3? "
+  s = s.replace(/^(?:(?:\[|\()?\s*(?:pesan|pertanyaan|test|case|turn|no\.?|nomor)\s*\d+\s*(?:\]|\))?[\s:.,\-–—?]+)/i, '');
+  // Also strip bracketed test label e.g. "[Pertanyaan 1]Apakah...", "(Pesan 2)Bagaimana..."
+  s = s.replace(/^(?:\[|\()\s*(?:pesan|pertanyaan|test|case|turn|no\.?|nomor)\s*\d+\s*(?:\]|\))[\s:.,\-–—?]*\s*/i, '');
+  // Strip standalone trailing test label e.g. "? Pesan 3", " (Pesan 3)", " - Pertanyaan 2"
+  s = s.replace(/(?:[\s,.\-–—?]+(?:\[|\()?\s*(?:pesan|pertanyaan|test|case|turn|no\.?|nomor)\s*\d+\s*(?:\]|\))?\s*)$/i, '');
+  return s.trim();
+}
+
 function isCompoundCourseBenefitQuery(rawQuery) {
   if (!rawQuery) return false;
   return /\b(?:mata\s*kuliah|matkul|kurikulum|silabus|ai\b|artificial\s+intelligence|kecerdasan\s+buatan)\b.*\b(?:semester\s+berapa\s+dan\s+apa|dan\s+apa\s+manfaat(?:nya)?)\b/i.test(rawQuery);
 }
 
 function splitCompoundQueryParts(rawQuery) {
-  const query = String(rawQuery || '').trim();
+  const cleaned = cleanTestLabelMetadata(rawQuery);
+  const query = String(cleaned || '').trim();
   if (!query) return [];
+
+  // Guard against splitting single-sentence course queries asking for name, semester, and SKS of a course
+  // e.g. Single-course multi-attribute query asking for course name, semester, and credits
+  const isSingleCourseAttributeQuery = /\b(?:mata\s*kuliah|matkul)\b/i.test(query) &&
+    /\b(?:semester\s+berapa|semester)\b/i.test(query) &&
+    /\b(?:berapa\s+sks|sks)\b/i.test(query) &&
+    (query.match(/\?/g) || []).length <= 1;
+
+  if (isSingleCourseAttributeQuery) {
+    return [query];
+  }
 
   const isComparison = /\b(perbedaan|beda|bedanya|banding(?:kan)?|dibandingkan|komparasi|versus|vs)\b/i.test(query) &&
     /\b(dan|serta|dengan)\b/i.test(query) &&
@@ -156,17 +180,17 @@ function classifyFollowupEntityFamilies(partFrame) {
   const domain = String(partFrame?.domain || '').toUpperCase();
 
   if (domain === 'FACILITIES' || domain === 'CAMPUS_SERVICE' ||
-      ['location', 'campus_location', 'address', 'facilities', 'facility'].some(aspect => aspects.has(aspect))) {
+    ['location', 'campus_location', 'address', 'facilities', 'facility'].some(aspect => aspects.has(aspect))) {
     return new Set(['campus_location', 'facility', 'campus_facility', 'campus_service']);
   }
   if (domain === 'ORGANIZATION_UKM' ||
-      ['organization', 'student_organization', 'ukm', 'sports', 'arts_culture'].some(aspect => aspects.has(aspect))) {
+    ['organization', 'student_organization', 'ukm', 'sports', 'arts_culture'].some(aspect => aspects.has(aspect))) {
     return new Set(['student_organization']);
   }
   if (['ACADEMIC_PROGRAM', 'ACADEMIC_CURRICULUM', 'TUITION_FEE', 'SCHOLARSHIP',
     'ACCREDITATION', 'ACADEMIC_RECOMMENDATION', 'INTERNATIONAL'].includes(domain) ||
-      ['curriculum', 'courses', 'fee', 'tuition', 'dpp', 'career', 'career_prospects',
-        'accreditation', 'requirements', 'scholarship', 'study_duration', 'degree_award', 'faculty', 'academic_structure'].some(aspect => aspects.has(aspect))) {
+    ['curriculum', 'courses', 'fee', 'tuition', 'dpp', 'career', 'career_prospects',
+      'accreditation', 'requirements', 'scholarship', 'study_duration', 'degree_award', 'faculty', 'academic_structure'].some(aspect => aspects.has(aspect))) {
     return new Set(['academic_program', 'international_program']);
   }
 
@@ -332,7 +356,8 @@ function propagateTrailingProgramEntity(subFrames, parts) {
  * Synchronous query decomposition (for deterministic tests and baseline compatibility)
  */
 function decomposeQuery(rawQuery, sessionData = {}) {
-  const query = String(rawQuery || '').trim();
+  const cleaned = cleanTestLabelMetadata(rawQuery);
+  const query = String(cleaned || rawQuery || '').trim();
   if (!query) return [];
 
   const parts = splitCompoundQueryParts(query);
@@ -367,7 +392,8 @@ function decomposeQuery(rawQuery, sessionData = {}) {
  * Asynchronous query decomposition leveraging AI semantic frame resolution
  */
 async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
-  const query = String(rawQuery || '').trim();
+  const cleaned = cleanTestLabelMetadata(rawQuery);
+  const query = String(cleaned || rawQuery || '').trim();
   if (!query) return [];
 
   const parts = splitCompoundQueryParts(query);

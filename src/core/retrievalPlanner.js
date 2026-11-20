@@ -38,14 +38,14 @@ const CONCEPT_RETRIEVAL_EXPANSIONS = Object.freeze({
     : ['total beban studi SKS kelulusan program studi'],
   faculty: (entity) => entity
     ? [
-        `fakultas program studi ${entity}`,
-        `program studi ${entity} masuk fakultas apa`,
-        'Fakultas Informatika dan Komputer Fakultas Bisnis dan Vokasi ITB STIKOM Bali'
-      ]
+      `fakultas program studi ${entity}`,
+      `program studi ${entity} masuk fakultas apa`,
+      'Fakultas Informatika dan Komputer Fakultas Bisnis dan Vokasi ITB STIKOM Bali'
+    ]
     : [
-        'Fakultas Informatika dan Komputer Fakultas Bisnis dan Vokasi ITB STIKOM Bali',
-        'daftar fakultas dan program studi di bawah fakultas ITB STIKOM Bali'
-      ],
+      'Fakultas Informatika dan Komputer Fakultas Bisnis dan Vokasi ITB STIKOM Bali',
+      'daftar fakultas dan program studi di bawah fakultas ITB STIKOM Bali'
+    ],
   degree_award: (entity) => entity
     ? [`gelar lulusan ${entity} sarjana komputer magister diploma`, `masa studi durasi kuliah ${entity} semester`]
     : ['gelar lulusan sarjana komputer magister diploma ITB STIKOM Bali'],
@@ -482,7 +482,7 @@ function buildRetrievalPlan(semanticFrame) {
     rawDomain === 'pmb_schedule' ||
     effectiveAspects.includes('schedule') ||
     (/\b(?:pendaftaran|daftar|mahasiswa\s+baru|pmb)\b/i.test(normalizedText) &&
-     /\b(?:buka|dibuka|masih\s+buka|masih\s+bisa|buka\s+gelombang|gelombang\s+berapa|jadwal|kapan|tutup|ditutup|batas\s+akhir|hari\s+ini|minggu\s+depan|sempat|tahun\s+ini|menerima\s+mahasiswa\s+baru|testing|tes\s+seleksi|pengumuman|registrasi\s+ulang)\b/i.test(normalizedText))
+      /\b(?:buka|dibuka|masih\s+buka|masih\s+bisa|buka\s+gelombang|gelombang\s+berapa|jadwal|kapan|tutup|ditutup|batas\s+akhir|hari\s+ini|minggu\s+depan|sempat|tahun\s+ini|menerima\s+mahasiswa\s+baru|testing|tes\s+seleksi|pengumuman|registrasi\s+ulang)\b/i.test(normalizedText))
   );
 
   if (isPmbAdmissionScheduleQuery) {
@@ -684,8 +684,7 @@ function buildRetrievalPlan(semanticFrame) {
           queryVariants.push(`${ent} pemrograman coding kurikulum dasar syarat`);
           queryVariants.push(`${ent} rekayasa perangkat lunak dasar algoritma`);
         }
-        if (/\b(?:artificial\s+intelligence|\bai\b|kecerdasan|prompt)\b/i.test(normQ)) {
-          queryVariants.push(`${ent} teknik pembuatan prompt model AI kurikulum`);
+        if (/\b(?:artificial\s+intelligence|\bai\b|kecerdasan)\b/i.test(normQ)) {
           queryVariants.push(`${ent} artificial intelligence kecerdasan buatan mata kuliah`);
         }
         queryVariants.push(`kurikulum 2025 program studi ${ent} mata kuliah sks semester`);
