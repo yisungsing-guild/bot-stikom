@@ -691,5 +691,93 @@
       "sourceDocument": null,
       "verificationNote": "Dokumen resmi kebijakan privasi (privacy policy), ketentuan perlindungan data pribadi, maupun mekanisme pembagian data mahasiswa ke pihak ketiga belum tercantum dalam korpus dokumen publikasi kampus yang tersedia."
     }
+  },
+  "officialProgramAccreditation": {
+    "S1 Sistem Informasi": {
+      "program": "S1 Sistem Informasi",
+      "degreeLevel": "S1",
+      "rank": "Baik Sekali",
+      "agency": "LAM INFOKOM",
+      "decreeNumber": "149/SK/LAM-INFOKOM/Ak/S/XII/2023",
+      "validFrom": "2023-12-14",
+      "validUntil": "2028-12-14",
+      "isCurrentlyActive": true,
+      "temporalStatus": "ACTIVE",
+      "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+      "sourceDocument": "SERTIFIKAT AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+      "sourceUrl": null
+    },
+    "S1 Sistem Komputer": {
+      "program": "S1 Sistem Komputer",
+      "degreeLevel": "S1",
+      "rank": "Baik Sekali",
+      "agency": "LAM INFOKOM",
+      "decreeNumber": "068/SK/LAM-INFOKOM/Ak/S/IV/2025",
+      "validFrom": "2025-04-09",
+      "validUntil": "2030-04-09",
+      "isCurrentlyActive": true,
+      "temporalStatus": "ACTIVE",
+      "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+      "sourceDocument": "SERTIFIKAT AKREDITASI SISTEM KOMPUTER (09 APRIL 2025 - 09 APRIL 2030).pdf",
+      "sourceUrl": null
+    },
+    "S1 Teknologi Informasi": {
+      "program": "S1 Teknologi Informasi",
+      "degreeLevel": "S1",
+      "rank": "Baik",
+      "agency": "BAN-PT",
+      "decreeNumber": "5908/SK/BAN-PT/Ak/S/IX/2022",
+      "validFrom": "2022-09-06",
+      "validUntil": "2027-09-06",
+      "isCurrentlyActive": true,
+      "temporalStatus": "ACTIVE",
+      "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+      "sourceDocument": "SERTIFIKAT AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf",
+      "sourceUrl": null
+    },
+    "S1 Bisnis Digital": {
+      "program": "S1 Bisnis Digital",
+      "degreeLevel": "S1",
+      "rank": "Baik",
+      "agency": "BAN-PT",
+      "decreeNumber": "6794/SK/BAN-PT/Ak/S/X/2022",
+      "validFrom": "2022-10-05",
+      "validUntil": "2027-10-05",
+      "isCurrentlyActive": true,
+      "temporalStatus": "ACTIVE",
+      "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+      "sourceDocument": "SERTIFIKAT AKREDITASI BD (05 OKT 2022 - 05 OKT 2027).pdf",
+      "sourceUrl": null
+    },
+    "D3 Manajemen Informatika": {
+      "program": "D3 Manajemen Informatika",
+      "degreeLevel": "D3",
+      "rank": "Baik",
+      "agency": "BAN-PT",
+      "decreeNumber": "12450/SK/BAN-PT/Akred-PMT/Dipl-III/XI/2021",
+      "validFrom": "2021-11-17",
+      "validUntil": "2026-11-17",
+      "isCurrentlyActive": false,
+      "temporalStatus": "EXPIRED_REQUIRES_RENEWAL",
+      "verificationStatus": "VERIFIED_PRIMARY_SOURCE",
+      "sourceDocument": "SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+      "sourceUrl": null,
+      "note": "Masa berlaku SK No. 12450/SK/BAN-PT/Akred-PMT/Dipl-III/XI/2021 berakhir pada 17 November 2026. Status akreditasi terkini memerlukan konfirmasi dokumen perpanjangan/terbaru resmi dari prodi atau BAN-PT."
+    },
+    "S2 Sistem Informasi": {
+      "program": "S2 Sistem Informasi",
+      "degreeLevel": "S2",
+      "rank": null,
+      "agency": null,
+      "decreeNumber": null,
+      "validFrom": null,
+      "validUntil": null,
+      "isCurrentlyActive": false,
+      "temporalStatus": "SAFE_UNKNOWN",
+      "verificationStatus": "UNVERIFIED_INTERNAL_DATASET",
+      "sourceDocument": "Training_Dataset_Pascasarjana_ITB_STIKOM_Bali.xlsx",
+      "sourceUrl": "https://pasca.stikom-bali.ac.id",
+      "note": "Dokumen fisik SK atau sertifikat akreditasi resmi BAN-PT/LAM INFOKOM belum terunggah dalam basis data resmi bot. Status akreditasi resmi diarahkan untuk dikonfirmasi langsung ke Direktorat Pascasarjana ITB STIKOM Bali."
+    }
   }
 }

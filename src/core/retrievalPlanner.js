@@ -29,7 +29,7 @@ const CONCEPT_RETRIEVAL_EXPANSIONS = Object.freeze({
     : ['rincian biaya pendidikan mahasiswa baru kelas reguler DPP SPP'],
   accreditation: (entity) => entity
     ? [`sertifikat akreditasi ${entity} peringkat resmi`, `status akreditasi program studi ${entity}`]
-    : ['status akreditasi institusi program studi BAN-PT LAM INFOKOM'],
+    : ['status akreditasi institusi program studi', 'peringkat akreditasi resmi kampus'],
   curriculum: (entity) => entity
     ? [`kurikulum ${entity} mata kuliah sebaran semester`, `struktur kurikulum beban studi SKS ${entity}`]
     : ['kurikulum program studi mata kuliah sebaran semester'],

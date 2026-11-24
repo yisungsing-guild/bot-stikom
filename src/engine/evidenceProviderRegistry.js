@@ -26,6 +26,14 @@ const {
 } = require('./scheduleEvidenceResolver');
 const { findCanonicalEntity, CANONICAL_ENTITIES } = require('./canonicalEntityRegistry');
 
+let CANONICAL_FACTS_REGISTRY = null;
+try {
+  CANONICAL_FACTS_REGISTRY = require('../../data/runtime/canonical_academic_facts_registry.json');
+} catch (_) {
+  CANONICAL_FACTS_REGISTRY = {};
+}
+const OFFICIAL_ACCREDITATION_MAP = CANONICAL_FACTS_REGISTRY?.officialProgramAccreditation || {};
+
 /**
  * Normalized evidence record factory
  */
@@ -283,73 +291,81 @@ class AcademicProgramEvidenceProvider {
       numericSemantics: ['duration_years', 'credits']
     });
 
+    const getAccred = (progName) => {
+      const entry = OFFICIAL_ACCREDITATION_MAP[progName] || {};
+      return {
+        accreditation: entry.rank || null,
+        agency: entry.agency || null,
+        decreeNumber: entry.decreeNumber || null,
+        validFrom: entry.validFrom || null,
+        validUntil: entry.validUntil || null,
+        isCurrentlyActive: Boolean(entry.isCurrentlyActive),
+        temporalStatus: entry.temporalStatus || (entry.isCurrentlyActive ? 'ACTIVE' : 'SAFE_UNKNOWN'),
+        accreditationDoc: entry.sourceDocument || null,
+        accreditationProvenance: entry.decreeNumber
+          ? (entry.agency === 'LAM INFOKOM'
+              ? `Keputusan LAM INFOKOM No. ${entry.decreeNumber}`
+              : `Surat Keputusan BAN-PT No. ${entry.decreeNumber}`)
+          : (entry.sourceDocument || null)
+      };
+    };
+
     // Official authoritative program specifications with documented provenance
+    // Accreditation metadata is hydrated dynamically from canonical registry (Single Source of Truth)
     this.authoritativeSpecs = Object.freeze({
       'S1 Sistem Informasi': {
         degree: 'Sarjana Komputer (S.Kom)',
         duration: '4 tahun (8 semester)',
         durationYears: 4,
         semesters: 8,
-        accreditation: 'Baik Sekali',
         pedomanDoc: 'Pedoman TA S1 2019 Revisi 1.pdf',
-        accreditationDoc: 'SERTIFIKAT AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf',
         degreeProvenance: 'Pedoman Akademik & Kurikulum S1 Sistem Informasi ITB STIKOM Bali',
-        accreditationProvenance: 'Sertifikat Akreditasi LAM INFOKOM Prodi S1 Sistem Informasi'
+        ...getAccred('S1 Sistem Informasi')
       },
       'S1 Teknologi Informasi': {
         degree: 'Sarjana Komputer (S.Kom)',
         duration: '4 tahun (8 semester)',
         durationYears: 4,
         semesters: 8,
-        accreditation: 'Baik Sekali',
         pedomanDoc: 'Pedoman TA S1 2019 Revisi 1.pdf',
-        accreditationDoc: 'SERTIFIKAT AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf',
         degreeProvenance: 'Pedoman Akademik & Kurikulum S1 Teknologi Informasi ITB STIKOM Bali',
-        accreditationProvenance: 'Sertifikat Akreditasi LAM INFOKOM Prodi S1 Teknologi Informasi'
+        ...getAccred('S1 Teknologi Informasi')
       },
       'S1 Bisnis Digital': {
         degree: 'Sarjana Bisnis (S.Bns)',
         duration: '4 tahun (8 semester)',
         durationYears: 4,
         semesters: 8,
-        accreditation: 'Baik Sekali',
         pedomanDoc: 'Pedoman TA S1 2019 Revisi 1.pdf',
-        accreditationDoc: 'SERTIFIKAT AKREDITASI BD (05 OKT 2022 - 05 OKT 2027).pdf',
         degreeProvenance: 'Pedoman Akademik & Kurikulum S1 Bisnis Digital ITB STIKOM Bali',
-        accreditationProvenance: 'Sertifikat Akreditasi LAM INFOKOM Prodi S1 Bisnis Digital'
+        ...getAccred('S1 Bisnis Digital')
       },
       'S1 Sistem Komputer': {
         degree: 'Sarjana Komputer (S.Kom)',
         duration: '4 tahun (8 semester)',
         durationYears: 4,
         semesters: 8,
-        accreditation: 'Baik Sekali',
         pedomanDoc: 'Pedoman TA S1 2019 Revisi 1.pdf',
-        accreditationDoc: 'SERTIFIKAT AKREDITASI SISTEM KOMPUTER (09 APRIL 2025 - 09 APRIL 2030).pdf',
         degreeProvenance: 'Pedoman Akademik & Kurikulum S1 Sistem Komputer ITB STIKOM Bali',
-        accreditationProvenance: 'Sertifikat Akreditasi BAN-PT/LAM INFOKOM Prodi S1 Sistem Komputer'
+        ...getAccred('S1 Sistem Komputer')
       },
       'D3 Manajemen Informatika': {
         degree: 'Ahli Madya Komputer (A.Md.Kom)',
         duration: '3 tahun (6 semester)',
         durationYears: 3,
         semesters: 6,
-        accreditation: 'Baik Sekali',
         pedomanDoc: 'Pedoman TA S1 2019 Revisi 1.pdf',
-        accreditationDoc: 'SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf',
         degreeProvenance: 'Pedoman Akademik & Kurikulum D3 Manajemen Informatika ITB STIKOM Bali',
-        accreditationProvenance: 'Sertifikat Akreditasi LAM INFOKOM Prodi D3 Manajemen Informatika'
+        ...getAccred('D3 Manajemen Informatika')
       },
       'S2 Sistem Informasi': {
         degree: 'Magister Komputer (M.Kom)',
         duration: '2 tahun (4 semester)',
         durationYears: 2,
         semesters: 4,
-        accreditation: 'Baik Sekali',
         pedomanDoc: 'Training_Dataset_Pascasarjana_ITB_STIKOM_Bali.xlsx',
-        accreditationDoc: 'Training_Dataset_Pascasarjana_ITB_STIKOM_Bali.xlsx',
         degreeProvenance: 'Pedoman Akademik Program Magister (S2) Sistem Informasi',
-        accreditationProvenance: 'Akreditasi Program Pascasarjana Magister Sistem Informasi'
+        ...getAccred('S2 Sistem Informasi')
       }
     });
   }
@@ -411,7 +427,16 @@ class AcademicProgramEvidenceProvider {
         sourceType: srcType,
         sourceDocumentOrRecord: sourceDoc,
         provenance: prov,
-        qualifiers: { durationYears: spec.durationYears, semesters: spec.semesters },
+        qualifiers: {
+          durationYears: spec.durationYears,
+          semesters: spec.semesters,
+          agency: spec.agency,
+          decreeNumber: spec.decreeNumber,
+          validFrom: spec.validFrom,
+          validUntil: spec.validUntil,
+          isCurrentlyActive: spec.isCurrentlyActive,
+          temporalStatus: spec.temporalStatus || (spec.isCurrentlyActive ? 'ACTIVE' : 'EXPIRED')
+        },
         confidenceSignals: { isOfficialDocument: true, exactMatch: true, score: 1.0 }
       }));
     }

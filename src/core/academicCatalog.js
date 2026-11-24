@@ -301,6 +301,197 @@ function getCatalogClaimProvenance(claimKey) {
 }
 
 /**
+ * Canonical Program Accreditation Registry (Phase 2B / Work Order 1B).
+ * Dynamically hydrated from CANONICAL_FACTS_REGISTRY.officialProgramAccreditation (Single Source of Truth).
+ * Grounded strictly in official primary accreditation certificates and decrees:
+ * - S1 Sistem Informasi: LAM INFOKOM No. 149/SK/LAM-INFOKOM/Ak/S/XII/2023 (Peringkat Baik Sekali, 14 Des 2023 - 14 Des 2028).
+ * - S1 Sistem Komputer: LAM INFOKOM No. 068/SK/LAM-INFOKOM/Ak/S/IV/2025 (Peringkat Baik Sekali, 09 Apr 2025 - 09 Apr 2030).
+ * - S1 Teknologi Informasi: BAN-PT No. 5908/SK/BAN-PT/Ak/S/IX/2022 (Peringkat Baik, 06 Sep 2022 - 06 Sep 2027).
+ * - S1 Bisnis Digital: BAN-PT No. 6794/SK/BAN-PT/Ak/S/X/2022 (Peringkat Baik, 05 Okt 2022 - 05 Okt 2027).
+ * - D3 Manajemen Informatika: BAN-PT No. 12450/SK/BAN-PT/Akred-PMT/Dipl-III/XI/2021 (Peringkat Baik, 17 Nov 2021 - 17 Nov 2026).
+ *   * Temporal Status: Expired on 17 Nov 2026 relative to runtime (24 Nov 2026).
+ *   * Current accreditation requests yield SAFE_UNKNOWN with transparent historical disclosure.
+ *   * Historical requests (2021-2026) return verified historical facts.
+ * - S2 Sistem Informasi: rank null, agency null (UNVERIFIED_INTERNAL_DATASET -> SAFE_UNKNOWN).
+ */
+const RAW_OFFICIAL_ACCREDITATION = CANONICAL_FACTS_REGISTRY?.officialProgramAccreditation || {};
+
+function buildProgramAccreditationRegistry() {
+  const result = {};
+  for (const [progKey, raw] of Object.entries(RAW_OFFICIAL_ACCREDITATION)) {
+    result[progKey] = Object.freeze({
+      canonical: raw.program,
+      degreeLevel: raw.degreeLevel,
+      rank: raw.rank,
+      agency: raw.agency,
+      decreeNumber: raw.decreeNumber,
+      validFrom: raw.validFrom,
+      validUntil: raw.validUntil,
+      isCurrentlyActive: Boolean(raw.isCurrentlyActive),
+      temporalStatus: raw.temporalStatus || (raw.isCurrentlyActive ? 'ACTIVE' : 'SAFE_UNKNOWN'),
+      certificateDocument: raw.sourceDocument,
+      verificationStatus: raw.verificationStatus,
+      sourceUrl: raw.sourceUrl || null,
+      note: raw.note || null,
+      provenance: raw.decreeNumber
+        ? (raw.agency === 'LAM INFOKOM'
+            ? `Keputusan LAM INFOKOM No. ${raw.decreeNumber}`
+            : `Surat Keputusan BAN-PT No. ${raw.decreeNumber}`)
+        : (raw.sourceDocument || 'Dokumen resmi institusi')
+    });
+  }
+  return Object.freeze(result);
+}
+
+const PROGRAM_ACCREDITATION_REGISTRY = buildProgramAccreditationRegistry();
+
+function formatIndonesianDate(isoDateStr) {
+  if (!isoDateStr) return '';
+  const parts = isoDateStr.split('-');
+  if (parts.length !== 3) return isoDateStr;
+  const day = parseInt(parts[2], 10);
+  const monthIdx = parseInt(parts[1], 10);
+  const year = parts[0];
+  const months = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  return `${day} ${months[monthIdx] || ''} ${year}`.trim();
+}
+
+function resolveProgramAccreditationEntry(programNameOrQuery) {
+  if (!programNameOrQuery) return null;
+  const raw = typeof programNameOrQuery === 'object'
+    ? (programNameOrQuery.canonical || programNameOrQuery.name || '')
+    : String(programNameOrQuery);
+  const str = raw.toLowerCase().trim();
+  if (str.includes('bisnis digital') || /\bbd\b/i.test(str)) return PROGRAM_ACCREDITATION_REGISTRY['S1 Bisnis Digital'];
+  if (str.includes('teknologi informasi') || /\bti\b/i.test(str)) return PROGRAM_ACCREDITATION_REGISTRY['S1 Teknologi Informasi'];
+  if (str.includes('sistem komputer') || /\bsk\b/i.test(str)) return PROGRAM_ACCREDITATION_REGISTRY['S1 Sistem Komputer'];
+  if (str.includes('manajemen informatika') || /\bmi\b/i.test(str)) return PROGRAM_ACCREDITATION_REGISTRY['D3 Manajemen Informatika'];
+  if (str.includes('magister') || str.includes('s2') || str.includes('pascasarjana')) return PROGRAM_ACCREDITATION_REGISTRY['S2 Sistem Informasi'];
+  if (str.includes('sistem informasi') || /\bsi\b/i.test(str)) return PROGRAM_ACCREDITATION_REGISTRY['S1 Sistem Informasi'];
+  return null;
+}
+
+function getProgramAccreditationFact(programNameOrQuery, options = {}) {
+  const entry = resolveProgramAccreditationEntry(programNameOrQuery);
+  if (!entry) return null;
+
+  const rawQuery = String(options.rawQuery || options.query || (typeof programNameOrQuery === 'string' ? programNameOrQuery : '')).toLowerCase();
+  const isEn = options.language === 'en' || (/\b(?:what|accreditation|rank|is\s+accredited|degree)\b/i.test(rawQuery) && !/\b(?:apa|bagaimana|status|akreditasi|peringkat|prodi|jurusan|kuliah|stikom)\b/i.test(rawQuery));
+
+  const isHistoricalQuery = /\b(?:periode\s+(?:2021|2022|2023|2024|2025|2026|sebelumnya)|sebelumnya|dulu|pernah|sk\s+(?:2021|2022|lama)|tahun\s+(?:2021|2022|2023|2024|2025)|historis|riwayat)\b/i.test(rawQuery);
+
+  // Check unverified programs without primary source (S2 Sistem Informasi)
+  if (entry.temporalStatus === 'SAFE_UNKNOWN' || entry.rank === null || entry.verificationStatus === 'UNVERIFIED_INTERNAL_DATASET') {
+    const ans = isEn
+      ? `Regarding the official accreditation status of the **${entry.canonical}** program at ITB STIKOM Bali, the primary accreditation decree (SK) or certificate from BAN-PT / LAM INFOKOM is currently not yet recorded in our verified official database (SAFE_UNKNOWN).\n\nFor official accreditation documentation and updates, please refer directly to the Directorate of Postgraduate Programs at https://pasca.stikom-bali.ac.id.`
+      : `Mengenai status akreditasi resmi Program Studi **${entry.canonical}** ITB STIKOM Bali, saat ini dokumen Surat Keputusan (SK) atau sertifikat akreditasi resmi dari BAN-PT maupun LAM INFOKOM belum tersedia dalam basis data resmi kami (SAFE_UNKNOWN).\n\nUntuk konfirmasi status akreditasi terkini dan dokumen penetapan resmi, silakan merujuk langsung ke laman resmi Direktorat Pascasarjana di **https://pasca.stikom-bali.ac.id** atau menghubungi sekretariat pascasarjana.`;
+    return {
+      success: true,
+      status: 'SAFE_UNKNOWN',
+      program: entry.canonical,
+      rank: null,
+      agency: null,
+      decreeNumber: null,
+      validFrom: null,
+      validUntil: null,
+      isCurrentlyActive: false,
+      temporalStatus: 'SAFE_UNKNOWN',
+      verificationStatus: entry.verificationStatus,
+      answer: ans,
+      handledSafely: true,
+      source: 'canonical_accreditation_registry'
+    };
+  }
+
+  // Check temporal validity for D3 MI
+  if (entry.canonical === 'D3 Manajemen Informatika' && !entry.isCurrentlyActive) {
+    if (isHistoricalQuery) {
+      const fromStr = formatIndonesianDate(entry.validFrom);
+      const toStr = formatIndonesianDate(entry.validUntil);
+      const ans = isEn
+        ? `Based on official decree SK BAN-PT No. **${entry.decreeNumber}**, the **D3 Informatics Management (Manajemen Informatika)** program at ITB STIKOM Bali held an accreditation rank of **${entry.rank}** by **BAN-PT** valid from **${fromStr} to ${toStr}**.\n\n_Note: The validity period of this decree expired on ${toStr}._`
+        : `Berdasarkan dokumen resmi SK BAN-PT No. **${entry.decreeNumber}**, Program Studi **D3 Manajemen Informatika** ITB STIKOM Bali memiliki peringkat akreditasi **${entry.rank}** oleh **BAN-PT** untuk masa berlaku **${fromStr} sampai dengan ${toStr}**.\n\n_Catatan: Masa berlaku SK tersebut berakhir pada ${toStr}._`;
+      return {
+        success: true,
+        status: 'HISTORICAL_FACT',
+        program: entry.canonical,
+        rank: entry.rank,
+        agency: entry.agency,
+        decreeNumber: entry.decreeNumber,
+        validFrom: entry.validFrom,
+        validUntil: entry.validUntil,
+        isCurrentlyActive: false,
+        answer: ans,
+        handledSafely: true,
+        source: 'canonical_accreditation_registry'
+      };
+    } else {
+      // Current active accreditation query without historical qualification: must SAFE_UNKNOWN
+      const toStr = formatIndonesianDate(entry.validUntil);
+      const ans = isEn
+        ? `Based on available official records (SK BAN-PT No. **${entry.decreeNumber}**), the **D3 Informatics Management (Manajemen Informatika)** study program at ITB STIKOM Bali previously held an accreditation rank of **${entry.rank}** with validity through **${toStr}**.\n\nHowever, official documentation regarding accreditation renewal or the latest accreditation certificate is not yet recorded in our official database (SAFE_UNKNOWN). To confirm the current active accreditation status, please contact the D3 Manajemen Informatika Study Program directly or verify via the official BAN-PT portal.`
+        : `Berdasarkan dokumen resmi yang tersedia (SK BAN-PT No. **${entry.decreeNumber}**), Program Studi **D3 Manajemen Informatika** ITB STIKOM Bali sebelumnya memiliki peringkat akreditasi **${entry.rank}** dengan masa berlaku hingga **${toStr}**.\n\nNamun, dokumen penetapan perpanjangan atau sertifikat akreditasi terbaru saat ini belum tersedia dalam basis data resmi kami (SAFE_UNKNOWN). Untuk memastikan status akreditasi terkini yang sedang berjalan, silakan mengonfirmasi langsung ke Program Studi D3 Manajemen Informatika atau memeriksa portal resmi BAN-PT.`;
+      return {
+        success: true,
+        status: 'SAFE_UNKNOWN',
+        program: entry.canonical,
+        rank: null,
+        historicalRank: entry.rank,
+        agency: entry.agency,
+        decreeNumber: entry.decreeNumber,
+        validUntil: entry.validUntil,
+        isCurrentlyActive: false,
+        answer: ans,
+        handledSafely: true,
+        source: 'canonical_accreditation_registry'
+      };
+    }
+  }
+
+  // Active programs: S1 TI, S1 BD, S1 SK, S1 SI, S2 SI
+  let validityText = '';
+  if (entry.validFrom && entry.validUntil) {
+    const fromStr = formatIndonesianDate(entry.validFrom);
+    const toStr = formatIndonesianDate(entry.validUntil);
+    validityText = isEn
+      ? ` (valid from ${fromStr} to ${toStr})`
+      : ` (berlaku sejak ${fromStr} sampai dengan ${toStr})`;
+  }
+
+  let decreeText = '';
+  if (entry.decreeNumber) {
+    if (entry.agency === 'LAM INFOKOM') {
+      decreeText = isEn
+        ? ` under LAM INFOKOM Decree No. **${entry.decreeNumber}**`
+        : ` berdasarkan Keputusan LAM INFOKOM No. **${entry.decreeNumber}**`;
+    } else {
+      decreeText = isEn
+        ? ` under Decree No. **${entry.decreeNumber}**`
+        : ` berdasarkan Surat Keputusan No. **${entry.decreeNumber}**`;
+    }
+  }
+
+  const ans = isEn
+    ? `The **${entry.canonical}** study program at ITB STIKOM Bali is accredited **${entry.rank}** by **${entry.agency}**${decreeText}${validityText}.\n\nThis accreditation assures official educational standards, curriculum quality, certified faculty, and learning facilities. Is there anything else about ${entry.canonical} you would like to know?`
+    : `Program Studi **${entry.canonical}** di ITB STIKOM Bali terakreditasi **${entry.rank}** oleh **${entry.agency}**${decreeText}${validityText}.\n\nAkreditasi ini menjadi jaminan standar mutu kurikulum, tenaga pengajar, dan fasilitas pembelajaran yang diselenggarakan. Ada info lain tentang prodi ${entry.canonical} yang ingin Kakak tanyakan?`;
+
+  return {
+    success: true,
+    status: 'VERIFIED_ACTIVE',
+    program: entry.canonical,
+    rank: entry.rank,
+    agency: entry.agency,
+    decreeNumber: entry.decreeNumber,
+    validFrom: entry.validFrom,
+    validUntil: entry.validUntil,
+    isCurrentlyActive: true,
+    answer: ans,
+    handledSafely: true,
+    source: 'canonical_accreditation_registry'
+  };
+}
+
+/**
  * Verified institutional catalog representation with degree metadata.
  * Grounded in official institutional curriculum guides and verified against CANONICAL_ENTITIES.
  */
@@ -314,6 +505,7 @@ const INSTITUTIONAL_ACADEMIC_CATALOG = Object.freeze([
     sks: CURRICULUM_FACTS['S1 Sistem Informasi']?.totalSks || 144,
     semesters: CURRICULUM_FACTS['S1 Sistem Informasi']?.normalDurationSemesters || 8,
     verificationStatus: CURRICULUM_FACTS['S1 Sistem Informasi']?.verificationStatus || 'VERIFIED_PRIMARY_SOURCE',
+    accreditation: PROGRAM_ACCREDITATION_REGISTRY['S1 Sistem Informasi'],
     focusId: 'Fokus pada perancangan sistem enterprise, tata kelola TI, basis data, dan analisis bisnis digital.',
     focusEn: 'Focuses on enterprise systems, IT governance, database management, and digital business analytics.',
     provenance: CURRICULUM_FACTS['S1 Sistem Informasi']?.sourceDocument || 'ISIAN WEBSITE (1).pdf & Pedoman Akademik Program Sarjana ITB STIKOM Bali'
@@ -327,6 +519,7 @@ const INSTITUTIONAL_ACADEMIC_CATALOG = Object.freeze([
     sks: CURRICULUM_FACTS['S1 Sistem Komputer']?.totalSks || 144,
     semesters: CURRICULUM_FACTS['S1 Sistem Komputer']?.normalDurationSemesters || 8,
     verificationStatus: CURRICULUM_FACTS['S1 Sistem Komputer']?.verificationStatus || 'VERIFIED_PRIMARY_SOURCE',
+    accreditation: PROGRAM_ACCREDITATION_REGISTRY['S1 Sistem Komputer'],
     focusId: 'Fokus pada perangkat keras (hardware), Internet of Things (IoT), embedded system, robotika, dan keamanan jaringan.',
     focusEn: 'Focuses on hardware engineering, Internet of Things (IoT), embedded systems, robotics, and network security.',
     provenance: CURRICULUM_FACTS['S1 Sistem Komputer']?.sourceDocument || 'ISIAN WEBSITE (1).pdf & Pedoman Akademik Program Sarjana ITB STIKOM Bali'
@@ -340,6 +533,7 @@ const INSTITUTIONAL_ACADEMIC_CATALOG = Object.freeze([
     sks: CURRICULUM_FACTS['S1 Teknologi Informasi']?.totalSks || 144,
     semesters: CURRICULUM_FACTS['S1 Teknologi Informasi']?.normalDurationSemesters || 8,
     verificationStatus: CURRICULUM_FACTS['S1 Teknologi Informasi']?.verificationStatus || 'VERIFIED_PRIMARY_SOURCE',
+    accreditation: PROGRAM_ACCREDITATION_REGISTRY['S1 Teknologi Informasi'],
     focusId: 'Fokus pada keamanan siber (cyber security), integrasi sistem ICT, cloud computing, dan infrastruktur jaringan.',
     focusEn: 'Focuses on cyber security, ICT system integration, cloud computing, and network infrastructure.',
     provenance: CURRICULUM_FACTS['S1 Teknologi Informasi']?.sourceDocument || 'ISIAN WEBSITE (1).pdf & Pedoman Akademik Program Sarjana ITB STIKOM Bali'
@@ -353,6 +547,7 @@ const INSTITUTIONAL_ACADEMIC_CATALOG = Object.freeze([
     sks: CURRICULUM_FACTS['S1 Bisnis Digital']?.totalSks || 144,
     semesters: CURRICULUM_FACTS['S1 Bisnis Digital']?.normalDurationSemesters || 8,
     verificationStatus: CURRICULUM_FACTS['S1 Bisnis Digital']?.verificationStatus || 'VERIFIED_PRIMARY_SOURCE',
+    accreditation: PROGRAM_ACCREDITATION_REGISTRY['S1 Bisnis Digital'],
     focusId: 'Fokus pada inovasi bisnis berbasis teknologi, e-commerce, digital marketing, analitika bisnis, dan pengembangan startup.',
     focusEn: 'Focuses on tech-driven business innovation, e-commerce, digital marketing, business analytics, and startup development.',
     provenance: CURRICULUM_FACTS['S1 Bisnis Digital']?.sourceDocument || 'ISIAN WEBSITE (1).pdf & Pedoman Akademik Program Sarjana ITB STIKOM Bali'
@@ -371,6 +566,7 @@ const INSTITUTIONAL_ACADEMIC_CATALOG = Object.freeze([
     distribution: D3_MI_FACTS.distribution || { 'Tingkat I': 38, 'Tingkat II': 40, 'Tingkat III': 32 },
     verificationStatus: D3_MI_FACTS.verificationStatus || 'PARTIAL_OR_NEEDS_VALIDATION',
     verificationNote: D3_MI_FACTS.verificationNote || null,
+    accreditation: PROGRAM_ACCREDITATION_REGISTRY['D3 Manajemen Informatika'],
     focusId: 'Fokus pada aplikasi terapan teknologi informasi, operasional bisnis, pengolahan data, administrasi sistem informasi, dan IT support praktis.',
     focusEn: 'Focuses on applied information technology applications, business operations, data processing, information systems administration, and practical IT support.',
     provenance: D3_MI_FACTS.sourceDocument || 'MI_curriculum_verified_obe-2023.json (Indeks Kurikulum OBE Program Studi D3 Manajemen Informatika)'
@@ -394,6 +590,7 @@ const INSTITUTIONAL_ACADEMIC_CATALOG = Object.freeze([
     curriculumStructureStatus: S2_SI_FACTS.curriculumStructureStatus || 'VERIFIED_PRIMARY_SOURCE',
     graduationMinSksStatus: S2_SI_FACTS.graduationMinSksStatus || 'PARTIAL_OR_NEEDS_VALIDATION',
     verificationNote: S2_SI_FACTS.verificationNote || null,
+    accreditation: PROGRAM_ACCREDITATION_REGISTRY['S2 Sistem Informasi'],
     focusId: 'Fokus pada riset terapan sistem informasi tingkat lanjut, arsitektur enterprise, kepemimpinan teknologi strategis, dan tata kelola TI tingkat magister.',
     focusEn: 'Focuses on advanced applied information systems research, enterprise architecture, strategic IT leadership, and master-level IT governance.',
     provenance: S2_SI_FACTS.sourceDocument || 'ISIAN WEBSITE (1).pdf & Training_Dataset_Pascasarjana_ITB_STIKOM_Bali.xlsx'
@@ -997,6 +1194,9 @@ module.exports = {
   generateGroundedContactSummary,
   getCanonicalProgramFacts,
   getProgramCourseFact,
+  PROGRAM_ACCREDITATION_REGISTRY,
+  resolveProgramAccreditationEntry,
+  getProgramAccreditationFact,
   CATALOG_FACT_PROVENANCE_STATUS,
   S1_CATALOG_CLAIM_PROVENANCE,
   getCatalogClaimProvenance

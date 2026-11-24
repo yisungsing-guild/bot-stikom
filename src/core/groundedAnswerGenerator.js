@@ -25,7 +25,10 @@ const {
   CATALOG_FACT_PROVENANCE_STATUS,
   S1_CATALOG_CLAIM_PROVENANCE,
   getCatalogClaimProvenance,
-  getProgramCourseFact
+  getProgramCourseFact,
+  PROGRAM_ACCREDITATION_REGISTRY,
+  resolveProgramAccreditationEntry,
+  getProgramAccreditationFact
 } = require('./academicCatalog');
 const { sanitizeOpenAiChatPayload } = require('../utils/openAiPayloadHelper');
 const { detectQueryLanguage } = require('../utils/languageDetector');
@@ -844,6 +847,12 @@ function extractYangDipelajariFromEvidence(chunks, entityName = '') {
 }
 
 function extractAccreditationFromEvidence(chunks, entityName = '') {
+  if (entityName) {
+    const canonicalFact = getProgramAccreditationFact(entityName);
+    if (canonicalFact && canonicalFact.rank) {
+      return canonicalFact.rank;
+    }
+  }
   if (!Array.isArray(chunks)) return null;
   for (const c of chunks) {
     const text = cleanDocumentArtifacts(c.text || c.chunk || '');
@@ -3584,6 +3593,58 @@ function buildProgramComparisonAnswer(semanticFrame, evidenceList = [], arbitrat
   };
 }
 
+function resolveCanonicalAccreditationHandoff(semanticFrame, arbitratedEvidence) {
+  const isAccreditationInquiryCandidate = (
+    semanticFrame?.domain === 'ACCREDITATION' ||
+    semanticFrame?.intent === 'PROGRAM_ACCREDITATION' ||
+    (Array.isArray(semanticFrame?.aspects) && semanticFrame.aspects.includes('accreditation')) ||
+    /\b(?:akreditasi(?:nya)?|peringkat\s+akreditasi|terakreditasi)\b/i.test(semanticFrame?.rawQuery || '')
+  ) && !semanticFrame?.isComparison && semanticFrame?.intent !== 'PROGRAM_COMPARISON' &&
+    !(semanticFrame?.negations && (semanticFrame.negations.includes('accreditation') || semanticFrame.negations.includes('akreditasi'))) &&
+    !(semanticFrame?.negatedAspects && (semanticFrame.negatedAspects.has('accreditation') || semanticFrame.negatedAspects.has('akreditasi')));
+
+  if (isAccreditationInquiryCandidate) {
+    const progTarget = resolveEffectiveTargetEntity(semanticFrame, arbitratedEvidence) ||
+      semanticFrame?.academicProgram ||
+      (semanticFrame?.entities || []).find(e => (e.family === 'academic_program' || e.type === 'program'))?.canonical ||
+      arbitratedEvidence?.sessionData?.activeEntity;
+
+    if (progTarget) {
+      const accFact = getProgramAccreditationFact(progTarget, { rawQuery: semanticFrame?.rawQuery });
+      if (accFact && accFact.success && accFact.answer) {
+        return {
+          success: true,
+          answer: accFact.answer,
+          source: 'canonical_accreditation_registry',
+          groundedFacts: [accFact],
+          accreditationFact: accFact
+        };
+      }
+    } else {
+      // Ambiguous accreditation inquiry without specified program target
+      const mentionsProgram = /\b(?:prodi|program\s*studi|jurusan)\b/i.test(semanticFrame?.rawQuery || '');
+      const isInstitutional = !mentionsProgram && /\b(?:institusi|kampus|perguruan\s+tinggi|stikom\s+bali)\b/i.test(semanticFrame?.rawQuery || '');
+      if (isInstitutional) {
+        return {
+          success: true,
+          answer: "Berdasarkan Keputusan BAN-PT No. **3033/SK/BAN-PT/Ak.KP/PT/XII/2025**, Peringkat Akreditasi Perguruan Tinggi **Institut Teknologi dan Bisnis (ITB) STIKOM Bali** adalah **Baik Sekali** (berlaku sejak 10 Desember 2025 hingga 14 November 2028).\n\nUntuk akreditasi masing-masing program studi (S1 Sistem Informasi, S1 Sistem Komputer, S1 Teknologi Informasi, S1 Bisnis Digital, D3 Manajemen Informatika, dan S2 Sistem Informasi), silakan sebutkan nama program studi yang ingin Kakak tanyakan.",
+          source: 'canonical_accreditation_registry',
+          status: 'INSTITUTIONAL_ACCREDITATION',
+          handledSafely: true
+        };
+      }
+      return {
+        success: true,
+        answer: "Mohon informasikan program studi mana yang ingin Kakak ketahui akreditasinya ya? ITB STIKOM Bali menyelenggarakan 6 program studi: S1 Sistem Informasi, S1 Sistem Komputer, S1 Teknologi Informasi, S1 Bisnis Digital, D3 Manajemen Informatika, dan S2 Sistem Informasi.",
+        source: 'canonical_accreditation_registry',
+        status: 'AMBIGUOUS_PROGRAM_SAFE_UNKNOWN',
+        handledSafely: true
+      };
+    }
+  }
+  return null;
+}
+
 async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparisonEnvelope = null, recommendationResult = null) {
   if (recommendationResult) {
     arbitratedEvidence.recommendationResult = recommendationResult;
@@ -3776,6 +3837,10 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     }
 
     // Zero-evidence canonical registry & institutional catalog/procedure resolution (only when not marked unanswerable)
+    const zeroEvAccRes = resolveCanonicalAccreditationHandoff(semanticFrame, arbitratedEvidence);
+    if (zeroEvAccRes && zeroEvAccRes.success && zeroEvAccRes.answer) {
+      return zeroEvAccRes;
+    }
     const zeroEvCurricRes = buildGroundedCurriculumAnswer(semanticFrame, accepted, arbitratedEvidence);
     if (zeroEvCurricRes && zeroEvCurricRes.success && zeroEvCurricRes.answer) {
       return zeroEvCurricRes;
@@ -3981,7 +4046,11 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     }
   }
 
-
+  // Dynamic Grounded Program Accreditation Fact Engine Hand-off
+  const canonicalAccRes = resolveCanonicalAccreditationHandoff(semanticFrame, arbitratedEvidence);
+  if (canonicalAccRes && canonicalAccRes.success && canonicalAccRes.answer) {
+    return canonicalAccRes;
+  }
 
   // In test environment, when OpenAI key is absent/circuit open, or fast fallback requested, use generic extractive fallback
   // Institutional catalog/governance intents (katalog prodi, fakultas, lokasi kampus, jadwal tahapan PMB) preserve structured institutional data.

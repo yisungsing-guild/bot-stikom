@@ -29,6 +29,7 @@ try {
 } catch (e) {
   canonicalAcademicRegistry = null;
 }
+const canonicalAccreditationRegistry = canonicalAcademicRegistry?.officialProgramAccreditation || {};
 
 const RAW_DOCUMENT_LEAK_PATTERNS = [
   /GǪ.*GǪ/i,
@@ -639,7 +640,8 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   const temporalClaimPattern = /\b(saat ini|sekarang|hari ini|masih buka|masih dibuka|masih tersedia|masih menerima|sudah tutup|telah ditutup|sedang aktif|berlaku aktif|currently|at present|now|still open|still active|closed)\b/i;
   const isSafeAdmissionsReferral = semanticFrame.intent === 'CURRENT_ENROLLMENT_STATUS' ||
     /\b(?:portal\s+resmi\s+pmb|ruang\s+layanan\s+pmb|layanan\s+telepon\s+pmb|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
-  if (temporalClaimPattern.test(text) && !isUnsupported && !isSafeAdmissionsReferral) {
+  const isSafeUnknownDisclosure = /\b(?:belum\s+(?:tersedia|tercantum|dapat\s+dipastikan)|safe_unknown)\b/i.test(text);
+  if (temporalClaimPattern.test(text) && !isUnsupported && !isSafeAdmissionsReferral && !isSafeUnknownDisclosure) {
     // If the answer asserts a temporal claim, arbitrated evidence must exist
     if (!arbitratedEvidence.accepted || arbitratedEvidence.accepted.length === 0) {
       return failVerification('unsupported_temporal_claim_zero_evidence');
@@ -770,6 +772,117 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
       const hasVerifiedScore = new RegExp(`\\b(?:nilai|skor)\\s+${claimedScore}\\b`, 'i').test(acceptedTexts);
       if (!hasVerifiedScore) {
         return failVerification(`unsupported_accreditation_score_claim: nilai ${claimedScore}`);
+      }
+    }
+
+    // 7a-1. Generic Accreditation Fact & Contradiction Guard (Single Source of Truth / Work Order 1B)
+    // Validates dynamically against canonical academic facts registry records.
+    const isHistoricalAccreditationQuery = /\b(?:periode\s+(?:2021|2022|2023|2024|2025|2026|sebelumnya)|sebelumnya|dulu|pernah|sk\s+(?:2021|2022|lama)|tahun\s+(?:2021|2022|2023|2024|2025)|historis|riwayat)\b/i.test(rawQuery);
+
+    function matchesProgramForAccreditation(progKey, str) {
+      if (!str) return false;
+      const s = String(str).toLowerCase();
+      if (progKey === 'S1 Bisnis Digital') {
+        return /\b(?:bisnis\s+digital|bd)\b/i.test(s);
+      }
+      if (progKey === 'S1 Teknologi Informasi') {
+        return /\b(?:teknologi\s+informasi|ti)\b/i.test(s);
+      }
+      if (progKey === 'S1 Sistem Komputer') {
+        // Must avoid matching 'SK' as Surat Keputusan (e.g. SK BAN-PT, nomor SK, dokumen SK)
+        if (/\b(?:sistem\s+komputer)\b/i.test(s)) return true;
+        if (/\b(?:prodi|jurusan|program\s*studi)\s+sk\b/i.test(s)) return true;
+        if (/\bakreditasi\s+sk\b/i.test(s)) return true;
+        if (/\b(?:s1\s+sk)\b/i.test(s)) return true;
+        return false;
+      }
+      if (progKey === 'D3 Manajemen Informatika') {
+        return /\b(?:manajemen\s+informatika|d3\s*mi|diploma\s*3\s*mi|prodi\s+mi)\b/i.test(s);
+      }
+      if (progKey === 'S2 Sistem Informasi') {
+        return /\b(?:magister\s+(?:sistem\s+informasi|si)|s2\s+(?:sistem\s+informasi|si)|pascasarjana)\b/i.test(s);
+      }
+      if (progKey === 'S1 Sistem Informasi') {
+        if (/\b(?:s2|magister|pascasarjana)\b/i.test(s)) return false;
+        return /\b(?:s1\s+sistem\s+informasi|sistem\s+informasi|prodi\s+si)\b/i.test(s);
+      }
+      return false;
+    }
+
+    const prodiKeys = [
+      'S1 Bisnis Digital',
+      'S1 Teknologi Informasi',
+      'S1 Sistem Komputer',
+      'D3 Manajemen Informatika',
+      'S2 Sistem Informasi',
+      'S1 Sistem Informasi'
+    ];
+
+    for (const key of prodiKeys) {
+      const canonicalRecord = canonicalAccreditationRegistry[key];
+      if (!canonicalRecord) continue;
+
+      const queryMatches = matchesProgramForAccreditation(key, rawQuery);
+      const textMatches = matchesProgramForAccreditation(key, text);
+
+      // Check if this prodi is actively discussed in query or text
+      if (queryMatches || textMatches) {
+        const isSafeUnknownText = /\b(?:safe_unknown|belum\s+tersedia|belum\s+tercatat|belum\s+memiliki\s+sk|konfirmasi\s+ke|merujuk\s+ke|direktorat\s+pascasarjana)\b/i.test(text);
+
+        // Case 1: Unverified program or SAFE_UNKNOWN (e.g. S2 Sistem Informasi)
+        if (canonicalRecord.temporalStatus === 'SAFE_UNKNOWN' || canonicalRecord.rank === null || canonicalRecord.verificationStatus === 'UNVERIFIED_INTERNAL_DATASET') {
+          // Must not assert official verified rank or agency without primary source
+          const assertsRank = /\b(?:terakreditasi|akreditasi)\s+(?:baik\s+sekali|baik|unggul|a|b)\b/i.test(text) ||
+                              /\b(?:baik\s+sekali|baik|unggul)\s+dari\s+(?:lam\s*infokom|ban[- ]?pt)\b/i.test(text);
+          if (assertsRank && !isSafeUnknownText) {
+            return failVerification(`unverified_accreditation_claim_without_primary_source: ${canonicalRecord.program} has no verified primary decree; must disclose SAFE_UNKNOWN`);
+          }
+        }
+
+        // Case 2: Expired decree (e.g. D3 Manajemen Informatika)
+        else if (!canonicalRecord.isCurrentlyActive || canonicalRecord.temporalStatus === 'EXPIRED_REQUIRES_RENEWAL') {
+          // If query is not asking for historical fact, must NOT claim active status without disclaimer
+          if (!isHistoricalAccreditationQuery) {
+            const claimsActiveStatus = /\b(?:saat\s+ini|sekarang|aktif|masih\s+berlaku)\b/i.test(text) && /\b(?:terakreditasi|akreditasi)\b/i.test(text);
+            const hasExpiredOrSafeDisclaimer = /\b(?:berakhir|berlaku\s+hingga|17\s+november\s+2026|safe_unknown|belum\s+tersedia|konfirmasi)\b/i.test(text);
+            if (claimsActiveStatus && !hasExpiredOrSafeDisclaimer) {
+              return failVerification(`unverified_active_accreditation_claim_for_expired_sk: ${canonicalRecord.program} SK expired on ${canonicalRecord.validUntil}`);
+            }
+          }
+          if (!isSafeUnknownText) {
+            // Must not claim higher rank or wrong agency
+            if (/\b(?:baik\s+sekali|unggul)\b/i.test(text)) {
+              return failVerification(`contradiction_accreditation_rank: ${canonicalRecord.program} is ${canonicalRecord.rank}, not Baik Sekali / Unggul`);
+            }
+            if (/\blam\s*infokom\b/i.test(text) && canonicalRecord.agency === 'BAN-PT') {
+              return failVerification(`contradiction_accreditation_agency: ${canonicalRecord.program} is accredited by ${canonicalRecord.agency}, not LAM INFOKOM`);
+            }
+          }
+        }
+
+        // Case 3: Active verified programs (S1 TI, S1 BD, S1 SK, S1 SI)
+        else {
+          if (!isSafeUnknownText) {
+            // Agency contradiction check
+            if (canonicalRecord.agency === 'BAN-PT' && /\blam\s*infokom\b/i.test(text)) {
+              return failVerification(`contradiction_accreditation_agency: ${canonicalRecord.program} is accredited by ${canonicalRecord.agency}, not LAM INFOKOM`);
+            }
+            if (canonicalRecord.agency === 'LAM INFOKOM' && /\bban[- ]?pt\b/i.test(text) && !/\b(?:institusi|kampus|perguruan\s+tinggi)\b/i.test(text)) {
+              return failVerification(`contradiction_accreditation_agency: ${canonicalRecord.program} is accredited by ${canonicalRecord.agency}, not BAN-PT`);
+            }
+
+            // Rank contradiction check
+            if (canonicalRecord.rank === 'Baik') {
+              if (/\b(?:baik\s+sekali|unggul)\b/i.test(text)) {
+                return failVerification(`contradiction_accreditation_rank: ${canonicalRecord.program} is ${canonicalRecord.rank}, not Baik Sekali / Unggul`);
+              }
+            } else if (canonicalRecord.rank === 'Baik Sekali') {
+              if (/\bunggul\b/i.test(text)) {
+                return failVerification(`contradiction_accreditation_rank: ${canonicalRecord.program} is ${canonicalRecord.rank}, not Unggul`);
+              }
+            }
+          }
+        }
       }
     }
   }
